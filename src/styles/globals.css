@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar visually while keeping scroll functionality */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* 로컬 폰트 로드 */
+@font-face {
+  font-family: 'Giants-Bold';
+  src: url('../assets/fonts/Giants-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vitro-Core';
+  src: url('../assets/fonts/VITRO CORE OTF.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard-Bold';
+  src: url('../assets/fonts/Pretendard-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard-ExtraBold';
+  src: url('../assets/fonts/Pretendard-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard-Medium';
+  src: url('../assets/fonts/Pretendard-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 기본 리셋 */
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family:
+    'Pretendard-Medium',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 폰트 유틸리티 클래스 */
+.font-giants {
+  font-family: 'Giants-Bold', sans-serif;
+  font-weight: 700;
+}
+
+.font-pretendard {
+  font-family: 'Pretendard-Medium', sans-serif;
+  font-weight: 500;
+}
+
+.font-pretendard-bold {
+  font-family: 'Pretendard-Bold', sans-serif;
+  font-weight: 700;
+}
+
+.font-pretendard-extrabold {
+  font-family: 'Pretendard-ExtraBold', sans-serif;
+  font-weight: 800;
+}
+
+.font-giants-bold {
+  font-family: 'Giants-Bold', sans-serif;
+}
+
+.font-vitro-core {
+  font-family: 'Vitro-Core', sans-serif;
+  font-weight: 300;
+}
+
+/* 반응형 기본 설정 */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* 헤더 요소들의 클릭 이벤트 보장 */
+header button,
+header nav,
+header a {
+  pointer-events: auto !important;
+}
+
+/* z-index가 높은 요소들의 클릭 이벤트 보장 */
+[style*='z-index: 100'],
+[style*='z-index: 110'],
+[style*='z-index: 95'],
+[style*='z-index: 105'] {
+  pointer-events: auto !important;
+}

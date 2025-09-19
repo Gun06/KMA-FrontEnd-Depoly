@@ -1,0 +1,15 @@
+/* styles/daypicker.css */
+.rdp {
+  --rdp-accent-color: #111827; /* 선택 색상 */
+  --rdp-background-color: #eef2ff; /* hover 배경 */
+  --rdp-accent-color-dark: #1f2937;
+}
+
+/* 날짜 아래 파란 점 */
+.rdp-day .dot {
+  display: block;
+  width: 4px; height: 4px;
+  border-radius: 9999px;
+  margin: 4px auto 0 auto;
+  background: #2563eb;
+}

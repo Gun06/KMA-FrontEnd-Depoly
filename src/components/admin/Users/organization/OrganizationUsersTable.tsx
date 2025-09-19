@@ -1,0 +1,132 @@
+// src/components/admin/Users/organization/OrganizationUsersTable.tsx
+'use client';
+
+import React, { useEffect, useMemo, useRef } from 'react';
+import AdminTable from '@/components/admin/Table/AdminTableShell';
+import FilterBar from '@/components/common/filters/FilterBar';
+import { PRESETS } from '@/components/common/filters/presets';
+import type { Column } from '@/components/common/Table/BaseTable';
+import type { OrganizationRow } from '@/data/users/organization';
+import orgColumns from '@/components/admin/Users/organization/orgColumns';
+
+type SortBy = 'id' | 'joinCount' | 'memberCount' | 'createdAt';
+type Order = 'asc' | 'desc';
+type SearchField = 'org' | 'owner' | 'ownerId';
+type MemberFilter = '' | 'member' | 'nonMember';
+
+type Props = {
+  rows: OrganizationRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (p: number) => void;
+
+  onSearch?: (q: string) => void;
+  onSearchFieldChange?: (f: SearchField) => void;
+  onSortByChange?: (s: SortBy) => void;
+  onOrderChange?: (o: Order) => void;
+  onMemberFilterChange?: (m: MemberFilter) => void;
+  onClickExcel?: () => void;
+  onResetFilters?: () => void;
+
+  selectedIds?: number[];
+  onToggleSelectOne?: (id: number, checked: boolean) => void;
+  onToggleSelectAll?: (checked: boolean, idsOnPage: number[]) => void;
+};
+
+export default function OrganizationUsersTable({
+  rows, total, page, pageSize, onPageChange,
+  onSearch, onSearchFieldChange, onSortByChange, onOrderChange, onMemberFilterChange,
+  onClickExcel, onResetFilters,
+  selectedIds = [], onToggleSelectOne, onToggleSelectAll,
+}: Props) {
+
+  /** 현재 페이지에 렌더된 행들의 id */
+  const idsOnPage = useMemo(() => rows.map(r => r.id), [rows]);
+
+  /** header 체크박스 상태 계산 */
+  const allChecked  = idsOnPage.length > 0 && idsOnPage.every(id => selectedIds.includes(id));
+  const someChecked = !allChecked && idsOnPage.some(id => selectedIds.includes(id));
+  const headerRef   = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (headerRef.current) headerRef.current.indeterminate = someChecked;
+  }, [someChecked]);
+
+  /** 선택 칼럼(번호 앞) */
+  const selectColumn: Column<OrganizationRow> = {
+    key: '_select',
+    header: (
+      <input
+        ref={headerRef}
+        type="checkbox"
+        checked={allChecked}
+        onChange={(e) => onToggleSelectAll?.(e.target.checked, idsOnPage)}
+        onClick={(e) => e.stopPropagation()}
+        className="cursor-pointer"
+        aria-label="현재 페이지 전체 선택"
+      />
+    ) as unknown as string, // BaseTable 타입맞춤용
+    width: 56,
+    align: 'center',
+    headerAlign: 'center',
+    className: 'whitespace-nowrap',
+    render: (r) => (
+      <input
+        type="checkbox"
+        checked={selectedIds.includes(r.id)}
+        onChange={(e) => onToggleSelectOne?.(r.id, e.target.checked)}
+        onClick={(e) => e.stopPropagation()} // 행 onClick과 충돌 방지
+        className="cursor-pointer"
+        aria-label={`${r.org} 선택`}
+      />
+    ),
+  };
+
+  /** 기존 칼럼 앞에 선택 칼럼 주입 */
+  const columns: Column<OrganizationRow>[] = useMemo(
+    () => [selectColumn, ...(orgColumns as Column<OrganizationRow>[])],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allChecked, someChecked, selectedIds, rows]
+  );
+
+  /** 필터바 프리셋 */
+  const presetProps = PRESETS['관리자 / 회원관리(단체)']?.props;
+  const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
+
+  const Actions = presetProps ? (
+    <FilterBar
+      {...presetProps}
+      className="ml-auto !gap-3"
+      showReset
+      onFieldChange={(label, value) => {
+        const L = norm(label);
+        const v = String(value);
+
+        if (L === '번호') {
+          if (v === 'member' || v === 'nonMember') onMemberFilterChange?.(v as MemberFilter);
+          else onSortByChange?.(v as SortBy);
+        } else if (L === '단체명') {
+          onSearchFieldChange?.(v as SearchField);
+        } else if (L === '오름차순') {
+          onOrderChange?.(v as Order);
+        }
+      }}
+      onSearch={(q) => onSearch?.(q)}
+      onActionClick={(label) => { if (label === 'Excel') onClickExcel?.(); }}
+      onReset={onResetFilters}
+    />
+  ) : null;
+
+  return (
+    <AdminTable<OrganizationRow>
+      columns={columns}
+      rows={rows}
+      rowKey={(r) => r.id}
+      renderFilters={null}
+      renderSearch={null}
+      renderActions={Actions}
+      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
+      minWidth={1200}
+    />
+  );
+}
