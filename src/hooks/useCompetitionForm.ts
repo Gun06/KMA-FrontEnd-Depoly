@@ -148,18 +148,22 @@ export type UseCompetitionPrefill = Partial<
         enabled?: boolean;
       }>;
     };
-    /** ✅ 신청여부 프리필 */
+    /** 신청여부 프리필 */
     applyStatus?: RegStatus;
-    /** ✅ 선착순 접수 인원수 프리필 */
+    /** 선착순 접수 인원수 프리필 */
     maxParticipants?: number;
-    /** ✅ 개최일시 시각 프리필 */
+    /** 개최일시 시각 프리필 */
     hh?: string;
     mm?: string;
-    /** ✅ 접수마감일자 프리필 */
+    /** 신청시작일자 프리필 */
+    registStartDate?: string;
+    registStartHh?: string;
+    registStartMm?: string;
+    /** 접수마감일자 프리필 */
     deadlineDate?: string;
     deadlineHh?: string;
     deadlineMm?: string;
-    /** ✅ 입금마감일자 프리필 */
+    /** 입금마감일자 프리필 */
     paymentDeadlineDate?: string;
     paymentDeadlineHh?: string;
     paymentDeadlineMm?: string;
@@ -212,11 +216,11 @@ export type HydrateSnapshotInput = {
   imgConfirm?: UploadItem[];
   imgResult?: UploadItem[];
   applyStatus?: RegStatus;
-  /** ✅ 접수마감일자 스냅샷 */
+  /** 접수마감일자 스냅샷 */
   deadlineDate?: string;
   deadlineHh?: string;
   deadlineMm?: string;
-  /** ✅ 입금마감일자 스냅샷 */
+  /** 입금마감일자 스냅샷 */
   paymentDeadlineDate?: string;
   paymentDeadlineHh?: string;
   paymentDeadlineMm?: string;
@@ -268,7 +272,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [homeUrl, setHomeUrl] = React.useState('');
   const [eventPageUrl, setEventPageUrl] = React.useState('');
 
-  /** ✅ 신청여부(라디오) */
+  /** 신청여부(라디오) */
   const [applyStatus, setApplyStatus] = React.useState<RegStatus>('접수중');
 
   // 그룹(코스+기념품)
@@ -460,7 +464,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       }
     }
 
-    // ✅ partners 우선 적용 (없으면 문자열 배열로 폴백)
+    // partners 우선 적용 (없으면 문자열 배열로 폴백)
     const toItem = (p?: {
       name?: string;
       link?: string;
@@ -833,7 +837,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         imgConfirm,
         imgResult,
       },
-      /** ✅ 신청여부를 API 바디에도 포함 */
+      /** 신청여부를 API 바디에도 포함 */
       applyStatus,
     } as unknown as EventCreatePayload;
 
@@ -897,7 +901,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setPaymentDeadlineHh(s.paymentDeadlineHh ?? '06');
     setPaymentDeadlineMm(s.paymentDeadlineMm ?? '00');
 
-    // 🔹 업로드들
+    // 업로드들
     setBannerHost(s.bannerHost ?? []);
     setBannerOrganizer(s.bannerOrganizer ?? []);
     setBannerSponsor(s.bannerSponsor ?? []);
