@@ -2,7 +2,8 @@
 import SectionPanel from '../SectionPanel';
 import EventCard from './EventCard';
 import { EVENT_ITEMS } from './Event';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { BlockEventResponse, BlockEventItem } from '@/types/event';
 
 export default function EventSection() {
   const [isDragging, setIsDragging] = useState(false);
@@ -10,6 +11,86 @@ export default function EventSection() {
   const [currentTransform, setCurrentTransform] = useState(0);
   const [dragStartTransform, setDragStartTransform] = useState(0);
   const marqueeRef = useRef<HTMLDivElement>(null);
+  
+  // API 데이터 상태
+  const [eventData, setEventData] = useState<BlockEventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // API에서 이벤트 데이터 가져오기
+  useEffect(() => {
+    const fetchEventData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+        
+        if (!API_BASE_URL) {
+          throw new Error('API 기본 URL이 설정되지 않았습니다. 환경 변수를 확인해주세요.');
+        }
+        
+        // 전체 연도의 이벤트 가져오기 (현재 연도 기준)
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        
+        // 전체 연도의 이벤트 가져오기 (month=0으로 전체 연도 + 다음 연도)
+        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/main-page/block-list?year=${year}&month=0`;
+        
+        const response = await fetch(API_ENDPOINT, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data: BlockEventResponse = await response.json();
+          
+          // API 응답 로그 확인
+          
+          
+          // 모든 카테고리의 이벤트를 하나의 배열로 합치기
+          const allEvents: BlockEventItem[] = [];
+          Object.values(data).forEach(events => {
+            if (Array.isArray(events)) {
+              allEvents.push(...events);
+            }
+          });
+          
+          // 미래 이벤트만 필터링 (현재 날짜 이후)
+          const currentDate = new Date();
+          const futureEvents = allEvents.filter(event => {
+            const eventDate = new Date(event.eventDate);
+            return eventDate >= currentDate;
+          });
+          
+          // 날짜순으로 정렬 (가까운 날짜부터)
+          const sortedEvents = futureEvents.sort((a, b) => {
+            const dateA = new Date(a.eventDate);
+            const dateB = new Date(b.eventDate);
+            return dateA.getTime() - dateB.getTime();
+          });
+          
+          // 최대 10개까지만 표시
+          const limitedEvents = sortedEvents.slice(0, 10);
+          setEventData(limitedEvents);
+        } else {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        }
+      } catch (error) {
+        // 서버 에러 시 기본 데이터 사용
+        setEventData([]);
+        setError(null); // 에러 상태를 null로 설정하여 기본 데이터 표시
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEventData();
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -110,21 +191,75 @@ export default function EventSection() {
                   transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}
               >
-                {/* 첫 번째 트랙 - 10개 카드 표시 */}
+                {/* 첫 번째 트랙 - API 데이터 또는 기본 데이터 표시 */}
                 <ul className="flex items-center gap-2 md:gap-4 lg:gap-6 px-0 h-full pl-2 md:pl-6 lg:pl-20">
-                  {EVENT_ITEMS.map((event, index) => (
-                    <EventCard
-                      key={index}
-                      imageSrc={event.imageSrc}
-                      imageAlt={event.imageAlt}
-                      title={event.title}
-                      subtitle={event.subtitle}
-                      date={event.date}
-                      price={event.price}
-                      status={event.status}
-                      eventDate={event.eventDate}
-                    />
-                  ))}
+                  {isLoading ? (
+                    // 로딩 상태
+                    <div className="flex items-center justify-center w-full h-full">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
+                        <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
+                      </div>
+                    </div>
+                  ) : error ? (
+                    // 에러 상태 - 기본 데이터 사용
+                    EVENT_ITEMS.map((event, index) => (
+                      <EventCard
+                        key={index}
+                        imageSrc={event.imageSrc}
+                        imageAlt={event.imageAlt}
+                        title={event.title}
+                        subtitle={event.subtitle}
+                        date={event.date}
+                        price={event.price}
+                        status={event.status}
+                        eventDate={event.eventDate}
+                      />
+                    ))
+                  ) : eventData.length > 0 ? (
+                    // API 데이터 사용
+                    eventData.map((event, index) => (
+                      <EventCard
+                        key={event.eventId}
+                        eventId={event.eventId}
+                        imageSrc={event.eventImgSrc}
+                        imageAlt={event.eventNameKr}
+                        title={event.eventNameKr}
+                        subtitle={event.eventNameEn}
+                        date={new Date(event.eventDate).toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                        price={`${event.lowerPrice.toLocaleString()}원`}
+                        status={event.status === 'PENDING' ? '접수중' : 
+                               event.status === 'ONGOING' ? '진행중' : 
+                               event.status === 'COMPLETED' ? '완료' : 
+                               event.status === 'CANCELLED' ? '취소' :
+                               event.status === 'REGISTRATION' ? '접수중' :
+                               event.status === 'ACTIVE' ? '진행중' :
+                               event.status === 'FINISHED' ? '완료' :
+                               event.status === 'CANCELED' ? '취소' :
+                               '접수중'} // 기본값을 '접수중'으로 변경
+                        eventDate={event.eventDate.split('T')[0]}
+                      />
+                    ))
+                  ) : (
+                    // 데이터가 없는 경우 기본 데이터 사용
+                    EVENT_ITEMS.map((event, index) => (
+                      <EventCard
+                        key={index}
+                        imageSrc={event.imageSrc}
+                        imageAlt={event.imageAlt}
+                        title={event.title}
+                        subtitle={event.subtitle}
+                        date={event.date}
+                        price={event.price}
+                        status={event.status}
+                        eventDate={event.eventDate}
+                      />
+                    ))
+                  )}
                 </ul>
                 
                 {/* 더보기 버튼 */}
@@ -134,7 +269,6 @@ export default function EventSection() {
                     <div className="w-0.5 h-24 md:h-28 lg:h-32 bg-gray-200"></div>
                     {/* 원형 버튼 - 세로선 중앙에 위치 */}
                     <button 
-                      onClick={() => console.log('더보기 클릭됨')}
                       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer"
                     >
                       {/* 오른쪽을 향하는 화살표 */}

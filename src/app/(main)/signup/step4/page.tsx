@@ -122,20 +122,16 @@ export default function SignupStep4Page() {
         }
       }
 
-      console.log('=== 회원가입 요청 데이터 ===')
-      console.log(JSON.stringify(signupData, null, 2))
 
       // useSignup 훅을 사용하여 회원가입 요청
       await signupMutation.mutateAsync(signupData)
       
-      console.log('=== 회원가입 성공 ===')
 
       // 성공 시 store 초기화하고 success 페이지로 이동
       resetStore()
       router.push('/signup/success')
       
     } catch (err) {
-      console.error('회원가입 오류:', err)
       setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setLoading(false)

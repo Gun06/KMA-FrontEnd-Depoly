@@ -10,32 +10,35 @@ export interface ApiNoticeItem {
 }
 
 export interface NoticeResponse {
-  totalPages: number;
-  totalElements: number;
-  pageable: {
-    paged: boolean;
-    pageSize: number;
-    pageNumber: number;
-    unpaged: boolean;
-    offset: number;
+  pinnedNoticeList: ApiNoticeItem[];
+  noticePage: {
+    totalPages: number;
+    totalElements: number;
+    pageable: {
+      paged: boolean;
+      pageSize: number;
+      pageNumber: number;
+      unpaged: boolean;
+      offset: number;
+      sort: {
+        sorted: boolean;
+        empty: boolean;
+        unsorted: boolean;
+      };
+    };
+    numberOfElements: number;
+    size: number;
+    content: ApiNoticeItem[];
+    number: number;
     sort: {
       sorted: boolean;
       empty: boolean;
       unsorted: boolean;
     };
-  };
-  numberOfElements: number;
-  size: number;
-  content: ApiNoticeItem[];
-  number: number;
-  sort: {
-    sorted: boolean;
+    first: boolean;
+    last: boolean;
     empty: boolean;
-    unsorted: boolean;
   };
-  first: boolean;
-  last: boolean;
-  empty: boolean;
 }
 
 // 카테고리 조회용 인터페이스

@@ -8,6 +8,7 @@ export interface MarathonSlide {
   title: string
   subtitle: string
   date: string
+  eventId?: string
   buttons: Array<{
     text: string
     variant: "default" | "outline"

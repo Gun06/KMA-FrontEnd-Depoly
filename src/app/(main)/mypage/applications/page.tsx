@@ -3,7 +3,9 @@
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
 import { useState, useEffect } from 'react'
-import { ChevronDown, Calendar } from 'lucide-react'
+
+import { ChevronDown } from 'lucide-react'
+
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
 
@@ -71,11 +73,12 @@ const statusConfig = {
   }
 }
 
-export default function MyApplicationsPage() {
+function MyApplicationsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('1주일')
   const [startDate, setStartDate] = useState('2025.04.26')
   const [endDate, setEndDate] = useState('2025.07.26')
-  const [sortBy, setSortBy] = useState<'date' | 'status'>('date')
+  const [sortBy] = useState<'date' | 'status'>('date')
+
   const [page, setPage] = useState(1)
   const pageSize = 7
 
@@ -236,5 +239,28 @@ export default function MyApplicationsPage() {
         </div>
       </div>
     </SubmenuLayout>
+  )
+}
+
+
+// 준비중 오버레이 (화면 상단 블러 + 안내)
+function Overlay() {
+  return (
+    <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-md px-6 py-4 text-gray-800 font-semibold">
+        준비중인 페이지입니다.
+      </div>
+    </div>
+  )
+}
+
+// 페이지 로드 시 오버레이 렌더
+// 기존 페이지 구성 요소는 그대로 두고, 같은 파일에서 추가 컴포넌트로 오버레이만 덮어씌웁니다.
+export default function PageWithOverlay() {
+  return (
+    <>
+      <MyApplicationsPage />
+      <Overlay />
+    </>
   )
 }

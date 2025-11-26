@@ -132,7 +132,6 @@ export default function SignupStep2Page() {
     try {
       await checkAccountDuplicate(formDataLocal.id)
     } catch (error) {
-      console.error('아이디 중복 검사 실패:', error)
     }
   }
 

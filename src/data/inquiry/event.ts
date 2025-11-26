@@ -1,5 +1,5 @@
 // src/data/inquiry/event.ts
-import type { Inquiry, InquiryFilter, InquiryFile, Paged } from "./types";
+import type { Inquiry, InquiryFilter, InquiryFile, Paged } from "./tpyes";
 
 /* Utils */
 const ymd = (d = new Date()) => {

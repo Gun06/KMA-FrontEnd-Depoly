@@ -17,7 +17,6 @@ export default function BusConfirmPage({ params }: { params: { eventId: string }
 
   const handleConfirm = () => {
     // TODO: 실제 버스예약 API 호출
-    console.log('버스예약 확정:', { departureLocationId, paymentMethodId });
     
     // 예약 완료 후 완료 페이지로 이동
     router.push(`/event/${params.eventId}/registration/bus/complete`);

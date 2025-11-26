@@ -153,7 +153,7 @@ export default function GalleryForm({
       <div className="flex mx-auto px-4 mt-10 mb-10">
         <NoticeMessage
           items={[
-            { text: "※ 이미지는 jpg, jpeg, png만 지원합니다." },
+            { text: "※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다." },
             { text: "※ 실제 사이즈는 1200px × 200px을 지원합니다." },
             {
               text:

@@ -12,7 +12,6 @@ interface GroupContactInfoSectionProps {
   onDropdownToggle: (dropdown: OpenDropdown) => void;
   refs: {
     phone1Ref: React.RefObject<HTMLDivElement>;
-    emailDomainRef: React.RefObject<HTMLDivElement>;
   };
 }
 
@@ -47,7 +46,7 @@ export default function GroupContactInfoSection({
         <hr className="border-gray-200" />
         
         {/* 이메일 */}
-        <FormField label="이메일" required>
+        <FormField label="이메일 (선택)">
           <EmailField
             email1={formData.email1}
             emailDomain={formData.emailDomain}

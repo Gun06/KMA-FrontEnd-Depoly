@@ -3,7 +3,9 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { marathonSlides } from './carouselData';
+import { MainBannerItem } from '@/types/event';
 import HeroButton from '@/components/common/Button/HeroButton';
 // Swiper 스타일
 import 'swiper/css';
@@ -11,25 +13,78 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 export default function MarathonHeroCarousel() {
-  const total = marathonSlides.length;
-  // const handleButtonClick = (action: string) => {
-  //   switch (action) {
-  //     case 'apply':
-  //       console.log('참가신청');
-  //       break;
-  //     case 'details':
-  //       console.log('상세보기');
-  //       break;
-  //     case 'rules':
-  //       console.log('요강보기');
-  //       break;
-  //     case 'confirm':
-  //       console.log('신청 확인');
-  //       break;
-  //     default:
-  //       console.log('알 수 없는 액션:', action);
-  //   }
-  // };
+  const [bannerData, setBannerData] = useState<MainBannerItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // API에서 메인 배너 데이터 가져오기
+  useEffect(() => {
+    const fetchBannerData = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_USER || 'http://localhost:8080';
+        const response = await fetch(`${baseUrl}/api/v1/public/main-page/main-banner`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data: MainBannerItem[] = await response.json();
+          // orderNo 기준으로 정렬
+          const sortedData = data.sort((a, b) => a.orderNo - b.orderNo);
+          setBannerData(sortedData);
+        } else {
+          setError('배너 데이터를 불러올 수 없습니다.');
+        }
+      } catch (err) {
+        setError('배너 데이터를 불러올 수 없습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBannerData();
+  }, []);
+
+  // 첫 번째 슬라이드는 하드코딩, 나머지는 API 데이터 사용
+  const allSlides = [
+    marathonSlides[0], // 첫 번째는 하드코딩된 슬라이드
+    ...bannerData.map((banner, index) => ({
+      id: index + 2, // 2번부터 시작
+      image: banner.imageUrl,
+      badge: "대회 안내",
+      title: banner.title,
+      subtitle: banner.subTitle,
+      date: banner.date,
+      eventId: banner.eventId,
+      buttons: [
+        { text: "신청하기", variant: "default" as const },
+        { text: "대회 요강", variant: "outline" as const },
+        { text: "신청 확인", variant: "outline" as const },
+      ],
+    }))
+  ];
+
+  const total = allSlides.length;
+
+  // 로딩 상태 처리
+  if (isLoading) {
+    return (
+      <div className="relative w-full hero-section mt-2 sm:mt-4 md:mt-6 lg:mt-0 motion-safe:transition-all motion-safe:duration-300 flex items-center justify-center" style={{ height: 'var(--heroH)' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">배너를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 상태 처리 - 기본 슬라이드만 사용
+  if (error) {
+    
+  }
 
   return (
     <div className="relative w-full hero-section mt-2 sm:mt-4 md:mt-6 lg:mt-0 motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH)' }}>
@@ -79,9 +134,9 @@ export default function MarathonHeroCarousel() {
         }}
         className="h-full"
       >
-        {marathonSlides.map((slide, idx) => (
+        {allSlides.map((slide, idx) => (
           <SwiperSlide key={slide.id}>
-            <a href="/event/[eventId]/guide/overview" className="relative block w-full hero-slide rounded-lg lg:rounded-none overflow-hidden motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH)' }}>
+            <a href={slide.eventId ? `/event/${slide.eventId}/guide/overview` : "/event/[eventId]/guide/overview"} className="relative block w-full hero-slide rounded-lg lg:rounded-none overflow-hidden motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH)' }}>
               <Image
                 src={slide.image || '/placeholder.svg'}
                 alt={slide.title}
@@ -132,9 +187,9 @@ export default function MarathonHeroCarousel() {
                     </div>
 
                     {/* Main title */}
-                    <h1 className="hero-anim hero-title flex flex-col gap-1.5 sm:gap-2 md:gap-4 font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6 leading-tight text-left">
-                      <div>{slide.title}</div>
-                      <div>{slide.subtitle}</div>
+                    <h1 className="hero-anim hero-title font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6 leading-tight text-left">
+                      <div className="whitespace-nowrap">{slide.title}</div>
+                      <div className="whitespace-nowrap">{slide.subtitle}</div>
                     </h1>
 
                     {/* Date */}
@@ -150,7 +205,7 @@ export default function MarathonHeroCarousel() {
                         tone="blue"
                         size="xs"
                         className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/apply'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
                       >
                         신청하기
                       </HeroButton>
@@ -159,7 +214,7 @@ export default function MarathonHeroCarousel() {
                         tone="blue"
                         size="sm"
                         className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/apply'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
                       >
                         신청하기
                       </HeroButton>
@@ -168,7 +223,7 @@ export default function MarathonHeroCarousel() {
                         tone="blue"
                         size="md"
                         className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/apply'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
                       >
                         신청하기
                       </HeroButton>
@@ -179,7 +234,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="xs"
                         className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/guide/overview'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
                       >
                         대회 요강
                       </HeroButton>
@@ -188,7 +243,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="sm"
                         className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/guide/overview'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
                       >
                         대회 요강
                       </HeroButton>
@@ -197,7 +252,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="md"
                         className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/guide/overview'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
                       >
                         대회 요강
                       </HeroButton>
@@ -208,7 +263,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="xs"
                         className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/confirm'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
                       >
                         신청 확인
                       </HeroButton>
@@ -217,7 +272,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="sm"
                         className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/confirm'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
                       >
                         신청 확인
                       </HeroButton>
@@ -226,7 +281,7 @@ export default function MarathonHeroCarousel() {
                         tone="white"
                         size="md"
                         className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/event/[eventId]/registration/confirm'; }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
                       >
                         신청 확인
                       </HeroButton>

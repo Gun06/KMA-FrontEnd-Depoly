@@ -90,3 +90,192 @@ export interface UserStatus {
   lastLoginAt?: string;
   loginAttempts: number;
 }
+
+// API 응답 타입 정의
+export interface UserListResponse {
+  totalPages: number;
+  totalElements: number;
+  pageable: {
+    unpaged: boolean;
+    paged: boolean;
+    pageSize: number;
+    pageNumber: number;
+    offset: number;
+    sort: {
+      unsorted: boolean;
+      sorted: boolean;
+      empty: boolean;
+    };
+  };
+  numberOfElements: number;
+  size: number;
+  content: UserApiData[];
+  number: number;
+  sort: {
+    unsorted: boolean;
+    sorted: boolean;
+    empty: boolean;
+  };
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+export interface UserApiData {
+  no: number;
+  id: string;
+  account: string;
+  accountPassword: string;
+  name: string;
+  phNum: string;
+  birth: string;
+  address: string;
+  addressDetail: string;
+  auth: 'USER' | 'ADMIN';
+  email: string;
+  gender: 'M' | 'F';
+  createdAt: string;
+}
+
+// 유저별 등록 대회 조회 API 타입 정의
+export interface UserRegistrationListResponse {
+  totalPages: number;
+  totalElements: number;
+  pageable: {
+    unpaged: boolean;
+    paged: boolean;
+    pageSize: number;
+    pageNumber: number;
+    offset: number;
+    sort: {
+      unsorted: boolean;
+      sorted: boolean;
+      empty: boolean;
+    };
+  };
+  numberOfElements: number;
+  size: number;
+  content: UserRegistrationData[];
+  number: number;
+  sort: {
+    unsorted: boolean;
+    sorted: boolean;
+    empty: boolean;
+  };
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+export interface UserRegistrationData {
+  no: number;
+  id?: string; // registration ID (비밀번호 초기화에 필요)
+  eventId: string;
+  nameKr: string;
+  startDate: string;
+  region: string;
+  eventType: 'KMA';
+  eventStatus: 'PENDING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+  registeredAt: string;
+}
+
+// ───────────── 단체 회원 API 타입 ─────────────
+export interface OrganizationApiData {
+  no: number;
+  id: string;
+  name: string;         // 단체명
+  leaderName: string;   // 대표자명
+  account: string;      // 대표자 아이디
+  leaderPhNum: string;  // 대표자 연락처
+  eventName: string;    // 최근(또는 대표) 대회명
+  memberCount: number;  // 회원수
+  leaderBirth?: string;
+  zipCode?: string;
+  address?: string;
+  addressDetail?: string;
+  email?: string;
+  registrationDate?: string;
+  organizationHeadCount?: number;
+  sumAmount?: number;
+  totalAmount?: number;
+  amount?: number;
+  paymentType?: string;
+  paymentMethod?: string;
+  paymenterName?: string;
+  paymentStatus?: string;
+}
+
+export interface OrganizationListResponse {
+  totalPages: number;
+  totalElements: number;
+  pageable: {
+    unpaged: boolean;
+    paged: boolean;
+    pageSize: number;
+    pageNumber: number;
+    offset: number;
+    sort: {
+      unsorted: boolean;
+      sorted: boolean;
+      empty: boolean;
+    };
+  };
+  numberOfElements: number;
+  size: number;
+  content: OrganizationApiData[];
+  number: number;
+  sort: {
+    unsorted: boolean;
+    sorted: boolean;
+    empty: boolean;
+  };
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+// ───────────── 단체 구성원 API 타입 ─────────────
+// GET /api/v1/organization/{organizationId}/user 응답 스키마 기반
+export interface OrganizationMemberApiData {
+  no: number;
+  registrationId?: string;
+  userType?: string;    // 'USER' 등
+  account?: string;      // 사용자 계정
+  userName?: string;     // 사용자 이름
+  name?: string;         // 호환성: 일부 응답에서 name 필드 사용
+  birth?: string;        // YYYY-MM-DD 형식
+  phNum?: string;        // 전화번호
+  registrationDate?: string; // ISO 8601 형식
+  amount?: number;        // 신청 금액
+  paymenterName?: string; // 입금자명
+  paymentStatus?: string; // 결제 상태 코드
+}
+
+export interface OrganizationMemberListResponse {
+  totalPages: number;
+  totalElements: number;
+  pageable: {
+    unpaged: boolean;
+    paged: boolean;
+    pageSize: number;
+    pageNumber: number;
+    offset: number;
+    sort: {
+      unsorted: boolean;
+      sorted: boolean;
+      empty: boolean;
+    };
+  };
+  numberOfElements: number;
+  size: number;
+  content: OrganizationMemberApiData[];
+  number: number;
+  sort: {
+    unsorted: boolean;
+    sorted: boolean;
+    empty: boolean;
+  };
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}

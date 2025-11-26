@@ -26,6 +26,7 @@ export type FilterBarProps = {
   buttonTextMode?: "label" | "current";
   buttons?: FilterButtonSpec[];
   showReset?: boolean;
+  initialValues?: string[]; // 필드별 초기값
   onFieldChange?: (label: string, value: string) => void;
   onSearch?: (q: string) => void;
   onActionClick?: (labelOrValue: string) => void; // 메뉴 value도 전달
@@ -39,17 +40,26 @@ export default function FilterBar({
   buttonTextMode = "current",
   buttons = [],
   showReset = false,
+  initialValues,
   onFieldChange,
   onSearch,
   onActionClick,
   onReset,
 }: FilterBarProps) {
-  const [values, setValues] = useState<string[]>(fields.map(() => ""));
+  const [values, setValues] = useState<string[]>(
+    initialValues && initialValues.length === fields.length
+      ? initialValues
+      : fields.map(() => "")
+  );
   const [q, setQ] = useState("");
 
   useEffect(() => {
-    setValues(fields.map(() => ""));
-  }, [fields]);
+    if (initialValues && initialValues.length === fields.length) {
+      setValues(initialValues);
+    } else {
+      setValues(fields.map(() => ""));
+    }
+  }, [fields, initialValues]);
 
   const handleChange = (i: number, v: string) => {
     setValues((prev) => {
@@ -61,7 +71,12 @@ export default function FilterBar({
   };
 
   const handleReset = () => {
-    setValues(fields.map(() => ""));
+    // initialValues가 있으면 사용하고, 없으면 빈 문자열로 리셋
+    if (initialValues && initialValues.length === fields.length) {
+      setValues(initialValues);
+    } else {
+      setValues(fields.map(() => ""));
+    }
     setQ("");
     onReset?.();
   };
@@ -139,7 +154,6 @@ export default function FilterBar({
               label: item.label,
               onClick: () => {
                 // 에러 레벨 로그 제거 (문제 패널 증가 방지)
-                console.log("[FilterBar] menu value:", item.value);
                 onActionClick?.(item.value);
               },
             }))}

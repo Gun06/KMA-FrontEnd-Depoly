@@ -49,6 +49,7 @@ export class EventDataTransformer {
   private static createEventInfo(data: EventCreatePayload): EventInfo {
     return {
       registMaximum: data.maxParticipants || 0,
+      registStartDate: data.registStartDate,
       registDeadline: data.registDeadline || this.getDefaultDeadline(),
       startDate: data.startAt || new Date().toISOString(),
       nameKr: data.titleKo || '새 대회',
@@ -56,8 +57,11 @@ export class EventDataTransformer {
       eventType: 'KMA',
       region: data.place || '',
       eventPageUrl: data.eventPageUrl || '',
-      mainBannerColor: data.eventTheme, // 테마 이름 전송
+      mainBannerColor: data.eventTheme, // 테마 이름을 그대로 전송
       paymentDeadline: data.paymentDeadline || this.getDefaultDeadline(),
+      // 결제 정보
+      bank: data.bank || undefined,
+      virtualAccount: data.virtualAccount || undefined,
     };
   }
 

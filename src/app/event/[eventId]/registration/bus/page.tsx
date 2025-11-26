@@ -50,7 +50,6 @@ export default function BusPage({ params }: { params: { eventId: string } }) {
     }
 
     // TODO: 실제 버스예약 API 호출
-    console.log('버스예약 데이터:', formData);
     
     // 예약 완료 후 다음 단계로 이동
     const queryString = `?departure=${formData.departureLocation}&payment=${formData.paymentMethod}`;

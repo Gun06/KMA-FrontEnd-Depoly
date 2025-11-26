@@ -9,7 +9,6 @@ import { type IndividualUserRow } from '@/data/users/individual';
 import makeIndividualColumns from '@/components/admin/Users/individual/columns';
 
 type SortKey = 'id' | 'name' | 'birth' | 'member';
-type SortDir = 'asc' | 'desc';
 type MemberFilter = '' | 'member' | 'nonMember';
 
 type Props = {
@@ -21,14 +20,13 @@ type Props = {
 
   onSearch?: (q: string) => void;
   onSortKeyChange?: (k: SortKey) => void;
-  onSortDirChange?: (d: SortDir) => void;
   onMemberFilterChange?: (v: MemberFilter) => void;
   onClickExcel?: () => void;
   onResetFilters?: () => void;
 
-  selectedIds?: number[];
-  onToggleSelectOne?: (id: number, checked: boolean) => void;
-  onToggleSelectAll?: (checked: boolean, idsOnPage: number[]) => void;
+  selectedIds?: string[];
+  onToggleSelectOne?: (id: string, checked: boolean) => void;
+  onToggleSelectAll?: (checked: boolean, idsOnPage: string[]) => void;
 };
 
 export default function IndividualUsersTable({
@@ -39,7 +37,6 @@ export default function IndividualUsersTable({
   onPageChange,
   onSearch,
   onSortKeyChange,
-  onSortDirChange,
   onMemberFilterChange,
   onClickExcel,
   onResetFilters,
@@ -50,19 +47,19 @@ export default function IndividualUsersTable({
 }: Props) {
   // ---- 선택 제어 ----
   const controlled = Array.isArray(selectedIds) && !!onToggleSelectOne;
-  const [localChecked, setLocalChecked] = React.useState<Record<number, boolean>>({});
+  const [localChecked, setLocalChecked] = React.useState<Record<string, boolean>>({});
 
-  const idsOnPageRef = React.useRef<number[]>([]);
+  const idsOnPageRef = React.useRef<string[]>([]);
   React.useEffect(() => {
     idsOnPageRef.current = rows.map((r) => r.id);
   }, [rows]);
 
   const pageAllSelected = controlled
-    ? rows.length > 0 && rows.every((r) => (selectedIds as number[]).includes(r.id))
+    ? rows.length > 0 && rows.every((r) => (selectedIds as string[]).includes(r.id))
     : rows.length > 0 && rows.every((r) => !!localChecked[r.id]);
 
   const pageSomeSelected = controlled
-    ? rows.some((r) => (selectedIds as number[]).includes(r.id)) && !pageAllSelected
+    ? rows.some((r) => (selectedIds as string[]).includes(r.id)) && !pageAllSelected
     : rows.some((r) => !!localChecked[r.id]) && !pageAllSelected;
 
   const headCbRef = React.useRef<HTMLInputElement>(null);
@@ -78,7 +75,7 @@ export default function IndividualUsersTable({
     } else {
       setLocalChecked(() => {
         if (!next) return {};
-        const m: Record<number, boolean> = {};
+        const m: Record<string, boolean> = {};
         idsOnPage.forEach((id) => (m[id] = true));
         return m;
       });
@@ -99,7 +96,7 @@ export default function IndividualUsersTable({
         />
       ),
       rowCheckbox: (r) => {
-        const checked = controlled ? (selectedIds as number[]).includes(r.id) : !!localChecked[r.id];
+        const checked = controlled ? (selectedIds as string[]).includes(r.id) : !!localChecked[r.id];
         return (
           <input
             type="checkbox"
@@ -116,10 +113,13 @@ export default function IndividualUsersTable({
       },
     },
     {
-      // ✅ 여기서 개인 신청목록 라우트로 연결
-      applicationsHref: (r) => `/admin/users/individual/${r.id}/events`,
+      // ✅ 여기서 개인 신청목록 라우트로 연결 (고유 ID 사용)
+      applicationsHref: (r) => `/admin/users/individual/${r.id}/detail`,
       makeNameClickable: true,   // 이름 클릭으로도 이동
       addActionColumn: true,     // 맨 끝 “신청” 버튼 컬럼 추가
+      rowIndexOffset: (page - 1) * pageSize,
+      totalCount: total,
+      descendingNumbering: true,
     }
   );
 
@@ -135,7 +135,6 @@ export default function IndividualUsersTable({
       onFieldChange={(label, value) => {
         const L = norm(label);
         if (L === '번호') onSortKeyChange?.(value as SortKey);
-        else if (L === '오름차순') onSortDirChange?.(value as SortDir);
         else if (L === '회원여부') onMemberFilterChange?.(value as MemberFilter);
       }}
       onSearch={(q) => onSearch?.(q)}

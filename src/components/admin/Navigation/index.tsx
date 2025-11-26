@@ -4,16 +4,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Users, FileText, Calendar, Image, Database, ChevronDown } from 'lucide-react';
+import { Users, FileText, Calendar, Image, Database, ChevronDown, LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 
 // 기존 데이터 소스
-import { MOCK_EVENTS } from '@/data/events';
 import { listOrganizations, getOrganizationById } from '@/data/users/organization';
 import { listIndividualUsers } from '@/data/users/individual';
 
+// API 훅들
+import { useEventList } from '@/hooks/useNotices';
+import type { EventListResponse } from '@/types/eventList';
+
 // 공지(기존) 소스 - 유지
-import { fetchEventNotices } from '@/data/notice/eventNotices';
+import { fetchEventNotices } from '@/data/notice/event';
 import { getMainNotices } from '@/data/notice/main';
 
 // 문의 소스 - 유지
@@ -25,19 +28,15 @@ import { getEventFaqs } from '@/data/faq/event';
 import { getMainFaqs } from '@/data/faq/main';
 
 type Child = { name: string; href: string };
-type Item = { name: string; base: string; icon: any; children: Child[] };
+type Item = { name: string; base: string; icon: LucideIcon; children: Child[] };
 
 const NAV_ITEMS: Item[] = [
   { name: '참가신청', base: '/admin/applications', icon: Users, children: [
-    { name: '신청자 목록', href: '/admin/applications/list' },
-    { name: '신청자 관리', href: '/admin/applications/management' },
-    { name: '인사말', href: '/admin/applications/greeting' },
-    { name: '설립취지', href: '/admin/applications/foundation' },
+    { name: '신청자 관리', href: '/admin/applications/list' },
   ]},
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
     { name: '대회관리', href: '/admin/events/management' },
     { name: '대회등록', href: '/admin/events/register' },
-    { name: '대회공지사항', href: '/admin/events/notice' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
     { name: '공지사항', href: '/admin/boards/notice' },
@@ -48,7 +47,7 @@ const NAV_ITEMS: Item[] = [
     { name: '개인 회원관리', href: '/admin/users/individual' },
     { name: '단체 회원관리', href: '/admin/users/organization' },
   ]},
-  { name: '메인배너관리', base: '/admin/banners', icon: Database, children: [
+  { name: '배너관리', base: '/admin/banners', icon: Database, children: [
     { name: '메인 배너등록',    href: '/admin/banners/main' },
     { name: '스폰서 배너등록',  href: '/admin/banners/sponsors' },
     { name: '팝업 등록',  href: '/admin/banners/popups' },
@@ -130,25 +129,33 @@ export default function AdminNavigation() {
 
   // ===== 기존 컨텍스트 =====
   // A) 신청자 관리
-  const isApplicationsMgmt = /^\/admin\/applications\/management(\/\d+)?$/.test(pathname);
+  const isApplicationsMgmt = /^\/admin\/applications\/management(\/[^/]+)?$/.test(pathname);
+  const isApplicationsList = pathname.startsWith('/admin/applications/list');
   const eventIdFromPathA = (() => {
-    const m = pathname.match(/^\/admin\/applications\/management\/(\d+)/);
-    return m ? Number(m[1]) : null;
+    const m = pathname.match(/^\/admin\/applications\/management\/([^/]+)/);
+    return m ? m[1] : null;
   })();
+
+  // 실제 이벤트 목록 API 사용
+  const { data: eventListData } = useEventList(1, 100) as { data: EventListResponse | undefined };
+  const eventList = useMemo(
+    () => {
+      if (!eventListData?.content) return [];
+      return [...eventListData.content].sort((a, b) => 
+        b.no - a.no // no 기준 내림차순 (테이블과 동일)
+      );
+    },
+    [eventListData]
+  );
 
   useEffect(() => {
     if (pathname === '/admin/applications/management') {
-      const latest = [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date))[0];
+      const latest = eventList[0];
       if (latest) router.replace(`/admin/applications/management/${latest.id}`);
     }
-  }, [pathname, router]);
-
-  const eventList = useMemo(
-    () => [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date)),
-    []
-  );
+  }, [pathname, router, eventList]);
   const currentEventA = useMemo(
-    () => (eventIdFromPathA ? eventList.find((e) => e.id === eventIdFromPathA) : null),
+    () => (eventIdFromPathA ? eventList.find((e) => String(e.id) === String(eventIdFromPathA)) : null),
     [eventIdFromPathA, eventList]
   );
 
@@ -161,7 +168,7 @@ export default function AdminNavigation() {
   const orgTab = (searchParams.get('tab') ?? 'members') as 'members' | 'apps' | 'settings';
 
   const allOrgs = useMemo(() => {
-    const { rows } = listOrganizations({ page: 1, pageSize: 500, sortBy: 'id', order: 'desc' } as any);
+    const { rows } = listOrganizations({ page: 1, pageSize: 500, sortBy: 'id', order: 'desc' } as Parameters<typeof listOrganizations>[0]);
     return rows || [];
   }, []);
   const currentOrg = useMemo(
@@ -173,10 +180,10 @@ export default function AdminNavigation() {
     return orgTab === 'apps' ? `${currentOrg.org} 신청리스트` : currentOrg.org;
   }, [currentOrg, orgTab]);
 
-  // C) 개인 신청목록
-  const isIndivEvents = /^\/admin\/users\/individual\/\d+\/events$/.test(pathname);
+  // C) 개인 상세
+  const isIndivDetail = /^\/admin\/users\/individual\/\d+\/detail$/.test(pathname);
   const indivIdFromPath = (() => {
-    const m = pathname.match(/^\/admin\/users\/individual\/(\d+)\/events$/);
+    const m = pathname.match(/^\/admin\/users\/individual\/(\d+)\/detail$/);
     return m ? Number(m[1]) : null;
   })();
 
@@ -199,16 +206,16 @@ export default function AdminNavigation() {
       memberFilter: '',
       page: 1,
       pageSize: 5000,
-    } as any);
+    } as Parameters<typeof listIndividualUsers>[0]);
     return rows || [];
   }, [sortFromQS, orderFromQS]);
 
   const currentIndiv = useMemo(
-    () => (indivIdFromPath ? allIndividuals.find((u) => u.id === indivIdFromPath) : null),
+    () => (indivIdFromPath ? allIndividuals.find((u) => String(u.id) === String(indivIdFromPath)) : null),
     [indivIdFromPath, allIndividuals]
   );
   const indivThirdLabel = useMemo(
-    () => (currentIndiv ? `${currentIndiv.name} 신청 대회 목록` : null),
+    () => (currentIndiv ? `${currentIndiv.name} 상세` : null),
     [currentIndiv]
   );
 
@@ -222,11 +229,16 @@ export default function AdminNavigation() {
   const boardsMainNoticeId = matchMainNotice ? Number(matchMainNotice[1]) : null;
 
   const boardsEventList_notice = useMemo(
-    () => [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date)),
-    []
+    () => {
+      if (!eventListData?.content) return [];
+      return [...eventListData.content].sort((a, b) => 
+        b.no - a.no // no 기준 내림차순 (테이블과 동일)
+      );
+    },
+    [eventListData]
   );
   const boardsCurrentEvent_notice = useMemo(
-    () => (boardsEventId_notice ? boardsEventList_notice.find((e) => e.id === boardsEventId_notice) : null),
+    () => (boardsEventId_notice ? boardsEventList_notice.find((e) => String(e.id) === String(boardsEventId_notice)) : null),
     [boardsEventId_notice, boardsEventList_notice]
   );
   const boardsEventNotices = useMemo(() => {
@@ -263,11 +275,16 @@ export default function AdminNavigation() {
 
   // 이벤트 리스트 (3단계 라벨/드롭다운용)
   const boardsEventList_inq = useMemo(
-    () => [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date)),
-    []
+    () => {
+      if (!eventListData?.content) return [];
+      return [...eventListData.content].sort((a, b) => 
+        b.no - a.no // no 기준 내림차순 (테이블과 동일)
+      );
+    },
+    [eventListData]
   );
   const boardsCurrentEvent_inq = useMemo(
-    () => (boardsEventId_inq ? boardsEventList_inq.find((e) => e.id === boardsEventId_inq) : null),
+    () => (boardsEventId_inq ? boardsEventList_inq.find((e) => String(e.id) === String(boardsEventId_inq)) : null),
     [boardsEventId_inq, boardsEventList_inq]
   );
 
@@ -277,7 +294,7 @@ export default function AdminNavigation() {
     try {
       const { rows } = getEventInquiries(String(boardsEventId_inq), 1, 1000, { sort: 'new', searchMode: 'post', q: '' });
       // 가상 답변행(__replyOf) 제거
-      return (rows || []).filter((r: any) => !('__replyOf' in r));
+      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
     } catch {
       return [];
     }
@@ -288,7 +305,7 @@ export default function AdminNavigation() {
     if (!isBoardsInquiry) return [];
     try {
       const { rows } = getMainInquiries(1, 1000, { sort: 'new', searchMode: 'post', q: '' });
-      return (rows || []).filter((r: any) => !('__replyOf' in r));
+      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
     } catch {
       return [];
     }
@@ -296,6 +313,11 @@ export default function AdminNavigation() {
 
   // ===== 🔹 게시판관리 > FAQ =====
   const isBoardsFaq = pathname.startsWith('/admin/boards/faq');
+
+  // ===== 🔹 배너관리 > 팝업 =====
+  const isBannersPopup = pathname.startsWith('/admin/banners/popups');
+  const isMainPopup = pathname === '/admin/banners/popups/main';
+  const isEventPopup = pathname.startsWith('/admin/banners/popups/events');
 
   // 이벤트 FAQ: /admin/boards/faq/events/[eventId] (/[faqId]?)
   const matchEventFaq = pathname.match(/^\/admin\/boards\/faq\/events\/(\d+)(?:\/(\d+))?$/);
@@ -309,11 +331,16 @@ export default function AdminNavigation() {
 
   // 이벤트 리스트(FAQ용 3단계)
   const boardsEventList_faq = useMemo(
-    () => [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date)),
-    []
+    () => {
+      if (!eventListData?.content) return [];
+      return [...eventListData.content].sort((a, b) => 
+        b.no - a.no // no 기준 내림차순 (테이블과 동일)
+      );
+    },
+    [eventListData]
   );
   const boardsCurrentEvent_faq = useMemo(
-    () => (boardsEventId_faq ? boardsEventList_faq.find((e) => e.id === boardsEventId_faq) : null),
+    () => (boardsEventId_faq ? boardsEventList_faq.find((e) => String(e.id) === String(boardsEventId_faq)) : null),
     [boardsEventId_faq, boardsEventList_faq]
   );
 
@@ -322,7 +349,7 @@ export default function AdminNavigation() {
     if (!boardsEventId_faq) return [];
     try {
       const { rows } = getEventFaqs(String(boardsEventId_faq), 1, 1000, { sort: 'new', searchMode: 'post', q: '' });
-      return (rows || []).filter((r: any) => !('__replyOf' in r));
+      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
     } catch {
       return [];
     }
@@ -333,7 +360,7 @@ export default function AdminNavigation() {
     if (!isBoardsFaq) return [];
     try {
       const { rows } = getMainFaqs(1, 1000, { sort: 'new', searchMode: 'post', q: '' });
-      return (rows || []).filter((r: any) => !('__replyOf' in r));
+      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
     } catch {
       return [];
     }
@@ -341,98 +368,108 @@ export default function AdminNavigation() {
 
   // ===== 3단계 리스트 =====
   const thirdList =
-    isApplicationsMgmt
-      ? eventList.map((e) => ({ key: String(e.id), label: e.title, href: `/admin/applications/management/${e.id}` }))
+    (isApplicationsMgmt || isApplicationsList)
+      ? eventList.map((e) => ({ key: String(e.id), label: e.nameKr, href: `/admin/applications/management/${e.id}` }))
       : isOrgDetail && currentOrg
       ? allOrgs.map((o) => ({ key: String(o.id), label: o.org, href: `/admin/users/organization/${o.id}?tab=${orgTab}` }))
-      : isIndivEvents
-      ? allIndividuals.map((u) => ({ key: String(u.id), label: u.name, href: `/admin/users/individual/${u.id}/events` }))
+      : isIndivDetail
+      ? allIndividuals.map((u) => ({ key: String(u.id), label: u.name, href: `/admin/users/individual/${u.id}/detail` }))
       : // 공지(기존)
         (matchEventNotice
           ? boardsEventList_notice.map((e) => ({
               key: String(e.id),
-              label: e.title,
+              label: e.nameKr,
               href: `/admin/boards/notice/events/${e.id}`,
             }))
           // 문의(이벤트)
           : matchEventInquiry
           ? boardsEventList_inq.map((e) => ({
               key: String(e.id),
-              label: e.title,
+              label: e.nameKr,
               href: `/admin/boards/inquiry/events/${e.id}`,
             }))
           // ✅ FAQ(이벤트)
           : matchEventFaq
           ? boardsEventList_faq.map((e) => ({
               key: String(e.id),
-              label: e.title,
+              label: e.nameKr,
               href: `/admin/boards/faq/events/${e.id}`,
             }))
+          // 🔹 팝업 관리
+          : isBannersPopup
+          ? [
+              { key: 'main', label: '메인팝업관리', href: '/admin/banners/popups/main' },
+              { key: 'events', label: '대회팝업관리', href: '/admin/banners/popups' },
+            ]
           : [])
   ;
 
   const thirdActiveKey =
     isApplicationsMgmt ? String(eventIdFromPathA ?? '') :
     isOrgDetail        ? String(orgIdFromPath ?? '')   :
-    isIndivEvents      ? String(indivIdFromPath ?? '') :
+    isIndivDetail      ? String(indivIdFromPath ?? '') :
     matchEventNotice   ? String(boardsEventId_notice ?? '') :
     matchEventInquiry  ? String(boardsEventId_inq ?? '') :
     matchEventFaq      ? String(boardsEventId_faq ?? '') :
+    isMainPopup        ? 'main' :
+    isEventPopup       ? 'events' :
     '';
 
   const showThird =
-    (isApplicationsMgmt && !!(eventIdFromPathA || currentEventA)) ||
+    isApplicationsMgmt ||
+    isApplicationsList ||
     (isOrgDetail && !!(orgIdFromPath || currentOrg)) ||
-    (isIndivEvents && !!(indivIdFromPath || currentIndiv)) ||
+    (isIndivDetail && !!(indivIdFromPath || currentIndiv)) ||
     (matchEventNotice && !!boardsEventId_notice) ||
     (matchEventInquiry && !!boardsEventId_inq) ||
     (matchEventFaq && !!boardsEventId_faq) ||
     isBoardsMainRoot_inq || !!boardsMainInquiryId ||
-    isBoardsMainRoot_faq || !!boardsMainFaqId
+    isBoardsMainRoot_faq || !!boardsMainFaqId ||
+    isMainPopup || isEventPopup
   ;
 
   // ===== 4단계 리스트 =====
   const fourthList =
     // 공지(이벤트)
     matchEventNotice
-      ? boardsEventNotices.map((n: any) => ({
+      ? boardsEventNotices.map((n: Record<string, unknown>) => ({
           key: String(n.id),
-          label: n.title,
+          label: n.title as string,
           href: `/admin/boards/notice/events/${boardsEventId_notice}/${n.id}`,
         }))
       // 공지(메인)
       : (isBoardsMainRoot_notice || !!boardsMainNoticeId)
-      ? getSafeArray(boardsMainNotices).map((n: any) => ({
+      ? getSafeArray(boardsMainNotices).map((n: Record<string, unknown>) => ({
           key: String(n.id),
-          label: (n as any).eventTitle ?? `공지 #${n.id}`,
+          label: (n.title as string) ?? `공지 #${n.id}`,
           href: `/admin/boards/notice/main/${n.id}`,
         }))
       // 문의(이벤트)
       : matchEventInquiry
-      ? boardsEventInquiries.map((q: any) => ({
+      ? boardsEventInquiries.map((q: Record<string, unknown>) => ({
           key: String(q.id),
-          label: q.title,
+          label: q.title as string,
           href: `/admin/boards/inquiry/events/${boardsEventId_inq}/${q.id}`,
         }))
       // 문의(메인)
       : (isBoardsMainRoot_inq || !!boardsMainInquiryId)
-      ? boardsMainInquiries.map((q: any) => ({
+      ? boardsMainInquiries.map((q: Record<string, unknown>) => ({
           key: String(q.id),
-          label: q.title,
+          label: q.title as string,
           href: `/admin/boards/inquiry/main/${q.id}`,
         }))
       // ✅ FAQ(이벤트)
       : matchEventFaq
-      ? boardsEventFaqs.map((f: any) => ({
+      ? boardsEventFaqs.map((f: Record<string, unknown>) => ({
           key: String(f.id),
-          label: f.title,
+          label: f.title as string,
           href: `/admin/boards/faq/events/${boardsEventId_faq}/${f.id}`,
         }))
       // ✅ FAQ(메인)
       : (isBoardsMainRoot_faq || !!boardsMainFaqId)
-      ? boardsMainFaqs.map((f: any) => ({
+      ? boardsMainFaqs.map((f: Record<string, unknown>) => ({
           key: String(f.id),
-          label: f.title,
+          label: f.title as string,
           href: `/admin/boards/faq/main/${f.id}`,
         }))
       : []
@@ -447,13 +484,7 @@ export default function AdminNavigation() {
     boardsMainFaqId  ? String(boardsMainFaqId)  :
     '';
 
-  const showFourth =
-    (!!boardsEventNoticeId) ||
-    (!!boardsMainNoticeId)  ||
-    (!!boardsEventInquiryId) ||
-    (!!boardsMainInquiryId) ||
-    (!!boardsEventFaqId) ||
-    (!!boardsMainFaqId);
+  const showFourth = false; // 4단계 제거 (boards 메인/이벤트 모두)
 
   // 열릴 때 활성 항목으로 스크롤
   useEffect(() => {
@@ -476,21 +507,28 @@ export default function AdminNavigation() {
   // ===== 3단계 라벨 =====
   const thirdLabel = (() => {
     // 신청/단체/개인
-    if (isApplicationsMgmt) return currentEventA?.title;
+    if (isApplicationsMgmt || isApplicationsList) {
+      if (!eventIdFromPathA) return '대회 선택';
+      return currentEventA?.nameKr || '대회 선택';
+    }
     if (isOrgDetail) return orgThirdLabel || undefined;
-    if (isIndivEvents) return indivThirdLabel || undefined;
+    if (isIndivDetail) return indivThirdLabel || undefined;
 
     // 공지
-    if (matchEventNotice) return boardsCurrentEvent_notice?.title || '대회 선택';
+    if (matchEventNotice) return boardsCurrentEvent_notice?.nameKr || '대회 선택';
     if (isBoardsMainRoot_notice || !!boardsMainNoticeId) return '전마협 공지사항';
 
     // 문의
-    if (matchEventInquiry) return boardsCurrentEvent_inq?.title || '대회 선택';
+    if (matchEventInquiry) return boardsCurrentEvent_inq?.nameKr || '대회 선택';
     if (isBoardsMainRoot_inq || !!boardsMainInquiryId) return '전마협 문의사항';
 
     // ✅ FAQ
-    if (matchEventFaq) return boardsCurrentEvent_faq?.title || '대회 선택';
+    if (matchEventFaq) return boardsCurrentEvent_faq?.nameKr || '대회 선택';
     if (isBoardsMainRoot_faq || !!boardsMainFaqId) return '전마협 FAQ';
+
+    // 🔹 팝업 관리
+    if (isMainPopup) return '메인팝업관리';
+    if (isEventPopup) return '대회팝업관리';
 
     return undefined;
   })();
@@ -498,42 +536,44 @@ export default function AdminNavigation() {
   // 3단계가 드롭다운인지
   const isThirdDropdown =
     isApplicationsMgmt ||
+    isApplicationsList ||
     isOrgDetail ||
-    isIndivEvents ||
+    isIndivDetail ||
     !!matchEventNotice ||
     !!matchEventInquiry ||
-    !!matchEventFaq;
+    !!matchEventFaq ||
+    isBannersPopup;
 
   // ===== 4단계 라벨 =====
-  const fourthLabel = (() => {
+  const fourthLabel: string = (() => {
     // 공지
     if (boardsEventNoticeId) {
-      const found = boardsEventNotices.find((n: any) => n.id === boardsEventNoticeId);
-      return found?.title || '공지 선택';
+      const found = boardsEventNotices.find((n: Record<string, unknown>) => n.id === boardsEventNoticeId);
+      return (found?.title as string) || '공지 선택';
     }
     if (boardsMainNoticeId) {
-      const found = getSafeArray(boardsMainNotices).find((n: any) => n.id === boardsMainNoticeId);
-      return (found as any)?.eventTitle || '공지 선택';
+      const found = getSafeArray(boardsMainNotices).find((n: Record<string, unknown>) => n.id === boardsMainNoticeId);
+      return ((found as Record<string, unknown>)?.eventTitle as string) || '공지 선택';
     }
 
     // 문의
     if (boardsEventInquiryId) {
-      const found = boardsEventInquiries.find((q: any) => q.id === boardsEventInquiryId);
-      return found?.title || '문의 선택';
+      const found = boardsEventInquiries.find((q: Record<string, unknown>) => q.id === boardsEventInquiryId);
+      return (found?.title as string) || '문의 선택';
     }
     if (boardsMainInquiryId) {
-      const found = boardsMainInquiries.find((q: any) => q.id === boardsMainInquiryId);
-      return found?.title || '문의 선택';
+      const found = boardsMainInquiries.find((q: Record<string, unknown>) => q.id === boardsMainInquiryId);
+      return (found?.title as string) || '문의 선택';
     }
 
     // ✅ FAQ
     if (boardsEventFaqId) {
-      const found = boardsEventFaqs.find((f: any) => f.id === boardsEventFaqId);
-      return found?.title || 'FAQ 선택';
+      const found = boardsEventFaqs.find((f: Record<string, unknown>) => f.id === boardsEventFaqId);
+      return (found?.title as string) || 'FAQ 선택';
     }
     if (boardsMainFaqId) {
-      const found = boardsMainFaqs.find((f: any) => f.id === boardsMainFaqId);
-      return found?.title || 'FAQ 선택';
+      const found = boardsMainFaqs.find((f: Record<string, unknown>) => f.id === boardsMainFaqId);
+      return (found?.title as string) || 'FAQ 선택';
     }
 
     return '선택';
@@ -549,9 +589,101 @@ export default function AdminNavigation() {
             <span className="font-medium">{safeMenu.name}</span>
           </div>
 
+          {isApplicationsMgmt || isApplicationsList ? (
+            <>
+              {/* Event breadcrumb first */}
+              {showThird && (
+                <>
+                  <span className="text-gray-400">&gt;</span>
+                  <div className="relative" ref={entRef}>
+                    <button
+                      onClick={toggleEntity}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                      aria-haspopup="listbox"
+                      aria-expanded={openEntity}
+                      title={thirdLabel}
+                    >
+                      <span className="max-w-[320px] truncate">{thirdLabel}</span>
+                      <ChevronDown className={clsx('w-4 h-4 transition-transform', openEntity && 'rotate-180')} />
+                    </button>
+
+                    {openEntity && thirdList.length > 0 && (
+                      <div className="absolute top-full left-0 mt-1 w-[320px] bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                        <div
+                          ref={listboxRef}
+                          role="listbox"
+                          aria-activedescendant={thirdActiveKey ? `opt-${thirdActiveKey}` : undefined}
+                          className="py-1 max-h-[264px] overflow-y-auto"
+                        >
+                          {thirdList.map((it) => {
+                            const active = it.key === thirdActiveKey;
+                            return (
+                              <Link
+                                key={it.key}
+                                id={`opt-${it.key}`}
+                                data-key={it.key}
+                                href={it.href}
+                                aria-selected={active}
+                                className={clsx(
+                                  'block px-4 py-2 text-sm transition-colors truncate',
+                                  active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                )}
+                                title={it.label}
+                                onClick={() => setOpenEntity(false)}
+                              >
+                                {it.label}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Sub breadcrumb (신청자 관리) after event */}
+              <span className="text-gray-400">&gt;</span>
+              <div className="relative" ref={subRef}>
+                <button
+                  onClick={toggleSub}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                  aria-haspopup="menu"
+                  aria-expanded={openSub}
+                >
+                  {currentSub.name}
+                  <ChevronDown className={clsx('w-4 h-4 transition-transform', openSub && 'rotate-180')} />
+                </button>
+
+                {openSub && (
+                  <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    <div className="py-1">
+                      {safeMenu.children.map((child) => {
+                        const active = pathname.startsWith(child.href);
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={clsx(
+                              'block px-4 py-2 text-sm transition-colors',
+                              active ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            )}
+                            onClick={() => setOpenSub(false)}
+                          >
+                            {child.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
           <span className="text-gray-400">&gt;</span>
 
-          {/* 2) 2단계 드롭다운 */}
+              {/* Sub breadcrumb default position */}
           <div className="relative" ref={subRef}>
             <button
               onClick={toggleSub}
@@ -641,6 +773,8 @@ export default function AdminNavigation() {
                 <div className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-md">
                   {thirdLabel}
                 </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -670,7 +804,7 @@ export default function AdminNavigation() {
                       aria-activedescendant={forthActiveKeySafe() ? `opt4-${forthActiveKeySafe()}` : undefined}
                       className="py-1 max-h-[264px] overflow-y-auto"
                     >
-                      {fourthList.map((it) => {
+                      {fourthList.map((it: { key: string; label: string; href: string }) => {
                         const active = it.key === forthActiveKeySafe();
                         return (
                           <Link
@@ -702,6 +836,6 @@ export default function AdminNavigation() {
   );
 }
 
-function getSafeArray<T = any>(arr: T[] | undefined | null): T[] {
+function getSafeArray<T = unknown>(arr: T[] | undefined | null): T[] {
   return Array.isArray(arr) ? arr : [];
 }

@@ -18,6 +18,9 @@ export default function PasswordField({
   const isValid = isPasswordValid(value);
   const hasValue = value && value.length > 0;
 
+  const hasNoSpace = !/\s/.test(value || '');
+  const lengthOk = (value || '').length >= 6;
+
   return (
     <div className="flex-1 max-w-md">
       <input
@@ -25,6 +28,8 @@ export default function PasswordField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        autoComplete="new-password"
+        name="no-autofill-password"
         className={`${className} ${
           hasValue
             ? isValid
@@ -38,28 +43,20 @@ export default function PasswordField({
       {/* 비밀번호 유효성 검사 안내 */}
       {value && (
         <div className="mt-2 space-y-1">
-          <div className={`flex items-center text-xs ${value.length >= 10 && value.length <= 64 ? 'text-green-600' : 'text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full mr-2 ${value.length >= 10 && value.length <= 64 ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            길이: 10~64자 ({value.length}/64)
+          <div className={`flex items-center text-xs ${lengthOk ? 'text-green-600' : 'text-red-500'}`}>
+            <span className={`w-2 h-2 rounded-full mr-2 ${lengthOk ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            길이: 최소 6자리 ({value.length}자)
           </div>
-          <div className={`flex items-center text-xs ${/[a-z]/.test(value) ? 'text-green-600' : 'text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(value) ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            소문자 포함
-          </div>
-          <div className={`flex items-center text-xs ${/\d/.test(value) ? 'text-green-600' : 'text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full mr-2 ${/\d/.test(value) ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            숫자 포함
-          </div>
-          <div className={`flex items-center text-xs ${/[~!@#$%^&*()_+\-={}\[\]\\|:;"'<>,.?/]/.test(value) ? 'text-green-600' : 'text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full mr-2 ${/[~!@#$%^&*()_+\-={}\[\]\\|:;"'<>,.?/]/.test(value) ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            특수문자 포함
+          <div className={`flex items-center text-xs ${hasNoSpace ? 'text-green-600' : 'text-red-500'}`}>
+            <span className={`w-2 h-2 rounded-full mr-2 ${hasNoSpace ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            공백 없음
           </div>
         </div>
       )}
       
       {/* 비밀번호 규칙 안내 */}
       <p className="text-xs text-gray-500 mt-2">
-        비밀번호는 10~64자이며 소문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다.
+        비밀번호는 최소 6자리, 공백 없이 입력해주세요.
       </p>
     </div>
   );

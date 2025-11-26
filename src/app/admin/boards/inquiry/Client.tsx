@@ -1,17 +1,24 @@
-// src/app/admin/boards/notice/Client.tsx
-"use client";
-import { useRouter } from "next/navigation";
-import OverviewScreen from "@/components/admin/boards/OverviewScreen";
-import { fetchNoticeOverview } from "@/data/notice/overview";
+'use client';
 
-export default function Client() {
+import { useRouter } from 'next/navigation';
+import { BoardEventList } from '@/components/admin/boards/BoardEventList';
+import { InquiryToggleTabs } from '@/components/admin/boards/inquiry/InquiryToggleTabs';
+
+export default function InquiryClient() {
   const router = useRouter();
+
   return (
-    <OverviewScreen
-      fetcher={fetchNoticeOverview}
-      onRowTitleClick={(row) => router.push(`/admin/boards/inquiry/events/${row.id}`)}
-      tableCtaLabel="전마협 메인 문의사항 관리하기 >"
-      tableCtaHref="/admin/boards/inquiry/main"
+    <BoardEventList
+      title={undefined}
+      basePath="inquiry"
+      titleAddon={
+        <InquiryToggleTabs
+          active="event"
+          onSelect={(value) => {
+            if (value === 'all') router.push('/admin/boards/inquiry/all');
+          }}
+        />
+      }
     />
   );
 }

@@ -19,7 +19,7 @@ export default function NoticeSection({
       ) : (
         <>
           <p className="text-sm sm:text-base text-gray-700 mb-2">
-            단체 신청 시 필요한 단체ID를 생성해주세요. 생성 후 중복확인을 클릭하세요.
+            단체 신청 시 필요한 단체신청용 ID를 생성해주세요. 생성 후 중복확인을 클릭하세요.
           </p>
           <p className="text-sm sm:text-base text-gray-700">
             단체 비밀번호를 생성하시기 바랍니다. 비밀번호 찾기를 클릭하시면 입력하신 이메일 주소로 비밀번호를 보내드립니다.

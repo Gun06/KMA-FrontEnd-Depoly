@@ -77,8 +77,6 @@ export const Dropdown = ({
                   role="menuitem"
                   onClick={() => {
                     setIsOpen(false);
-                    // 필요하면 여기서만 console.log 사용 (문제 패널 증식 방지)
-                    console.log("[Dropdown] option click:", opt.label);
                     opt.onClick();
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer whitespace-nowrap"

@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       const from = process.env.NCP_FROM_NUMBER || '발신번호'
       
       if (!serviceId || !accessKey || !secretKey) {
-        console.log(`[SMS 발송] ${phoneNumber}로 인증번호 ${verificationCode} 전송 (환경변수 미설정으로 인해 실제 전송 생략)`)
         return NextResponse.json({
           success: true,
           message: '인증번호가 발송되었습니다.',
@@ -57,13 +56,9 @@ export async function POST(request: NextRequest) {
       })
 
       if (response.ok) {
-        console.log(`[SMS 발송 성공] ${phoneNumber}로 인증번호 ${verificationCode} 전송`)
       } else {
-        console.error(`[SMS 발송 실패] ${phoneNumber}: ${response.statusText}`)
       }
     } catch (error) {
-      console.error('SMS 발송 중 오류:', error)
-      console.log(`[SMS 발송] ${phoneNumber}로 인증번호 ${verificationCode} 전송 (오류로 인해 실제 전송 생략)`)
     }
 
     // 인증번호를 세션/캐시에 저장 (실제로는 Redis나 DB 사용)
@@ -77,7 +72,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('SMS 발송 오류:', error)
     return NextResponse.json(
       { error: '인증번호 발송에 실패했습니다. 다시 시도해주세요.' },
       { status: 500 }

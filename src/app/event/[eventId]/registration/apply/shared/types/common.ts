@@ -41,9 +41,7 @@ export interface ApiSubmitData {
                   };
     };
     address: {
-      siDo: string;
-      siGunGu: string;
-      roadAddress: string;
+      address: string;
       zipCode: string;
       addressDetail: string;
     };
@@ -73,15 +71,57 @@ export interface IndividualRegistrationResponse {
   email: string;
   address: string;
   zipCode: string;
+  addressDetail: string;
+  eventCategoryId: string;
   eventCategoryName: string;
   souvenir: {
+    souvenirId: string;
     souvenirName: string;
     souvenirSize: string;
   }[];
   amount: number;
   paymentType: "CARD" | "ACCOUNT_TRANSFER";
   paymenterName: string;
-  paymentStatus: "UNPAID" | "PAID";
+  paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
+}
+
+// 단체신청 조회 응답 인터페이스 (업데이트된 스키마)
+export interface GroupRegistrationResponse {
+  registrationDate: string;
+  organizationName: string;
+  organizationAccount: string;
+  leaderName: string;
+  leaderBirth: string;
+  leaderPhNum: string;
+  email: string;
+  address: string;
+  zipCode: string;
+  sumAmount: number;
+  organizationHeadCount: number;
+  paymentType: "CARD" | "ACCOUNT_TRANSFER";
+  paymenterName: string;
+  paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
+  innerUserRegistrationList: GroupParticipant[];
+}
+
+// 단체신청 참가자 인터페이스
+export interface GroupParticipant {
+  registrationId: string;
+  personalAccount: string;
+  name: string;
+  gender: "M" | "F";
+  birth: string;
+  phNum: string;
+  email: string;
+  eventCategoryId: string;
+  eventCategoryName: string;
+  souvenir: {
+    souvenirId: string;
+    souvenirName: string;
+    souvenirSize: string;
+  }[];
+  amount: number;
+  note?: string;
 }
 
 // 공통 옵션 타입

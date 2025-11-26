@@ -6,9 +6,5 @@ export const handleDownload = (attachment: AttachmentInfo) => {
     // 새 창에서 파일 다운로드
     window.open(attachment.url, '_blank');
   } catch (error) {
-    console.error('❌ 첨부파일 다운로드 실패:', {
-      error: error,
-      attachment
-    });
   }
 };

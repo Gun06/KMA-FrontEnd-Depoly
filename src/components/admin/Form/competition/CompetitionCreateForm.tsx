@@ -38,6 +38,14 @@ type Props = {
   hideBottomPrimary?: boolean;
   editHref?: string;
   initialEditing?: boolean;
+  existingEventBanners?: Array<{
+    id: string;
+    imageUrl: string;
+    url: string;
+    providerName: string;
+    bannerType: string;
+    static: boolean;
+  }>;
 };
 
 export default function CompetitionCreateForm({
@@ -51,6 +59,7 @@ export default function CompetitionCreateForm({
   hideBottomPrimary,
   editHref,
   initialEditing = false,
+  existingEventBanners,
 }: Props) {
   const isEditPage = mode === 'edit';
   const [isEditing, setIsEditing] = useState(
@@ -196,6 +205,7 @@ export default function CompetitionCreateForm({
       f.setBannerOrganizer([uploadItem]);
       f.setBannerSponsor([uploadItem]);
       f.setBannerInstagram([uploadItem]);
+      f.setBannerSideMenu([uploadItem]);
       f.setBannerGuideDesktop([uploadItem]);
       f.setBannerGuideMobile([uploadItem]);
       f.setBannerMainDesktop([uploadItem]);
@@ -209,10 +219,11 @@ export default function CompetitionCreateForm({
 
       alert('테스트 이미지가 모든 필드에 업로드되었습니다!');
     } catch (error) {
-      console.error('테스트 이미지 업로드 실패:', error);
       alert('테스트 이미지 업로드에 실패했습니다.');
     }
   };
+
+
 
   // 하단 버튼 노출 여부 및 타이틀
   const actuallyHideBottom = isEditPage ? true : !!hideBottomPrimary;
@@ -249,17 +260,7 @@ export default function CompetitionCreateForm({
                 onDelete={handleDelete}
                 editHref={editHref}
               />
-              {/* 테스트용 이미지 일괄 업로드 버튼 */}
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  tone="dark"
-                  size="sm"
-                  onClick={handleTestImageUpload}
-                  disabled={loading}
-                >
-                  🖼️ 테스트 이미지 일괄 업로드
-                </Button>
-              )}
+
             </div>
           }
         >
@@ -324,7 +325,7 @@ export default function CompetitionCreateForm({
         <div className="flex mx-auto px-4">
           <NoticeMessage
             items={[
-              { text: '※ 이미지는 jpg, jpeg, png만 지원합니다.' },
+              { text: '※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다.' },
               {
                 text: '주최/주관/후원은 대회 페이지의 Footer 상단에 위치합니다.',
               },

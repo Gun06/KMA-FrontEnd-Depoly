@@ -11,12 +11,14 @@ export const createInitialParticipant = (): ParticipantData => ({
   category: '종목',
   souvenir: '선택',
   size: '사이즈',
-  email1: '',
-  email2: '',
-  emailDomain: '직접입력',
+  selectedSouvenirs: [],
+  // email1: '', // API 구조 변경으로 제거
+  // email2: '', // API 구조 변경으로 제거
+  // emailDomain: '직접입력', // API 구조 변경으로 제거
   phone1: '010',
   phone2: '',
-  phone3: ''
+  phone3: '',
+  note: ''
 });
 
 // 초기 폼 데이터
@@ -32,12 +34,11 @@ export const initialGroupFormData: GroupFormData = {
   address: '',
   detailedAddress: '',
   
-  // 개인 정보 (연락처, 이메일만)
+  // 개인 정보 (연락처만)
   phone1: '010',
   phone2: '',
   phone3: '',
   email1: '',
-  email2: '',
   emailDomain: '직접입력',
   
   // 참가인원 정보

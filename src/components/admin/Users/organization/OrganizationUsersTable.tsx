@@ -7,10 +7,9 @@ import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 import type { Column } from '@/components/common/Table/BaseTable';
 import type { OrganizationRow } from '@/data/users/organization';
-import orgColumns from '@/components/admin/Users/organization/orgColumns';
+import createOrgColumns from '@/components/admin/Users/organization/orgColumns';
 
 type SortBy = 'id' | 'joinCount' | 'memberCount' | 'createdAt';
-type Order = 'asc' | 'desc';
 type SearchField = 'org' | 'owner' | 'ownerId';
 type MemberFilter = '' | 'member' | 'nonMember';
 
@@ -24,7 +23,6 @@ type Props = {
   onSearch?: (q: string) => void;
   onSearchFieldChange?: (f: SearchField) => void;
   onSortByChange?: (s: SortBy) => void;
-  onOrderChange?: (o: Order) => void;
   onMemberFilterChange?: (m: MemberFilter) => void;
   onClickExcel?: () => void;
   onResetFilters?: () => void;
@@ -36,7 +34,7 @@ type Props = {
 
 export default function OrganizationUsersTable({
   rows, total, page, pageSize, onPageChange,
-  onSearch, onSearchFieldChange, onSortByChange, onOrderChange, onMemberFilterChange,
+  onSearch, onSearchFieldChange, onSortByChange, onMemberFilterChange,
   onClickExcel, onResetFilters,
   selectedIds = [], onToggleSelectOne, onToggleSelectAll,
 }: Props) {
@@ -83,10 +81,18 @@ export default function OrganizationUsersTable({
   };
 
   /** 기존 칼럼 앞에 선택 칼럼 주입 */
+  const baseColumns = useMemo(
+    () => createOrgColumns({
+      rowIndexOffset: (page - 1) * pageSize,
+      totalCount: total,
+      descendingNumbering: true,
+    }),
+    [page, pageSize, total]
+  );
+
   const columns: Column<OrganizationRow>[] = useMemo(
-    () => [selectColumn, ...(orgColumns as Column<OrganizationRow>[])],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allChecked, someChecked, selectedIds, rows]
+    () => [selectColumn, ...baseColumns],
+    [selectColumn, baseColumns]
   );
 
   /** 필터바 프리셋 */
@@ -107,8 +113,6 @@ export default function OrganizationUsersTable({
           else onSortByChange?.(v as SortBy);
         } else if (L === '단체명') {
           onSearchFieldChange?.(v as SearchField);
-        } else if (L === '오름차순') {
-          onOrderChange?.(v as Order);
         }
       }}
       onSearch={(q) => onSearch?.(q)}
@@ -121,7 +125,7 @@ export default function OrganizationUsersTable({
     <AdminTable<OrganizationRow>
       columns={columns}
       rows={rows}
-      rowKey={(r) => r.id}
+      rowKey={(r, idx) => r.id || `row-${idx}`}
       renderFilters={null}
       renderSearch={null}
       renderActions={Actions}

@@ -34,9 +34,9 @@ type Props = {
   onResetFilters?: () => void;
   onClickBack?: () => void;
 
-  selectedIds?: number[];
-  onToggleSelectOne?: (eventId: number, checked: boolean) => void;
-  onToggleSelectAll?: (checked: boolean, idsOnPage: number[]) => void;
+  selectedIds?: Array<string | number>;
+  onToggleSelectOne?: (eventId: string | number, checked: boolean) => void;
+  onToggleSelectAll?: (checked: boolean, idsOnPage: Array<string | number>) => void;
 
   title?: React.ReactNode;
 };
@@ -47,9 +47,10 @@ export default function IndivEventTable({
   onPayFilterChange, onAppStatusChange, onClickExcel, onResetFilters, onClickBack,
   selectedIds = [], onToggleSelectAll, onToggleSelectOne, title,
 }: Props) {
-  const idsOnPage = useMemo(() => rows.map(r => r.eventId), [rows]);
-  const allChecked  = idsOnPage.length > 0 && idsOnPage.every(id => selectedIds.includes(id));
-  const someChecked = !allChecked && idsOnPage.some(id => selectedIds.includes(id));
+  const idsOnPage = useMemo(() => rows.map(r => String(r.eventId)), [rows]);
+  const selectedSet = useMemo(() => new Set((selectedIds ?? []).map(v => String(v))), [selectedIds]);
+  const allChecked  = idsOnPage.length > 0 && idsOnPage.every(id => selectedSet.has(String(id)));
+  const someChecked = !allChecked && idsOnPage.some(id => selectedSet.has(String(id)));
   const headerRef   = useRef<HTMLInputElement>(null);
   useEffect(() => { if (headerRef.current) headerRef.current.indeterminate = someChecked; }, [someChecked]);
 
@@ -90,8 +91,8 @@ export default function IndivEventTable({
     render: (r) => (
       <input
         type="checkbox"
-        checked={selectedIds.includes(r.eventId)}
-        onChange={(e) => onToggleSelectOne?.(r.eventId, e.target.checked)}
+        checked={selectedSet.has(String(r.eventId))}
+        onChange={(e) => onToggleSelectOne?.(String(r.eventId), e.target.checked)}
         onClick={(e) => e.stopPropagation()}
         className="cursor-pointer"
         aria-label={`${r.title} 선택`}
@@ -141,11 +142,11 @@ export default function IndivEventTable({
     },
     {
       key: 'regDate',
-      header: '신청일',
-      width: 116,
+      header: '신청일시',
+      width: 160,
       align: 'center',
       className: 'whitespace-nowrap tabular-nums',
-      render: (r) => r.regDate.replaceAll('-', '.'),
+      render: (r) => r.regDate,
     },
   ];
 

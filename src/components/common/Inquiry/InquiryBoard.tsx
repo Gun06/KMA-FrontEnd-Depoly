@@ -45,7 +45,6 @@ export default function InquiryBoard({
   const handleCreateInquiry = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: 문의사항 생성 로직 구현
-    console.log('Creating inquiry:', formData);
     resetForm();
   };
 

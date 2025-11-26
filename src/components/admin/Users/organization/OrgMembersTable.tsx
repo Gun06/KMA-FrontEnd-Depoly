@@ -7,6 +7,7 @@ import type { Column } from '@/components/common/Table/BaseTable';
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 import MemberBadge from '@/components/common/Badge/MemberBadge';
+import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import type { OrgMemberRow } from '@/data/users/orgMembers';
 
 type SortKey = 'id' | 'name' | 'birth';
@@ -35,6 +36,7 @@ type Props = {
   onToggleSelectAll?: (checked: boolean, idsOnPage: number[]) => void;
 
   title?: React.ReactNode;
+  onRowClick?: (row: OrgMemberRow) => void;
 };
 
 export default function OrgMembersTable({
@@ -54,6 +56,7 @@ export default function OrgMembersTable({
   onToggleSelectOne,
   onToggleSelectAll,
   title,
+  onRowClick,
 }: Props) {
   /** 현재 페이지 id 목록 + 헤더 체크박스 상태 */
   const idsOnPage = useMemo(() => rows.map(r => r.id), [rows]);
@@ -94,19 +97,56 @@ export default function OrgMembersTable({
 
   // 구성원 화면 기본 컬럼
   const baseCols: Column<OrgMemberRow>[] = [
-    { key: 'id', header: '번호', width: 80, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'id', header: '번호', width: 70, align: 'center', className: 'whitespace-nowrap tabular-nums' },
     {
       key: 'isMember',
       header: '회원여부',
-      width: 110,
+      width: 100,
       align: 'center',
       render: (r) => <MemberBadge isMember={r.isMember} />,
     },
-    { key: 'userId', header: '아이디', width: 160, align: 'center', className: 'whitespace-nowrap' },
-    { key: 'name', header: '이름', width: 120, align: 'center' },
-    { key: 'birth', header: '생년월일', width: 140, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    { key: 'phone', header: '전화번호', width: 160, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    { key: 'createdAt', header: '등록일', width: 140, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'userId', header: '아이디', width: 140, align: 'center', className: 'whitespace-nowrap' },
+    { key: 'name', header: '이름', width: 110, align: 'center' },
+    { key: 'birth', header: '생년월일', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'phone', header: '전화번호', width: 135, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    {
+      key: 'regDate',
+      header: '신청일시',
+      width: 160,
+      align: 'center',
+      className: 'whitespace-nowrap tabular-nums',
+      render: (r) => r.regDate || r.createdAt || '-',
+    },
+    {
+      key: 'fee',
+      header: '금액',
+      width: 110,
+      align: 'right',
+      className: 'whitespace-nowrap tabular-nums pr-4',
+      render: (r) =>
+        typeof r.fee === 'number' && !Number.isNaN(r.fee)
+          ? `${r.fee.toLocaleString()}원`
+          : '-',
+    },
+    {
+      key: 'account',
+      header: '입금자명',
+      width: 115,
+      align: 'center',
+      className: 'whitespace-nowrap',
+      render: (r) => {
+        const display = typeof r.account === 'string' ? r.account.trim() : '';
+        return display || '-';
+      },
+    },
+    {
+      key: 'payStatus',
+      header: '입금여부',
+      width: 115,
+      align: 'center',
+      className: 'whitespace-nowrap',
+      render: (r) => <PaymentBadgeApplicants payStatus={r.payStatus} paid={r.paid} />,
+    },
   ];
 
   /** 선택 칼럼 주입 */
@@ -148,11 +188,12 @@ export default function OrgMembersTable({
         columns={cols}
         rows={rows}
         rowKey={(r) => `${r.orgId}-${r.id}`}
+        onRowClick={onRowClick}
         renderFilters={null}
         renderSearch={null}
         renderActions={Actions}
         pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
-        minWidth={1200}
+        minWidth={1160}
       />
     </div>
   );

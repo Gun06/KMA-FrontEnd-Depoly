@@ -2,29 +2,186 @@
 "use client";
 
 import React from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import InquiryDetailPanel from "@/components/admin/boards/inquiry/InquiryDetailPanel";
-import type { Inquiry, InquiryFile } from "@/data/inquiry/types";
-import { getMainInquiryDetail, replyMainInquiry } from "@/data/inquiry/main";
+import { useInquiryDetail, useCreateAnswer, useUpdateAnswer } from "@/hooks/useInquiries";
+import { useQueryClient } from "@tanstack/react-query";
+import { inquiryKeys } from "@/hooks/useInquiries";
+import { InquiryDetail } from "@/services/admin/inquiries";
+import type { InquiryFile } from "@/types/inquiry";
 
 export default function Page() {
   const { inquiryId } = useParams<{ inquiryId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
-  const [detail, setDetail] = React.useState<Inquiry | undefined>(() =>
-    getMainInquiryDetail(Number(inquiryId))
-  );
+  // API로 문의사항 상세 정보 가져오기
+  const { data: inquiryDetail, isLoading, error } = useInquiryDetail(inquiryId);
+  
+  // 답변 생성 훅
+  const createAnswerMutation = useCreateAnswer(inquiryId);
+  const answerId = (inquiryDetail as InquiryDetail)?.answerDetail?.id;
+  const updateAnswerMutation = useUpdateAnswer(answerId || '');
 
-  React.useEffect(() => {
-    setDetail(getMainInquiryDetail(Number(inquiryId)));
-  }, [inquiryId]);
+  // API 데이터를 기존 Inquiry 형식으로 변환
+  const detail = React.useMemo(() => {
+    if (!inquiryDetail) return undefined;
+    
+    const typedInquiry = inquiryDetail as InquiryDetail;
+    const question = typedInquiry.questionDetail;
+    const answer = typedInquiry.answerDetail;
+    
+    
+    return {
+      id: question.id,
+      title: question.title,
+      author: question.author,
+      date: question.createdAt?.split('T')[0]?.replace(/-/g, '.') || '', // 안전한 접근
+      views: 0, // API에서 조회수 정보가 없으므로 0으로 설정
+      content: question.content,
+      secret: question.secret, // 비밀글 정보 추가
+      files: question.attachmentUrls?.map((url: string, index: number) => ({
+        id: `file-${index}`,
+        name: url.split('/').pop() || `첨부파일-${index + 1}`,
+        sizeMB: 0, // API에서 파일 크기 정보가 없으므로 0으로 설정
+        mime: 'application/octet-stream',
+        url: url
+      })) || [],
+      answer: answer ? {
+        title: answer.title,
+        author: answer.author,
+        date: answer.createdAt?.split('T')[0]?.replace(/-/g, '.') || '',
+        content: answer.content || '', // 실제 답변 내용 표시
+        files: answer.attachmentUrls?.map((url: string, index: number) => {
+          const fileName = url.split('/').pop() || `답변첨부파일-${index + 1}`;
+          // 파일명에서 크기 정보 추출 시도 (예: filename_[2.5MB].pdf)
+          const sizeMatch = fileName.match(/\[(\d+(?:\.\d+)?)MB\]/i);
+          const sizeMB = sizeMatch ? parseFloat(sizeMatch[1]) : 1; // 기본값 1MB
+          
+          return {
+            id: `answer-file-${index}`,
+            name: fileName,
+            sizeMB: sizeMB,
+            mime: 'application/octet-stream',
+            url: url
+          };
+        }) || []
+      } : undefined
+    };
+  }, [inquiryDetail]);
 
-  if (!detail) return <main className="p-6">데이터가 없습니다.</main>;
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-500">문의사항을 불러오는 중...</div>
+        </div>
+      </main>
+    );
+  }
 
-  const onBack = () => router.replace(`/admin/boards/inquiry/main`);
-  const onSave = (content: string, files: InquiryFile[]) => {
-    replyMainInquiry(detail.id, content, files);
-    setDetail(getMainInquiryDetail(Number(inquiryId)));
+  if (error || !detail) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="text-red-500">문의사항을 불러오는데 실패했습니다.</div>
+        </div>
+      </main>
+    );
+  }
+
+  const onBack = () => {
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo === 'all') {
+      router.replace(`/admin/boards/inquiry/all`);
+    } else {
+      router.replace(`/admin/boards/inquiry/main`);
+    }
+  };
+  
+  const onSave = async (title: string, content: string, files: InquiryFile[], deletedFiles?: InquiryFile[]) => {
+    try {
+      const formData = new FormData();
+      const typedInquiry = inquiryDetail as InquiryDetail;
+      const question = typedInquiry.questionDetail;
+      const answer = typedInquiry.answerDetail;
+      
+      
+      // 제목 길이 제한 (DB 컬럼 크기 고려)
+      const maxTitleLength = 200;
+      const finalTitle = title.length > maxTitleLength ? 
+        title.substring(0, maxTitleLength - 3) + '...' : title;
+      
+      // 이미 답변이 있는 경우 수정, 없는 경우 생성
+      if (question?.answered && answer?.id) {
+        
+        // 답변 수정용 데이터 (answerUpdate 필드명 사용)
+        const deleteFileUrls = deletedFiles?.map(file => file.url).filter(Boolean) || [];
+        const answerUpdate = {
+          title: finalTitle,
+          content: content,
+          deleteFileUrls: deleteFileUrls // 삭제할 파일 URL 배열
+        };
+        
+        formData.append('answerUpdate', JSON.stringify(answerUpdate));
+        
+        // 첨부파일 추가
+        files.forEach((file) => {
+          if (file.file) {
+            formData.append(`attachments`, file.file);
+          }
+        });
+        
+        // 기존 답변 수정
+        await updateAnswerMutation.mutateAsync(formData);
+      } else {
+        
+        // 답변 생성용 데이터 (answerRequest 필드명 사용)
+        const answerRequest = {
+          title: finalTitle,
+          content: content
+        };
+        
+        formData.append('answerRequest', JSON.stringify(answerRequest));
+        
+        // 첨부파일 추가
+        files.forEach((file) => {
+          if (file.file) {
+            formData.append(`attachments`, file.file);
+          }
+        });
+        
+        try {
+          // 새 답변 생성
+          await createAnswerMutation.mutateAsync(formData);
+        } catch (error: unknown) {
+          // 답변 생성 실패 시 이미 답변이 있는지 확인
+          const isError = error as { response?: { status?: number }; message?: string };
+          if (isError?.response?.status === 400 || isError?.message?.includes('이미 답변이 있습니다')) {
+            return;
+          }
+          throw error; // 다른 에러는 다시 던지기
+        }
+      }
+      
+      // 캐시 무효화 - 모든 페이지의 목록 데이터 무효화
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.detail(inquiryId) }),
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.homepage() }), // 모든 페이지 무효화
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.all }) // 전체 문의사항 캐시 무효화
+      ]);
+      
+      // 더 강력한 캐시 무효화
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: inquiryKeys.detail(inquiryId) }),
+        queryClient.refetchQueries({ queryKey: inquiryKeys.homepage() }),
+        queryClient.refetchQueries({ queryKey: inquiryKeys.all })
+      ]);
+      
+    } catch (error) {
+      throw error; // 에러를 다시 던져서 상위에서 처리하도록 함
+    }
   };
 
   return <InquiryDetailPanel detail={detail} onBack={onBack} onSave={onSave} />;

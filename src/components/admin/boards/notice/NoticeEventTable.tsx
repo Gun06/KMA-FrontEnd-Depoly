@@ -6,7 +6,7 @@ import AdminTable from "@/components/admin/Table/AdminTableShell";
 import type { Column } from "@/components/common/Table/BaseTable";
 import CategoryBadge from "@/components/common/Badge/CategoryBadge";
 import type { Category } from "@/components/common/Table/types";
-import type { NoticeEventRow, NoticeType } from "@/data/notice/types";
+import type { NoticeEventRow, NoticeType } from "@/types/notice";
 
 const mapToCategory: Record<NoticeType, Category | null> = {
   match: "대회",
@@ -19,7 +19,7 @@ type Props = {
   rows?: NoticeEventRow[];
   eventId?: string | number; // ⬅ optional
   linkForRow?: (row: NoticeEventRow) => string | undefined | null; // ⬅ 링크 주입(없으면 텍스트)
-  onDelete?: (id: number) => void;
+  onDelete?: (id: number | string) => void; // UUID 문자열 ID 지원
   pagination?: {
     page: number;
     pageSize: number;
@@ -89,21 +89,15 @@ export default function NoticeEventTable({
         );
       },
     },
-    {
-      key: "visibility",
-      header: "공개여부",
-      width: 100,
-      align: "center",
-      render: (r) =>
-        r.visibility === "closed" ? (
-          <span className="text-[#D12D2D]">비공개</span>
-        ) : (
-          <span className="text-[#1E5EFF]">공개</span>
-        ),
-    },
     { key: "author", header: "작성자", width: 110, align: "center" },
     { key: "date", header: "작성일", width: 120, align: "center" },
-    { key: "views", header: "조회수", width: 90, align: "center" },
+    { 
+      key: "views", 
+      header: "조회수", 
+      width: 90, 
+      align: "center",
+      render: (r) => <span className="font-medium">{r.views.toLocaleString()}</span>
+    },
     {
       key: "delete",
       header: "삭제",
@@ -121,19 +115,19 @@ export default function NoticeEventTable({
   ];
 
   const tableProps = pagination
-    ? { pagination: { align: "center", ...pagination } }
+    ? { pagination: { align: "center" as const, ...pagination } }
     : {};
 
   return (
     <AdminTable<NoticeEventRow>
       columns={columns}
       rows={data}
-      rowKey={(r) => r.id}
+      rowKey={(r, index) => r.id && !isNaN(Number(r.id)) ? r.id : `notice-${index}`}
       renderFilters={null}
       renderSearch={null}
       renderActions={null}
       minWidth={1200}
-      {...(tableProps as any)}
+      {...tableProps}
     />
   );
 }

@@ -39,8 +39,8 @@ export default function IndividualRecordResult({ className = "" }: IndividualRec
       <div className="mt-6">
         <RecordTable
           category={selectedCategory}
-          gender={selectedGender}
-          ageGroup={selectedAgeGroup}
+          _gender={selectedGender}
+          _ageGroup={selectedAgeGroup}
         />
       </div>
     </div>

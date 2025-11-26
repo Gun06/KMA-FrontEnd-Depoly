@@ -1,39 +1,37 @@
 import { ChevronLeft, Edit, Trash2, Lock } from 'lucide-react';
-import { InquiryDetail } from '../types';
+import { InquiryDetail, AnswerHeader } from '../types';
 import { formatDate } from '../utils/formatters';
 
-// 이름 마스킹 함수
+// 이름 마스킹 함수 (마스킹 비활성화)
 const maskAuthorName = (authorName: string, currentUserId?: string | null): string => {
   if (!authorName || authorName.length < 2) return authorName;
   
-  // 관리자 계정은 마스킹하지 않음
-  if (authorName === '총관리자' || authorName === '관리자') {
-    return authorName;
-  }
-  
-  // 본인이 작성한 글인지 확인
-  if (currentUserId && authorName === currentUserId) {
-    return authorName; // 본인 글은 전체 이름 표시
-  }
-  
-  // 다른 사람 글은 성만 표시
-  return authorName.charAt(0) + '*'.repeat(authorName.length - 1);
+  // 모든 작성자명을 전체 표시
+  return authorName;
 };
 
 interface InquiryHeaderProps {
   inquiryDetail: InquiryDetail;
   currentUserId?: string | null;
+  answerHeader?: AnswerHeader | null;
+  urlPassword?: string | null;
   onGoBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onViewAnswer?: () => void;
+  onViewAnswerWithPassword?: (password: string) => void;
 }
 
 export const InquiryHeader = ({ 
   inquiryDetail, 
   currentUserId,
+  answerHeader,
+  urlPassword,
   onGoBack, 
   onEdit, 
-  onDelete
+  onDelete,
+  onViewAnswer,
+  onViewAnswerWithPassword
 }: InquiryHeaderProps) => {
   return (
     <>
@@ -48,6 +46,28 @@ export const InquiryHeader = ({
         </button>
         
         <div className="flex items-center gap-3">
+          {answerHeader && answerHeader.id && (
+            <button
+              onClick={() => {
+                // 비밀글 여부: inquiryDetail.secret이 true이거나 URL에 비밀번호가 있는 경우
+                const isSecret = inquiryDetail?.secret || !!urlPassword;
+                
+                if (isSecret && onViewAnswerWithPassword) {
+                  // 비밀글인 경우 비밀번호 입력 모달 표시
+                  onViewAnswerWithPassword('');
+                } else if (onViewAnswer) {
+                  // 공개글인 경우 바로 답변 보기
+                  onViewAnswer();
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-600 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              답변 보기
+            </button>
+          )}
           <button
             onClick={onEdit}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors"
@@ -97,8 +117,9 @@ export const InquiryHeader = ({
 
         {/* 본문 내용 */}
         <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
-          <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
-            {inquiryDetail?.content || '내용이 없습니다.'}
+          <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words">
+            {/* 서버 저장된 HTML을 안전하게 렌더링 */}
+            <div dangerouslySetInnerHTML={{ __html: inquiryDetail?.content || '' }} />
           </div>
         </div>
       </div>

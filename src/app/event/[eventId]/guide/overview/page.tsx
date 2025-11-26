@@ -46,23 +46,7 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
   // API 데이터만 사용
   const imageUrl = eventData?.eventOutlinePageImageUrlById;
 
-  if (isLoading) {
-    return (
-      <SubmenuLayout 
-        eventId={eventId}
-        breadcrumb={{
-          mainMenu: "대회안내",
-          subMenu: "대회요강"
-        }}
-      >
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center mb-6">
-            <div className="text-gray-500">로딩 중...</div>
-          </div>
-        </div>
-      </SubmenuLayout>
-    );
-  }
+  // 로딩 상태 제거 - 바로 콘텐츠 표시
 
   if (error && !eventData) {
     return (

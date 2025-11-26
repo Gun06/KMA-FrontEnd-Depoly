@@ -12,6 +12,8 @@ interface GroupInfoSectionProps {
   onAddressSelect: (postalCode: string, address: string) => void;
   onGroupNameCheck: () => void;
   onGroupIdCheck: () => void;
+  groupNameCheckResult: 'none' | 'available' | 'unavailable' | 'error';
+  groupIdCheckResult: 'none' | 'available' | 'unavailable' | 'error';
 }
 
 export default function GroupInfoSection({
@@ -19,7 +21,9 @@ export default function GroupInfoSection({
   onInputChange,
   onAddressSelect,
   onGroupNameCheck,
-  onGroupIdCheck
+  onGroupIdCheck,
+  groupNameCheckResult,
+  groupIdCheckResult
 }: GroupInfoSectionProps) {
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -30,45 +34,129 @@ export default function GroupInfoSection({
       
       <div className="space-y-4 sm:space-y-6">
         {/* 단체명 */}
-        <FormField label="단체명" required>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="단체명을 입력해주세요"
-              value={formData.groupName}
-              onChange={(e) => onInputChange('groupName', e.target.value)}
-              className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
-            <button
-              type="button"
-              onClick={onGroupNameCheck}
-              className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
-            >
-              단체명 확인 →
-            </button>
-          </div>
-        </FormField>
+        <div>
+          <FormField label="단체명" required>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="단체명을 띄어쓰기 없이 입력해주세요"
+                value={formData.groupName}
+                onChange={(e) => onInputChange('groupName', e.target.value)}
+                className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+              <button
+                type="button"
+                onClick={onGroupNameCheck}
+                className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
+              >
+                단체명 중복확인 →
+              </button>
+            </div>
+          </FormField>
+          {groupNameCheckResult !== 'none' && (
+            <div className="mt-3 ml-0 sm:ml-44">
+              {groupNameCheckResult === 'available' && (
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">•</span>
+                  <span className="text-green-600 text-sm">사용 가능한 단체명입니다.</span>
+                </div>
+              )}
+              {groupNameCheckResult === 'unavailable' && (
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2">•</span>
+                  <span className="text-red-600 text-sm">이미 사용 중인 단체명입니다. 다른 단체명을 입력해주세요.</span>
+                </div>
+              )}
+              {groupNameCheckResult === 'error' && (
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2">•</span>
+                  <span className="text-red-600 text-sm">단체명 중복확인 중 오류가 발생했습니다. 다시 시도해주세요.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <hr className="border-gray-200" />
         
         {/* 단체 아이디 */}
-        <FormField label="단체 아이디" required>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="단체 아이디를 입력해주세요"
-              value={formData.groupId}
-              onChange={(e) => onInputChange('groupId', e.target.value)}
-              className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
-            <button
-              type="button"
-              onClick={onGroupIdCheck}
-              className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
-            >
-              아이디 확인 →
-            </button>
-          </div>
-        </FormField>
+        <div>
+          <FormField label="단체신청용 ID" required>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="단체신청용 ID를 입력해주세요 (5-20자, 영문/숫자/특문)"
+                value={formData.groupId}
+                onChange={(e) => {
+                  // 5-20자, 영문대소문자/숫자/특문 허용, 한글 불허
+                  const value = e.target.value.replace(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/g, '');
+                  if (value.length <= 20) {
+                    onInputChange('groupId', value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // 한글 입력 방지
+                  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+              <button
+                type="button"
+                onClick={onGroupIdCheck}
+                className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
+              >
+                단체ID중복확인 →
+              </button>
+            </div>
+          </FormField>
+          {formData.groupId && (
+            <div className="mt-2 ml-0 sm:ml-44">
+              <div className="text-xs text-gray-600 space-y-1">
+                <div className="flex items-center">
+                  <span className={`w-2 h-2 rounded-full mr-2 ${formData.groupId.length >= 5 && formData.groupId.length <= 20 ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                  <span className={formData.groupId.length >= 5 && formData.groupId.length <= 20 ? 'text-green-600' : 'text-gray-500'}>
+                    5~20자 입력 ({formData.groupId.length}/20)
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`w-2 h-2 rounded-full mr-2 ${!/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(formData.groupId) ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                  <span className={!/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(formData.groupId) ? 'text-green-600' : 'text-red-600'}>
+                    한글 사용 불가
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="w-2 h-2 rounded-full mr-2 bg-green-500"></span>
+                  <span className="text-green-600">
+                    영문대소문자/숫자/특수문자 사용 가능
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          {groupIdCheckResult !== 'none' && (
+            <div className="mt-3 ml-0 sm:ml-44">
+              {groupIdCheckResult === 'available' && (
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">•</span>
+                  <span className="text-green-600 text-sm">사용 가능한 단체신청용 ID입니다.</span>
+                </div>
+              )}
+              {groupIdCheckResult === 'unavailable' && (
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2">•</span>
+                  <span className="text-red-600 text-sm">이미 사용 중인 단체신청용 ID입니다. 다른 ID를 입력해주세요.</span>
+                </div>
+              )}
+              {groupIdCheckResult === 'error' && (
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2">•</span>
+                  <span className="text-red-600 text-sm">5-20자, 영문/숫자/특문만 입력 가능합니다. 한글은 사용할 수 없습니다.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <hr className="border-gray-200" />
         
         {/* 대표자 성명 */}

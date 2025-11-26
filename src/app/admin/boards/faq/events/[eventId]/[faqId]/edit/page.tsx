@@ -3,62 +3,103 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Button from "@/components/common/Button/Button";
-import TextField from "@/components/common/TextField/TextField";
 import TextEditor from "@/components/common/TextEditor/TextEditor";
-import BoardFileBox from "@/components/admin/boards/BoardFileBox";
-import type { FaqFile } from "@/data/faq/types";
-import { getEventFaqDetail, updateEventFaq } from "@/data/faq/event";
+import { useFaqDetail, useUpdateFaq } from "@/hooks/useFaqs";
 
 export default function Page() {
   const { eventId, faqId } = useParams<{ eventId: string; faqId: string }>();
   const router = useRouter();
 
-  const [title, setTitle] = useState("");
   const [questionContent, setQuestionContent] = useState("");
   const [answerContent, setAnswerContent] = useState("");
-  const [answerFiles, setAnswerFiles] = useState<FaqFile[]>([]); // ✅ 답변 첨부 상태
   const [isLoading, setIsLoading] = useState(false);
 
+  // API에서 FAQ 상세 정보 가져오기 (임시로 목록에서 찾기)
+  const { data: faqDetail, isLoading: detailLoading } = useFaqDetail(faqId);
+  const updateFaqMutation = useUpdateFaq();
+
   useEffect(() => {
-    const it = getEventFaqDetail(String(eventId), Number(faqId));
-    if (it) {
-      setTitle(it.title || "");
-      setQuestionContent(it.question || "");
-      setAnswerContent(it.answer?.content || "");
-      setAnswerFiles(it.answer?.files ?? []); // ✅ 기존 첨부 불러오기
+    if (faqDetail) {
+      // 타입 안전성을 위해 명시적 캐스팅
+      const typedFaqDetail = faqDetail as {
+        id: string;
+        problem: string;
+        solution: string;
+        eventId: string;
+        attachmentUrls?: string[];
+      };
+
+      setQuestionContent(typedFaqDetail.problem);
+      setAnswerContent(typedFaqDetail.solution);
     }
-  }, [eventId, faqId]);
+  }, [faqDetail]);
 
   const handleSave = async () => {
-    if (!title.trim()) return alert("제목을 입력해주세요.");
+    if (!questionContent.trim()) return alert("질문을 입력해주세요.");
+    if (!answerContent.trim()) return alert("답변을 입력해주세요.");
     setIsLoading(true);
     try {
-      updateEventFaq(
-        String(eventId),
-        Number(faqId),
-        {
-          title: title.trim(),
-          question: questionContent,
-          answer: {
-            content: answerContent,
-            files: answerFiles, // ✅ 저장 payload에 포함
-          },
-        },
-        { adminName: "관리자" }
-      );
+      // FormData 생성
+      const formData = new FormData();
+      
+      // FAQ 수정 요청 데이터
+      // HTML 태그 제거 함수
+      const stripHtmlTags = (html: string) => {
+        return html.replace(/<[^>]*>/g, '').trim();
+      };
+
+      const faqUpdate = {
+        problem: stripHtmlTags(questionContent),
+        solution: stripHtmlTags(answerContent),
+        deleteFileUrls: [] // 삭제할 파일 URL (필요시 구현)
+      };
+      
+      formData.append('faqUpdate', JSON.stringify(faqUpdate));
+
+      await updateFaqMutation.mutateAsync({
+        faqId,
+        formData
+      });
+
+      // 캐시 무효화 완료 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       alert("수정되었습니다.");
-      router.push(`/admin/boards/faq/events/${eventId}/${faqId}`); // 수정 후 상세로
+      router.push(`/admin/boards/faq/events/${eventId}/${faqId}`);
+      // 페이지 강제 새로고침으로 최신 데이터 보장
+      setTimeout(() => window.location.reload(), 100);
+    } catch (error) {
+      alert('FAQ 수정에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCancel = () => {
-    if (title || questionContent || answerContent || answerFiles.length) {
+    if (questionContent || answerContent) {
       if (!confirm("작성 중인 내용이 있습니다. 취소할까요?")) return;
     }
     router.back();
   };
+
+  // 로딩 상태 처리
+  if (detailLoading) {
+    return (
+      <div className="flex p-6 flex-col gap-6 mx-20">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="text-lg font-medium text-gray-700">
+              FAQ 정보를 불러오는 중입니다...
+            </div>
+            <div className="text-sm text-gray-500">
+              잠시만 기다려주세요
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex p-6 flex-col gap-6 mx-20">
@@ -67,39 +108,24 @@ export default function Page() {
           취소하기
         </Button>
         <Button tone="primary" variant="solid" size="sm" widthType="pager" onClick={handleSave} disabled={isLoading}>
-          {isLoading ? "저장 중..." : "수정하기"}
+          {isLoading ? "저장 중..." : "저장하기"}
         </Button>
       </div>
 
       <div className="flex gap-6">
         <div className="flex-1 rounded-lg shadow-sm">
           <div className="mb-6 gap-4 flex flex-col">
-            {/* 제목 */}
-            <div className="flex gap-4">
-              <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center"><p>FAQ</p></div>
-              <div className="flex-1">
-                <TextField
-                  type="text"
-                  placeholder="제목을 입력하세요."
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="!h-12 flex-1"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
             {/* 질문 */}
             <div className="flex gap-4">
               <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center"><p>질문</p></div>
               <div className="flex-1">
                 <TextEditor
                   height="200px"
-                  initialContent={questionContent || "<p></p>"}
+                  initialContent={questionContent || ""}
                   showFormatting
                   showFontSize
                   showTextColor
-                  showImageUpload
+                  showImageUpload={false}
                   onChange={setQuestionContent}
                 />
               </div>
@@ -108,28 +134,15 @@ export default function Page() {
             {/* 답변 */}
             <div className="flex gap-4">
               <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center"><p>답변</p></div>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1">
                 <TextEditor
                   height="300px"
-                  initialContent={answerContent || "<p></p>"}
+                  initialContent={answerContent || ""}
                   showFormatting
                   showFontSize
                   showTextColor
-                  showImageUpload
+                  showImageUpload={false}
                   onChange={setAnswerContent}
-                />
-                {/* ✅ 답변 첨부 업로더 (저장 연동됨) */}
-                <BoardFileBox
-                  variant="edit"
-                  title="첨부파일"
-                  files={answerFiles}
-                  onChange={setAnswerFiles}
-                  label="첨부파일 업로드"
-                  maxCount={10}
-                  maxSizeMB={20}
-                  totalMaxMB={200}
-                  multiple
-                  showQuotaText={false}
                 />
               </div>
             </div>

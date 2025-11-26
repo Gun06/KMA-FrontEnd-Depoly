@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { ChevronDown as Caret } from 'lucide-react';
 
-export type Opt = { key: number; label: string };
+export type Opt = { key: string; label: string };
 
 function useOutside(handler: () => void) {
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -27,8 +27,8 @@ export default function EventDropdownPortal({
   placeholder = '대회를 선택해주세요',
   readOnly = false,
 }: {
-  value?: number;
-  onChange: (v?: number) => void;
+  value?: string;
+  onChange: (v?: string) => void;
   options: Opt[];
   placeholder?: string;
   readOnly?: boolean;

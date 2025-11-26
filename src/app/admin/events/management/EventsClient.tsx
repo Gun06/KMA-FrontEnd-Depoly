@@ -3,21 +3,25 @@
 
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import EventTable, { type EventRow } from '@/components/admin/events/EventTable';
+import EventTable, {
+  type EventRow,
+} from '@/components/admin/events/EventTable';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import { useEventsState } from '@/contexts/EventsContext';
 import { MOCK_EVENTS } from '@/data/events';
+import {
+  useAdminEventList,
+  transformAdminEventToEventRow,
+} from '@/services/admin';
 
 type SortKey = 'no' | 'date' | 'title' | 'place' | 'host';
 
 export default function EventsClient({
   initialRows,
-  total,
   initialPage,
   pageSize,
 }: {
   initialRows: EventRow[];
-  total: number;
   initialPage: number;
   pageSize: number;
 }) {
@@ -27,20 +31,42 @@ export default function EventsClient({
 
   // ✅ API 붙기 전까지는 로컬(mock) 전체 목록 사용
   //    나중에 API 붙으면 NEXT_PUBLIC_USE_MOCK=0 으로 바꿔서 서버 페이징으로 전환
-  const USE_LOCAL_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== '0';
+  const USE_LOCAL_MOCK = false; // 임시로 API 데이터 사용하도록 설정
 
-  // base: mock 전체 or SSR 한 페이지
-  const base: EventRow[] = React.useMemo(
-    () => (USE_LOCAL_MOCK ? [...MOCK_EVENTS] : [...initialRows]),
-    // initialRows는 SSR 파라미터라 변경 거의 없음
-    [USE_LOCAL_MOCK, initialRows]
-  );
+  // API에서 이벤트 목록 조회
+  const {
+    data: apiData,
+    isLoading,
+    error,
+  } = useAdminEventList({
+    page: initialPage,
+    size: pageSize,
+  });
+
+  // API 데이터를 EventRow로 변환
+  const apiRows: EventRow[] = React.useMemo(() => {
+    if (!apiData?.content) return [];
+    const transformed = apiData.content.map(transformAdminEventToEventRow);
+
+    return transformed;
+  }, [apiData]);
+
+  // base: mock 전체 or SSR 한 페이지 or API 데이터
+  const base: EventRow[] = React.useMemo(() => {
+    if (USE_LOCAL_MOCK) {
+      return [...MOCK_EVENTS];
+    }
+    if (apiRows.length > 0) {
+      return [...apiRows];
+    }
+    return [...initialRows];
+  }, [USE_LOCAL_MOCK, apiRows, initialRows]);
 
   // base + 컨텍스트(로컬 변경분) 병합 (같은 id는 컨텍스트가 덮어씀)
   const all = React.useMemo(() => {
-    const m = new Map<number, EventRow>();
-    base.forEach((r) => m.set(r.id, r));
-    storeRows.forEach((r) => m.set(r.id, r));
+    const m = new Map<string, EventRow>();
+    base.forEach(r => m.set(String(r.id), r));
+    storeRows.forEach(r => m.set(String(r.id), r));
     return Array.from(m.values());
   }, [base, storeRows]);
 
@@ -52,7 +78,11 @@ export default function EventsClient({
     (search.get('status') as RegStatus | '') || ''
   );
   const [pub, setPub] = React.useState<'' | '공개' | '비공개'>(
-    search.get('pub') === 'open' ? '공개' : search.get('pub') === 'closed' ? '비공개' : ''
+    search.get('pub') === 'open'
+      ? '공개'
+      : search.get('pub') === 'closed'
+        ? '비공개'
+        : ''
   );
   const [page, setPage] = React.useState(
     Number(search.get('page') ?? initialPage) || initialPage
@@ -76,7 +106,7 @@ export default function EventsClient({
     if (q.trim()) {
       const t = q.trim().toLowerCase();
       list = list.filter(
-        (r) =>
+        r =>
           r.title.toLowerCase().includes(t) ||
           r.host.toLowerCase().includes(t) ||
           r.place.toLowerCase().includes(t)
@@ -84,14 +114,15 @@ export default function EventsClient({
     }
 
     // 신청상태
-    if (status) list = list.filter((r) => r.applyStatus === status);
+    if (status) list = list.filter(r => r.applyStatus === status);
 
     // 공개여부
-    if (pub) list = list.filter((r) => (pub === '공개' ? r.isPublic : !r.isPublic));
+    if (pub)
+      list = list.filter(r => (pub === '공개' ? r.isPublic : !r.isPublic));
 
     // 정렬
     list.sort((a, b) => {
-      if (sort === 'no') return b.id - a.id; // 번호=내림차순 id
+      if (sort === 'no') return String(b.id).localeCompare(String(a.id)); // 번호=내림차순 id
 
       if (sort === 'date') {
         const ad = a.date || '0000-00-00';
@@ -105,7 +136,10 @@ export default function EventsClient({
       return 0;
     });
 
-    const totalCount = list.length;
+    // API 데이터를 사용하는 경우 서버의 총 개수 사용, 아니면 로컬 필터링 결과 사용
+    const totalCount = USE_LOCAL_MOCK
+      ? list.length
+      : apiData?.totalElements || 0;
     const start = (page - 1) * pageSize;
     const pageRows = list.slice(start, start + pageSize);
 
@@ -116,7 +150,7 @@ export default function EventsClient({
     })) as EventRow[];
 
     return { rows: withNo, totalCount };
-  }, [all, q, sort, status, pub, page, pageSize]);
+  }, [all, q, sort, status, pub, page, pageSize, USE_LOCAL_MOCK, apiData]);
 
   // ---------- URL 동기화 ----------
   const replaceQuery = (next: Record<string, string | undefined>) => {
@@ -151,14 +185,23 @@ export default function EventsClient({
     setPage(1);
     replaceQuery({
       page: '1',
-      status: s ? (s === '접수중' ? 'ing' : s === '접수마감' ? 'done' : 'none') : '',
+      status: s
+        ? s === '접수중'
+          ? 'ing'
+          : s === '접수마감'
+            ? 'done'
+            : 'none'
+        : '',
     });
   };
 
   const onFilterPublicChange = (v: '' | '공개' | '비공개') => {
     setPub(v);
     setPage(1);
-    replaceQuery({ page: '1', pub: v ? (v === '공개' ? 'open' : 'closed') : '' });
+    replaceQuery({
+      page: '1',
+      pub: v ? (v === '공개' ? 'open' : 'closed') : '',
+    });
   };
 
   const onResetFilters = () => {
@@ -169,6 +212,26 @@ export default function EventsClient({
     setPage(1);
     replaceQuery({ page: '1', q: '', sort: 'date', status: '', pub: '' });
   };
+
+  // 로딩 상태 처리
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
+
+  // 에러 상태 처리
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-red-500">
+          데이터를 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <EventTable
@@ -182,7 +245,7 @@ export default function EventsClient({
       onFilterStatusChange={onFilterStatusChange}
       onFilterPublicChange={onFilterPublicChange}
       onClickRegister={() => router.push('/admin/events/register')}
-      onTitleClick={(r) => router.push(`/admin/events/${r.id}`)}
+      onTitleClick={r => router.push(`/admin/events/${r.id}`)}
       onResetFilters={onResetFilters}
     />
   );

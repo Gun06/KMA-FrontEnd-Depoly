@@ -6,12 +6,9 @@ import {
   UseMutationOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
-import {
-  getAccessToken,
-  clearTokens,
-  getAdminAccessToken,
-  clearAdminTokens,
-} from '@/utils/jwt';
+import { clearTokens, clearAdminTokens } from '@/utils/jwt';
+import { tokenService } from '@/utils/tokenService';
+import { logError, getUserFriendlyMessage } from '@/utils/errorHandler';
 
 /** ====== 설정 ====== */
 const API_BASE_URL_ADMIN = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN ?? '';
@@ -124,7 +121,13 @@ const buildHeaders = (
   // form은 브라우저가 boundary 포함한 Content-Type 자동 설정
 
   if (withAuth) {
-    const token = server === 'admin' ? getAdminAccessToken() : getAccessToken();
+    // 메인은 로컬스토리지에서, 관리자는 기존 서비스 유지
+    let token: string | null = null;
+    if (server === 'admin') {
+      token = tokenService.getAdminAccessToken();
+    } else if (typeof window !== 'undefined') {
+      token = localStorage.getItem('kmaAccessToken');
+    }
     if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   return headers;
@@ -189,13 +192,26 @@ const handleErrorResponse = async (
 ): Promise<never> => {
   const data = await readErrorPayload(res);
 
+  // 에러 로깅
+  logError({ status: res.status, message: res.statusText }, `API ${server}`);
+
   if (res.status === 401) {
-    if (server === 'admin') clearAdminTokens();
-    else clearTokens();
+    // 토큰 만료 시 자동 갱신 시도
+    if (server === 'admin') {
+      // 관리자: 자동 리프레시 시도하지 않음 → 즉시 토큰 정리
+      clearAdminTokens();
+      tokenService.setAdminAccessToken(null);
+    } else {
+      const refreshed = await tokenService.refreshAccessToken();
+      if (!refreshed) {
+        clearTokens();
+        tokenService.setAccessToken(null);
+      }
+    }
   }
 
   // 백엔드의 message를 항상 우선 사용. 폴백은 일반 상태 문자열만 사용
-  const fallback = `HTTP ${res.status}`;
+  const fallback = getUserFriendlyMessage({ status: res.status });
 
   const { message, code, serverHttpStatus, meta } = parseErrorFields(
     data,
@@ -229,24 +245,29 @@ export const request = async <T>(
   const baseUrl = getBaseUrl(server);
   const isAbsoluteEndpoint = /^https?:\/\//i.test(endpoint);
   if (!isAbsoluteEndpoint && !baseUrl) {
-    console.warn('API base URL이 비어 있습니다. 환경변수를 확인하세요.', {
-      server,
-      endpoint,
-    });
+    // 서버 URL이 설정되지 않음
+    throw new Error(`서버 URL이 설정되지 않았습니다: ${server}`);
   }
   const url = isAbsoluteEndpoint ? endpoint : joinUrl(baseUrl, endpoint);
 
   const isFormData =
     typeof FormData !== 'undefined' && body instanceof FormData;
+  // RAW 본문(예: text/plain) 전송용: { __raw: string | Blob | ArrayBufferView }
+  const isRawBody =
+    typeof body === 'object' &&
+    body !== null &&
+    '__raw' in (body as Record<string, unknown>);
 
   const headers = buildHeaders(
     server,
     withAuth,
     isFormData
       ? undefined
-      : method === 'POST' || method === 'PUT' || method === 'PATCH'
-        ? 'json'
-        : undefined
+      : isRawBody
+        ? undefined // RAW 전송 시 Content-Type은 init.headers에서 지정
+        : method === 'POST' || method === 'PUT' || method === 'PATCH'
+          ? 'json'
+          : undefined
   );
   const mergedHeaders = { ...headers, ...(init?.headers ?? {}) };
 
@@ -258,16 +279,72 @@ export const request = async <T>(
       headers: mergedHeaders,
       body: isFormData
         ? (body as FormData)
-        : body != null
-          ? JSON.stringify(body)
-          : undefined,
+        : isRawBody
+          ? ((body as { __raw: BodyInit }).__raw as BodyInit)
+          : body != null
+            ? JSON.stringify(body)
+            : undefined,
       signal: init?.signal, // ← 핵심: 외부 signal 사용
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
     throw new HttpError('네트워크 오류가 발생했습니다.', 0);
   }
 
-  if (!res.ok) await handleErrorResponse(server, res);
+  if (!res.ok) {
+    // 401이면 토큰 갱신 후 원 요청 1회 재시도
+    if (res.status === 401 && withAuth) {
+      let refreshed = false;
+      if (server === 'admin') {
+        refreshed = await tokenService.refreshAdminToken();
+      } else {
+        refreshed = await tokenService.refreshAccessToken();
+      }
+
+      if (refreshed) {
+        // 새로운 토큰으로 헤더 재구성 후 재요청
+        const retryHeaders = buildHeaders(
+          server,
+          withAuth,
+          isFormData
+            ? undefined
+            : method === 'POST' || method === 'PUT' || method === 'PATCH'
+              ? 'json'
+              : undefined
+        );
+        const retryMergedHeaders = {
+          ...retryHeaders,
+          ...(init?.headers ?? {}),
+        };
+
+        let retryRes: Response;
+        try {
+          retryRes = await fetch(url, {
+            ...init,
+            method,
+            headers: retryMergedHeaders,
+            body: isFormData
+              ? (body as FormData)
+              : isRawBody
+                ? ((body as { __raw: BodyInit }).__raw as BodyInit)
+                : body != null
+                  ? JSON.stringify(body)
+                  : undefined,
+            signal: init?.signal,
+          });
+        } catch {
+          throw new HttpError('네트워크 오류가 발생했습니다.', 0);
+        }
+
+        if (!retryRes.ok) await handleErrorResponse(server, retryRes);
+        return parseResponse<T>(retryRes);
+      }
+    }
+
+    await handleErrorResponse(server, res);
+  }
 
   return parseResponse<T>(res);
 };

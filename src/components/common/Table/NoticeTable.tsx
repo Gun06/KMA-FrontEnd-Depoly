@@ -6,14 +6,18 @@ import type { NoticeItem } from './types';
 
 type Props = {
   data: NoticeItem[];
-  onRowClick?: (id: number) => void;
+  onRowClick?: (id: string | number) => void;
   pinLimit?: number;
   numberDesc?: boolean;
   showPinnedBadgeInNo?: boolean;
   pinnedClickable?: boolean;
+  // 페이지네이션을 위한 추가 props
+  currentPage?: number;
+  pageSize?: number;
+  totalElements?: number;
 };
 
-type DisplayRow = NoticeItem & { __displayNo: number | '공지' };
+type DisplayRow = NoticeItem & { __displayNo: number | '공지' | undefined };
 
 export default function NoticeTable({
   data,
@@ -22,33 +26,61 @@ export default function NoticeTable({
   numberDesc = true,
   showPinnedBadgeInNo = true,
   pinnedClickable = true,
+  currentPage = 1,
+  pageSize = 10,
+  totalElements = 0,
 }: Props) {
+
   const rows = useMemo<DisplayRow[]>(() => {
-    const autoPinned = data.map((row) =>
+    // 질문과 답변을 별도 행으로 변환
+    const expandedRows: NoticeItem[] = [];
+    
+    data.forEach((row) => {
+      // 질문 행 추가
+      expandedRows.push(row);
+      
+      // 답변이 있는 경우 답변 행 추가 (권한과 관계없이 모든 답변 표시)
+      if (row.answer) {
+        const answerRow: NoticeItem = {
+          ...row,
+          id: `answer-${row.id}`, // 답변 행의 ID는 고유하게 생성
+          title: `↳ [RE] ${row.title}`, // 화살표와 [RE] 추가
+          category: '답변' as const,
+          author: row.answer.author,
+          date: row.answer.date,
+          // 답변 행은 번호 없음
+          originalQuestionId: row.id, // 원본 질문 ID 저장
+          answerHeaderId: row.answerHeaderId,
+          // 원본 질문의 권한 정보 상속 (답변도 같은 권한을 가짐)
+          canViewContent: row.canViewContent,
+          isAuthor: row.isAuthor,
+          secret: row.secret // 원본 질문의 비밀글 여부 상속
+        };
+        expandedRows.push(answerRow);
+      }
+    });
+
+    const autoPinned = expandedRows.map((row) =>
       row.category === '공지' ? { ...row, pinned: true } : row
     );
     const pinned = autoPinned.filter((r) => r.pinned);
     const effectivePinned = pinLimit ? pinned.slice(0, pinLimit) : pinned;
-    const pinnedIdSet = new Set(effectivePinned.map((r) => r.id));
+    const pinnedIdSet = new Set<string | number>(effectivePinned.map((r) => r.id));
     const nonPinned = autoPinned.filter((r) => !pinnedIdSet.has(r.id));
 
-    const totalNonPinned = nonPinned.length;
-    const idNoPairs = numberDesc
-      ? nonPinned.map((r, idx) => [r.id, totalNonPinned - idx] as const)
-      : nonPinned.map((r, idx) => [r.id, idx + 1] as const);
-
-    const nonPinnedIndexMap = new Map<number, number>(idNoPairs);
+    // 번호는 이미 inquiry/page.tsx에서 계산되어 전달됨
     const sorted = [...effectivePinned, ...nonPinned];
 
     return sorted.map((row) => {
       if (pinnedIdSet.has(row.id)) return { ...row, __displayNo: '공지' as const };
-      const displayNo = nonPinnedIndexMap.get(row.id) ?? 0;
-      return { ...row, __displayNo: displayNo };
+      
+      // __displayNo는 이미 전달받은 값 사용
+      return { ...row, __displayNo: row.__displayNo };
     });
-  }, [data, pinLimit, numberDesc]);
+  }, [data, pinLimit]);
 
   const handleRowKeyDown =
-    (id: number, clickable: boolean) =>
+    (id: string | number, clickable: boolean) =>
     (e: React.KeyboardEvent<HTMLTableRowElement | HTMLLIElement>) => {
       if (!clickable) return;
       if (e.key === 'Enter' || e.key === ' ') {
@@ -88,15 +120,13 @@ export default function NoticeTable({
         const clickable = !(isPinned && !pinnedClickable);
         return (
           <div className="flex min-w-0 items-center gap-2">
-            {!isPinned && row.category && (
+            {!isPinned && row.category && row.category !== '일반' && (
               <CategoryBadge category={row.category} size="xs" />
             )}
             <span
-              className="text-[15px] text-[#0F1113] truncate cursor-pointer hover:underline"
+              className={`text-[15px] text-[#0F1113] truncate ${clickable ? 'cursor-pointer hover:underline' : ''}`}
               title={row.title}
-              onClick={() => clickable && onRowClick?.(row.id)}
-              tabIndex={0}
-              onKeyDown={handleRowKeyDown(row.id, clickable)}
+              onClick={(e) => { if (clickable) { e.stopPropagation(); onRowClick?.(row.id); } }}
             >
               {row.title}
             </span>
@@ -119,18 +149,12 @@ export default function NoticeTable({
       className: "text-[#6B7280] whitespace-nowrap",
     },
     {
-      key: "attachments",
-      header: "첨부",
-      width: 100,
-      align: "center",
-      className: "text-[#6B7280]",
-    },
-    {
       key: "views",
       header: "조회수",
       width: 100,
       align: "center",
       className: "text-[#6B7280]",
+      render: (row) => <span className="font-medium">{row.views.toLocaleString()}</span>,
     },
   ];
 
@@ -144,7 +168,18 @@ export default function NoticeTable({
         headRowClassName="bg-[#3B3F45] text-white text-center"
         zebra={false}
         // 모든 행에 동일한 hover 스타일 적용
-        rowClassName={() => 'hover:bg-[#F8FAFF]'}
+        rowClassName={(row) => {
+          const isPinned = row.__displayNo === '공지';
+          const clickable = !(isPinned && !pinnedClickable);
+          return `hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
+        }}
+        onRowClick={(row) => {
+          const isPinned = row.__displayNo === '공지';
+          const clickable = !(isPinned && !pinnedClickable);
+          if (clickable) {
+            onRowClick?.(row.id);
+          }
+        }}
       />
 
       {/* Mobile */}
@@ -161,28 +196,36 @@ export default function NoticeTable({
                 'px-2 py-3 transition-colors outline-none sm:px-4 active:bg-transparent focus:bg-transparent',
                 // 모든 행에 동일한 스타일 적용
                 'bg-white hover:bg-[#F8FAFF]',
+                clickable ? 'cursor-pointer' : '',
               ].join(' ')}
               onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (clickable) {
+                  onRowClick?.(row.id);
+                }
+              }}
+              onKeyDown={handleRowKeyDown(row.id, clickable)}
             >
               <div className="grid grid-cols-[40px_1fr] gap-3 items-start">
                 <div className="h-6 flex items-center justify-center">
                   <CategoryBadge category={row.category ?? '공지'} size="xs" />
                 </div>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-1.5">
                     <span
-                      className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 cursor-pointer hover:underline"
-                      tabIndex={0}
-                      onClick={() => clickable && onRowClick?.(row.id)}
-                      onKeyDown={handleRowKeyDown(row.id, clickable)}
+                      className={`text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1 ${
+                        row.originalQuestionId ? 'ml-4' : ''
+                      }`}
                       title={row.title}
                     >
                       {row.title}
                     </span>
                   </div>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280]">
+                  <div className={`mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280] ${
+                    row.originalQuestionId ? 'ml-4' : ''
+                  }`}>
                     <span className="shrink-0">{row.author}</span>
                     <span className="opacity-30">·</span>
                     <span className="shrink-0">{row.date}</span>

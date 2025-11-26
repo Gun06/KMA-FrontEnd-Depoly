@@ -1,5 +1,3 @@
-import { RecordCategory } from "@/types/event";
-
 interface RecordFilterBarProps {
   selectedCategory: string;
   selectedGender: string;

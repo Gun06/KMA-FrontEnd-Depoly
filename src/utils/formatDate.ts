@@ -16,7 +16,6 @@ export function formatDate(dateString: string): string {
     
     return `${year}년 ${month}월 ${day}일`;
   } catch (error) {
-    console.error('날짜 포맷팅 오류:', error);
     return dateString;
   }
 }
@@ -39,7 +38,6 @@ export function formatDateShort(dateString: string): string {
     
     return `${year}.${month}.${day}`;
   } catch (error) {
-    console.error('날짜 포맷팅 오류:', error);
     return dateString;
   }
 }

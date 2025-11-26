@@ -9,7 +9,7 @@ interface PostalCodeSearchProps {
 
 declare global {
   interface Window {
-    daum: any
+    daum?: any
   }
 }
 

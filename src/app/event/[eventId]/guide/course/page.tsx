@@ -45,25 +45,7 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
   // API 데이터만 사용
   const imageUrl = eventData?.coursePageImageUrl;
 
-  if (isLoading) {
-    return (
-      <SubmenuLayout 
-        eventId={eventId}
-        breadcrumb={{
-          mainMenu: "대회안내",
-          subMenu: "대회 코스"
-        }}
-      >
-        <div className="container mx-auto px-4 py-4 sm:py-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-            <div className="flex justify-center">
-              <div className="text-gray-500">로딩 중...</div>
-            </div>
-          </div>
-        </div>
-      </SubmenuLayout>
-    );
-  }
+  // 로딩 상태 제거 - 바로 콘텐츠 표시
 
   if (error && !eventData) {
     return (
@@ -105,8 +87,6 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
             <h3 className="text-lg sm:text-xl font-extrabold text-gray-800 mb-2 sm:mb-3 text-left">풀코스 안내</h3>
             <div className="text-gray-700 space-y-2 sm:space-y-3 text-left">
               <p className="text-sm sm:text-base leading-relaxed">
-                출발지에서 심판의 신호에 따라 배정받은 출발그룹별로 순차적으로 출발합니다.
-                <br />
                 출발그룹은 최고기록을 바탕으로 배정되었으며 플래카드의 유도 지시에 따라 순서대로 자신의 출발그룹별 지점에 위치해 주시기 바랍니다.
               </p>
             </div>

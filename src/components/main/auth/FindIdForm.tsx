@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Button from '@/components/common/Button/Button'
 import { authService } from '@/services/auth'
 import logoImage from '@/assets/images/main/logo.jpg'
+import { handlePhoneInput } from '@/utils/phoneFormat'
 
 export default function FindIdForm() {
   const router = useRouter()
@@ -32,6 +33,21 @@ export default function FindIdForm() {
     if (error) {
       setError(null)
     }
+  }
+
+  const handlePhoneChange = (value: string) => {
+    handlePhoneInput(value, (formattedValue) => {
+      setFormData(prev => ({ ...prev, phone: formattedValue }))
+      
+      // 필드별 에러 메시지 초기화
+      if (errors.phone) {
+        setErrors(prev => ({ ...prev, phone: undefined }))
+      }
+      // 전역 에러 메시지 초기화
+      if (error) {
+        setError(null)
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,7 +107,6 @@ export default function FindIdForm() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '아이디 찾기에 실패했습니다.'
       setError(errorMessage)
-      console.error('Find ID failed:', err)
     } finally {
       setIsLoading(false)
     }
@@ -268,7 +283,7 @@ export default function FindIdForm() {
                       type="tel"
                       placeholder="휴대폰 번호 (예: 010-1234-5678)"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
                     />
                     {errors.phone && <p className="text-xs text-kma-red mt-1">{errors.phone}</p>}

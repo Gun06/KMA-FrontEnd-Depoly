@@ -6,7 +6,7 @@ import Button from "@/components/common/Button/Button";
 import FilterBar from "@/components/common/filters/FilterBar";
 import { PRESETS } from "@/components/common/filters/presets";
 import FaqTable from "@/components/admin/boards/faq/FaqTable";
-import type { Faq } from "@/data/faq/types";
+import type { Faq } from "@/types/faq";
 
 type Sort = "new" | "old" | "hit" | "name";
 type SearchMode = "name" | "post";
@@ -18,7 +18,12 @@ type Props = {
     opt: { q: string; sort: Sort; searchMode: SearchMode }
   ) => { rows: Faq[]; total: number };
   linkForRow: (row: Faq) => string;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
+  onSearch?: (q: string, searchMode: SearchMode) => void;
+  onReset?: () => void;
+  onPageChange?: (page: number) => void;
+  currentPage?: number; // 현재 페이지 번호를 외부에서 받음
+  isLoading?: boolean; // 로딩 상태
   title: React.ReactNode;
   headerButton?: {
     label: string;
@@ -37,9 +42,14 @@ export default function FaqListPage({
   provider,
   linkForRow,
   onDelete,
+  onSearch,
+  onReset,
+  onPageChange,
+  currentPage,
+  isLoading = false,
   title,
   headerButton,
-  presetKey = "관리자 / 대회_문의사항",
+  presetKey = "관리자 / FAQ",
   pageSize = DEFAULT_PAGE_SIZE,
   createHref,
 }: Props) {
@@ -67,8 +77,7 @@ export default function FaqListPage({
   const preset = PRESETS[presetKey]?.props;
   const norm = (s?: string) => (s ?? "").replace(/\s/g, "");
 
-  const handleDelete = (id: number) => {
-    if (!confirm("삭제하시겠습니까?")) return;
+  const handleDelete = (id: string) => {
     onDelete(id);
     const newTotal = Math.max(0, total - 1);
     const lastPage = Math.max(1, Math.ceil(newTotal / pageSize));
@@ -97,12 +106,16 @@ export default function FaqListPage({
             onSearch={(value) => {
               setQ(value);
               setPage(1);
+              setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
+              onSearch?.(value, searchMode);
             }}
             onReset={() => {
               setQ("");
               setSort("new");
               setSearchMode("post");
               setPage(1);
+              setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
+              onReset?.();
             }}
           />
 
@@ -122,8 +135,12 @@ export default function FaqListPage({
       <FaqTable
         rows={rows}
         linkForRow={linkForRow}
-        pagination={{ page, pageSize, total, onChange: setPage, align: "center" }}
+        pagination={{ page: currentPage || page, pageSize, total, onChange: (newPage) => {
+          setPage(newPage);
+          onPageChange?.(newPage);
+        }, align: "center" }}
         onDelete={handleDelete}
+        isLoading={isLoading}
       />
     </div>
   );

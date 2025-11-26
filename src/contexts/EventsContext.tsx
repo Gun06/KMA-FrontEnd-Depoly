@@ -7,7 +7,7 @@ import type { EventRow } from '@/components/admin/events/EventTable';
 type EventsState = {
   rows: EventRow[];
   /** ✅ 폼 전체 스냅샷 저장소: id -> buildApiBody() 결과 그대로 */
-  forms: Record<number, unknown>;
+  forms: Record<string, unknown>; // number에서 string으로 변경 (UUID 지원)
 };
 
 type EventsActions = {
@@ -15,12 +15,12 @@ type EventsActions = {
   /** 있으면 업데이트, 없으면 추가 */
   upsertOne: (row: EventRow) => void;
   /** (하위호환) 부분 업데이트 — 없으면 최소 정보로 추가 */
-  updateOne: (id: number, patch: Partial<EventRow>) => void;
-  removeOne: (id: number) => void;
+  updateOne: (id: string, patch: Partial<EventRow>) => void; // number에서 string으로 변경
+  removeOne: (id: string) => void; // number에서 string으로 변경
   addOne: (row: EventRow) => void;
   /** ✅ 폼 스냅샷 저장/읽기 */
-  saveForm: (id: number, form: unknown) => void;
-  clearForm: (id: number) => void;
+  saveForm: (id: string, form: unknown) => void; // number에서 string으로 변경
+  clearForm: (id: string) => void; // number에서 string으로 변경
 };
 
 // mainBannerColor용 타입
@@ -41,10 +41,27 @@ const MainBannerContext = createContext<MainBannerContextType | undefined>(
 const LS_KEY = 'events_ctx_v1';
 const MAIN_BANNER_COLOR_KEY = 'main_banner_color';
 
-export function EventsProvider({ children }: { children: ReactNode }) {
+interface EventsProviderProps {
+  children: ReactNode;
+  initialMainBannerColor?: string | null;
+}
+
+export function EventsProvider({ children, initialMainBannerColor = null }: EventsProviderProps) {
+  const normalizedInitialColor =
+    typeof initialMainBannerColor === 'string' && initialMainBannerColor.length > 0
+      ? initialMainBannerColor
+      : null;
   const [rows, setRows] = React.useState<EventRow[]>([]);
-  const [forms, setForms] = React.useState<Record<number, unknown>>({});
-  const [mainBannerColor, setMainBannerColor] = useState<string | null>(null);
+  const [forms, setForms] = React.useState<Record<string, unknown>>({}); // number에서 string으로 변경
+  const [mainBannerColor, setMainBannerColor] = useState<string | null>(() => {
+    if (normalizedInitialColor) return normalizedInitialColor;
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(MAIN_BANNER_COLOR_KEY);
+    } catch {
+      return null;
+    }
+  });
 
   // load
   React.useEffect(() => {
@@ -55,16 +72,23 @@ export function EventsProvider({ children }: { children: ReactNode }) {
         if (parsed?.rows) setRows(parsed.rows);
         if (parsed?.forms) setForms(parsed.forms);
       }
-      
+
       // mainBannerColor도 localStorage에서 로드
       const savedColor = localStorage.getItem(MAIN_BANNER_COLOR_KEY);
       if (savedColor) {
-        setMainBannerColor(savedColor);
+        setMainBannerColor(prev => prev ?? savedColor);
       }
     } catch {
       /* noop */
     }
   }, []);
+
+  // 초기값이 갱신되면 컨텍스트도 함께 갱신
+  React.useEffect(() => {
+    if (normalizedInitialColor && normalizedInitialColor !== mainBannerColor) {
+      setMainBannerColor(normalizedInitialColor);
+    }
+  }, [normalizedInitialColor, mainBannerColor]);
 
   // save
   React.useEffect(() => {
@@ -93,7 +117,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     /** ✅ 업서트: 같은 id 있으면 병합/교체, 없으면 추가 */
     upsertOne: row =>
       setRows(prev => {
-        const idx = prev.findIndex(r => r.id === row.id);
+        const idx = prev.findIndex(r => String(r.id) === String(row.id));
         if (idx >= 0) {
           const next = [...prev];
           next[idx] = { ...next[idx], ...row };
@@ -104,7 +128,7 @@ export function EventsProvider({ children }: { children: ReactNode }) {
     /** 하위호환: 부분 패치. 없으면 최소 정보로 추가(가능하면 upsertOne을 사용 권장) */
     updateOne: (id, patch) =>
       setRows(prev => {
-        const idx = prev.findIndex(r => r.id === id);
+        const idx = prev.findIndex(r => String(r.id) === String(id));
         if (idx >= 0) {
           const next = [...prev];
           next[idx] = { ...next[idx], ...patch };

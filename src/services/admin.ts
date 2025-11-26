@@ -1,5 +1,16 @@
 'use client';
 
+import { useGetQuery } from '@/hooks/useFetch';
+import { authService } from '@/services/auth';
+import type {
+  AdminEventListResponse,
+  AdminEventListParams,
+  AdminEventItem,
+  EventStatus,
+} from '@/types/Admin';
+import type { EventRow } from '@/components/admin/events/EventTable';
+import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
+
 export interface AdminLoginCredentials {
   account: string;
   password: string;
@@ -14,106 +25,69 @@ export interface AdminLoginResult {
 
 export const adminAuthService = {
   async login(credentials: AdminLoginCredentials): Promise<AdminLoginResult> {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN;
-    if (!API_BASE_URL) {
-      throw new Error('API_BASE_URL_ADMIN 환경 변수가 설정되지 않았습니다.');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        account: credentials.account,
-        password: credentials.password,
-      }),
+    const res = await authService.adminLogin({
+      account: credentials.account,
+      password: credentials.password,
     });
-
-    if (!response.ok) {
-      // 서버 페이로드의 message/코드 등을 보존하여 HttpError 유사 형태로 throw
-      let payload: unknown = undefined;
-      let message = `HTTP ${response.status}`;
-      let code: string | undefined;
-      let httpStatus: string | undefined;
-      let meta: unknown | undefined;
-
-      try {
-        const ct = (response.headers.get('content-type') || '').toLowerCase();
-        if (ct.includes('json')) {
-          payload = await response.clone().json();
-        } else {
-          const text = await response.text();
-          try {
-            payload = JSON.parse(text);
-          } catch {
-            payload = text;
-          }
-        }
-
-        if (payload && typeof payload === 'object') {
-          const obj = payload as {
-            message?: unknown;
-            code?: unknown;
-            httpStatus?: unknown;
-            meta?: unknown;
-          };
-          if (typeof obj.message === 'string' && obj.message.trim())
-            message = obj.message;
-          if (typeof obj.code === 'string') code = obj.code;
-          if (typeof obj.httpStatus === 'string') httpStatus = obj.httpStatus;
-          if ('meta' in obj) meta = obj.meta;
-        } else if (typeof payload === 'string' && payload.trim()) {
-          message = payload;
-        }
-      } catch {
-        // ignore
-      }
-
-      const error = new Error(message) as Error & {
-        status: number;
-        data?: unknown;
-        code?: string;
-        serverHttpStatus?: string;
-        meta?: unknown;
-        response?: {
-          status: number;
-          data?: unknown;
-          message: string;
-          code?: string;
-          httpStatus?: string;
-          meta?: unknown;
-        };
-      };
-      error.status = response.status;
-      error.data = payload;
-      error.code = code;
-      error.serverHttpStatus = httpStatus;
-      error.meta = meta;
-      error.response = {
-        status: response.status,
-        data: payload,
-        message,
-        code,
-        httpStatus,
-        meta,
-      };
-      throw error;
-    }
-
-    const accessToken =
-      response.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
-      undefined;
-    const refreshToken =
-      response.headers.get('refreshtoken')?.replace(/^Bearer\s+/i, '') ||
-      undefined;
-
     return {
-      success: true,
-      message: '로그인 성공',
-      accessToken,
-      refreshToken,
+      success: res.success,
+      message: res.message,
+      accessToken: res.accessToken,
+      refreshToken: res.refreshToken,
     };
   },
 };
+
+// API 이벤트 상태를 프론트엔드 상태로 변환
+function mapEventStatusToRegStatus(eventStatus: EventStatus): RegStatus {
+  switch (eventStatus) {
+    case 'OPEN':
+      return '접수중';
+    case 'CLOSED':
+      return '접수마감';
+    case 'PENDING':
+    default:
+      return '비접수';
+  }
+}
+
+// API 데이터를 EventRow로 변환
+export function transformAdminEventToEventRow(
+  apiEvent: AdminEventItem
+): EventRow {
+  // UUID를 그대로 사용 (문자열 ID)
+  const eventId = apiEvent.id;
+
+  return {
+    id: eventId, // EventRow의 id가 이제 string 타입이므로 타입 캐스팅 불필요
+    date: apiEvent.startDate.split('T')[0], // ISO 8601에서 날짜 부분만 추출 (YYYY-MM-DD)
+    title: apiEvent.nameKr,
+    place: apiEvent.region,
+    host: apiEvent.host,
+    applyStatus: mapEventStatusToRegStatus(apiEvent.eventStatus),
+    isPublic: apiEvent.visibleStatus,
+  };
+}
+
+// 관리자 이벤트 목록 조회 훅
+export function useAdminEventList(params: AdminEventListParams = {}) {
+  const { page = 1, size = 20 } = params;
+
+  const queryParams = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+
+  return useGetQuery<AdminEventListResponse>(
+    ['admin', 'events', 'list', page, size],
+    `/api/v1/event?${queryParams.toString()}`,
+    'admin',
+    {
+      staleTime: 0, // 캐시 즉시 만료 (항상 최신 데이터 가져오기)
+      gcTime: 5 * 60 * 1000, // 5분 후 가비지 컬렉션
+      refetchOnWindowFocus: true, // 윈도우 포커스 시 리페치
+      refetchOnMount: true, // 컴포넌트 마운트 시 리페치
+    },
+    true // withAuth = true
+  );
+}

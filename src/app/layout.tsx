@@ -2,6 +2,7 @@ import '@/styles/globals.css';
 import 'react-toastify/dist/ReactToastify.css';
 import type { Metadata, Viewport } from 'next';
 import QueryProvider from '@/components/providers/QueryProvider';
+import AuthInitializer from '@/components/AuthInitializer';
 
 export const metadata: Metadata = {
   title: {
@@ -40,7 +41,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="font-pretendard">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <AuthInitializer />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

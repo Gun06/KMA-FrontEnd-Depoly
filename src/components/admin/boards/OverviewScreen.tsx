@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button/Button";
 import ApplicantEventListTable, { type ApplicantListRow } from "@/components/admin/applications/ApplicantEventListTable";
-import type { NoticeFilter } from "@/data/notice/types";
+import type { NoticeFilter } from "@/types/notice";
 
 type Fetcher = (
   page: number,

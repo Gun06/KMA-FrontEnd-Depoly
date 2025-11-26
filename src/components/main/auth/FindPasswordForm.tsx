@@ -102,7 +102,6 @@ export default function FindPasswordForm() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '비밀번호 찾기에 실패했습니다.'
       setError(errorMessage)
-      console.error('Find Password failed:', err)
     } finally {
       setIsLoading(false)
     }
@@ -157,7 +156,6 @@ export default function FindPasswordForm() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '비밀번호 재설정에 실패했습니다.'
       setError(errorMessage)
-      console.error('Reset Password failed:', err)
     } finally {
       setIsLoading(false)
     }

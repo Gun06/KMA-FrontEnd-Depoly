@@ -79,7 +79,6 @@ export default function SignupStep3Page() {
 
   // 도메인 선택 시 직접 입력 모드 해제
   const handleDomainSelection = (domain: string) => {
-    console.log('도메인 선택:', { domain, 이전_isCustomDomain: isCustomDomain })
     setIsCustomDomain(false)
     handleInputChange('emailDomain', domain)
     setShowEmailDomainDropdown(false)
@@ -94,7 +93,6 @@ export default function SignupStep3Page() {
 
   const handleCustomDomainToggle = () => {
     const newCustomDomain = !isCustomDomain
-    console.log('직접 입력 모드 전환:', { 이전: isCustomDomain, 현재: newCustomDomain })
     setIsCustomDomain(newCustomDomain)
     
     // 직접 입력 모드로 전환 시 도메인 값 초기화

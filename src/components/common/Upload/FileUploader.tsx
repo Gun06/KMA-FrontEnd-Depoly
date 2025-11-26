@@ -79,7 +79,7 @@ export default function FileUploader({
   const hasItems = items.length > 0;
 
   return (
-    <div className={className}>
+    <div className={cn("w-full min-w-0", className)}>
       {/* 버튼 + 설명 (single 모드: 업로드 후 버튼/헬퍼 숨김) */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
         {!(single && hasItems) && (
@@ -125,10 +125,10 @@ export default function FileUploader({
           );
 
           return (
-            <div key={it.id} className={rowCls}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 text-[#0F1113]">
-                  <span className="block truncate max-w-[60vw] sm:max-w-none text-[15px]">
+            <div key={it.id} className={cn(rowCls, "w-full min-w-0")}>
+              <div className="flex items-center justify-between gap-3 min-w-0 w-full">
+                <div className="min-w-0 flex-1 text-[#0F1113] overflow-hidden">
+                  <span className="block truncate text-[15px] w-full" title={it.name}>
                     {it.name}
                   </span>
                   <span className="ml-0.5 text-[12px] text-[#6B7280]">[{it.sizeMB}MB]</span>
@@ -136,7 +136,7 @@ export default function FileUploader({
 
                 <button
                   type="button"
-                  className="shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727]"
+                  className="shrink-0 flex-shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
                   onClick={() => removeOne(it.id)}
                   aria-label={`${it.name} 삭제`}
                 >

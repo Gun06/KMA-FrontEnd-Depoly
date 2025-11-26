@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
+import { getIndividualRecord, type IndividualRecordRequest } from "@/services/record";
 
 type InquiryType = "개인" | "단체";
 
@@ -45,6 +46,7 @@ export default function RecordInquiryForm() {
     birthYear: "",
     birthMonth: "",
     birthDay: "",
+    phone: "",
     password: "",
   });
 
@@ -55,6 +57,26 @@ export default function RecordInquiryForm() {
     }));
   };
 
+  // 전화번호 포맷팅 함수
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/\D/g, '');
+    
+    // 길이에 따라 포맷팅
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    handleInputChange("phone", formatted);
+  };
+
   const handleTabChange = (type: InquiryType) => {
     if (type === "개인") {
       router.push(`/event/${eventId}/records`);
@@ -63,7 +85,11 @@ export default function RecordInquiryForm() {
     }
   };
 
-  const handleSubmit = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isErrorVisible, setIsErrorVisible] = useState(false);
+
+  const handleSubmit = async () => {
     // 폼 유효성 검사
     if (!formData.name.trim()) {
       alert('이름을 입력해주세요.');
@@ -73,25 +99,63 @@ export default function RecordInquiryForm() {
       alert('생년월일을 모두 선택해주세요.');
       return;
     }
+    if (!formData.phone.trim()) {
+      alert('전화번호를 입력해주세요.');
+      return;
+    }
     if (!formData.password.trim()) {
       alert('비밀번호를 입력해주세요.');
       return;
     }
 
-    // 폼 데이터를 쿼리 파라미터로 전달
-    const searchParams = new URLSearchParams({
-      name: formData.name,
-      birthDate: `${formData.birthYear}.${formData.birthMonth}.${formData.birthDay}`,
-      password: formData.password
-    });
+    setIsLoading(true);
+    setError(null);
+    setIsErrorVisible(false);
     
-    console.log('Form submitted:', formData);
-    router.push(`/event/${eventId}/records/result?${searchParams.toString()}`);
+    try {
+      // API 요청 데이터 구성
+      const requestData: IndividualRecordRequest = {
+        name: formData.name,
+        phNum: formData.phone,
+        birth: `${formData.birthYear}-${formData.birthMonth}-${formData.birthDay}`,
+        eventPw: formData.password
+      };
+
+      // API 호출
+      const result = await getIndividualRecord(eventId, requestData);
+      
+      // 결과를 쿼리 파라미터로 전달하여 결과 페이지로 이동
+      const searchParams = new URLSearchParams({
+        name: result.name,
+        birth: result.birth,
+        course: result.course,
+        number: result.number.toString(),
+        resultTime: JSON.stringify(result.resultTime),
+        orgName: result.orgName,
+        resultId: result.resultId,
+        eventId: result.eventId
+      });
+      
+      router.push(`/event/${eventId}/records/result?${searchParams.toString()}`);
+    } catch (error) {
+      setError('개인 기록 조회에 실패했습니다. 정보를 다시 입력해주세요.');
+      setIsErrorVisible(true);
+      
+      // 3초 후 에러 메시지 자동 제거 (스무스하게)
+      setTimeout(() => {
+        setIsErrorVisible(false);
+        // 애니메이션 완료 후 에러 메시지 제거
+        setTimeout(() => {
+          setError(null);
+        }, 300);
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePasswordFind = () => {
     // 비밀번호 찾기 로직
-    console.log('Password find clicked');
   };
 
   const years = Array.from({ length: 100 }, (_, i) => 2025 - i);
@@ -269,6 +333,23 @@ export default function RecordInquiryForm() {
         {/* 구분선 */}
         <hr className="border-gray-200" />
 
+        {/* 전화번호 */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+          <label className="w-full sm:w-24 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
+            전화번호
+          </label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            placeholder="010-1234-5678"
+            className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+          />
+        </div>
+
+        {/* 구분선 */}
+        <hr className="border-gray-200" />
+
         {/* 비밀번호 */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
           <label className="w-full sm:w-24 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
@@ -292,11 +373,30 @@ export default function RecordInquiryForm() {
         </div>
       </div>
 
-      {/* 제출 버튼 */}
+      {/* 에러 메시지 */}
+      {error && (
+        <div className={`mt-4 p-4 bg-red-50 border border-red-200 rounded-lg transition-all duration-300 ease-in-out ${
+          isErrorVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
+        }`}>
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 제출 버튼 - 비활성화 */}
       <div className="mt-6 sm:mt-8 text-center">
         <button
           onClick={handleSubmit}
-          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-base sm:text-lg"
+          disabled
+          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 font-medium text-base sm:text-lg"
         >
           다음
         </button>

@@ -1,20 +1,18 @@
 // app/admin/events/[eventId]/page.tsx
-import Client from "./Client";
-import { getEventById } from "@/data/events";
-import { rowToPrefill } from "@/data/eventPrefill";
-import { notFound } from "next/navigation";
+import Client from './Client';
+import { notFound } from 'next/navigation';
 
 export const dynamicParams = true;
 // (선택) 정적 캐싱 방지하고 항상 최신 컨텍스트로 보이고 싶다면:
 // export const dynamic = "force-dynamic";
 
 export default function Page({ params }: { params: { eventId: string } }) {
-  const id = Number(params.eventId);
-  if (!Number.isFinite(id) || id <= 0) notFound();
+  const id = params.eventId; // eventId를 그대로 사용 (UUID 또는 숫자 ID)
 
-  // 🔹 SSR 더미에서만 시도 → 없으면 비워서 Client에 넘김(컨텍스트가 채울 것)
-  const row = getEventById(id) || null;
-  const prefill = row ? (rowToPrefill(row) as any) : ({} as any);
+  // 빈 문자열이나 잘못된 형식만 체크
+  if (!id || id.trim() === '') {
+    notFound();
+  }
 
-  return <Client eventId={id} prefill={prefill} />;
+  return <Client eventId={id} />;
 }

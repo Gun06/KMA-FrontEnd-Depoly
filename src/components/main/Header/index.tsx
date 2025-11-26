@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import logoImage from '@/assets/images/main/logo.jpg';
 import searchIcon from '@/assets/icons/main/search.svg';
 import cartIcon from '@/assets/icons/main/cart.svg';
@@ -12,6 +13,9 @@ import menuIcon from '@/assets/icons/main/menu.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoints } from '@/hooks/useMediaQuery';
 import { useAuthStore } from '@/store/authStore';
+import { tokenService } from '@/utils/tokenService';
+import { authService } from '@/services/auth';
+import { navigationGuard } from '@/utils/navigationGuard';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -54,6 +58,7 @@ const subMenus: Record<string, SubMenu> = {
     items: [
       { label: '공지사항', href: '/notice/notice' },
       { label: '문의사항', href: '/notice/inquiry' },
+      { label: 'FAQ', href: '/notice/faq' },
     ],
   },
   쇼핑몰: {
@@ -85,7 +90,24 @@ const dropdownVariants = {
 export default function Header() {
   // useBreakpoints 훅을 사용하여 세밀한 반응형 감지
   const { isCustom } = useBreakpoints();
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn, user, logout, accessToken, hasHydrated } = useAuthStore();
+  const router = useRouter();
+
+  // Hydration mismatch 방지: 클라이언트 마운트 후에만 토큰/스토어 기반 판별
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 전역 스토어 + 토큰 기반으로 로그인 상태 판별 (user가 있을 때만 로그인 UI 노출)
+  const actualIsLoggedIn =
+    mounted &&
+    ((typeof window !== 'undefined' &&
+      !!localStorage.getItem('kmaAccessToken')) ||
+      !!accessToken ||
+      isLoggedIn) &&
+    !!user;
+
 
   // 모든 상태를 하나의 객체로 통합
   const [state, setState] = useState<HeaderState>({
@@ -290,7 +312,7 @@ export default function Header() {
                 ↗
               </span>
             </a>
-            {isLoggedIn ? (
+            {actualIsLoggedIn ? (
               <div className="flex items-center space-x-3">
                 <Image
                   src={userIcon}
@@ -303,7 +325,25 @@ export default function Header() {
                   {user?.account || '회원'} 님
                 </span>
                 <button
-                  onClick={() => logout()}
+                  onClick={async () => {
+                    const canNavigate = navigationGuard.startNavigation();
+                    if (!canNavigate) return;
+
+                    try {
+                      // 통합 로그아웃 처리
+                      await authService.logout();
+
+                      // 브로드캐스트로 다른 탭에 로그아웃 알림
+                      tokenService.broadcastLogout();
+
+                      // 홈으로 리다이렉트
+                      await navigationGuard.safeNavigate(() => {
+                        router.push('/');
+                      }, 100);
+                    } catch (error) {
+                      navigationGuard.endNavigation();
+                    }
+                  }}
                   className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
                   로그아웃
@@ -313,10 +353,14 @@ export default function Header() {
               <a
                 href="/login"
                 className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   if (state.subMenuOpen || state.searchOpen) {
                     updateState({ subMenuOpen: null, searchOpen: false });
                   }
+                  // 클라이언트에서만 returnUrl 설정
+                  const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
+                  window.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
                 }}
               >
                 <Image
@@ -643,15 +687,16 @@ export default function Header() {
                   </li>
                 ))}
                 <li className="px-4 py-3 flex justify-end items-center gap-3 border-t border-gray-200">
-                  {isLoggedIn ? (
+                  {actualIsLoggedIn ? (
                     <>
                       <span className="text-sm text-gray-800 whitespace-nowrap">
                         {user?.account || '회원'} 님
                       </span>
                       <button
                         className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 transition-colors"
-                        onClick={() => {
-                          logout();
+                        onClick={async () => {
+                          await authService.logout();
+                          tokenService.broadcastLogout();
                           updateState({ mobileOpen: false });
                         }}
                       >

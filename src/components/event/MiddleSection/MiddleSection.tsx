@@ -21,23 +21,59 @@ interface MiddleSectionProps {
 }
 
 export default function MiddleSection({ 
-  eventId = 'marathon2025',
+  eventId,
   className = '',
   eventInfo: propEventInfo
 }: MiddleSectionProps) {
-  const [eventInfo, setEventInfo] = useState<MainPageImagesInfo | null>(propEventInfo || null);
+  // SSR/CSR 일치를 위해 초기 상태를 null로 설정
+  const [eventInfo, setEventInfo] = useState<MainPageImagesInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // API에서 이벤트 정보 가져오기
+  // 캐시된 데이터를 가져오는 함수
+  const getCachedEventInfo = (): MainPageImagesInfo | null => {
+    if (typeof window === 'undefined' || !eventId) return null;
+    try {
+      const raw = localStorage.getItem(`hero_main_${eventId}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.data || null;
+    } catch { return null; }
+  };
+
+  // 컴포넌트 마운트 후 데이터 로드
   useEffect(() => {
-    if (propEventInfo || !eventId) return;
+    setIsMounted(true);
+    if (propEventInfo) {
+      setEventInfo(propEventInfo);
+    } else {
+      const cached = getCachedEventInfo();
+      if (cached) {
+        setEventInfo(cached);
+      }
+    }
+  }, [eventId, propEventInfo]);
+
+  // API에서 이벤트 정보 가져오기 (마운트 후 캐시가 없을 때만)
+  useEffect(() => {
+    if (!isMounted || propEventInfo || !eventId) return;
 
     const fetchEventInfo = async () => {
+      // 캐시가 있으면 로딩하지 않음
+      if (getCachedEventInfo()) return;
+      
       setIsLoading(true);
       setError(null);
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+        
+        // 환경 변수 체크
+        if (!API_BASE_URL) {
+          setError('API 서버 설정이 필요합니다.');
+          return;
+        }
+        
         const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/mainpage-images`;
 
         const response = await fetch(API_ENDPOINT);
@@ -45,33 +81,33 @@ export default function MiddleSection({
         if (response.ok) {
           const data = await response.json();
           setEventInfo(data);
+          // 캐시에 저장
+          try {
+            localStorage.setItem(`hero_main_${eventId}`, JSON.stringify({ data, ts: Date.now() }));
+          } catch {}
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
-        console.error('이벤트 정보를 가져오는데 실패했습니다:', error);
-        setError('이벤트 정보를 불러올 수 없습니다.');
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          setError('API 서버에 연결할 수 없습니다.');
+        } else {
+          setError('이벤트 정보를 불러올 수 없습니다.');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchEventInfo();
-  }, [eventId, propEventInfo]);
+  }, [eventId, propEventInfo, isMounted]);
 
   // 이미지 우선순위: API 데이터 > 기본 이미지
-  const desktopImage = eventInfo?.mainOutlinePcImageUrl || middleImage;
-  const mobileImage = eventInfo?.mainOutlineMobileImageUrl || middleMobileImage;
+  // SSR/CSR 일치를 위해 마운트 전에는 기본 이미지만 사용
+  const desktopImage = (isMounted && eventInfo?.mainOutlinePcImageUrl) || middleImage;
+  const mobileImage = (isMounted && eventInfo?.mainOutlineMobileImageUrl) || middleMobileImage;
 
-  if (isLoading) {
-    return (
-      <section className={`relative w-full overflow-hidden ${className}`}>
-        <div className="relative w-full min-h-[200px] flex items-center justify-center bg-gray-100">
-          <div className="text-gray-500">로딩 중...</div>
-        </div>
-      </section>
-    );
-  }
+  // 로딩 상태를 표시하지 않음 - 캐시된 데이터를 즉시 사용
 
   if (error && !eventInfo) {
     return (

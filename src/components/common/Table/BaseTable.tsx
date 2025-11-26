@@ -24,6 +24,7 @@ type Props<T> = {
   rowClassName?: (row: T, index: number) => string | undefined;
   zebra?: boolean;
   minWidth?: number | string;
+  onRowClick?: (row: T) => void;
 };
 
 export default function BaseTable<T>({
@@ -34,6 +35,7 @@ export default function BaseTable<T>({
   rowClassName,
   zebra = false,
   minWidth,
+  onRowClick,
 }: Props<T>) {
   const thAlign = (a?: "left" | "center" | "right") =>
     a === "left" ? "text-left" : a === "right" ? "text-right" : "text-center";
@@ -55,7 +57,7 @@ export default function BaseTable<T>({
                 scope="col"
                 style={{ width: c.width }}
                 className={clsx(
-                  "h-12 px-3 lg:px-4 font-medium",
+                  "h-12 px-2.5 lg:px-3.5 font-medium",
                   // ✅ 헤더는 기본 '가운데'. 필요하면 column.headerAlign으로 개별 지정
                   thAlign(c.headerAlign ?? "center"),
                   c.headerClassName
@@ -81,21 +83,39 @@ export default function BaseTable<T>({
                 className={clsx(
                   "border-b border-[#F1F3F5] text-center outline-none hover:bg-[#F8FAFF] active:bg-transparent focus:bg-transparent",
                   zebraBg,
-                  rowClassName?.(row, idx)
+                  rowClassName?.(row, idx),
+                  onRowClick ? "cursor-pointer" : ""
                 )}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={(e) => {
+                  // 인풋 필드나 편집 가능한 요소는 이벤트 차단하지 않음
+                  const target = e.target as HTMLElement;
+                  if (target.closest('input, textarea, select, [data-stop-bubble="true"]')) {
+                    return;
+                  }
+                  e.preventDefault();
+                }}
+                onClick={(e) => {
+                  // 인풋 필드나 편집 가능한 요소는 이벤트 차단하지 않음
+                  const target = e.target as HTMLElement;
+                  if (target.closest('input, textarea, select, [data-stop-bubble="true"]')) {
+                    return;
+                  }
+                  if (onRowClick) {
+                    onRowClick(row);
+                  }
+                }}
               >
                 {columns.map((c, ci) => (
                   <td
                     key={String(c.key) + ci}
                     className={clsx(
-                      "px-3 lg:px-4 py-3 text-[14px]",
+                      "px-2.5 lg:px-3.5 py-3 text-[14px]",
                       // ✅ 본문은 기본 '왼쪽'. 필요하면 column.align으로 개별 지정
                       tdAlign(c.align ?? "left"),
                       c.className
                     )}
                   >
-                    {c.render ? c.render(row, idx) : (row as any)[c.key]}
+                    {c.render ? c.render(row, idx) : String(row[c.key as keyof T] || '')}
                   </td>
                 ))}
               </tr>

@@ -10,21 +10,11 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
- * 이름 마스킹 (본인 글은 전체 이름, 관리자와 다른 사람 글은 성만 표시)
+ * 작성자 이름 표시 (마스킹 제거)
  */
 export const maskAuthorName = (authorName: string, currentUserId?: string | null): string => {
-  if (!authorName || authorName.length < 2) return authorName;
+  if (!authorName) return authorName;
   
-  // 관리자 계정은 마스킹하지 않음
-  if (authorName === '총관리자' || authorName === '관리자') {
-    return authorName;
-  }
-  
-  // 본인이 작성한 글인지 확인
-  if (currentUserId && authorName === currentUserId) {
-    return authorName; // 본인 글은 전체 이름 표시
-  }
-  
-  // 다른 사람 글은 성만 표시
-  return authorName.charAt(0) + '*'.repeat(authorName.length - 1);
+  // 마스킹 없이 전체 이름 표시
+  return authorName;
 };

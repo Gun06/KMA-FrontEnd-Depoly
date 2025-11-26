@@ -20,13 +20,16 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
     setFormData,
     isGroupNameChecked,
     isGroupIdChecked,
+    groupNameCheckResult,
+    groupIdCheckResult,
     isEditMode,
     isLoading,
     isFormValid,
     openDropdown,
     setOpenDropdown,
     refs,
-    handlers
+    handlers,
+    error
   } = useGroupForm(params.eventId, eventInfo);
 
   return (
@@ -64,6 +67,8 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
                 onAddressSelect={handlers.handleAddressSelect}
                 onGroupNameCheck={handlers.handleGroupNameCheck}
                 onGroupIdCheck={handlers.handleGroupIdCheck}
+                groupNameCheckResult={groupNameCheckResult}
+                groupIdCheckResult={groupIdCheckResult}
               />
 
               {/* 연락처 정보 섹션 */}
@@ -86,10 +91,21 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
               <GroupPaymentInfoSection
                 formData={formData}
                 onInputChange={handlers.handleInputChange}
+                eventId={params.eventId}
               />
 
               {/* 하단 안내사항 */}
               <BottomNoticeSection />
+
+              {/* 오류 메시지 */}
+              {error.submitError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <span className="text-red-600 mr-2">•</span>
+                    <span className="text-red-600 text-sm">{error.submitError}</span>
+                  </div>
+                </div>
+              )}
 
               {/* 제출 버튼 */}
               <SubmitButton

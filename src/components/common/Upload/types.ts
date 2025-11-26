@@ -1,11 +1,13 @@
 export type UploadItem = {
   id: string;
-  file: File;
+  file: File | null;  // 기존 파일의 경우 null
   name: string;
   size: number;     // bytes
   sizeMB: number;   // MB (정수, 표시용)
   tooLarge: boolean;
   error?: string;
+  isExisting?: boolean;  // 기존 파일 여부
+  url?: string;          // 기존 파일의 URL
 };
 
 export type MultipleUploaderProps = {

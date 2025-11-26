@@ -138,3 +138,10 @@ playwright/.cache/
 # 로컬 설정 파일
 .env.example
 .env.template 
+
+# 커서 룰
+.cursorrules
+.cursorignore
+
+/kma-project@*
+/next

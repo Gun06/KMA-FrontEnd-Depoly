@@ -26,6 +26,8 @@ export default function PasswordConfirmField({
         placeholder={placeholder}
         value={confirmPassword}
         onChange={(e) => onChange(e.target.value)}
+        autoComplete="new-password"
+        name="no-autofill-password-confirm"
         className={`${className} ${
           hasValue
             ? isMatch

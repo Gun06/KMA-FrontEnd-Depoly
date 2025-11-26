@@ -23,7 +23,9 @@ export const initialIndividualFormData: IndividualFormData = {
   category: '',
   souvenir: '',
   size: '',
+  selectedSouvenirs: [],
   jeonmahyupId: '',
   paymentMethod: '',
-  depositorName: ''
+  depositorName: '',
+  note: ''
 };

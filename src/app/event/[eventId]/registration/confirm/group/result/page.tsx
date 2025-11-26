@@ -2,87 +2,467 @@
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { GroupRegistrationConfirmData } from "./types";
 import { fetchGroupRegistrationConfirm, createEditData } from "./api";
+import { getRegistrationDetail } from "@/services/registration";
+import { convertPaymentStatusToKorean } from "@/types/registration";
 
-// Mock 데이터 (API 연결 전까지 사용)
-const mockGroupApplicationData: GroupRegistrationConfirmData = {
-  registrationDate: "2025-09-18",
-  organizationName: "전마협과아이들",
-  organizationAccount: "kjk0626",
-  birth: "2000-06-26",
-  address: "서울 중랑구 겸재로 237 (망우동), 2층",
-  zipCode: "02175",
-  phNum: "010-1234-5678",
-  email: "ko0626@naver.com",
-  sumAmount: 99000,
-  organizationHeadCount: 2,
-  paymentType: "ACCOUNT_TRANSFER",
-  paymenterName: "고재건",
-  paymentStatus: "UNPAID",
-  innerUserRegistrationList: [
-    {
-      registrationId: "REG001",
-      personalAccount: "kjk0626",
-      name: "고재건",
-      gender: "M",
-      birth: "2000-06-26",
-      phNum: "010-1234-5678",
-      eventCategoryName: "Full Marathon(t-shirts + cup)",
-      souvenir: [
-        {
-          souvenirName: "1301",
-          souvenirSize: "S"
-        }
-      ],
-      amount: 50000
-    },
-    {
-      registrationId: "REG002",
-      personalAccount: "kjk0626_2",
-      name: "김마라톤",
-      gender: "F",
-      birth: "1995-03-15",
-      phNum: "010-9876-5432",
-      eventCategoryName: "Half Marathon",
-      souvenir: [
-        {
-          souvenirName: "1",
-          souvenirSize: "사이즈 없음"
-        }
-      ],
-      amount: 49000
-    }
-  ]
-};
 
-export default function GroupApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
+export default function GroupApplicationConfirmResultPage() {
   const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
-  const [groupApplicationData, setGroupApplicationData] = useState<GroupRegistrationConfirmData>(mockGroupApplicationData);
-  const [isLoading, setIsLoading] = useState(false);
+  const eventId = params.eventId as string;
+  const [groupApplicationData, setGroupApplicationData] = useState<GroupRegistrationConfirmData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [displayedCount, setDisplayedCount] = useState(10); // 초기 표시 개수
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // 더보기 로딩 중
+  const [loadedParticipantsMap, setLoadedParticipantsMap] = useState<Map<string, any>>(new Map()); // 상세 정보가 로드된 참가자들 (registrationId를 키로)
+  const [bankName, setBankName] = useState('');
+  const [virtualAccount, setVirtualAccount] = useState('');
+  
+  // 참가자 상세 정보 로드 함수
+  const loadParticipantDetails = async (participants: any[], startIndex: number, count: number): Promise<Map<string, any>> => {
+    const participantsToLoad = participants.slice(startIndex, startIndex + count);
+    const newMap = new Map(loadedParticipantsMap);
+    
+    const BATCH_SIZE = 10;
+    const DELAY_BETWEEN_BATCHES = 100;
+    
+    // 배치 처리로 로드
+    for (let i = 0; i < participantsToLoad.length; i += BATCH_SIZE) {
+      const batch = participantsToLoad.slice(i, i + BATCH_SIZE);
+      
+      const batchResults = await Promise.all(
+        batch.map(async (participant) => {
+          const registrationId = participant.registrationId;
+          if (!registrationId || newMap.has(registrationId)) {
+            return { registrationId, participant: newMap.get(registrationId) || participant };
+          }
+          
+          try {
+            const participantDetail = await getRegistrationDetail(registrationId);
+            
+            // 기념품 정보 변환 (souvenirId 포함)
+            const souvenirs = participantDetail.souvenirListDetail?.map((s) => ({
+              souvenirId: String(s.id || '0'), // id 필드를 souvenirId로 매핑, 문자열로 변환
+              souvenirName: s.name || '기념품 없음',
+              souvenirSize: s.size || '사이즈 없음',
+            })) || participant.souvenir || [];
+            
+            // 기념품이 없는 경우 기본값 설정
+            if (souvenirs.length === 0) {
+              souvenirs.push({
+                souvenirId: '0',
+                souvenirName: '기념품 없음',
+                souvenirSize: '사이즈 없음'
+              });
+            }
+            
+            // 참가종목 정보 업데이트
+            const eventCategoryName = participantDetail.eventCategory || participantDetail.categoryName || participant.eventCategoryName;
+            
+            // amount도 최신 데이터로 업데이트
+            const updatedAmount = participantDetail.amount || participant.amount;
+            
+            // 결제 상태 업데이트
+            const paymentStatus = participantDetail.paymentStatus || participant.paymentStatus || 'UNPAID';
+            
+            const updatedParticipant = {
+              ...participant,
+              registrationId: registrationId,
+              eventCategoryName,
+              souvenir: souvenirs, // souvenirId가 포함된 배열
+              amount: updatedAmount,
+              paymentStatus: paymentStatus,
+            };
+            
+            newMap.set(registrationId, updatedParticipant);
+            return { registrationId, participant: updatedParticipant };
+          } catch (error) {
+            // 실패 시 기존 정보 유지 (기념품 정보도 유지)
+            const fallbackParticipant = {
+              ...participant,
+              paymentStatus: participant.paymentStatus || 'UNPAID',
+              souvenir: participant.souvenir || [{
+                souvenirId: '0',
+                souvenirName: '기념품 없음',
+                souvenirSize: '사이즈 없음'
+              }]
+            };
+            newMap.set(registrationId, fallbackParticipant);
+            return { registrationId, participant: fallbackParticipant };
+          }
+        })
+      );
+      
+      // 배치 간 딜레이
+      if (i + BATCH_SIZE < participantsToLoad.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+      }
+    }
+    
+    setLoadedParticipantsMap(newMap);
+    return newMap; // 업데이트된 맵 반환
+  };
+  
+  // 더보기 버튼 클릭 핸들러
+  const handleLoadMore = async () => {
+    if (!groupApplicationData || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const currentParticipants = groupApplicationData.innerUserRegistrationList || [];
+      await loadParticipantDetails(currentParticipants, displayedCount, 10);
+      setDisplayedCount(prev => prev + 10);
+    } catch (error) {
+      // 에러 처리
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
-  // URL 파라미터에서 데이터 가져오기
-  const dataParam = searchParams.get('data');
-
+  // 전체보기 버튼 클릭 핸들러
+  const handleLoadAll = async () => {
+    if (!groupApplicationData || isLoadingMore) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const currentParticipants = groupApplicationData.innerUserRegistrationList || [];
+      const totalCount = currentParticipants.length;
+      const remainingCount = totalCount - displayedCount;
+      
+      // 남은 참가자들 모두 로드
+      if (remainingCount > 0) {
+        await loadParticipantDetails(currentParticipants, displayedCount, remainingCount);
+      }
+      
+      // 전체 개수로 표시 개수 설정
+      setDisplayedCount(totalCount);
+    } catch (error) {
+      // 에러 처리
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+ 
   useEffect(() => {
-    if (dataParam) {
+    const loadData = async () => {
       try {
-        const decodedData = JSON.parse(decodeURIComponent(dataParam));
-        setGroupApplicationData(decodedData);
+        // organizationAccount를 쿼리 파라미터에서 가져오기 (새로운 방식)
+        const orgAccount = searchParams.get('orgAccount');
+        
+        // 하위 호환성을 위해 기존 data 파라미터도 확인
+        const dataParam = searchParams.get('data');
+        
+        let organizationAccount: string | null = null;
+        let baseData: GroupRegistrationConfirmData | null = null;
+        
+        if (orgAccount) {
+          // 새로운 방식: organizationAccount만 받아서 API 호출
+          organizationAccount = decodeURIComponent(orgAccount);
+        } else if (dataParam) {
+          // 기존 방식: data 파라미터에서 파싱 (하위 호환성)
+          try {
+            baseData = JSON.parse(decodeURIComponent(dataParam));
+            organizationAccount = baseData?.organizationAccount || null;
+          } catch {
+            setError('데이터를 파싱할 수 없습니다.');
+            setIsLoading(false);
+            return;
+          }
+        } else {
+          setError('신청 정보가 없습니다.');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!organizationAccount) {
+          setError('단체신청용 ID를 찾을 수 없습니다.');
+          setIsLoading(false);
+          return;
+        }
+        
+        // 세션 스토리지에서 저장된 데이터와 비밀번호 가져오기
+        const storageKey = `group_registration_data_${eventId}_${organizationAccount}`;
+        let storedData: GroupRegistrationConfirmData | null = null;
+        let storedPassword = '';
+        try {
+          const storedDataString = sessionStorage.getItem(storageKey);
+          if (storedDataString) {
+            const parsed = JSON.parse(storedDataString);
+            storedPassword = parsed._password || '';
+            // 비밀번호 필드 제거하고 나머지 데이터 사용
+            delete parsed._password;
+            storedData = parsed as GroupRegistrationConfirmData;
+            // 저장된 데이터가 있으면 먼저 표시 (사용자 경험 개선)
+            if (storedData) {
+              setGroupApplicationData(storedData);
+              setIsLoading(false);
+            }
+            // 사용 후 즉시 삭제하지 않고 API 호출 성공 후 삭제 (보안)
+          }
+          } catch (e) {
+          // 세션 스토리지 접근 실패 시 무시
+          }
+        
+        // 저장된 데이터가 없으면 에러 표시
+        if (!storedData) {
+          setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
+          setIsLoading(false);
+          return;
+        }
+        
+        try {
+          // 최신 데이터 가져오기 (비밀번호가 있으면 사용)
+          const latestGroupData = await fetchGroupRegistrationConfirm(eventId, organizationAccount, storedPassword);
+          
+          // API 호출 성공 후 sessionStorage 삭제
+          try {
+            sessionStorage.removeItem(storageKey);
+          } catch (e) {
+            // 무시
+          }
+              
+            // 초기에는 처음 10명의 참가자 상세 정보만 로드 (더보기 방식)
+            const participantsToUpdate = latestGroupData.innerUserRegistrationList || [];
+            const initialLoadCount = Math.min(10, participantsToUpdate.length);
+            
+            // 처음 10명의 상세 정보만 로드
+            const loadedDetails = await loadParticipantDetails(participantsToUpdate, 0, initialLoadCount);
+            
+            // 로드된 상세 정보를 맵에 저장
+            const initialMap = new Map<string, any>();
+            loadedDetails.forEach((detail) => {
+              const registrationId = detail.registrationId;
+              if (registrationId) {
+                initialMap.set(registrationId, detail);
+              }
+            });
+            setLoadedParticipantsMap(initialMap);
+            
+            // 전체 참가자 목록은 기본 데이터를 유지하되, 로드된 참가자는 업데이트된 정보 사용
+            const updatedParticipants = participantsToUpdate.map(participant => {
+              const registrationId = participant.registrationId;
+              if (registrationId && initialMap.has(registrationId)) {
+                return initialMap.get(registrationId);
+              }
+              return participant;
+            });
+            
+            // 단체 전체 결제 상태 확인: 모든 참가자의 결제 상태를 확인 (기본 정보 기준)
+            // 모두가 COMPLETED → COMPLETED, 모두가 UNPAID → UNPAID, 모두가 MUST_CHECK → MUST_CHECK
+            // 그 외 섞여 있을 때 → MUST_CHECK (부분 진행 중으로 표시)
+            let overallPaymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED" = 'UNPAID';
+            let isMixedStatus = false; // 섞여 있는 상태인지 여부
+            
+            // 전체 참가자 목록의 기본 paymentStatus로 계산 (상세 정보는 점진적으로 업데이트)
+            if (participantsToUpdate.length > 0) {
+              const participantStatuses = participantsToUpdate.map(p => p.paymentStatus || 'UNPAID');
+              
+              // 모든 가능한 상태에 대해 모두 같은 상태인지 확인
+              const allUnpaid = participantStatuses.every(status => status === 'UNPAID');
+              const allPaid = participantStatuses.every(status => status === 'PAID');
+              const allMustCheck = participantStatuses.every(status => status === 'MUST_CHECK');
+              const allNeedRefund = participantStatuses.every(status => status === 'NEED_REFUND');
+              const allNeedPartialRefund = participantStatuses.every(status => status === 'NEED_PARTITIAL_REFUND');
+              const allCompleted = participantStatuses.every(status => status === 'COMPLETED');
+              const allRefunded = participantStatuses.every(status => status === 'REFUNDED');
+              
+              if (allUnpaid) {
+                overallPaymentStatus = 'UNPAID';
+              } else if (allPaid) {
+                overallPaymentStatus = 'PAID';
+              } else if (allMustCheck) {
+                overallPaymentStatus = 'MUST_CHECK';
+              } else if (allNeedRefund) {
+                overallPaymentStatus = 'NEED_REFUND';
+              } else if (allNeedPartialRefund) {
+                overallPaymentStatus = 'NEED_PARTITIAL_REFUND';
+              } else if (allCompleted) {
+                overallPaymentStatus = 'COMPLETED';
+              } else if (allRefunded) {
+                overallPaymentStatus = 'REFUNDED';
+              } else {
+                // 섞여 있는 경우
+                overallPaymentStatus = 'MUST_CHECK';
+                isMixedStatus = true;
+              }
+            } else {
+              // 참가자 목록이 없으면 latestGroupData의 결제 상태 사용
+              overallPaymentStatus = (latestGroupData.paymentStatus || 'UNPAID') as typeof overallPaymentStatus;
+            }
+            
+            // 최신 데이터로 업데이트 (단체 전체 결제 상태, 참가자별 코스/기념품/사이즈, 주소 포함)
+            // 섞여 있는 상태 정보를 저장하기 위해 임시로 데이터에 추가
+            const updatedData: GroupRegistrationConfirmData & { _isMixedStatus?: boolean } = {
+              ...latestGroupData,
+              paymentStatus: overallPaymentStatus,
+              innerUserRegistrationList: updatedParticipants,
+            address: latestGroupData.address || baseData?.address || '',
+            addressDetail: latestGroupData.addressDetail || baseData?.addressDetail || '',
+            zipCode: latestGroupData.zipCode || baseData?.zipCode || '',
+              _isMixedStatus: isMixedStatus,
+            };
+            
+            setGroupApplicationData(updatedData);
+            setIsLoading(false);
+            return; // 성공하면 여기서 종료
+          } catch (apiError) {
+            // API 호출 실패 시 저장된 데이터를 사용 (이미 표시되어 있음)
+            // 추가 업데이트만 시도
+            try {
+              sessionStorage.removeItem(storageKey);
+            } catch (e) {
+              // 무시
+            }
+            
+            // storedData가 이미 표시되어 있으므로 추가 처리만 수행
+            if (!storedData) {
+            setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
+            setIsLoading(false);
+            return;
+            }
+            
+            // 저장된 데이터를 baseData로 설정하여 추가 처리
+            baseData = storedData;
+            
+            // 참가자 결제 상태 확인 시도 (registrationId가 있는 경우)
+            if (baseData.innerUserRegistrationList && baseData.innerUserRegistrationList.length > 0) {
+              try {
+                // 초기에는 처음 10명만 로드
+                const participantsToUpdate = baseData.innerUserRegistrationList;
+                const initialLoadCount = Math.min(10, participantsToUpdate.length);
+                
+                // 처음 10명의 상세 정보만 로드
+                const loadedDetails = await loadParticipantDetails(participantsToUpdate, 0, initialLoadCount);
+                
+                // 로드된 상세 정보를 맵에 저장
+                const initialMap = new Map<string, any>();
+                loadedDetails.forEach((detail) => {
+                  const registrationId = detail.registrationId;
+                  if (registrationId) {
+                    initialMap.set(registrationId, detail);
+                  }
+                });
+                setLoadedParticipantsMap(initialMap);
+                
+                // 전체 참가자 목록은 기본 데이터를 유지하되, 로드된 참가자는 업데이트된 정보 사용
+                const updatedParticipants = participantsToUpdate.map(participant => {
+                  const registrationId = participant.registrationId;
+                  if (registrationId && initialMap.has(registrationId)) {
+                    return initialMap.get(registrationId);
+                  }
+                  return participant;
+                });
+                
+                // 모든 가능한 상태에 대해 모두 같은 상태인지 확인
+                // 그 외 섞여 있을 때 → MUST_CHECK (부분 진행 중으로 표시)
+                const participantStatuses = updatedParticipants.map(p => p.paymentStatus || 'UNPAID');
+                if (participantStatuses.length > 0) {
+                  const allUnpaid = participantStatuses.every(status => status === 'UNPAID');
+                  const allPaid = participantStatuses.every(status => status === 'PAID');
+                  const allMustCheck = participantStatuses.every(status => status === 'MUST_CHECK');
+                  const allNeedRefund = participantStatuses.every(status => status === 'NEED_REFUND');
+                  const allNeedPartialRefund = participantStatuses.every(status => status === 'NEED_PARTITIAL_REFUND');
+                  const allCompleted = participantStatuses.every(status => status === 'COMPLETED');
+                  const allRefunded = participantStatuses.every(status => status === 'REFUNDED');
+                  
+                  let overallPaymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
+                  let isMixedStatus = false;
+                  
+                  if (allUnpaid) {
+                    overallPaymentStatus = 'UNPAID';
+                  } else if (allPaid) {
+                    overallPaymentStatus = 'PAID';
+                  } else if (allMustCheck) {
+                    overallPaymentStatus = 'MUST_CHECK';
+                  } else if (allNeedRefund) {
+                    overallPaymentStatus = 'NEED_REFUND';
+                  } else if (allNeedPartialRefund) {
+                    overallPaymentStatus = 'NEED_PARTITIAL_REFUND';
+                  } else if (allCompleted) {
+                    overallPaymentStatus = 'COMPLETED';
+                  } else if (allRefunded) {
+                    overallPaymentStatus = 'REFUNDED';
+                  } else {
+                    // 섞여 있는 경우
+                    overallPaymentStatus = 'MUST_CHECK';
+                    isMixedStatus = true;
+                  }
+                  baseData.paymentStatus = overallPaymentStatus;
+                  // 섞여 있는 상태 정보 저장
+                  (baseData as any)._isMixedStatus = isMixedStatus;
+                }
+                
+                // 각 참가자의 결제 상태 업데이트
+                baseData.innerUserRegistrationList = updatedParticipants;
+              } catch (error) {
+                // 참가자 결제 상태 확인 실패 시 무시
+              }
+            }
+            setGroupApplicationData(baseData);
+          }
       } catch (err) {
         setError('데이터를 불러올 수 없습니다.');
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setError('신청 정보가 없습니다.');
-    }
-    setIsLoading(false);
-  }, [dataParam]);
+    };
+
+    loadData();
+  }, [searchParams, eventId]);
+
+  // 결제 계좌 정보 로드 (신청하기와 동일한 방식)
+  useEffect(() => {
+    let ignore = false;
+    const loadPaymentInfo = async () => {
+      if (!eventId) return;
+      const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+      try {
+        // 1순위: 전용 결제 정보 API
+        const infoRes = await fetch(`${base}/api/v1/public/event/${eventId}/payment-info`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (infoRes.ok) {
+          const data = await infoRes.json();
+          if (!ignore) {
+            setBankName(String(data?.bankName || ''));
+            setVirtualAccount(String(data?.virtualAccount || ''));
+          }
+          return;
+        }
+      } catch (error) {
+        // 무시하고 fallback
+      }
+
+      try {
+        // Fallback: 이벤트 기본 정보에서 계좌 정보 추출
+        const eventRes = await fetch(`${base}/api/v1/public/event/${eventId}`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (!eventRes.ok) return;
+        const eventData = await eventRes.json();
+        if (!ignore && eventData?.eventInfo) {
+          setBankName(String(eventData.eventInfo.bank || ''));
+          setVirtualAccount(String(eventData.eventInfo.virtualAccount || ''));
+        }
+      } catch (error) {
+        // 실패 시 계좌 정보 표시하지 않음
+      }
+    };
+    loadPaymentInfo();
+    return () => {
+      ignore = true;
+    };
+  }, [eventId]);
 
   const handleBackToList = () => {
-    router.push(`/event/${params.eventId}/registration/confirm`);
+    router.push(`/event/${eventId}/registration/confirm`);
   };
 
   const handlePrint = () => {
@@ -97,18 +477,98 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
     return paymentType === "CARD" ? "카드결제" : "계좌이체";
   };
 
-  const getPaymentStatusLabel = (status: "UNPAID" | "PAID") => {
-    return status === "PAID" ? "입금완료" : "입금대기";
+  // 주소에서 우편번호 제거 (끝에 있는 우편번호 패턴 제거)
+  const cleanAddress = (address: string, zipCode?: string) => {
+    if (!address) return '';
+    let cleaned = address;
+    
+    // zipCode가 있으면 주소 끝에서 해당 우편번호 패턴 제거
+    if (zipCode) {
+      // 다양한 패턴: "_06794", " (06794)", "-06794", "06794"
+      const patterns = [
+        new RegExp(`[\\s_\\-]${zipCode.replace(/\d/g, '\\d')}$`), // 끝에 오는 우편번호 패턴
+        new RegExp(`${zipCode.replace(/\d/g, '\\d')}$`), // 그냥 끝에 우편번호
+        new RegExp(`[\\s_\\-]\\d{5}$`), // 5자리 우편번호 패턴
+      ];
+      
+      for (const pattern of patterns) {
+        cleaned = cleaned.replace(pattern, '').trim();
+      }
+    }
+    
+    // 일반적인 우편번호 패턴도 제거 (끝에 5자리 숫자)
+    cleaned = cleaned.replace(/[_\-\s]?\d{5}$/, '').trim();
+    
+    return cleaned;
   };
 
-  const getPaymentStatusColor = (status: "UNPAID" | "PAID") => {
-    return status === "PAID" ? "text-green-600" : "text-red-600";
+  // 결제 상태 한글 변환 (관리자 쪽과 동일한 로직)
+  const getPaymentStatusLabel = (status: string, isOverallStatus: boolean = false, isMixedStatus: boolean = false) => {
+    // 전체 결제 상태인 경우 특별 처리
+    if (isOverallStatus) {
+      // 섞여 있는 경우 → "부분 진행 중"
+      if (isMixedStatus) {
+        return '부분 진행 중';
+      }
+      
+      // 모두가 같은 상태인 경우 → 각 상태를 그대로 한글 변환
+      if (status === 'COMPLETED') {
+        return '결제완료';
+      }
+      if (status === 'UNPAID') {
+        return '미결제';
+      }
+      if (status === 'PAID') {
+        return '결제완료';
+      }
+      // 백엔드 enum 형식인 경우 관리자 쪽 함수 사용
+      const koreanStatus = convertPaymentStatusToKorean(status);
+      // 관리자 쪽은 '미결제'를 사용하지만 전체 상태에서는 '미결제' 사용
+      return koreanStatus;
+    }
+    
+    // 개별 참가자 상태인 경우
+    // PAID/UNPAID 형식인 경우 백엔드 enum으로 변환
+    if (status === 'PAID') {
+      return '결제완료';
+    }
+    if (status === 'UNPAID') {
+      return '미입금';
+    }
+    // 백엔드 enum 형식인 경우 관리자 쪽 함수 사용
+    const koreanStatus = convertPaymentStatusToKorean(status);
+    // 관리자 쪽은 '미결제'를 사용하지만 유저 쪽은 '미입금'을 사용
+    return koreanStatus === '미결제' ? '미입금' : koreanStatus;
+  };
+
+  // 결제 상태에 따른 색상
+  const getPaymentStatusColor = (status: string, isOverallStatus: boolean = false) => {
+    const statusUpper = status.toUpperCase();
+    
+    // 전체 결제 상태인 경우 특별 처리 (부분 결제는 주황색)
+    if (isOverallStatus && statusUpper === 'MUST_CHECK') {
+      return 'text-orange-600';
+    }
+    
+    if (statusUpper === 'PAID' || statusUpper === 'COMPLETED') {
+      return 'text-green-600';
+    }
+    if (statusUpper === 'UNPAID') {
+      return 'text-red-600';
+    }
+    if (statusUpper === 'MUST_CHECK' || statusUpper === 'NEED_REFUND' || statusUpper === 'NEED_PARTITIAL_REFUND') {
+      return 'text-orange-600';
+    }
+    if (statusUpper === 'REFUNDED') {
+      return 'text-gray-600';
+    }
+    return 'text-gray-600';
   };
 
   if (isLoading) {
     return (
       <SubmenuLayout 
-        eventId={params.eventId}
+        eventId={eventId}
         breadcrumb={{
           mainMenu: "참가신청",
           subMenu: "단체 신청 확인 결과"
@@ -129,7 +589,7 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
   if (error) {
     return (
       <SubmenuLayout 
-        eventId={params.eventId}
+        eventId={eventId}
         breadcrumb={{
           mainMenu: "참가신청",
           subMenu: "단체 신청 확인 결과"
@@ -153,9 +613,34 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
     );
   }
 
+
+  // 데이터가 로드되지 않은 경우 로딩 표시
+  if (!groupApplicationData) {
+    return (
+      <SubmenuLayout 
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "참가신청",
+          subMenu: "단체 신청 확인 결과"
+        }}
+      >
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+                <p className="mt-4 text-gray-600">데이터를 불러오는 중...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
+
   return (
     <SubmenuLayout 
-      eventId={params.eventId}
+      eventId={eventId}
       breadcrumb={{
         mainMenu: "참가신청",
         subMenu: "단체 신청 확인 결과"
@@ -163,6 +648,164 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
     >
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+
+          {/* 안내문구 섹션 */}
+          <div className="mb-6">
+              {(() => {
+                const paymentStatus = groupApplicationData.paymentStatus || 'UNPAID';
+                const isMixedStatus = (groupApplicationData as any)._isMixedStatus || false;
+                
+                // 섞여 있는 경우 (부분 진행 중)
+                if (isMixedStatus) {
+                  return (
+                    <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-orange-700">
+                            <span className="font-medium">부분 진행 중입니다.</span> 참가자별로 결제 상태가 다릅니다. 모든 참가자의 결제가 완료되면 신청 정보 수정이 불가능합니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // 결제 상태별 메시지
+                switch (paymentStatus) {
+                  case 'UNPAID':
+                    return (
+                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-yellow-700">
+                              <span className="font-medium">입금 대기 중입니다.</span> 입금 확인까지 최대 1-2일 소요될 수 있습니다. 입금 완료 후 신청 정보 수정이 불가능합니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  case 'MUST_CHECK':
+                    return (
+                      <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-orange-700">
+                              <span className="font-medium">결제 확인이 필요합니다.</span> 입금 확인 중입니다. 확인 완료 후 신청 정보 수정이 불가능합니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  case 'NEED_REFUND':
+                    return (
+                      <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-red-700">
+                              <span className="font-medium">환불이 필요합니다.</span> 관리자에게 문의해주세요. 환불 처리 중에는 신청 정보 수정이 불가능합니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  case 'NEED_PARTITIAL_REFUND':
+                    return (
+                      <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-red-700">
+                              <span className="font-medium">부분 환불이 필요합니다.</span> 관리자에게 문의해주세요. 환불 처리 중에는 신청 정보 수정이 불가능합니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  case 'COMPLETED':
+                  case 'PAID':
+                    return (
+                      <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-green-700">
+                              <span className="font-medium">입금이 확인되었습니다.</span> 신청이 정상적으로 완료되었습니다. 입금 완료 후 신청 정보 수정이 불가능합니다. 대회 당일 참석 부탁드립니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  case 'REFUNDED':
+                    return (
+                      <div className="bg-gray-50 border-l-4 border-gray-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-gray-700">
+                              <span className="font-medium">환불이 완료되었습니다.</span> 신청이 취소되었습니다. 추가 문의사항이 있으시면 관리자에게 연락해주세요.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  
+                  default:
+                    return (
+                      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-yellow-700">
+                              <span className="font-medium">입금 대기 중입니다.</span> 입금 확인까지 최대 1-2일 소요될 수 있습니다. 입금 완료 후 신청 정보 수정이 불가능합니다.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                }
+              })()}
+          </div>
 
           {/* 신청 정보 카드 */}
           <div className="bg-white mb-8">
@@ -190,29 +833,36 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">단체 ID</label>
+                  <label className="text-base font-medium text-black">단체신청용 ID</label>
                   <span className="text-base text-black">{groupApplicationData.organizationAccount}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">대표자명</label>
-                  <span className="text-base text-black">{groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
+                  <span className="text-base text-black">{(groupApplicationData as any).leaderName || groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">대표자 생년월일</label>
-                  <span className="text-base text-black">{groupApplicationData.birth}</span>
+                  <span className="text-base text-black">{(groupApplicationData as any).leaderBirth || groupApplicationData.birth || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">우편번호</label>
-                  <span className="text-base text-black">{groupApplicationData.zipCode}</span>
+                  <span className="text-base text-black">{groupApplicationData.zipCode || '-'}</span>
                 </div>
                 
-                <div className="flex items-center justify-between pb-4">
+                <div className="flex items-start justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">주소</label>
+                  <span className="text-base text-black text-right">
+                    {cleanAddress(groupApplicationData.address || '', groupApplicationData.zipCode) || '-'}
+                  </span>
+                </div>
+                
+                <div className="flex items-start justify-between pb-4">
+                  <label className="text-base font-medium text-black">상세주소</label>
                   <span className="text-base text-black">
-                    {groupApplicationData.address}
+                    {groupApplicationData.addressDetail || '-'}
                   </span>
                 </div>
               </div>
@@ -224,7 +874,7 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">휴대폰번호</label>
-                  <span className="text-base text-black">{groupApplicationData.phNum}</span>
+                  <span className="text-base text-black">{(groupApplicationData as any).leaderPhNum || groupApplicationData.phNum || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4">
@@ -238,22 +888,29 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
             <div className="px-8 pb-8">
               <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">참가자 정보</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {groupApplicationData.innerUserRegistrationList.map((participant, index) => (
-                  <div key={participant.registrationId} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                {groupApplicationData.innerUserRegistrationList.slice().reverse().slice(0, displayedCount).map((participant, index) => {
+                  // 상세 정보가 로드된 참가자는 업데이트된 정보 사용
+                  const registrationId = participant.registrationId;
+                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? loadedParticipantsMap.get(registrationId)
+                    : participant;
+                  
+                  return (
+                  <div key={detailedParticipant.registrationId || index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
                     {/* 참가자 헤더 */}
                     <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-blue-100">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
                           {index + 1}
                         </div>
-                        <h4 className="text-lg font-bold text-black">{participant.name}</h4>
+                        <h4 className="text-lg font-bold text-black">{detailedParticipant.name}</h4>
                         <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                          {getGenderLabel(participant.gender)}
+                          {getGenderLabel(detailedParticipant.gender)}
                         </span>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-blue-600">
-                          {participant.amount.toLocaleString()}원
+                          {detailedParticipant.amount.toLocaleString()}원
                         </div>
                       </div>
                     </div>
@@ -263,25 +920,16 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 font-medium">생년월일</span>
                         <span className="text-black font-semibold">
-                          {participant.birth}
+                          {detailedParticipant.birth}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 font-medium">전마협 ID</span>
-                        <span className="text-black font-semibold">{participant.personalAccount || "없음"}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600 font-medium">기념품</span>
-                        <span className="text-black font-semibold">
-                          {participant.souvenir.length > 0 
-                            ? `${participant.souvenir[0].souvenirName} (${participant.souvenir[0].souvenirSize})`
-                            : '없음'
-                          }
-                        </span>
+                        <span className="text-black font-semibold">{detailedParticipant.personalAccount || "없음"}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 font-medium">연락처</span>
-                        <span className="text-black font-semibold">{participant.phNum}</span>
+                        <span className="text-black font-semibold">{detailedParticipant.phNum}</span>
                       </div>
                     </div>
 
@@ -291,45 +939,102 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">참가종목</span>
-                          <span className="text-black">{participant.eventCategoryName}</span>
+                          <span className="text-black">{detailedParticipant.eventCategoryName}</span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-gray-600">기념품</span>
-                          <span className="text-black">
-                            {participant.souvenir.length > 0 
-                              ? participant.souvenir[0].souvenirName
-                              : '없음'
-                            }
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">사이즈</span>
-                          <span className="text-black">
-                            {participant.souvenir.length > 0 
-                              ? participant.souvenir[0].souvenirSize
-                              : '없음'
-                            }
-                          </span>
+                          <div className="text-black text-right">
+                            {detailedParticipant.souvenir && detailedParticipant.souvenir.length > 0
+                              ? detailedParticipant.souvenir.map((item: any, idx: number) => {
+                                  const size = (item.souvenirSize === '사이즈 없음' || item.souvenirSize === '기념품 없음') ? '' : ` (${item.souvenirSize})`;
+                                  const label = (item.souvenirName === '기념품 없음') ? '없음' : `${item.souvenirName}${size}`;
+                                  return (
+                                    <div key={idx}>{label}</div>
+                                  );
+                                })
+                              : '없음'}
+                          </div>
                         </div>
                         
                         <div className="border-t border-gray-200 pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
                             <span className="text-gray-700">총금액</span>
-                            <span className="text-blue-600">{participant.amount.toLocaleString()}원</span>
+                            <span className="text-blue-600">{detailedParticipant.amount.toLocaleString()}원</span>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* 결제 상태 - 각 참가자별 결제 상태 표시 */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600 font-medium">결제상태</span>
+                        <span className={`text-sm font-semibold ${getPaymentStatusColor(detailedParticipant.paymentStatus || 'UNPAID')}`}>
+                          {getPaymentStatusLabel(detailedParticipant.paymentStatus || 'UNPAID')}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                );
+                })}
               </div>
+              
+              {/* 더보기 / 전체보기 버튼 */}
+              {groupApplicationData.innerUserRegistrationList.length > displayedCount && (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className={`px-8 py-3 rounded-lg font-medium text-base transition-colors w-full sm:w-auto ${
+                      isLoadingMore
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isLoadingMore ? (
+                      <span className="flex items-center gap-2 justify-center">
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        로딩 중...
+                      </span>
+                    ) : (
+                      `더보기 (${displayedCount}/${groupApplicationData.innerUserRegistrationList.length})`
+                    )}
+                  </button>
+                  <button
+                    onClick={handleLoadAll}
+                    disabled={isLoadingMore}
+                    className={`px-8 py-3 rounded-lg font-medium text-base transition-colors w-full sm:w-auto ${
+                      isLoadingMore
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-white text-blue-600 border border-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    전체보기
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 결제 정보 섹션 */}
             <div className="px-8 pb-8">
               <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">결제 정보</h3>
+              
+              {/* 계좌 안내 문구 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
+                  <p>
+                    계좌번호 :{' '}
+                    <span className="bg-yellow-200 font-semibold px-2 py-1 rounded">
+                      {bankName && virtualAccount ? `${bankName} ${virtualAccount}` : '계좌 정보 준비 중입니다.'}
+                    </span>
+                  </p>
+                </div>
+              </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">참가인원</label>
@@ -355,8 +1060,8 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
                 
                 <div className="flex items-center justify-between pb-4">
                   <label className="text-base font-medium text-black">결제상태</label>
-                  <span className={`text-base font-semibold ${getPaymentStatusColor(groupApplicationData.paymentStatus)}`}>
-                    {getPaymentStatusLabel(groupApplicationData.paymentStatus)}
+                  <span className={`text-base font-semibold ${getPaymentStatusColor(groupApplicationData.paymentStatus, true)}`}>
+                    {getPaymentStatusLabel(groupApplicationData.paymentStatus, true, (groupApplicationData as any)._isMixedStatus || false)}
                   </span>
                 </div>
               </div>
@@ -367,12 +1072,137 @@ export default function GroupApplicationConfirmResultPage({ params }: { params: 
           {/* 버튼 그룹 */}
           <div className="flex justify-center gap-4 mt-8">
             <button
-              onClick={() => {
-                const editData = createEditData(groupApplicationData);
+              onClick={async () => {
+                // 수정하기 버튼 클릭 시 모든 참가자 정보를 먼저 로드
+                const allParticipants = groupApplicationData.innerUserRegistrationList || [];
+                const notLoadedCount = allParticipants.length - loadedParticipantsMap.size;
+                
+                // 아직 로드되지 않은 참가자 정보가 있으면 먼저 로드
+                // 모든 참가자를 확실하게 로드하기 위해 처음부터 다시 로드
+                setIsLoadingMore(true);
+                try {
+                  // 모든 참가자의 상세 정보를 확실하게 로드
+                  const allLoadedParticipants = await loadParticipantDetails(allParticipants, 0, allParticipants.length);
+                  
+                  // 로드된 결과를 맵으로 변환하여 사용
+                  const loadedMap = new Map<string, any>();
+                  allLoadedParticipants.forEach((loadedParticipant: any) => {
+                    const registrationId = loadedParticipant.registrationId;
+                    if (registrationId) {
+                      loadedMap.set(registrationId, loadedParticipant);
+                    }
+                  });
+                  
+                  // 로드된 참가자 정보로 업데이트된 데이터 생성
+                  const updatedParticipants = allParticipants.map(participant => {
+                    const registrationId = participant.registrationId;
+                    if (registrationId && loadedMap.has(registrationId)) {
+                      return loadedMap.get(registrationId);
+                    }
+                    return participant;
+                  });
+                  
+                  // 주소에서 우편번호 제거하여 수정 페이지로 전달
+                  const editData = createEditData({
+                    ...groupApplicationData,
+                    innerUserRegistrationList: updatedParticipants,
+                    address: cleanAddress(groupApplicationData.address || '', groupApplicationData.zipCode),
+                  });
+                  
+                  // sessionStorage에 수정 데이터 저장 (URL 길이 문제 해결)
+                  const storageKey = `group_edit_data_${eventId}_${groupApplicationData.organizationAccount}`;
+                  try {
+                    sessionStorage.setItem(storageKey, JSON.stringify(editData));
+                  } catch (e) {
+                    // sessionStorage 접근 실패 시 기존 방식으로 fallback
+                    const queryString = `?mode=edit&data=${encodeURIComponent(JSON.stringify(editData))}`;
+                    router.push(`/event/${eventId}/registration/apply/group${queryString}`);
+                    return;
+                  }
+                  
+                  // sessionStorage에 저장 후 mode만 쿼리 파라미터로 전달
+                  router.push(`/event/${eventId}/registration/apply/group?mode=edit&orgAccount=${encodeURIComponent(groupApplicationData.organizationAccount)}`);
+                  return;
+                } catch (error) {
+                  // 에러 발생 시에도 진행 (기존 정보 사용)
+                } finally {
+                  setIsLoadingMore(false);
+                }
+                
+                // 에러 발생 시 기존 방식으로 진행
+                const updatedParticipants = allParticipants.map(participant => {
+                  const registrationId = participant.registrationId;
+                  if (registrationId && loadedParticipantsMap.has(registrationId)) {
+                    return loadedParticipantsMap.get(registrationId);
+                  }
+                  return participant;
+                });
+                
+                // 주소에서 우편번호 제거하여 수정 페이지로 전달
+                const editData = createEditData({
+                  ...groupApplicationData,
+                  innerUserRegistrationList: updatedParticipants,
+                  address: cleanAddress(groupApplicationData.address || '', groupApplicationData.zipCode),
+                });
+                
+                // sessionStorage에 수정 데이터 저장 (URL 길이 문제 해결)
+                const storageKey = `group_edit_data_${eventId}_${groupApplicationData.organizationAccount}`;
+                try {
+                  sessionStorage.setItem(storageKey, JSON.stringify(editData));
+                } catch (e) {
+                  // sessionStorage 접근 실패 시 기존 방식으로 fallback
                 const queryString = `?mode=edit&data=${encodeURIComponent(JSON.stringify(editData))}`;
-                router.push(`/event/${params.eventId}/registration/apply/group${queryString}`);
+                  router.push(`/event/${eventId}/registration/apply/group${queryString}`);
+                  return;
+                }
+                
+                // sessionStorage에 저장 후 mode만 쿼리 파라미터로 전달
+                router.push(`/event/${eventId}/registration/apply/group?mode=edit&orgAccount=${encodeURIComponent(groupApplicationData.organizationAccount)}`);
               }}
-              className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 bg-white text-black border-2 border-black rounded-lg font-medium text-sm md:text-base hover:bg-gray-100 transition-colors"
+              disabled={(() => {
+                // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
+                const participants = groupApplicationData.innerUserRegistrationList || [];
+                const allCompleted = participants.every(participant => {
+                  const registrationId = participant.registrationId;
+                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? loadedParticipantsMap.get(registrationId)
+                    : participant;
+                  return detailedParticipant.paymentStatus === 'COMPLETED';
+                });
+                const allRefunded = participants.every(participant => {
+                  const registrationId = participant.registrationId;
+                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? loadedParticipantsMap.get(registrationId)
+                    : participant;
+                  return detailedParticipant.paymentStatus === 'REFUNDED';
+                });
+                // 모두가 COMPLETED이거나 모두가 REFUNDED인 경우 비활성화
+                return allCompleted || allRefunded;
+              })()}
+              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
+                (() => {
+                  // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
+                  const participants = groupApplicationData.innerUserRegistrationList || [];
+                  const allCompleted = participants.every(participant => {
+                    const registrationId = participant.registrationId;
+                    const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                      ? loadedParticipantsMap.get(registrationId)
+                      : participant;
+                    return detailedParticipant.paymentStatus === 'COMPLETED';
+                  });
+                  const allRefunded = participants.every(participant => {
+                    const registrationId = participant.registrationId;
+                    const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                      ? loadedParticipantsMap.get(registrationId)
+                      : participant;
+                    return detailedParticipant.paymentStatus === 'REFUNDED';
+                  });
+                  // 모두가 COMPLETED이거나 모두가 REFUNDED가 아닌 경우에만 활성화
+                  return !allCompleted && !allRefunded;
+                })()
+                  ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                  : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
+              }`}
             >
               수정하기
             </button>

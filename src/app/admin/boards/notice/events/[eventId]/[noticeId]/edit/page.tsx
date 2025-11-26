@@ -2,77 +2,181 @@
 
 import { useParams, useRouter } from "next/navigation";
 import React from "react";
-import Link from "next/link";
 import Button from "@/components/common/Button/Button";
 import SelectMenu from "@/components/common/filters/SelectMenu";
 import TextField from "@/components/common/TextField/TextField";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 
-import type { NoticeType, NoticeFile, NoticeEventRow, Visibility } from "@/data/notice/types";
-import { getEventById } from "@/data/events";
-import { getEventNoticeDetail, saveEventNotice } from "@/data/notice/eventNotices";
+import type { NoticeFile } from "@/types/notice";
+import { useNoticeDetail, useUpdateNotice, useNoticeCategories } from "@/hooks/useNotices";
+import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
+import { useAuthStore } from "@/store/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
   const { eventId, noticeId } = useParams<{ eventId: string; noticeId: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const event = getEventById(Number(eventId));
-  const [detail, setDetail] = React.useState<NoticeEventRow | undefined>(() =>
-    getEventNoticeDetail(eventId, noticeId)
-  );
+  // API 훅들
+  const { data: detail, isLoading, error } = useNoticeDetail(noticeId) as {
+    data: NoticeDetail | undefined;
+    isLoading: boolean;
+    error: Error | null;
+  };
+  const updateMutation = useUpdateNotice(noticeId);
+  const { data: categories } = useNoticeCategories() as {
+    data: NoticeCategory[] | undefined;
+  };
+  
+  // 현재 사용자 정보
+  const { user } = useAuthStore();
 
-  const [type, setType] = React.useState<NoticeType>(detail?.type ?? "notice");
-  const [title, setTitle] = React.useState(detail?.title ?? "");
-  const [content, setContent] = React.useState(detail?.content ?? "내용을 작성해주세요...");
-  const [pinned, setPinned] = React.useState<boolean>(!!detail?.pinned);
-  const [files, setFiles] = React.useState<NoticeFile[]>(detail?.files ?? []);
-  const [visibility, setVisibility] = React.useState<Visibility>(detail?.visibility ?? "open");
+  const [categoryId, setCategoryId] = React.useState<string>("");
+  const [title, setTitle] = React.useState("");
+  const [content, setContent] = React.useState("");
+  const [files, setFiles] = React.useState<NoticeFile[]>([]);
 
+  // 상세 데이터 로드 시 폼 초기화
   React.useEffect(() => {
-    const d = getEventNoticeDetail(eventId, noticeId);
-    setDetail(d);
-    setType(d?.type ?? "notice");
-    setTitle(d?.title ?? "");
-    setContent(d?.content ?? "내용을 작성해주세요...");
-    setPinned(!!d?.pinned);
-    setFiles(d?.files ?? []);
-    setVisibility(d?.visibility ?? "open");
-  }, [eventId, noticeId]);
+    if (detail) {
+      setTitle(detail.title);
+      setContent(detail.content);
+      // 첨부파일을 NoticeFile 형식으로 변환
+      setFiles(detail.attachmentUrls?.map((url: string, index: number) => {
+        const fileName = url.split('/').pop() || `첨부파일_${index + 1}`;
+        return {
+          id: url,
+          url,
+          name: fileName,
+          sizeMB: 1 // 기본값 설정
+        };
+      }) || []);
+      // 카테고리 설정 (noticeCategoryId 우선, 없으면 categoryId 사용)
+      const actualCategoryId = detail.noticeCategoryId || detail.categoryId;
+      if (actualCategoryId) {
+        setCategoryId(actualCategoryId);
+      } else {
+        setCategoryId("801"); // 기본값: 공지
+      }
+    }
+  }, [detail]);
 
-  const TYPES = [
-    { label: "대회", value: "match" },
-    { label: "이벤트", value: "event" },
-    { label: "공지", value: "notice" },
-    { label: "일반", value: "general" },
-  ];
-  const canPin = type === "notice";
+  // 카테고리 옵션 생성
+  const categoryOptions = categories?.map(category => ({
+    label: category.name,
+    value: category.id,
+  })) || [];
+
 
   const onSave = () => {
-    if (!detail) return;
-    const next: NoticeEventRow = {
-      ...detail,
-      type,
-      title: title.trim() || detail.title,
+    if (!title.trim()) { 
+      alert("제목을 입력하세요."); 
+      return; 
+    }
+    if (!categoryId) { 
+      alert("카테고리를 선택하세요."); 
+      return; 
+    }
+
+    // 파일을 File 객체로 변환
+    const fileObjects = files
+      .filter(file => file.file) // file 속성이 있는 것만 필터링
+      .map(file => file.file!); // 실제 File 객체 사용
+
+    // 기존 첨부파일 URL들 (삭제할 파일들)
+    const originalFileUrls = detail?.attachmentUrls || [];
+    const currentFileUrls = files
+      .filter(file => file.url && !file.file) // 새로 추가되지 않은 기존 파일들
+      .map(file => file.url!);
+    const deletedFileUrls = originalFileUrls.filter(url => !currentFileUrls.includes(url));
+
+
+    // FormData 생성
+    const formData = new FormData();
+    formData.append('noticeUpdate', JSON.stringify({
+      title: title.trim(),
       content,
-      pinned: canPin ? pinned : false,
-      files,
-      visibility,
-    };
-    saveEventNotice(eventId, next);
-    // 저장 후 상세(비-edit)로 이동
-    router.replace(`/admin/boards/notice/events/${eventId}/${noticeId}?_r=${Date.now()}`);
+      categoryId,
+      author: user?.account || '관리자', // 작성자 정보
+      deleteFileUrls: deletedFileUrls, // 삭제할 파일 URL들
+      // TODO: 백엔드에서 visible, pinned 필드 지원 시 추가
+      // visible: visibility === 'open',
+      // pinned: canPin ? pinned : false,
+    }));
+    
+    if (fileObjects.length > 0) {
+      fileObjects.forEach(file => {
+        formData.append('attachments', file);
+      });
+    }
+
+    updateMutation.mutate(
+      formData,
+      {
+        onSuccess: () => {
+          // 캐시 무효화를 위해 쿼리 키 무효화
+          queryClient.invalidateQueries({ queryKey: ['notice', 'detail', noticeId] });
+          queryClient.invalidateQueries({ queryKey: ['notice', 'event', eventId] });
+          queryClient.invalidateQueries({ queryKey: ['notice'] });
+          router.replace(`/admin/boards/notice/events/${eventId}/${noticeId}?_r=${Date.now()}`);
+        },
+        onError: (error) => {
+          alert('공지사항 수정에 실패했습니다.');
+        }
+      }
+    );
   };
 
   const goView = () =>
     router.replace(`/admin/boards/notice/events/${eventId}/${noticeId}?_r=${Date.now()}`);
 
+  // 로딩 상태 처리
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
+        <div className="rounded-xl border p-8 text-center text-gray-500">
+          공지사항을 불러오는 중...
+        </div>
+      </main>
+    );
+  }
+
+  // 에러 상태 처리
+  if (error) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
+        <div className="rounded-xl border p-8 text-center text-red-500">
+          공지사항을 불러오는데 실패했습니다.
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
       <div className="flex items-center gap-2 text-sm">
         <div className="ml-auto flex gap-2">
-          <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={goView}>취소하기</Button>
-          <Button size="sm" tone="primary" widthType="pager" onClick={onSave}>저장하기</Button>
+          <Button 
+            size="sm" 
+            tone="outlineDark" 
+            variant="outline" 
+            widthType="pager" 
+            onClick={goView}
+            disabled={updateMutation.isPending}
+          >
+            취소하기
+          </Button>
+          <Button 
+            size="sm" 
+            tone="primary" 
+            widthType="pager" 
+            onClick={onSave}
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? '저장 중...' : '저장하기'}
+          </Button>
         </div>
       </div>
 
@@ -80,16 +184,16 @@ export default function Page() {
         <div className="rounded-xl border p-8 text-center text-gray-500">데이터가 없습니다.</div>
       ) : (
         <section className="space-y-4">
-          {/* 1줄: 유형 + 제목 */}
+          {/* 1줄: 카테고리 + 제목 */}
           <div className="flex gap-3 items-center">
-            <SelectMenu
-              label="유형"
-              value={type}
-              onChange={(v) => setType(v as NoticeType)}
-              options={TYPES}
-              buttonTextMode="current"
-              className="!h-12"
-            />
+        <SelectMenu
+          label="카테고리"
+          value={categoryId}
+          onChange={setCategoryId}
+          options={categoryOptions}
+          buttonTextMode="current"
+          className="!h-12"
+        />
             <TextField
               type="text"
               placeholder="제목을 입력하세요."
@@ -99,54 +203,33 @@ export default function Page() {
             />
           </div>
 
-          {/* 2줄: 고정 + 공개여부 */}
-          <div className="flex items-center gap-8">
-            <label className={`inline-flex items-center gap-2 ${canPin ? "" : "opacity-50 cursor-not-allowed"}`}>
-              <input
-                type="checkbox"
-                disabled={!canPin}
-                checked={canPin && pinned}
-                onChange={(e) => setPinned(e.target.checked)}
-              />
-              <span>고정</span>
-            </label>
 
-            <div className="inline-flex items-center gap-3">
-              <span className="text-sm text-gray-700">공개여부</span>
-              <label className="inline-flex items-center gap-1 text-sm">
-                <input
-                  type="radio"
-                  name="vis"
-                  checked={visibility === "open"}
-                  onChange={() => setVisibility("open")}
-                />
-                <span>공개</span>
-              </label>
-              <label className="inline-flex items-center gap-1 text-sm">
-                <input
-                  type="radio"
-                  name="vis"
-                  checked={visibility === "closed"}
-                  onChange={() => setVisibility("closed")}
-                />
-                <span>비공개</span>
-              </label>
-            </div>
-          </div>
-
-          <TextEditor initialContent={content} onChange={setContent} height="520px" />
-
-          <BoardFileBox
-            variant="edit"
-            title="첨부파일"
-            files={files}
-            onChange={setFiles}
-            maxCount={10}
-            maxSizeMB={20}
-            totalMaxMB={200}
-            multiple
-            className="mt-2"
+          <TextEditor 
+            initialContent={content} 
+            onChange={setContent} 
+            height="520px" 
+            imageDomainType="NOTICE"
+            placeholder="내용을 작성해주세요..."
           />
+
+          <div className="space-y-2">
+            <BoardFileBox
+              variant="edit"
+              title="첨부파일"
+              files={files}
+              onChange={setFiles}
+              maxCount={10}
+              maxSizeMB={20}
+              totalMaxMB={200}
+              multiple
+              className="mt-2"
+            />
+        <div className="text-sm text-gray-500 px-1 pt-1">
+          <p>• 텍스트 에디터 내 이미지: JPG, PNG (크기 조절 가능)</p>
+          <p>• 첨부파일: JPG, PNG, PDF, DOC, XLS, XLSX</p>
+          <p>• 첨부파일 이름이 너무 길면 등록이 실패할 수 있습니다</p>
+        </div>
+          </div>
         </section>
       )}
     </main>

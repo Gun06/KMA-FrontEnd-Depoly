@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
 
     // TODO: 실제로는 서버에 저장된 인증번호와 비교
     // 여기서는 간단히 콘솔에 출력 (실제로는 Redis나 DB에서 조회)
-    console.log(`[인증 확인] ${phoneNumber}의 인증번호 ${code} 확인`)
 
     // 실제 인증번호 확인 로직:
     // 1. Redis/DB에서 phoneNumber로 저장된 인증번호 조회
@@ -54,7 +53,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('인증번호 확인 오류:', error)
     return NextResponse.json(
       { error: '인증번호 확인에 실패했습니다. 다시 시도해주세요.' },
       { status: 500 }

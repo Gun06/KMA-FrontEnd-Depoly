@@ -12,19 +12,22 @@ import RegistrationInfoSection from "./components/RegistrationInfoSection";
 import PaymentInfoSection from "./components/PaymentInfoSection";
 import BottomNoticeSection from "./components/BottomNoticeSection";
 import SubmitButton from "./components/SubmitButton";
+import IdPasswordModal from "@/components/event/Registration/IdPasswordModal";
 
 export default function IndividualApplyPage({ params }: { params: { eventId: string } }) {
   const { eventInfo, isLoading: isLoadingEvent, error: eventError, refetch } = useEventRegistration(params.eventId);
   const {
     formData,
-    setFormData,
+    setFormData: _setFormData,
     openDropdown,
     setOpenDropdown,
     idCheckResult,
     isSubmitted,
     isFormValid,
     refs,
-    handlers
+    handlers,
+    modal,
+    error
   } = useIndividualForm(params.eventId, eventInfo);
 
   // 편집 모드 확인
@@ -58,7 +61,7 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
             
             {/* 폼 - 이벤트 정보가 로드된 후에만 표시 */}
             {eventInfo && !isLoadingEvent && (
-            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit}>
+            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit} autoComplete="off">
               {/* 개인정보 섹션 */}
               <PersonalInfoSection
                 formData={formData}
@@ -68,6 +71,7 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
                 onIdCheck={handlers.handleIdCheck}
                 onAddressSelect={handlers.handleAddressSelect}
                 onDropdownToggle={setOpenDropdown}
+                onOpenIdPasswordModal={() => modal.setIsIdPasswordModalOpen(true)}
                 refs={refs}
               />
 
@@ -94,10 +98,22 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
               <PaymentInfoSection
                 formData={formData}
                 onInputChange={handlers.handleInputChange}
+                eventId={params.eventId}
               />
+
 
               {/* 하단 안내사항 */}
               <BottomNoticeSection />
+
+              {/* 오류 메시지 */}
+              {error.submitError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <span className="text-red-600 mr-2">•</span>
+                    <span className="text-red-600 text-sm">{error.submitError}</span>
+                  </div>
+                </div>
+              )}
 
               {/* 제출 버튼 */}
               <SubmitButton
@@ -110,6 +126,13 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
           </div>
         </div>
       </div>
+
+      {/* 아이디/비밀번호 모달 */}
+      <IdPasswordModal
+        isOpen={modal.isIdPasswordModalOpen}
+        onClose={() => modal.setIsIdPasswordModalOpen(false)}
+        onSuccess={modal.handleUserDataLoad}
+      />
     </SubmenuLayout>
   );
 }

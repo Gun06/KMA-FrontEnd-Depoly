@@ -2,9 +2,13 @@
 
 import { MOCK_EVENTS } from '@/data/events';
 import { APPLICANTS } from '@/data/applicants';
+import type { OrganizationApiData } from '@/types/user';
 
 export type OrganizationRow = {
-  id: number;         // 번호 (= 고유 id, 최신일수록 큼)
+  id: number;         // 테이블 표시용 고유 행 ID(숫자)
+  no?: number;        // 백엔드에서 내려온 목록 번호
+  orgApiId: string;   // 백엔드 단체 ID(문자열, 상세/구성원 API path에 사용)
+  orgAccount: string; // 조직 코드(organizationAccount)
   org: string;        // 단체명
   owner: string;      // 대표자명
   ownerId: string;    // 대표자 아이디
@@ -29,6 +33,9 @@ const RAW: Omit<OrganizationRow,'id'>[] = Array.from({ length: 150 }).map((_, i)
   const suffix = (i % 3 === 0) ? ' A' : '';
   const owner = owners[i % owners.length];
   return {
+    no: i + 1,
+    orgApiId: `mock-org-${i + 1}`,
+    orgAccount: `mockAccount${1000 + i}`,
     org: `${fam}${suffix}`,
     owner,
     ownerId: `abc${String(1000 + i)}`,
@@ -51,24 +58,25 @@ export function getOrganizationById(id: number) {
 
 /* ───────────── 대회명 주입 유틸 ───────────── */
 
-const norm = (s: any) =>
+const norm = (s: unknown) =>
   String(s ?? '')
     .replace(/\s+/g, '')
     .replace(/[·•\-_/]/g, '')
     .replace(/A$/i, '');
 
+type MockEvent = { id: number; title: string; date: string; host?: string };
 const EVENT_BY_ID = new Map<number, { title: string; date: string; host?: string }>(
-  (MOCK_EVENTS as any[]).map(e => [e.id, { title: e.title, date: e.date, host: e.host }])
+  (MOCK_EVENTS as unknown as MockEvent[]).map((e) => [e.id, { title: e.title, date: e.date, host: e.host }])
 );
 
 // APPLICANTS에서 org별 최신 eventId
 const LATEST_EVENT_ID_BY_ORG = (() => {
-  const map = new Map<string, number>();
+  const map = new Map<string, string>();
   for (const a of APPLICANTS) {
     if (!a.org || a.org === '개인') continue;
     const key = norm(a.org);
     const curr = map.get(key);
-    if (curr == null || a.eventId > curr) map.set(key, a.eventId);
+    if (curr == null || parseInt(a.eventId) > parseInt(curr)) map.set(key, a.eventId);
   }
   return map;
 })();
@@ -86,8 +94,8 @@ function cityFromOrg(orgName: string): string | null {
 }
 
 function findLatestEventByCityKeyword(city: string | null) {
-  const events = (MOCK_EVENTS as any[]);
-  const getTime = (e: any) => new Date(e?.date || '1970-01-01').getTime();
+  const events = MOCK_EVENTS as unknown as MockEvent[];
+  const getTime = (e: MockEvent) => new Date(e?.date || '1970-01-01').getTime();
   if (city) {
     const candidates = events.filter(e =>
       String(e.title).includes(city) ||
@@ -108,7 +116,7 @@ function findLatestEventTitleByOrg(org: OrganizationRow): string | undefined {
   const bridgedId =
     LATEST_EVENT_ID_BY_ORG.get(key) ??
     LATEST_EVENT_ID_BY_ORG.get(norm(org.org.replace(/\s*A$/, '')));
-  if (bridgedId) return EVENT_BY_ID.get(bridgedId)?.title;
+  if (bridgedId) return EVENT_BY_ID.get(parseInt(bridgedId))?.title;
   const city = cityFromOrg(org.org);
   return findLatestEventByCityKeyword(city) ?? undefined;
 }
@@ -141,7 +149,7 @@ export function listOrganizations(params: {
 
   // 검색
   const q = query.trim().toLowerCase();
-  if (q) rows = rows.filter(r => String((r as any)[field] ?? '').toLowerCase().includes(q));
+  if (q) rows = rows.filter((r) => String((r as Record<string, unknown>)[field] ?? '').toLowerCase().includes(q));
 
   // 회원여부 필터
   if (memberFilter) {
@@ -158,8 +166,8 @@ export function listOrganizations(params: {
     }
     if (sortBy === 'id') return (a.id - b.id) * dir;
 
-    const A = (a as any)[sortBy];
-    const B = (b as any)[sortBy];
+    const A = (a as Record<string, unknown>)[sortBy] as unknown;
+    const B = (b as Record<string, unknown>)[sortBy] as unknown;
     if (typeof A === 'number' && typeof B === 'number') return (A - B) * dir;
     return String(A).localeCompare(String(B), 'ko') * dir;
   });
@@ -169,4 +177,44 @@ export function listOrganizations(params: {
   const start = (page - 1) * pageSize;
   const pageRows = rows.slice(start, start + pageSize);
   return { rows: pageRows, total };
+}
+
+// ───────────── 변환기: API → OrganizationRow ─────────────
+// UUID 문자열을 숫자로 변환하는 간단한 해시 함수
+function hashStringToNumber(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 32bit 정수로 변환
+  }
+  return Math.abs(hash);
+}
+
+export function transformOrganizationApiToRow(item: OrganizationApiData, index?: number): OrganizationRow {
+  // id가 문자열 UUID인 경우 해시로 변환, 아니면 no 사용
+  let finalId: number;
+  if (item.id && typeof item.id === 'string' && item.id.length > 0) {
+    // UUID 문자열을 숫자로 변환
+    finalId = hashStringToNumber(item.id);
+  } else {
+    // id가 없거나 숫자인 경우 no 사용
+    const numId = Number(item.id ?? item.no);
+    finalId = (numId && numId !== 0) ? numId : (1000000 + (index ?? 0));
+  }
+  
+  return {
+    id: finalId,
+    no: typeof item.no === 'number' ? item.no : undefined,
+    orgApiId: String(item.id || ''),
+    orgAccount: String(item.account || ''),
+    org: item.name,
+    owner: item.leaderName,
+    ownerId: item.account, // 대표자 아이디 (account 필드 사용)
+    createdAt: '-',
+    joinCount: 0,
+    memberCount: item.memberCount,
+    isMember: true,
+    eventTitle: item.eventName || '-',
+  };
 }

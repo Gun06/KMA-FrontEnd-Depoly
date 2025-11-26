@@ -45,25 +45,7 @@ export default function GuideCautionPage({ params }: { params: { eventId: string
   // API 데이터만 사용
   const imageUrl = eventData?.noticePageImageUrl;
 
-  if (isLoading) {
-    return (
-      <SubmenuLayout 
-        eventId={eventId}
-        breadcrumb={{
-          mainMenu: "대회안내",
-          subMenu: "대회유의사항"
-        }}
-      >
-        <div className="container mx-auto px-4 py-4 sm:py-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-            <div className="flex justify-center">
-              <div className="text-gray-500">로딩 중...</div>
-            </div>
-          </div>
-        </div>
-      </SubmenuLayout>
-    );
-  }
+  // 로딩 상태 제거 - 바로 콘텐츠 표시
 
   if (error && !eventData) {
     return (

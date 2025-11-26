@@ -7,12 +7,31 @@ import { GroupFormData as GroupFormDataType } from "../types/group";
 export const handleInputChange = (
   setFormData: Dispatch<SetStateAction<IndividualFormData>>,
   field: keyof IndividualFormData,
-  value: string
+  value: string | Array<{souvenirId: string, souvenirName: string, size: string}>
 ) => {
-  setFormData(prev => ({
-    ...prev,
-    [field]: value
-  }));
+  setFormData(prev => {
+    // 카테고리가 변경되면 기념품 관련 필드들 초기화
+    if (field === 'category') {
+      // category는 string 타입이므로 value가 string인지 확인
+      if (typeof value === 'string') {
+        return {
+          ...prev,
+          [field]: value,
+          souvenir: '',
+          size: '',
+          selectedSouvenirs: []
+        };
+      }
+      // category에 Array가 전달되면 무시
+      return prev;
+    }
+    
+    // 다른 필드들은 타입에 맞게 처리
+    return {
+      ...prev,
+      [field]: value
+    };
+  });
 };
 
 export const handleIdCheck = async (
@@ -87,32 +106,72 @@ export const handleGroupAddressSelect = (
   }));
 };
 
-export const handleGroupNameCheck = async (groupName: string) => {
-  if (!groupName.trim()) return false;
+export const handleGroupNameCheck = async (
+  eventId: string, 
+  groupName: string,
+  setNameCheckResult: Dispatch<SetStateAction<'none' | 'available' | 'unavailable' | 'error'>>
+) => {
+  if (!groupName.trim()) {
+    setNameCheckResult('none');
+    return false;
+  }
+
+  setNameCheckResult('none'); // 로딩 상태 초기화
 
   try {
-    // TODO: 실제 API 호출로 변경
-    // const response = await checkGroupNameExists(groupName);
-    // return !response.exists;
+    const { checkGroupName } = await import('../api/group');
+    const isDuplicate = await checkGroupName(eventId, groupName);
     
-    // 임시로 랜덤 결과 반환
-    return Math.random() > 0.5;
+    if (isDuplicate) {
+      setNameCheckResult('unavailable');
+      return false;
+    } else {
+      setNameCheckResult('available');
+      return true;
+    }
   } catch (error) {
+    setNameCheckResult('error');
     return false;
   }
 };
 
-export const handleGroupIdCheck = async (groupId: string) => {
-  if (!groupId.trim()) return false;
+export const handleGroupIdCheck = async (
+  eventId: string, 
+  groupId: string,
+  setIdCheckResult: Dispatch<SetStateAction<'none' | 'available' | 'unavailable' | 'error'>>
+) => {
+  if (!groupId.trim()) {
+    setIdCheckResult('none');
+    return false;
+  }
+
+  // 길이 체크 (5-20자)
+  if (groupId.length < 5 || groupId.length > 20) {
+    setIdCheckResult('error');
+    return false;
+  }
+
+  // 한글 포함 여부 체크
+  if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(groupId)) {
+    setIdCheckResult('error');
+    return false;
+  }
+
+  setIdCheckResult('none'); // 로딩 상태 초기화
 
   try {
-    // TODO: 실제 API 호출로 변경
-    // const response = await checkGroupIdExists(groupId);
-    // return !response.exists;
+    const { checkGroupId } = await import('../api/group');
+    const isDuplicate = await checkGroupId(eventId, groupId);
     
-    // 임시로 랜덤 결과 반환
-    return Math.random() > 0.5;
+    if (isDuplicate) {
+      setIdCheckResult('unavailable');
+      return false;
+    } else {
+      setIdCheckResult('available');
+      return true;
+    }
   } catch (error) {
+    setIdCheckResult('error');
     return false;
   }
 };

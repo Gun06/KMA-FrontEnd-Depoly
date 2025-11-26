@@ -1,13 +1,82 @@
 "use client"
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import sponsor01 from '@/assets/images/main/sponsor01.png'
 import sponsor02 from '@/assets/images/main/sponsor02.png'
 import sponsor03 from '@/assets/images/main/sponsor03.png'
+import { SponsorBanner } from '@/types/event'
 
 export default function SponsorSection() {
   const sources = [sponsor01, sponsor02, sponsor03]
-  const banners = Array.from({ length: 12 }, (_, i) => sources[i % sources.length])
+  const defaultBanners = Array.from({ length: 12 }, (_, i) => sources[i % sources.length])
+  
+  // API 데이터 상태
+  const [sponsorData, setSponsorData] = useState<SponsorBanner[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // API에서 스폰서 배너 데이터 가져오기
+  useEffect(() => {
+    const fetchSponsorData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER
+        
+        if (!API_BASE_URL) {
+          throw new Error('API 기본 URL이 설정되지 않았습니다. 환경 변수를 확인해주세요.')
+        }
+        
+        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/main-page/main-sponsor`
+        
+        const response = await fetch(API_ENDPOINT, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        })
+        
+        if (response.ok) {
+          const data: SponsorBanner[] = await response.json()
+          
+          // visible이 true인 배너만 필터링하고 orderNo 순으로 정렬
+          const visibleBanners = data
+            .filter(banner => banner.visible)
+            .sort((a, b) => a.orderNo - b.orderNo)
+          
+          setSponsorData(visibleBanners)
+        } else {
+          const errorText = await response.text()
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+        }
+      } catch (error) {
+        // 서버 에러 시 기본 데이터 사용
+        setSponsorData([])
+        setError(null) // 에러 상태를 null로 설정하여 기본 데이터 표시
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSponsorData()
+  }, [])
+
+  // 표시할 배너 결정 (API 데이터가 있으면 사용, 없으면 기본 데이터)
+  const baseBanners = sponsorData.length > 0 
+    ? sponsorData.map(banner => ({ src: banner.imageUrl, alt: banner.url, url: banner.url }))
+    : defaultBanners.map((src, i) => ({ src, alt: `sponsor-${i % sources.length}`, url: '#' }))
+  
+  // 중복 제거 (URL 기준) - 관리자 미리보기와 동일한 로직
+  const uniqueBanners = baseBanners.filter((banner, index, arr) => 
+    arr.findIndex(other => other.src === banner.src) === index
+  )
+  
+  // 최소 12개가 되도록 반복 (관리자 미리보기와 동일한 로직)
+  const banners = uniqueBanners.length > 0
+    ? Array.from({ length: Math.max(12, uniqueBanners.length * 3) }, (_, i) => uniqueBanners[i % uniqueBanners.length])
+    : []
 
   return (
     <section className="relative bg-white sponsor-section" style={{ height: 'var(--sectionH)' }}>
@@ -28,17 +97,49 @@ export default function SponsorSection() {
       >
         <div className="marquee flex w-max items-center h-full leading-[0]">
           <ul className="flex items-center gap-0 px-0 h-full">
-            {banners.map((src, idx) => (
+            {banners.map((banner, idx) => (
               <li key={`s-${idx}`} className="shrink-0 flex items-center justify-center h-full">
-                <Image src={src} alt={`sponsor-${idx % sources.length}`} height={100} style={{ height: 'var(--imgH)' }} className="w-auto object-contain" />
+                <a 
+                  href={banner.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Image 
+                    src={banner.src} 
+                    alt={banner.alt} 
+                    height={100} 
+                    width={200}
+                    style={{ height: 'var(--imgH)' }} 
+                    className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                </a>
               </li>
             ))}
           </ul>
           {/* 두 번째 트랙을 이어붙여 끊김 없는 루프 */}
           <ul className="flex items-center gap-0 px-0 h-full">
-            {banners.map((src, idx) => (
+            {banners.map((banner, idx) => (
               <li key={`s2-${idx}`} className="shrink-0 flex items-center justify-center h-full">
-                <Image src={src} alt={`sponsor-${idx % sources.length}`} height={100} style={{ height: 'var(--imgH)' }} className="w-auto object-contain" />
+                <a 
+                  href={banner.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Image 
+                    src={banner.src} 
+                    alt={banner.alt} 
+                    height={100} 
+                    width={200}
+                    style={{ height: 'var(--imgH)' }} 
+                    className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                </a>
               </li>
             ))}
           </ul>
@@ -67,8 +168,22 @@ export default function SponsorSection() {
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gray-200 z-[60]" />
 
       <style jsx>{`
-        .marquee { animation: marquee 45s linear infinite; will-change: transform; }
+        .marquee { animation: marquee 60s linear infinite; will-change: transform; }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        
+        /* 이미지 드래그 방지 */
+        .marquee img {
+          -webkit-user-drag: none;
+          -khtml-user-drag: none;
+          -moz-user-drag: none;
+          -o-user-drag: none;
+          user-drag: none;
+          pointer-events: none;
+        }
+        
+        .marquee a {
+          pointer-events: auto;
+        }
         /* Desktop default (>=1280px) */
         .sponsor-section {
           --sectionH: 140px;  /* 기본 높이 증가 */

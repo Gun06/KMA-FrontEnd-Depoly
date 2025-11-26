@@ -8,7 +8,7 @@ import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 
 export type ApplicantListRow = {
-  id: number;
+  id: string;
   date: string;   // YYYY-MM-DD
   title: string;
   applyStatus: RegStatus;

@@ -17,7 +17,7 @@ export default function NoticeDetailPage() {
   const eventId = params.eventId as string;
   const noticeId = params.noticeId as string;
   
-  const { noticeDetail, isLoading, error } = useNoticeDetail(noticeId);
+  const { noticeDetail, isLoading, error } = useNoticeDetail(eventId, noticeId);
 
   // 뒤로가기 함수
   const handleBack = () => {

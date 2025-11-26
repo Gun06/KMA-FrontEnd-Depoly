@@ -105,8 +105,8 @@ export default function SingleImageUploader({
         {/* 파일 메타 + 제거 */}
         {file && (
           <div className="space-y-2">
-            <div className="text-[14px]">
-              <div className="text-[#0F1113]">{file.name}</div>
+            <div className="text-[14px] min-w-0">
+              <div className="text-[#0F1113] truncate max-w-[400px]" title={file.name}>{file.name}</div>
               <div className="text-[#6B7280]">{formatBytes(file.size)}</div>
             </div>
             {!readOnly && (

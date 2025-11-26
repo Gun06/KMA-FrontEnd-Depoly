@@ -21,6 +21,7 @@ const styles = cva(
         primary: "",
         success: "",
         danger:  "",
+        warning: "",
         neutral: "",
       },
       size: {
@@ -29,6 +30,7 @@ const styles = cva(
         smd:  "w-[70px] h-9 text-[13px] leading-[22px]",
         md:   "w-[65px] h-[32px] text-[14px] leading-[20px]",
         pill: "h-6 w-[50px] px-2.5 text-[12px] leading-[16px] rounded-full",
+        applicationPill: "h-6 w-[70px] px-2.5 text-[12px] leading-[16px] rounded-full",
       },
       withIcon: { true: "gap-1", false: "" },
     },
@@ -36,16 +38,19 @@ const styles = cva(
       { variant: "solid",   tone: "primary", class: "bg-kma-blue text-white" },
       { variant: "solid",   tone: "success", class: "bg-kma-green text-white" },
       { variant: "solid",   tone: "danger",  class: "bg-kma-red text-white" },
+      { variant: "solid",   tone: "warning", class: "bg-orange-400 text-white" },
       { variant: "solid",   tone: "neutral", class: "bg-kma-black text-white" },
 
       { variant: "soft",    tone: "primary", class: "border-blue-200  bg-blue-50  text-blue-600" },
       { variant: "soft",    tone: "success", class: "border-emerald-200 bg-emerald-50 text-emerald-600" },
       { variant: "soft",    tone: "danger",  class: "border-rose-200   bg-rose-50   text-rose-600" },
+      { variant: "soft",    tone: "warning", class: "border-orange-200 bg-orange-50 text-orange-600" },
       { variant: "soft",    tone: "neutral", class: "border-gray-200   bg-gray-50   text-gray-700" },
 
       { variant: "outline", tone: "primary", class: "border-blue-500   text-blue-600" },
       { variant: "outline", tone: "success", class: "border-emerald-500 text-emerald-600" },
       { variant: "outline", tone: "danger",  class: "border-rose-500   text-rose-600" },
+      { variant: "outline", tone: "warning", class: "border-orange-400 text-orange-600" },
       { variant: "outline", tone: "neutral", class: "border-gray-400   text-gray-700" },
     ],
     defaultVariants: {

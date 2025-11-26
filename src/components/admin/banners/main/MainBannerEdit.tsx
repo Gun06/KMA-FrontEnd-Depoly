@@ -3,11 +3,15 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/common/Button/Button';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
-import { MOCK_EVENTS } from '@/data/events';
 import EventDropdownPortal, { Opt } from './EventDropdownPortal';
+import { getMainBannersForAdmin, updateMainBanner } from '@/services/mainBanner';
+import { getSimpleEventList } from '@/services/event';
+import type { MainBannerUpdateInfo } from '@/types/mainBanner';
+import { mainBannerKeys } from '@/hooks/useMainBanners';
 
 /* --------------------------------
    Types / Const
@@ -21,78 +25,32 @@ export type EditRow = {
   subtitle: string;
   date: string;
   eventId?: number;
+  bannerType: 'event' | 'association';
 };
 
-type PersistRow = {
-  id: number;
-  visible: boolean;
-  badge: string;
-  title: string;
-  subtitle: string;
-  date: string;
-  eventId?: number;
-  image: null | { name?: string; sizeMB?: number; url: string };
-};
 
-const LS_KEY = 'kma_admin_banners_main_v1';
 const softInput =
   'bg-white border border-slate-200 hover:border-slate-300 ' +
   'focus:border-[#BFD7FF] outline-none focus:outline-none ring-0 focus:ring-0 ' +
   'transition-colors shadow-none';
 
-/* ----------- blob → data: 유틸 ----------- */
-async function toPersistentUrl(maybeUrl?: string): Promise<string> {
-  if (!maybeUrl) return '';
-  if (/^(https?:|data:)/i.test(maybeUrl)) return maybeUrl;
-  if (maybeUrl.startsWith('blob:')) {
-    try {
-      const res = await fetch(maybeUrl);
-      const blob = await res.blob();
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result));
-        r.onerror = reject;
-        r.readAsDataURL(blob);
-      });
-      return dataUrl;
-    } catch { return ''; }
+/* ------------ utils ------------ */
+function extractFileNameFromUrl(url: string): string {
+  try {
+    // URL에서 파일명 추출
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const fileName = pathname.split('/').pop() || 'image.jpg';
+    
+    // URL 디코딩 (한글 파일명 등)
+    return decodeURIComponent(fileName);
+  } catch {
+    // URL 파싱 실패 시 기본값
+    return 'image.jpg';
   }
-  return maybeUrl;
 }
 
-/* --------------------------------
-   Storage helpers (목록과 동일 포맷)
---------------------------------- */
-function normalizeForStorage(rows: EditRow[]): PersistRow[] {
-  return rows.map(r => {
-    const f: any = r.image;
-    const url = f?.url || f?.previewUrl || '';
-    return {
-      id: r.id,
-      visible: !!r.visible,
-      badge: r.badge ?? '',
-      title: r.title ?? '',
-      subtitle: r.subtitle ?? '',
-      date: r.date ?? '',
-      eventId: r.eventId ?? undefined,
-      image: f ? { name: f.name, sizeMB: f.sizeMB, url } : null,
-    };
-  });
-}
-function loadRows(): EditRow[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    const arr: PersistRow[] = raw ? JSON.parse(raw) : [];
-    return arr.map(r => ({
-      id: r.id, visible: r.visible, image: (r as any).image ?? null,
-      badge: r.badge, title: r.title, subtitle: r.subtitle, date: r.date, eventId: r.eventId,
-    }));
-  } catch { return []; }
-}
-function saveRows(rows: EditRow[]) {
-  const payload = normalizeForStorage(rows);
-  localStorage.setItem(LS_KEY, JSON.stringify(payload));
-}
+
 
 /* --------------------------------
    IME-safe input
@@ -126,53 +84,173 @@ function CellInput({
 /* --------------------------------
    Page
 --------------------------------- */
-export default function MainBannerEdit({ idParam }: { idParam: number }) {
+export default function MainBannerEdit({ idParam }: { idParam: string }) {
   const router = useRouter();
-  const [rows, setRows] = React.useState<EditRow[]>([]);
+  const queryClient = useQueryClient();
   const [row, setRow] = React.useState<EditRow | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [eventOptions, setEventOptions] = React.useState<Opt[]>([]);
 
+  // API에서 배너 데이터와 대회 목록 로드
   React.useEffect(() => {
-    const all = loadRows();
-    if (idParam === 0) {
-      const nextId = Math.max(0, ...all.map(r => r.id || 0)) + 1;
-      const draft: EditRow = {
-        id: nextId, visible: true, image: null, badge: '대회 안내', title: '', subtitle: '', date: '', eventId: undefined,
-      };
-      setRows([...all, draft]);
-      setRow(draft);
-    } else {
-      const found = all.find(r => r.id === idParam) || null;
-      setRows(all);
-      setRow(found);
-    }
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        if (idParam === '0') {
+          // 새 배너 생성
+          const draft: EditRow = {
+            id: Date.now(), // 임시 ID
+            visible: true,
+            image: null,
+            badge: '대회 안내',
+            title: '',
+            subtitle: '',
+            date: '',
+            eventId: undefined,
+            bannerType: 'event',
+          };
+          setRow(draft);
+        } else {
+          // 기존 배너 수정 - 전체 목록에서 해당 배너 찾기
+          const [allBanners, eventsData] = await Promise.all([
+            getMainBannersForAdmin(),
+            getSimpleEventList().catch(() => [])
+          ]);
+          
+          // URL의 UUID를 직접 사용해서 매칭
+          const bannerData = allBanners.find(banner => banner.id === idParam);
+          
+          if (!bannerData) {
+            throw new Error('배너를 찾을 수 없습니다.');
+          }
+
+          // 대회 목록을 드롭다운 옵션으로 변환
+          const eventOpts: Opt[] = eventsData.map(event => ({
+            key: event.id,
+            label: event.title
+          }));
+          setEventOptions(eventOpts);
+
+          // 백엔드에서 eventId를 제공하므로 직접 사용
+          const eventId = parseInt(bannerData.eventId);
+
+          // API 데이터를 EditRow 형식으로 변환
+          const editRow: EditRow = {
+            id: parseInt(bannerData.id),
+            visible: true, // API에서 visible 정보가 없으므로 기본값 true
+            image: bannerData.imageUrl ? {
+              id: bannerData.id,
+              file: new File([], 'image.jpg'),
+              name: extractFileNameFromUrl(bannerData.imageUrl), // URL에서 실제 파일명 추출
+              size: 1000000, // 1MB로 가정
+              sizeMB: 1, // 1MB 표시
+              tooLarge: false,
+              url: bannerData.imageUrl,
+              previewUrl: bannerData.imageUrl // 이미지 URL을 previewUrl로 사용
+            } as unknown as UploadItem : null,
+            badge: '대회 안내', // 고정값
+            title: bannerData.title,
+            subtitle: bannerData.subTitle,
+            date: bannerData.date,
+            eventId: eventId, // eventName으로부터 찾은 eventId 사용
+            bannerType: 'event',
+          };
+
+          setRow(editRow);
+        }
+
+      } catch (_err) {
+        setError('데이터를 불러오는데 실패했습니다.');
+        
+        // 에러 시 빈 배열로 설정
+        setEventOptions([]);
+        
+          if (idParam === '0') {
+          const draft: EditRow = {
+            id: Date.now(),
+            visible: true,
+            image: null,
+            badge: '대회 안내',
+            title: '',
+            subtitle: '',
+            date: '',
+            eventId: undefined,
+            bannerType: 'event',
+          };
+          setRow(draft);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [idParam]);
 
-  const eventOpts: Opt[] = React.useMemo(
-    () => MOCK_EVENTS.map(e => ({ key: e.id, label: e.title })), []
-  );
 
+    // 로딩 상태 처리
+    if (isLoading) {
+      return (
+        <div className="mx-auto max-w-[900px] px-4 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">데이터를 불러오는 중...</div>
+          </div>
+        </div>
+      );
+    }
+  
+    // 에러 상태 처리
+    if (error && !row) {
+      return (
+        <div className="mx-auto max-w-[900px] px-4 py-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="text-red-500 mb-2">{error}</div>
+              <div className="text-sm text-gray-400">기본 데이터를 사용합니다.</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  
   if (!row) return <div className="p-6">존재하지 않는 배너입니다.</div>;
 
   const update = (patch: Partial<EditRow>) =>
     setRow(prev => ({ ...(prev as EditRow), ...patch }));
 
   const onSave = async () => {
-    // 현재 row의 이미지 URL을 영구화
-    const f: any = row?.image;
-    let url = '';
-    if (f?.url) url = await toPersistentUrl(f.url);
-    else if (f?.previewUrl) url = await toPersistentUrl(f.previewUrl);
-    const image = f ? { ...f, url, previewUrl: url } : null;
+    if (!row) return;
 
-    const normalizedRow: EditRow = { ...(row as EditRow), image };
+    try {
+      // API 요청 데이터 구성
+      const updateInfo: MainBannerUpdateInfo = {
+        title: row.title,
+        subtitle: row.subtitle,
+        date: row.date,
+        eventId: row.eventId?.toString() || '',
+        deleteMainBannerIds: [], // 개별 수정 시에는 삭제할 항목이 없으므로 빈 배열
+      };
 
-    const next = rows.some(r => r.id === normalizedRow.id)
-      ? rows.map(r => (r.id === normalizedRow.id ? normalizedRow : r))
-      : [...rows, normalizedRow];
+      // 이미지 파일 추출 (새로 업로드된 경우)
+      let imageFile: File | undefined;
+      if (row.image && 'file' in row.image && row.image.file instanceof File) {
+        imageFile = row.image.file;
+      }
 
-    saveRows(next);
-    alert('저장되었습니다.');
-    router.push('/admin/banners/main');
+      // API 호출 (URL의 UUID 사용)
+      await updateMainBanner(idParam, updateInfo, imageFile);
+
+      // 메인 배너 목록 캐시 무효화 (목록에서 변경사항 반영)
+      queryClient.invalidateQueries({ queryKey: mainBannerKeys.lists() });
+
+      alert('저장되었습니다.');
+      router.push('/admin/banners/main');
+    } catch (_err) {
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   return (
@@ -192,24 +270,36 @@ export default function MainBannerEdit({ idParam }: { idParam: number }) {
       </div>
 
       {/* 폼 */}
-      <div className="grid grid-cols-2 gap-2">
-        <CellInput value={row.badge}    onCommit={(v) => update({ badge: v })}    placeholder="배지(예: 대회 안내)" className="h-10" />
-        <CellInput value={row.date}     onCommit={(v) => update({ date: v })}     placeholder="대회 날짜(예: 2025.11.03)" className="h-10" />
-        <CellInput value={row.title}    onCommit={(v) => update({ title: v })}    placeholder="큰 제목(예: 2025 전주 남강 마라톤)" className="col-span-2 h-11 text-[15px]" />
-        <CellInput value={row.subtitle} onCommit={(v) => update({ subtitle: v })} placeholder="부제(선택)" className="col-span-2 h-10" />
-      </div>
+      {row.bannerType === 'association' ? (
+        <div className="text-center py-8 bg-blue-50 rounded-lg border-2 border-dashed border-blue-300">
+          <div className="text-blue-500 mb-2">🏢</div>
+          <div className="text-sm text-blue-600 font-medium">협회소개 배너</div>
+          <div className="text-xs text-blue-500 mt-1">이미지만 업로드하세요</div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="h-10 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md flex items-center text-gray-600">
+              {row.badge}
+            </div>
+            <CellInput value={row.date}     onCommit={(v) => update({ date: v })}     placeholder="대회 날짜(예: 2025.11.03)" className="h-10" />
+            <CellInput value={row.title}    onCommit={(v) => update({ title: v })}    placeholder="큰 제목(예: 2025 전주 남강 마라톤)" className="col-span-2 h-11 text-[15px]" />
+            <CellInput value={row.subtitle} onCommit={(v) => update({ subtitle: v })} placeholder="부제(선택)" className="col-span-2 h-10" />
+          </div>
 
-      {/* 대회 선택 */}
-      <div className="mt-3">
-        <label className="block text-sm font-medium mb-1">대회 선택</label>
-        <EventDropdownPortal
-          value={row.eventId}
-          onChange={(v) => update({ eventId: v })}
-          options={eventOpts}
-          placeholder="대회를 선택해주세요"
-        />
-        {row.eventId && <p className="mt-1 text-xs text-gray-500">버튼 경로는 자동으로 생성됩니다.</p>}
-      </div>
+          {/* 대회 선택 */}
+          <div className="mt-3">
+            <label className="block text-sm font-medium mb-1">대회 선택</label>
+            <EventDropdownPortal
+              value={row.eventId?.toString()}
+              onChange={(v) => update({ eventId: v ? parseInt(v) : undefined })}
+              options={eventOptions}
+              placeholder="대회를 선택해주세요"
+            />
+            {row.eventId && <p className="mt-1 text-xs text-gray-500">버튼 경로는 자동으로 생성됩니다.</p>}
+          </div>
+        </>
+      )}
 
       {/* 공개/비공개 */}
       <div className="mt-4">

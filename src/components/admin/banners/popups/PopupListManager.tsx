@@ -2,35 +2,30 @@
 
 import React from 'react';
 import Link from 'next/link';
-import AdminTableShell from '@/components/admin/Table/AdminTableShell';
-import type { Column } from '@/components/common/Table/BaseTable';
-import Button from '@/components/common/Button/Button';
+import AdminBannerTableShell from '@/components/admin/Table/AdminBannerTableShell';
+import type { Column } from '@/components/admin/Table/BannerTable';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 import PopupPreview from './PopupPreview';
+import Button from '@/components/common/Button/Button';
 import { ChevronUp, ChevronDown, Plus, Minus, Pencil } from 'lucide-react';
+import { useGetQuery, useApiMutation } from '@/hooks/useFetch';
+import { useQueryClient } from '@tanstack/react-query';
+import type { PopupItem, PopupBatchRequest } from '@/types/popup';
 
-/* ---------- Types & Storage ---------- */
+/* ---------- Types ---------- */
 export type PopupRow = {
-  id: number;
+  id: string;
   url: string;
   image: UploadItem | null;
   visible: boolean;
-  device: 'all' | 'pc' | 'mobile';
+  device: 'PC' | 'MOBILE' | 'BOTH';
   startAt?: string;
   endAt?: string;
+  orderNo: number;
+  eventId?: string;
   draft?: boolean;
-};
-
-type PersistRow = {
-  id: number;
-  url: string;
-  visible: boolean;
-  device: 'all' | 'pc' | 'mobile';
-  startAt?: string;
-  endAt?: string;
-  image: null | { name?: string; sizeMB?: number; url: string };
 };
 
 export const POPUP_LS_KEY = 'kma_admin_popups_v1';
@@ -81,74 +76,119 @@ function CircleBtn({ kind, onClick }: { kind: 'up'|'down'|'plus'|'minus'; onClic
   );
 }
 
-/* ---------- storage helpers ---------- */
-function normalizeForStorage(rows: PopupRow[]): PersistRow[] {
-  return rows.map((r) => {
-    const f: any = r.image;
-    const url =
-      typeof f?.url === 'string' && /^https?:\/\//i.test(f.url)
-        ? f.url
-        : (f?.previewUrl || '');
-    return {
-      id: r.id,
-      url: (r.url || '').trim(),
-      visible: !!r.visible,
-      device: r.device ?? 'all',
-      startAt: r.startAt || undefined,
-      endAt: r.endAt || undefined,
-      image: f ? { name: f.name, sizeMB: f.sizeMB, url } : null,
-    };
-  });
-}
-function loadFromStorage(): PopupRow[] {
-  try {
-    const raw = localStorage.getItem(POPUP_LS_KEY);
-    const arr: PersistRow[] = raw ? JSON.parse(raw) : [];
-    return arr.map((r, i) => ({
-      id: r.id ?? i + 1,
-      url: r.url ?? '',
-      visible: r.visible ?? true,
-      device: r.device ?? 'all',
-      startAt: r.startAt,
-      endAt: r.endAt,
-      image: (r as any).image ?? null,
-      draft: false,
-    }));
-  } catch {
-    return [];
-  }
-}
-function saveToStorage(rows: PopupRow[]) {
-  const payload = normalizeForStorage(rows.map(({ draft, ...rest }) => rest));
-  localStorage.setItem(POPUP_LS_KEY, JSON.stringify(payload));
-}
 
 /* ---------- Component (List + Preview toggle) ---------- */
-export default function PopupListManager() {
+export interface PopupListManagerRef {
+  addNewPopup: () => void;
+  handleSave: () => void;
+}
+
+const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: string }>(
+  ({ eventId }, ref) => {
   const mounted = useMounted();
+  const queryClient = useQueryClient();
   const [mode, setMode] = React.useState<'manage' | 'preview'>('manage');
   const [rows, setRows] = React.useState<PopupRow[]>([]);
 
+  // API 데이터 조회
+  const { data: apiPopups } = useGetQuery(
+    eventId ? ['eventPopups', eventId] : ['homepagePopups'],
+    eventId ? `/api/v1/event/${eventId}/popup` : '/api/v1/homepage/popup',
+    'admin',
+    { enabled: mounted },
+    true // withAuth = true (관리자 API이므로 인증 필요)
+  );
+
+  // API 데이터를 PopupRow로 변환
   React.useEffect(() => {
     if (!mounted) return;
-    const initial = loadFromStorage();
-    setRows(
-      initial.length
-        ? initial
-        : [{
-            id: 1,
-            url: '',
-            image: null,
-            visible: true,
-            device: 'all',
-            startAt: '',
-            endAt: '',
-            draft: true,
-          }]
-    );
-  }, [mounted]);
+    
+    // ISO 날짜를 datetime-local 형식으로 변환하는 함수
+    const formatDateForInput = (isoDate: string) => {
+      if (!isoDate) return '';
+      const date = new Date(isoDate);
+      return date.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM 형식
+    };
 
-  const updateRow = (id: number, patch: Partial<PopupRow>) =>
+    // 이미지 URL에서 파일명 추출하는 함수
+    const getFileNameFromUrl = (url: string) => {
+      try {
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname;
+        const fileName = pathname.split('/').pop() || 'image';
+        // URL 디코딩하여 한글 파일명 복원
+        return decodeURIComponent(fileName);
+      } catch {
+        return 'image';
+      }
+    };
+    
+    if (apiPopups && Array.isArray(apiPopups) && apiPopups.length > 0) {
+      // 기존 데이터가 있는 경우
+      const convertedRows: PopupRow[] = apiPopups.map((popup: PopupItem, _index: number) => ({
+        id: popup.id,
+        url: popup.url || '',
+        image: popup.imageUrl ? {
+          id: `${popup.id}_image`, // 각 팝업마다 고유한 이미지 ID
+          file: new File([], `placeholder_${popup.id}`), // 각 팝업마다 고유한 placeholder 파일
+          name: getFileNameFromUrl(popup.imageUrl),
+          size: 0, // 실제 파일 크기는 알 수 없으므로 0으로 설정
+          sizeMB: 0,
+          tooLarge: false,
+          url: popup.imageUrl, // 스폰서와 동일하게 url 필드에 저장
+          previewUrl: popup.imageUrl
+        } as UploadItem : null,
+        visible: true, // API에서 visible 정보가 없으므로 기본값
+        device: popup.device,
+        startAt: formatDateForInput(popup.startAt),
+        endAt: formatDateForInput(popup.endAt),
+        orderNo: popup.orderNo,
+        eventId: popup.eventId,
+        draft: false
+      }));
+
+      setRows(convertedRows);
+    } else {
+      // 기존 데이터가 없는 경우, 새 팝업 등록을 위한 빈 폼 생성
+      const newPopupRow: PopupRow = {
+        id: `temp_${Date.now()}`,
+        url: '',
+        image: null,
+        visible: true,
+        device: 'BOTH',
+        startAt: '',
+        endAt: '',
+        orderNo: 1,
+        eventId: eventId,
+        draft: true
+      };
+
+      setRows([newPopupRow]);
+    }
+  }, [apiPopups, mounted, eventId]);
+
+  // 저장 mutation
+  const saveMutation = useApiMutation(
+    eventId ? `/api/v1/event/${eventId}/popup` : '/api/v1/homepage/popup',
+    'admin',
+    'POST',
+    true,
+    {
+      onSuccess: () => {
+        // 팝업 목록 쿼리 무효화하여 데이터 다시 로드
+        const queryKey = eventId ? ['eventPopups', eventId] : ['homepagePopups'];
+        queryClient.invalidateQueries({ queryKey });
+        
+        alert('저장되었습니다.');
+        setMode('preview');
+      },
+      onError: (error: Error) => {
+        alert(`저장 실패: ${error.message}`);
+      }
+    }
+  );
+
+  const updateRow = (id: string, patch: Partial<PopupRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   const move = (idx: number, dir: -1 | 1) =>
@@ -157,28 +197,115 @@ export default function PopupListManager() {
       const j = idx + dir;
       if (j < 0 || j >= next.length) return prev;
       [next[idx], next[j]] = [next[j], next[idx]];
+      // orderNo 업데이트
+      next.forEach((row, index) => {
+        row.orderNo = index + 1;
+      });
       return next;
     });
 
   const addAfter = (idx: number) =>
     setRows((prev) => {
-      const nextId = Math.max(0, ...prev.map((r) => r.id)) + 1;
+      const nextId = `temp_${Date.now()}`; // 임시 ID (백엔드에서 실제 UUID 생성)
       const next = [...prev];
       next.splice(idx + 1, 0, {
-        id: nextId, url: '', image: null, visible: true, device: 'all', startAt: '', endAt: '', draft: true,
+        id: nextId, 
+        url: '', 
+        image: null, 
+        visible: true, 
+        device: 'BOTH', 
+        startAt: '', 
+        endAt: '', 
+        orderNo: idx + 2,
+        eventId: eventId,
+        draft: true,
+      });
+      // orderNo 재정렬
+      next.forEach((row, index) => {
+        row.orderNo = index + 1;
       });
       return next;
     });
 
+  const addNewPopup = () => {
+    const nextId = `temp_${Date.now()}`; // 임시 ID (백엔드에서 실제 UUID 생성)
+    const newPopup: PopupRow = {
+      id: nextId,
+      url: '',
+      image: null,
+      visible: true,
+      device: 'BOTH',
+      startAt: '',
+      endAt: '',
+      orderNo: rows.length + 1,
+      eventId: eventId,
+      draft: true,
+    };
+    setRows(prev => [...prev, newPopup]);
+  };
+
+  // ref를 통해 외부에서 함수들을 호출할 수 있도록 노출
+  React.useImperativeHandle(ref, () => ({
+    addNewPopup,
+    handleSave,
+  }));
+
   const removeAt = (idx: number) =>
-    setRows((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+    setRows((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      // orderNo 재정렬
+      next.forEach((row, index) => {
+        row.orderNo = index + 1;
+      });
+      return next;
+    });
 
   const handleSave = () => {
-    const frozen = rows.map((r) => ({ ...r, draft: false }));
-    saveToStorage(frozen);
-    setRows(frozen);
-    alert('저장되었습니다.');
-    setMode('preview');
+    
+    // 현재 시간과 기본 종료 시간 계산
+    const now = new Date();
+    const defaultEndTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1년 후
+
+    // API 요청 데이터 준비
+    const popupInfos = rows.map(row => ({
+      id: row.draft ? undefined : row.id, // 새 팝업(draft)은 ID 없이 전송
+      url: row.url || '',
+      startAt: row.startAt || now.toISOString(),
+      endAt: row.endAt || defaultEndTime.toISOString(),
+      device: row.device,
+      orderNo: row.orderNo,
+      eventId: row.eventId
+    }));
+
+
+    // 삭제된 팝업 ID 추출 (배너/스폰서와 동일한 방식)
+    const deletedPopupIds = (apiPopups && Array.isArray(apiPopups))
+      ? apiPopups
+          .filter((apiPopup: PopupItem) => !rows.some(r => r.id === apiPopup.id))
+          .map((popup: PopupItem) => popup.id)
+      : [];
+
+
+        const popupBatchRequest: PopupBatchRequest = {
+          popupInfos,
+          deletedPopupIds // 삭제된 팝업 ID들 포함
+        };
+
+
+    // FormData 생성
+    const formData = new FormData();
+    formData.append('popupBatchRequest', JSON.stringify(popupBatchRequest));
+    
+    // 새로 업로드한 이미지만 필터링 (draft 상태이면서 실제 File 객체인 것들)
+    const imagesToSend = rows.filter(row => row.draft && row.image?.file instanceof File);
+    
+    imagesToSend.forEach((row) => {
+      if (row.image?.file instanceof File) {
+        formData.append('images', row.image.file);
+      }
+    });
+
+    saveMutation.mutate(formData);
   };
 
   if (!mounted) return null;
@@ -195,19 +322,17 @@ export default function PopupListManager() {
       width: 320,
       align: 'left',
       render: (r) => (
-        <div className="h-full w-full flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <SponsorUploader
-              label="이미지 선택"
-              accept=".jpg,.jpeg,.png,.webp"
-              maxSizeMB={20}
-              value={r.image ? [r.image] : []}
-              readOnly={!r.draft}
-              onChange={(files) => r.draft && updateRow(r.id, { image: files?.[0] ?? null })}
-              buttonClassName="h-9 px-3"
-              emptyText="이미지 없음"
-            />
-          </div>
+        <div className="flex items-center gap-3 h-full min-h-[120px] w-[320px] overflow-hidden">
+          <SponsorUploader
+            label="이미지 선택"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            maxSizeMB={20}
+            value={r.image ? [r.image] : []}
+            readOnly={!r.draft}
+            onChange={(files) => r.draft && updateRow(r.id, { image: files?.[0] ?? null })}
+            buttonClassName="h-9 px-3"
+            emptyText="이미지 없음"
+          />
         </div>
       ),
     },
@@ -231,9 +356,9 @@ export default function PopupListManager() {
               <CircleBtn kind="down" onClick={() => move(idx, +1)} />
               <CircleBtn kind="plus" onClick={() => addAfter(idx)} />
               <CircleBtn kind="minus" onClick={() => removeAt(idx)} />
-              {!r.draft && (
+              {!r.id.startsWith('temp_') && (
                 <Link
-                  href={`/admin/banners/popups/${r.id}/edit`}
+                  href={eventId ? `/admin/banners/popups/events/${eventId}/${r.id}/edit` : `/admin/banners/popups/main/${r.id}/edit`}
                   className="shrink-0 inline-flex items-center gap-1 text-sm px-3 h-9 rounded-md border whitespace-nowrap"
                   title="수정"
                 >
@@ -264,13 +389,13 @@ export default function PopupListManager() {
                   onChange={(e) => updateRow(r.id, { device: e.target.value as PopupRow['device'] })}
                   className="h-10 px-3 rounded-md border border-slate-200 text-sm"
                 >
-                  <option value="all">전체</option>
-                  <option value="pc">PC</option>
-                  <option value="mobile">모바일</option>
+                  <option value="BOTH">전체</option>
+                  <option value="PC">PC</option>
+                  <option value="MOBILE">모바일</option>
                 </select>
               ) : (
                 <div className="h-10 flex items-center text-sm text-gray-700">
-                  {r.device === 'all' ? '전체' : r.device === 'pc' ? 'PC' : '모바일'}
+                  {r.device === 'BOTH' ? '전체' : r.device === 'PC' ? 'PC' : '모바일'}
                 </div>
               )}
             </div>
@@ -304,8 +429,8 @@ export default function PopupListManager() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4">
-      {/* 헤더: 모드 토글 + 저장 */}
+    <div>
+      {/* 헤더: 탭과 액션 버튼들 */}
       <div className="mb-4 flex items-center justify-between">
         <div className="rounded-lg border bg-white p-1 inline-flex gap-1">
           <button
@@ -323,17 +448,49 @@ export default function PopupListManager() {
             미리보기
           </button>
         </div>
-        {mode === 'manage' ? (
-          <Button size="sm" tone="primary" widthType="pager" onClick={handleSave}>
-            저장하기
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            tone="outlineDark"
+            variant="outline"
+            widthType="pager"
+            onClick={() => {
+              if (eventId) {
+                window.history.back();
+              } else {
+                window.location.href = '/admin/banners/popups';
+              }
+            }}
+          >
+            목록으로
           </Button>
-        ) : <div />}
+          {mode === 'manage' && (
+            <>
+              <Button
+                size="sm"
+                tone="neutral"
+                widthType="pager"
+                onClick={addNewPopup}
+              >
+                추가하기
+              </Button>
+              <Button
+                size="sm"
+                tone="primary"
+                widthType="pager"
+                onClick={handleSave}
+              >
+                저장하기
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {mode === 'manage' ? (
         <>
-          <AdminTableShell<PopupRow>
-            title="팝업 관리"
+          <AdminBannerTableShell<PopupRow>
+            title=""
             className="w-full"
             columns={columns}
             rows={rows}
@@ -351,6 +508,7 @@ export default function PopupListManager() {
                 { text: '※ 저장 전 항목만 편집 가능합니다. 저장 후에는 [수정]으로 들어가 편집하세요.' },
                 { text: '※ 기간을 비우면 항상 노출로 간주됩니다. (실서비스에서는 서버 검증 권장)' },
                 { text: '※ 이미지는 JPG/PNG 권장, 가로 1200px 이상, 20MB 이하.' },
+                { text: '⚠️ 개별 수정 후 목록으로 돌아온 경우, 이미 저장되어 있으니 목록에서 또 저장버튼 누르지 마세요. (이미지 오류 발생 가능)' },
               ]}
             />
           </div>
@@ -362,4 +520,8 @@ export default function PopupListManager() {
       )}
     </div>
   );
-}
+});
+
+PopupListManager.displayName = 'PopupListManager';
+
+export default PopupListManager;

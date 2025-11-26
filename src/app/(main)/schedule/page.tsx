@@ -12,10 +12,49 @@ import Image from 'next/image';
 import Link from 'next/link';
 import menubanner from '@/assets/images/main/menubanner.png';
 import homeIcon from '@/assets/icons/main/home.svg';
+import { useSchedule, useCalendar, flattenScheduleEvents, flattenCalendarEvents, filterScheduleEventsByType } from '@/hooks/useSchedule';
+import { ScheduleEvent, CalendarEvent } from '@/types/event';
 
 export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'all' | 'marathon' | 'national'>('calendar');
+  
+  // API 연동
+  const { data: scheduleData, isLoading, error } = useSchedule(currentDate.getFullYear(), currentDate.getMonth() + 1);
+  const { data: calendarData, isLoading: calendarLoading, error: calendarError } = useCalendar(currentDate.getFullYear(), currentDate.getMonth() + 1);
+  
+  // API 데이터를 평면화
+  const allEvents = scheduleData ? flattenScheduleEvents(scheduleData) : [];
+  const allCalendarEvents = calendarData ? flattenCalendarEvents(calendarData) : [];
+  
+  // 달력용 이벤트 데이터 변환 (API 데이터를 MarathonCalendar 형식으로)
+  const marathonEvents = allCalendarEvents.map(event => {
+    // API 날짜 형식: '10.01(수)' -> '2025-10-01' 형식으로 변환
+    const dateStr = event.date; // '10.01(수)'
+    const monthDay = dateStr.split('(')[0]; // '10.01'
+    const [month, day] = monthDay.split('.'); // ['10', '01']
+    const currentYear = currentDate.getFullYear();
+    const formattedDate = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    return {
+      id: `${formattedDate}-${event.eventName}`,
+      title: event.eventName,
+      date: formattedDate,
+      location: '장소 미정', // API에 장소 정보가 없으므로 기본값
+      time: '07:00', // 기본 시간
+      category: 'other' as const,
+      status: 'upcoming' as const,
+      type: 'marathon' as const,
+      imageSrc: '/assets/images/event/default-event.png' as any // 기본 이미지
+    };
+  });
+  
+  
+  // 전마협 대회만 필터링
+  const kmaEvents = filterScheduleEventsByType(allEvents, 'KMA');
+  
+  // 전국 대회만 필터링  
+  const localEvents = filterScheduleEventsByType(allEvents, 'LOCAL');
 
   const handleDateChange = (newDate: Date) => {
     setCurrentDate(newDate);
@@ -459,209 +498,53 @@ export default function SchedulePage() {
                  )}
 
                  {/* 전체일정 탭 */}
-                 {viewMode === 'all' && (
+                 {viewMode === 'calendar' && (
                    <>
-                   {/* 모바일: 달력과 대회일정을 세로로 배치 */}
-                   <div className="sm:hidden">
-                     {/* 달력 */}
-                     <div className="px-0.5 mb-3">
-                       <MarathonCalendar 
-                         events={marathonEvents} 
-                         className="w-full"
-                         currentDate={currentDate}
-                       />
-                     </div>
-                     
-                     {/* 대회일정 테이블 - 통합 */}
-                     <div className="px-0.5">
-                       <h2 className="text-lg font-semibold text-gray-900 mb-4 px-0.5">
-                         {currentDate.getMonth() + 1}월 대회 일정
-                       </h2>
-                       
-                       {/* 테이블 헤더 */}
-                       <div className="grid grid-cols-[1fr_2fr_1fr_0.8fr] gap-1 mb-2 pb-2 border-b border-gray-200">
-                         <div className="font-bold text-gray-700 text-center text-xs">일자</div>
-                         <div className="font-bold text-gray-700 text-center text-xs">대회명</div>
-                         <div className="font-bold text-gray-700 text-center text-xs">개최장소</div>
-                         <div className="font-bold text-gray-700 text-center text-xs">비고</div>
-                       </div>
-                       
-                       {/* 테이블 데이터 */}
-                       <div className="space-y-2">
-                       {marathonEvents
-                         .filter(event => {
-                           const eventDate = new Date(event.date);
-                           return eventDate.getMonth() === currentDate.getMonth() && 
-                                  eventDate.getFullYear() === currentDate.getFullYear();
-                         })
-                         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                         .map(event => {
-                           const eventDate = new Date(event.date);
-                           const today = new Date();
-                           const isPast = eventDate < today;
-                           
-                           return (
-                             <div 
-                               key={event.id} 
-                               className="grid grid-cols-[1fr_2fr_1fr_0.8fr] gap-1 py-2 px-1 rounded hover:bg-gray-50"
-                             >
-                               <div className="text-center text-xs text-gray-900">
-                                 {eventDate.getDate()}일 ({event.time})
-                               </div>
-                               <div className="text-left text-xs text-gray-900 font-medium truncate">
-                                 {event.title}
-                               </div>
-                               <div className="text-center text-xs text-gray-600 truncate">
-                                 {event.location}
-                               </div>
-                               <div className="text-center">
-                                 <span className={clsx(
-                                   'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                                   isPast 
-                                     ? 'bg-gray-100 text-gray-600' 
-                                     : 'bg-green-100 text-green-800'
-                                 )}>
-                                   {isPast ? '접수마감' : '접수중'}
-                                 </span>
-                               </div>
-                             </div>
-                           );
-                         })}
-                       {marathonEvents.filter(event => {
-                         const eventDate = new Date(event.date);
-                         return eventDate.getMonth() === currentDate.getMonth() && 
-                                eventDate.getFullYear() === currentDate.getFullYear();
-                       }).length === 0 && (
-                         <div className="text-center py-8 text-gray-500">
-                           <p>이번 달에는 예정된 대회가 없습니다.</p>
-                         </div>
-                       )}
-                       </div>
-                     </div>
-                   </div>
-                   
-                   {/* 데스크탑: 달력과 대회일정을 가로로 배치 */}
-                   <div className="hidden sm:block">
-                     <div className="flex gap-6">
-                       {/* 달력 */}
-                       <div className="flex-1">
-                         <MarathonCalendar 
-                           events={marathonEvents} 
-                           currentDate={currentDate}
-                           className="w-full"
-                         />
-                       </div>
-                       
-                       {/* 대회일정 테이블 */}
-                       <div className="flex-1">
-                         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                           {currentDate.getMonth() + 1}월 대회 일정
-                         </h2>
-                         
-                         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                           <div className="overflow-x-auto">
-                             <table className="w-full">
-                               <thead className="bg-gray-50">
-                                 <tr>
-                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">일자</th>
-                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대회명</th>
-                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">개최장소</th>
-                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">비고</th>
-                                 </tr>
-                               </thead>
-                               <tbody className="bg-white divide-y divide-gray-200">
-                                 {marathonEvents
-                                   .filter(event => {
-                                     const eventDate = new Date(event.date);
-                                     return eventDate.getMonth() === currentDate.getMonth() && 
-                                            eventDate.getFullYear() === currentDate.getFullYear();
-                                   })
-                                   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                                   .map(event => {
-                                     const eventDate = new Date(event.date);
-                                     const today = new Date();
-                                     const isPast = eventDate < today;
-                                     
-                                     return (
-                                       <tr key={event.id} className={clsx(isPast && 'opacity-60')}>
-                                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                           {eventDate.getMonth() + 1}.{eventDate.getDate()}
-                                         </td>
-                                         <td className="px-4 py-4 text-sm text-gray-900 font-medium">
-                                           {event.title}
-                                         </td>
-                                         <td className="px-4 py-4 text-sm text-gray-600">
-                                           {event.location}
-                                         </td>
-                                         <td className="px-4 py-4 whitespace-nowrap">
-                                           <span className={clsx(
-                                             'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                                             isPast 
-                                               ? 'bg-gray-100 text-gray-600' 
-                                               : 'bg-green-100 text-green-800'
-                                           )}>
-                                             {isPast ? '접수마감' : '접수중'}
-                                           </span>
-                                         </td>
-                                       </tr>
-                                     );
-                                   })}
-                                 {marathonEvents.filter(event => {
-                                   const eventDate = new Date(event.date);
-                                   return eventDate.getMonth() === currentDate.getMonth() && 
-                                          eventDate.getFullYear() === currentDate.getFullYear();
-                                 }).length === 0 && (
-                                   <tr>
-                                     <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                                       이번 달에는 예정된 대회가 없습니다.
-                                     </td>
-                                   </tr>
-                                 )}
-                               </tbody>
-                             </table>
-                           </div>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
                    </>
                  )}
 
                  {/* 전마협 대회일정 탭 */}
                  {viewMode === 'marathon' && (
                    <div className="w-full">
-                     
+                     {isLoading ? (
+                       <div className="text-center py-16">
+                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                         <p className="text-gray-500">대회일정을 불러오는 중...</p>
+                       </div>
+                     ) : error ? (
+                       <div className="text-center py-16 text-gray-500">
+                         <div className="text-6xl mb-4">⚠️</div>
+                         <p className="text-xl font-medium mb-2">대회일정을 불러올 수 없습니다</p>
+                         <p className="text-gray-500">잠시 후 다시 시도해주세요</p>
+                       </div>
+                     ) : (
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
-                       {marathonEvents
+                         {kmaEvents
                          .filter(event => {
-                           const eventDate = new Date(event.date);
+                             const eventDate = new Date(event.eventDate);
                            return eventDate.getMonth() === currentDate.getMonth() && 
-                                  eventDate.getFullYear() === currentDate.getFullYear() &&
-                                  event.type === 'marathon';
+                                    eventDate.getFullYear() === currentDate.getFullYear();
                          })
-                         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                           .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
                          .map(event => {
-                           const eventDate = new Date(event.date);
+                             const eventDate = new Date(event.eventDate);
                            const today = new Date();
                            const isPast = eventDate < today;
                            
                            // EventCard에 필요한 props 매핑
                            const eventCardProps = {
-                             imageSrc: event.imageSrc,
-                             imageAlt: event.title,
-                             title: event.title,
-                             subtitle: event.location,
-                             date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${event.time}`,
-                             price: event.category === 'full' ? '풀마라톤' : 
-                                    event.category === 'half' ? '하프마라톤' : 
-                                    event.category === '10k' ? '10km' : 
-                                    event.category === '5k' ? '5km' : '기타',
-                             status: isPast ? '접수마감' : '접수중',
-                             eventDate: event.date
+                               imageSrc: event.eventImgSrc,
+                               imageAlt: event.eventNameKr,
+                               title: event.eventNameKr,
+                               subtitle: event.eventNameEn,
+                               date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
+                               price: `₩${event.lowerPrice.toLocaleString()}`,
+                               status: isPast ? '접수마감' : event.status === 'PENDING' ? '접수중' : event.status,
+                               eventDate: event.eventDate
                            };
                            
                            return (
-                             <div key={event.id} className={clsx(
+                               <div key={event.eventId} className={clsx(
                                isPast && 'opacity-60'
                              )}>
                                <EventCard {...eventCardProps} size="test" className="w-full" />
@@ -670,56 +553,64 @@ export default function SchedulePage() {
                          })}
                        
                        {/* 해당 월에 대회가 없을 때 */}
-                       {marathonEvents.filter(event => {
-                         const eventDate = new Date(event.date);
+                         {kmaEvents.filter(event => {
+                           const eventDate = new Date(event.eventDate);
                          return eventDate.getMonth() === currentDate.getMonth() && 
                                 eventDate.getFullYear() === currentDate.getFullYear();
                        }).length === 0 && (
                          <div className="col-span-2 md:col-span-3 lg:col-span-5 text-center py-16 text-gray-500">
                            <div className="text-6xl mb-4">📅</div>
-                           <p className="text-xl font-medium mb-2">이번 달에는 예정된 대회가 없습니다</p>
+                             <p className="text-xl font-medium mb-2">이번 달에는 예정된 전마협 대회가 없습니다</p>
                            <p className="text-gray-500">다른 월을 선택해보세요</p>
                          </div>
                        )}
                      </div>
+                     )}
                    </div>
                  )}
 
                  {/* 전국대회 일정 탭 */}
                  {viewMode === 'national' && (
                    <div className="w-full">
-                     
+                     {isLoading ? (
+                       <div className="text-center py-16">
+                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                         <p className="text-gray-500">대회일정을 불러오는 중...</p>
+                       </div>
+                     ) : error ? (
+                       <div className="text-center py-16 text-gray-500">
+                         <div className="text-6xl mb-4">⚠️</div>
+                         <p className="text-xl font-medium mb-2">대회일정을 불러올 수 없습니다</p>
+                         <p className="text-gray-500">잠시 후 다시 시도해주세요</p>
+                       </div>
+                     ) : (
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
-                       {marathonEvents
+                         {localEvents
                          .filter(event => {
-                           const eventDate = new Date(event.date);
+                             const eventDate = new Date(event.eventDate);
                            return eventDate.getMonth() === currentDate.getMonth() && 
-                                  eventDate.getFullYear() === currentDate.getFullYear() &&
-                                  event.type === 'national';
+                                    eventDate.getFullYear() === currentDate.getFullYear();
                          })
-                         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                           .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
                          .map(event => {
-                           const eventDate = new Date(event.date);
+                             const eventDate = new Date(event.eventDate);
                            const today = new Date();
                            const isPast = eventDate < today;
                            
                            // EventCard에 필요한 props 매핑
                            const eventCardProps = {
-                             imageSrc: event.imageSrc,
-                             imageAlt: event.title,
-                             title: event.title,
-                             subtitle: event.location,
-                             date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${event.time}`,
-                             price: event.category === 'full' ? '풀마라톤' : 
-                                    event.category === 'half' ? '하프마라톤' : 
-                                    event.category === '10k' ? '10km' : 
-                                    event.category === '5k' ? '5km' : '기타',
-                             status: isPast ? '접수마감' : '접수중',
-                             eventDate: event.date
+                               imageSrc: event.eventImgSrc,
+                               imageAlt: event.eventNameKr,
+                               title: event.eventNameKr,
+                               subtitle: event.eventNameEn,
+                               date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
+                               price: `₩${event.lowerPrice.toLocaleString()}`,
+                               status: isPast ? '접수마감' : event.status === 'PENDING' ? '접수중' : event.status,
+                               eventDate: event.eventDate
                            };
                            
                            return (
-                             <div key={event.id} className={clsx(
+                               <div key={event.eventId} className={clsx(
                                isPast && 'opacity-60'
                              )}>
                                <EventCard {...eventCardProps} size="test" className="w-full" />
@@ -728,19 +619,19 @@ export default function SchedulePage() {
                          })}
                        
                        {/* 해당 월에 대회가 없을 때 */}
-                       {marathonEvents.filter(event => {
-                         const eventDate = new Date(event.date);
+                         {localEvents.filter(event => {
+                           const eventDate = new Date(event.eventDate);
                          return eventDate.getMonth() === currentDate.getMonth() && 
-                                eventDate.getFullYear() === currentDate.getFullYear() &&
-                                event.type === 'national';
+                                  eventDate.getFullYear() === currentDate.getFullYear();
                        }).length === 0 && (
                          <div className="col-span-2 md:col-span-3 lg:col-span-5 text-center py-16 text-gray-500">
                            <div className="text-6xl mb-4">📅</div>
-                           <p className="text-xl font-medium mb-2">이번 달에는 예정된 대회가 없습니다</p>
+                             <p className="text-xl font-medium mb-2">이번 달에는 예정된 전국 대회가 없습니다</p>
                            <p className="text-gray-500">다른 월을 선택해보세요</p>
                          </div>
                        )}
                      </div>
+                     )}
                    </div>
                  )}
 

@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { NoticeBoard } from '@/components/common/Notice';
 import { getAccessToken, isTokenValid, decodeToken } from '@/utils/jwt';
+import { authService } from '@/services/auth';
 
 import { ChevronDown } from 'lucide-react';
 import type { NoticeItem as TableNoticeItem } from '@/components/common/Table/types';
-import { fetchInquiryList, type InquiryResponse, type InquiryItem } from './api/inquiryApi';
+import { fetchInquiryList, type InquiryResponse, type InquiryItem, type SearchTarget } from './api/inquiryApi';
 import { formatDate, maskAuthorName } from './utils/formatters';
 import { SecretPostModal } from './components/SecretPostModal';
 
@@ -39,16 +40,23 @@ export default function EventInquiryPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+  const [allInquiries, setAllInquiries] = useState<InquiryResponse | null>(null);
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedSearchType, setSelectedSearchType] = useState('title');
+  const [selectedSearchType, setSelectedSearchType] = useState<SearchTarget>('ALL');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [appliedSearchKeyword, setAppliedSearchKeyword] = useState(''); // 실제 적용된 검색어
+  const [appliedSearchType, setAppliedSearchType] = useState<SearchTarget>('ALL'); // 실제 적용된 검색 타입
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isSecretModalOpen, setIsSecretModalOpen] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   
   const searchOptions = [
-    { value: 'title', label: '제목' },
-    { value: 'author', label: '작성자' },
-    { value: 'content', label: '내용' },
+    { value: 'ALL', label: '전체' },
+    { value: 'TITLE', label: '제목' },
+    { value: 'AUTHOR', label: '작성자' },
   ];
 
   // 현재 로그인한 사용자 ID 가져오기
@@ -68,87 +76,190 @@ export default function EventInquiryPage() {
     const userId = getCurrentUserId();
     setCurrentUserId(userId);
 
-    const fetchInquiries = async () => {
+    const fetchAllInquiries = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const data = await fetchInquiryList(eventId, currentPage, pageSize);
+        // 모든 데이터를 한 번에 가져오기 (페이지네이션 없이)
+        const data = await fetchInquiryList(
+          eventId, 
+          1, // 첫 페이지
+          100, // 충분히 큰 페이지 크기
+          appliedSearchKeyword ? appliedSearchType : undefined, // 검색어가 있을 때만 타입 전달
+          appliedSearchKeyword || undefined // 빈 문자열 대신 undefined 전달
+        );
         
         // API 응답 데이터 유효성 검사
         if (data && typeof data === 'object' && Array.isArray(data.content)) {
-          setInquiryData(data);
+          setAllInquiries(data);
           setError(null);
         } else {
           setError('API 응답 데이터 구조가 올바르지 않습니다.');
-          setInquiryData(null);
+          setAllInquiries(null);
         }
       } catch (error) {
-        console.error('❌ 문의사항 목록 조회 중 오류:', error);
         const errorMessage = error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.';
         setError(errorMessage);
-        setInquiryData(null);
-        
-        // 로그인 관련 오류인 경우 리다이렉트
-        if (errorMessage.includes('로그인')) {
-          setTimeout(() => {
-            router.push(`/event/${eventId}/login`);
-          }, 3000);
-        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInquiries();
-  }, [eventId, currentPage, pageSize]);
+    fetchAllInquiries();
+  }, [eventId, appliedSearchType, appliedSearchKeyword]);
 
   // 행 클릭 시 처리 (상세 페이지로 이동)
   const handleRowClick = (id: string | number) => {
+    // 해당 행의 데이터 찾기 (전체 데이터에서 찾기)
+    const rowData = displayInquiries.find(item => item.id === id);
     
-    // 답변 항목인지 확인 (answer_ prefix가 있는지)
-    const idString = String(id);
+    if (!rowData) return;
     
-    // 비밀글 권한 체크
-    if (inquiryData?.content) {
-      const inquiry = inquiryData.content.find(item => 
-        item.questionHeader.id === idString || 
-        `answer_${item.questionHeader.id}` === idString
+    // 답변 항목인지 확인
+    if (rowData.originalQuestionId) {
+      // 답변 항목인 경우 - 원본 문의글이 비밀글인지 확인
+      const inquiry = allInquiries?.content.find(item => 
+        item.questionHeader.id === String(rowData.originalQuestionId)
       );
       
       if (inquiry) {
-        // 문의글인 경우
-        if (idString === inquiry.questionHeader.id) {
-          if (inquiry.questionHeader.secret && inquiry.questionHeader.authorName !== currentUserId) {
-            // 비밀글이고 본인이 아닌 경우 모달 표시
-            setIsSecretModalOpen(true);
-            return;
-          }
+        // 원본 문의글이 비밀글인지 확인
+        const isSecret = inquiry.questionHeader.secret;
+        const isAuthor = !!(currentUserId && inquiry.questionHeader.authorName === currentUserId);
+        const canViewContent = !isSecret || isAuthor;
+        
+        if (!canViewContent) {
+          // 원본 문의글이 비밀글인 경우 - 비밀번호 입력 후 이동
+          setSelectedInquiryId(String(rowData.answerHeaderId));
+          setIsSecretModalOpen(true);
+          return;
         }
-        // 답변인 경우
-        else if (idString.startsWith('answer_') && inquiry.answerHeader) {
-          if (inquiry.questionHeader.secret && inquiry.questionHeader.authorName !== currentUserId) {
-            // 원본 문의글이 비밀글이고 본인이 아닌 경우 모달 표시
-            setIsSecretModalOpen(true);
-            return;
-          }
+      }
+      
+      // 권한이 있거나 공개 문의글인 경우 - 답변은 항상 공개이므로 바로 이동
+      router.push(`/event/${eventId}/notices/inquiry/particular?id=${rowData.originalQuestionId}&answerId=${rowData.answerHeaderId}`);
+      return;
+    } else {
+      // 질문 항목인 경우
+      const inquiry = allInquiries?.content.find(item => 
+        item.questionHeader.id === String(id)
+      );
+      
+      if (inquiry) {
+        // 메인 문의와 동일한 권한 규칙: 비밀글은 작성자만 열람 가능
+        const isSecret = inquiry.questionHeader.secret;
+        const isAuthor = !!(currentUserId && inquiry.questionHeader.authorName === currentUserId);
+        const canViewContent = !isSecret || isAuthor;
+        
+        if (!canViewContent) {
+          // 비밀글인 경우 - 질문 ID를 저장하고 모달 열기
+          setSelectedInquiryId(String(id));
+          setIsSecretModalOpen(true);
+          return;
         }
+        
+        // 권한이 있는 경우 - 문의사항 상세 페이지로 이동
+        router.push(`/event/${eventId}/notices/inquiry/particular?id=${id}`);
+        return;
       }
     }
     
-    if (idString.startsWith('answer_')) {
-      // 답변 ID에서 prefix 제거하고 답변만 보기 위해 answerId 파라미터 추가
-      const questionId = idString.replace('answer_', '');
-      router.push(`/event/${eventId}/notices/inquiry/particular?id=${questionId}&answerId=${idString}`);
-    } else {
-      // 질문 항목
-      router.push(`/event/${eventId}/notices/inquiry/particular?id=${id}`);
+    // 기본적으로 문의사항 상세 페이지로 이동 (메인과 동일한 방식)
+    router.push(`/event/${eventId}/notices/inquiry/particular?id=${id}`);
+  };
+
+  // 글쓰기 페이지로 이동 (write 폴더 사용)
+  const handleGoToWrite = () => {
+    router.push(`/event/${eventId}/notices/inquiry/write`);
+  };
+
+  // 비밀번호 확인 핸들러
+  const handlePasswordConfirm = async (password: string) => {
+    if (!selectedInquiryId) return;
+    
+    try {
+      setIsPasswordLoading(true);
+      
+      // 답변인지 질문인지 확인
+      const rowData = displayInquiries.find(item => 
+        item.id === selectedInquiryId || 
+        item.answerHeaderId === selectedInquiryId
+      );
+      
+      // 답변인 경우 원본 문의글 ID로 비밀번호 검증
+      const questionIdForValidation = rowData?.originalQuestionId || selectedInquiryId;
+      
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+      const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionIdForValidation}`;
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          password: password 
+        }),
+      });
+
+
+      if (response.ok) {
+        // 비밀번호가 맞으면 상세 페이지로 이동
+        if (rowData?.originalQuestionId) {
+          // 답변인 경우 - 현재 페이지로 이동하면서 answerId와 password 전달
+          router.push(`/event/${eventId}/notices/inquiry/particular?id=${rowData.originalQuestionId}&answerId=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+        } else {
+          // 질문인 경우 - 비밀번호를 URL 파라미터로 전달
+          router.push(`/event/${eventId}/notices/inquiry/particular?id=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+        }
+        
+        setIsSecretModalOpen(false);
+        setSelectedInquiryId(null);
+      } else {
+        // 비밀번호가 틀리면 에러 메시지 표시 (모달 내에서 처리)
+        throw new Error('비밀번호가 올바르지 않습니다.');
+      }
+    } catch (error) {
+      // 에러를 다시 throw하여 모달에서 처리하도록 함
+      throw error;
+    } finally {
+      setIsPasswordLoading(false);
     }
   };
 
-  // 글쓰기 페이지로 이동 (edit 폴더 사용)
-  const handleGoToWrite = () => {
-    router.push(`/event/${eventId}/notices/inquiry/edit`);
+  // 비밀글 모달 닫기
+  const handleSecretModalClose = () => {
+    setIsSecretModalOpen(false);
+    setSelectedInquiryId(null);
+  };
+
+  // 검색 핸들러
+  const handleSearch = () => {
+    setAppliedSearchKeyword(searchKeyword);
+    setAppliedSearchType(selectedSearchType);
+    setCurrentPage(1); // 검색 시 첫 페이지로 이동
+    // useEffect에서 자동으로 검색 실행됨
+  };
+
+  // 검색어 입력 핸들러
+  const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchKeyword(e.target.value);
+  };
+
+  // 검색 타입 변경 핸들러
+  const handleSearchTypeChange = (type: SearchTarget) => {
+    setSelectedSearchType(type);
+    setCurrentPage(1); // 검색 타입 변경 시 첫 페이지로 이동
+  };
+
+  // 검색어 초기화
+  const handleSearchReset = () => {
+    setSearchKeyword('');
+    setSelectedSearchType('ALL');
+    setAppliedSearchKeyword('');
+    setAppliedSearchType('ALL');
+    setCurrentPage(1);
   };
 
   // 로딩 상태
@@ -162,9 +273,9 @@ export default function EventInquiryPage() {
         }}
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
-          <div className="text-center">
-            <div className="text-gray-500 text-lg mb-2">로딩 중...</div>
-            <div className="text-sm text-gray-400">문의사항을 불러오는 중입니다</div>
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+            <span className="ml-4 text-gray-600">로딩 중...</span>
           </div>
         </div>
       </SubmenuLayout>
@@ -182,24 +293,26 @@ export default function EventInquiryPage() {
         }}
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
-          <div className="text-center">
-            <div className="text-red-500 text-lg mb-2">문의사항을 불러올 수 없습니다</div>
-            <div className="text-sm text-gray-400 mb-4">{error}</div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button 
-                onClick={() => window.location.reload()} 
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                다시 시도
-              </button>
-              {error?.includes('로그인이 필요') && (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-2">오류가 발생했습니다</div>
+              <div className="text-sm text-gray-400 break-words">{error}</div>
+              <div className="flex flex-col sm:flex-row gap-3 mt-4">
                 <button
-                  onClick={() => router.push(`/event/${eventId}/login`)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                  onClick={() => window.location.reload()}
+                  className="w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                 >
-                  로그인하기
+                  새로고침
                 </button>
-              )}
+                {error?.includes('로그인이 필요') && (
+                  <button
+                    onClick={() => router.push(`/event/${eventId}/login`)}
+                    className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                  >
+                    로그인하기
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -209,10 +322,14 @@ export default function EventInquiryPage() {
 
   // API 데이터를 TableNoticeItem 타입으로 변환 (질문 + 답변)
   const displayInquiries: TableNoticeItem[] = (() => {
-    if (inquiryData && inquiryData.content && inquiryData.content.length > 0) {
+    if (allInquiries && allInquiries.content && allInquiries.content.length > 0) {
       const items: TableNoticeItem[] = [];
+      let answerIdCounter = 10000; // 답변 ID용 카운터 (충돌 방지)
       
-      inquiryData.content.forEach((inquiry: InquiryItem) => {
+      // 전체 문의글 개수
+      const totalQuestions = allInquiries.content.length;
+      
+      allInquiries.content.forEach((inquiry: InquiryItem, index: number) => {
         // 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD)
         const formatDate = (dateString: string) => {
           try {
@@ -222,40 +339,41 @@ export default function EventInquiryPage() {
           }
         };
 
-
-        // 질문 항목 추가
+        // 문의글 번호 계산 (내림차순: 9번부터 시작)
+        const questionNumber = totalQuestions - index;
+        
+        // 메인 문의 항목 추가
         const questionItem: TableNoticeItem = {
-          id: inquiry.questionHeader.id as any,
-          title: (inquiry.questionHeader.secret && inquiry.questionHeader.authorName !== currentUserId) 
-            ? '비밀글입니다.' 
-            : inquiry.questionHeader.title,
+          id: inquiry.questionHeader.id,
+          title: inquiry.questionHeader.title,
           author: maskAuthorName(inquiry.questionHeader.authorName, currentUserId),
           date: formatDate(inquiry.questionHeader.createdAt),
-          attachments: 0,
+          attachments: 0, // 첨부파일 개수 (기본값 0)
           views: 0,
           pinned: false,
-          category: '문의' as const
+          category: '문의' as const,
+          secret: inquiry.questionHeader.secret && !(currentUserId && inquiry.questionHeader.authorName === currentUserId),
+          __displayNo: questionNumber, // 문의글 번호 미리 할당
         };
         items.push(questionItem);
 
-        // 답변이 있고, 현재 사용자가 질문 작성자인 경우에만 답변 항목 추가
-
-        if (inquiry.answerHeader && currentUserId && inquiry.questionHeader.authorName === currentUserId) {
-          
+        // 답변이 있는 경우 답변 항목도 추가
+        if (inquiry.answerHeader) {
           const answerItem: TableNoticeItem = {
-            id: `answer_${inquiry.questionHeader.id}` as any, // 원본 문의사항 ID 사용
-            title: `↳ [RE] ${(inquiry.questionHeader.secret && inquiry.questionHeader.authorName !== currentUserId) 
-              ? '비밀글입니다.' 
-              : inquiry.questionHeader.title}`,
+            id: `answer_${answerIdCounter++}`, // 고유한 답변 ID 생성
+            title: inquiry.answerHeader.title || '답변',
             author: maskAuthorName(inquiry.answerHeader.authorName, currentUserId),
             date: formatDate(inquiry.answerHeader.createdAt),
-            attachments: 0,
+            attachments: 0, // 첨부파일 개수 (기본값 0)
             views: 0,
             pinned: false,
-            category: '답변' as const
+            category: '답변' as const,
+            secret: false, // 답변은 항상 공개 (비밀번호 요구 안함)
+            originalQuestionId: inquiry.questionHeader.id, // 원본 문의 ID 저장 (string으로 유지)
+            answerHeaderId: inquiry.answerHeader.id, // 답변 헤더 ID 저장
+            __displayNo: undefined, // 답변은 번호 없음
           };
           items.push(answerItem);
-        } else if (inquiry.answerHeader && currentUserId && inquiry.questionHeader.authorName !== currentUserId) {
         }
 
       });
@@ -265,6 +383,16 @@ export default function EventInquiryPage() {
       return [];
     }
   })();
+
+  // 실제 표시되는 항목 수 계산 (질문 + 답변)
+  const actualTotalElements = displayInquiries.length;
+  
+
+  // 클라이언트 측 페이지네이션 처리
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedInquiries = displayInquiries.slice(startIndex, endIndex);
+
 
   // 빈 데이터 상태 처리
   if (!isLoading && !error && displayInquiries.length === 0) {
@@ -278,14 +406,34 @@ export default function EventInquiryPage() {
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
           <div className="text-center">
-            <div className="text-gray-500 text-lg mb-2">등록된 문의사항이 없습니다</div>
-            <div className="text-sm text-gray-400 mb-4">첫 번째 문의사항을 작성해보세요</div>
-            <button 
-              onClick={handleGoToWrite}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              문의사항 작성하기
-            </button>
+            <div className="text-gray-500 text-lg mb-2">
+              {appliedSearchKeyword || appliedSearchType !== 'ALL' 
+                ? '검색 결과가 없습니다' 
+                : '등록된 문의사항이 없습니다'
+              }
+            </div>
+            <div className="text-sm text-gray-400 mb-4">
+              {appliedSearchKeyword 
+                ? '다른 검색어로 시도해보세요' 
+                : '첫 번째 문의사항을 작성해보세요'
+              }
+            </div>
+            <div className="flex gap-3 justify-center">
+              {appliedSearchKeyword && (
+                <button
+                  onClick={handleSearchReset}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                >
+                  검색 초기화
+                </button>
+              )}
+              <button 
+                onClick={handleGoToWrite}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                문의사항 작성하기
+              </button>
+            </div>
           </div>
         </div>
       </SubmenuLayout>
@@ -301,18 +449,29 @@ export default function EventInquiryPage() {
       }}
     >
       <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        {/* 안내문구 */}
+        <div className="mb-6">
+          <div className="bg-gray-100 rounded-lg p-4 text-center">
+            <p className="text-gray-700 text-sm leading-relaxed">
+              대회 관련 문의사항을 남겨주시면 빠른 시간 내에 답변드리겠습니다. 
+              문의하실 때는 구체적인 내용을 작성해 주시기 바라며, 
+              비밀글 설정 시 비밀번호를 잊지 않도록 주의해 주세요.
+            </p>
+          </div>
+        </div>
+
+        {/* 문의사항 목록 - NoticeBoard 내장 페이지네이션 사용 */}
         <NoticeBoard
           data={displayInquiries}
-          onRowClick={handleRowClick}
-          pageSize={10}
-          pinLimit={0}
-          numberDesc={true}
-          showPinnedBadgeInNo={false}
-          pinnedClickable={true}
+          onRowClick={(id) => handleRowClick(id)}
           showSearch={false}
+          currentPage={currentPage}
+          totalElements={actualTotalElements}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
         />
         
-        {/* 페이지네이션 밑 검색 영역 */}
+        {/* 검색 영역 */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
           {/* 카테고리 드롭다운 */}
           <div className="relative">
@@ -322,7 +481,7 @@ export default function EventInquiryPage() {
               className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
             >
               <span className="text-[15px] leading-[26px] text-[#1E2124]">
-                {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '제목'}
+                {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '전체'}
               </span>
               <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -341,7 +500,7 @@ export default function EventInquiryPage() {
                       key={option.value}
                       type="button"
                       onClick={() => {
-                        setSelectedSearchType(option.value);
+                        handleSearchTypeChange(option.value as SearchTarget);
                         setIsDropdownOpen(false);
                       }}
                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
@@ -360,16 +519,37 @@ export default function EventInquiryPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="검색어를 입력해주세요."
-              className="h-10 pl-4 pr-12 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
+              value={searchKeyword}
+              onChange={handleKeywordChange}
+               onKeyPress={(e) => {
+                 if (e.key === 'Enter') {
+                   e.preventDefault();
+                   handleSearch();
+                 }
+               }}
+              placeholder="검색어를 입력하세요"
+              className="h-10 pl-4 pr-12 border border-gray-300 rounded-md text-sm w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
-            <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={handleSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
           </div>
           
+          {/* 검색 초기화 버튼 */}
+          {(appliedSearchKeyword || appliedSearchType !== 'ALL') && (
+            <button
+              onClick={handleSearchReset}
+              className="h-10 px-4 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors whitespace-nowrap"
+            >
+              초기화
+            </button>
+          )}
+
           {/* 글쓰기 버튼 */}
           <button 
             onClick={handleGoToWrite}
@@ -379,72 +559,16 @@ export default function EventInquiryPage() {
           </button>
         </div>
 
-        {/* 페이지네이션 */}
-        {inquiryData && inquiryData.totalPages > 1 && (
-          <div className="mt-6 flex justify-center">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={inquiryData.first || currentPage === 1}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                이전
-              </button>
-
-              {/* 페이지 번호 표시 로직 개선 */}
-              {(() => {
-                const totalPages = inquiryData.totalPages;
-                const current = currentPage;
-                const pages = [];
-                
-                // 시작 페이지 계산
-                let startPage = Math.max(1, current - 2);
-                let endPage = Math.min(totalPages, startPage + 4);
-                
-                // 끝 페이지가 조정되면 시작 페이지도 조정
-                if (endPage - startPage < 4) {
-                  startPage = Math.max(1, endPage - 4);
-                }
-                
-                for (let i = startPage; i <= endPage; i++) {
-                  pages.push(
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i)}
-                      className={`px-3 py-2 text-sm border rounded-md ${current === i
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                        }`}
-                    >
-                      {i}
-                    </button>
-                  );
-                }
-                
-                return pages;
-              })()}
-
-              <button
-                onClick={() => setCurrentPage(Math.min(inquiryData.totalPages, currentPage + 1))}
-                disabled={inquiryData.last || currentPage === inquiryData.totalPages}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-              >
-                다음
-              </button>
-            </div>
-            
-            {/* 페이지 정보 표시 */}
-            <div className="ml-4 text-sm text-gray-600">
-              총 {inquiryData.totalElements}개 중 {inquiryData.numberOfElements}개 표시
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* 로그인 필요 모달 제거 (비회원 작성 허용) */}
       
       {/* 비밀글 모달 */}
       <SecretPostModal 
         isOpen={isSecretModalOpen}
-        onClose={() => setIsSecretModalOpen(false)}
+        onClose={handleSecretModalClose}
+        onConfirm={handlePasswordConfirm}
+        isLoading={isPasswordLoading}
       />
     </SubmenuLayout>
   );

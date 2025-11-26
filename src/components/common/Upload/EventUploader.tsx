@@ -102,7 +102,7 @@ export default function EventUploader({
   const padX = dense ? "px-3" : "px-5";
 
   return (
-    <div className={cn("w-full min-w-0", className)} aria-readonly={readOnly || undefined}>
+    <div className={cn("w-full min-w-0 max-w-full", className)} aria-readonly={readOnly || undefined}>
       {/* 파일 없을 때 */}
       {!hasFile && (
         readOnly ? (
@@ -138,20 +138,20 @@ export default function EventUploader({
           )}
           aria-live="polite"
         >
-          <div className={cn("flex items-center gap-3 min-w-0", hasError ? "" : "h-full")}>
+          <div className={cn("flex items-center gap-3 min-w-0 w-full", hasError ? "" : "h-full")}>
             {/* 파일명 + 용량 */}
-            <div className="flex-1 min-w-0 flex items-center gap-2 whitespace-nowrap">
-              <span className="truncate text-[15px] text-[#0F1113] max-w-full" title={file.name}>
+            <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
+              <span className="truncate text-[15px] text-[#0F1113] w-full" title={file.name}>
                 {truncateMiddle(file.name, nameMaxChars)}
               </span>
-              <span className="text-[12px] text-[#6B7280]">[{file.sizeMB}MB]</span>
+              <span className="text-[12px] text-[#6B7280] shrink-0">[{file.sizeMB}MB]</span>
             </div>
 
             {/* 읽기 전용이면 삭제 버튼 숨김 */}
             {!readOnly && (
               <button
                 type="button"
-                className="shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727]"
+                className="shrink-0 flex-shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
                 onClick={removeOne}
                 aria-label={`${file.name} 삭제`}
               >

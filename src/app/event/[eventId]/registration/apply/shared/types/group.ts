@@ -8,14 +8,22 @@ export interface ParticipantData {
   birthDay: string;
   gender: string;
   category: string;
-  souvenir: string;
-  size: string;
-  email1: string;
-  email2: string;
-  emailDomain: string;
+  souvenir: string; // 기존 호환성을 위해 유지
+  size: string; // 기존 호환성을 위해 유지
+  selectedSouvenirs: Array<{souvenirId: string, souvenirName: string, size: string}>; // 여러 기념품 선택 지원
+  // email1: string; // API 구조 변경으로 제거
+  // email2: string; // API 구조 변경으로 제거
+  // emailDomain: string; // API 구조 변경으로 제거
   phone1: string;
   phone2: string;
   phone3: string;
+  // 사용자 비고 (클라이언트 입력)
+  note?: string;
+  // 관리자 메모 (관리자 전용)
+  memo?: string;
+  // 결제 상태 (수정 모드에서 사용)
+  paymentStatus?: 'UNPAID' | 'PAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
+  registrationId?: string; // 수정 모드에서 사용
 }
 
 // 단체신청 폼 데이터 타입
@@ -31,12 +39,11 @@ export interface GroupFormData {
   address: string;
   detailedAddress: string;
   
-  // 개인 정보 (연락처, 이메일만)
+  // 개인 정보 (연락처만)
   phone1: string;
   phone2: string;
   phone3: string;
   email1: string;
-  email2: string;
   emailDomain: string;
   
   // 참가인원 정보
@@ -57,9 +64,7 @@ export interface GroupApiRequestData {
     };
     organizationProfile: {
       address: {
-        siDo: string;
-        siGunGu: string;
-        roadAddress: string;
+        address: string; // 단일 문자열 주소 (개인신청과 동일)
         zipCode: string;
         addressDetail: string;
       };
@@ -72,9 +77,6 @@ export interface GroupApiRequestData {
       paymentType: string;
       paymenterName: string;
     };
-    souvenir_json: string;
-    souvenirJson: string;
-    souvenir: string;
   };
   registrationInfoPerUserList: Array<{
     mustRegistrationInfo: {
@@ -82,7 +84,6 @@ export interface GroupApiRequestData {
         birth: string;
         name: string;
         phNum: string;
-        email: string;
         gender: string;
       };
       registrationInfo: {
@@ -91,6 +92,7 @@ export interface GroupApiRequestData {
           souvenirId: string;
           selectedSize: string;
         }>;
+        note?: string;
       };
     };
   }>;

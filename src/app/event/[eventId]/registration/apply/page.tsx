@@ -1,28 +1,149 @@
 "use client";
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import { getAgreementData } from "./shared/api/event";
-import { useState } from "react";
-import Link from "next/link";
+import { getAgreementData } from "../agreement/data";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadge";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 
 export default function ApplyPage({ params }: { params: { eventId: string } }) {
+  const router = useRouter();
   const agreementData = getAgreementData(params.eventId);
   const [isAgreed, setIsAgreed] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [applyStatus, setApplyStatus] = useState<RegStatus | null>(null);
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  useEffect(() => {
+    // 페이지 로딩 완료 시 로딩 상태 해제
+    const timer = setTimeout(() => {
+      setIsPageLoading(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 대회 신청 상태 조회 (공개 이벤트 상세 API 사용)
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        setIsStatusLoading(true);
+        const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+        if (!base) {
+          setIsStatusLoading(false);
+          return;
+        }
+        const res = await fetch(
+          `${base}/api/v1/public/event/${params.eventId}`,
+          { headers: { Accept: "application/json" }, cache: "no-store" }
+        );
+        if (!res.ok) {
+          setIsStatusLoading(false);
+          return;
+        }
+        const data = await res.json();
+        const status: string | undefined = data?.eventInfo?.eventStatus;
+        if (status) {
+          const s = status.toUpperCase();
+          if (s === "OPEN" || s === "ONGOING") setApplyStatus("접수중");
+          else if (s === "PENDING") setApplyStatus("비접수");
+          else setApplyStatus("접수마감");
+        }
+      } catch {
+        // 무시: 상태를 못 불러와도 기본 동작은 유지
+      } finally {
+        setIsStatusLoading(false);
+      }
+    };
+
+    fetchStatus();
+  }, [params.eventId]);
+
+  const showAlert = (message: string) => {
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
+
+  const handleApplyClick = (kind: "individual" | "group") => {
+    if (!isAgreed) {
+      showAlert("약관에 동의하셔야 신청이 가능합니다.");
+      return;
+    }
+
+    // 상태를 아직 못 불러온 경우에는 기존 방식 그대로 진행
+    if (!applyStatus || isStatusLoading) {
+      router.push(
+        `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
+      );
+      return;
+    }
+
+    if (applyStatus === "비접수") {
+      showAlert("현재는 접수 기간이 아닙니다. 접수 시작 후 다시 시도해주세요.");
+      return;
+    }
+
+    if (applyStatus === "접수마감") {
+      showAlert("해당 대회의 접수가 마감되었습니다.");
+      return;
+    }
+
+    // 접수중인 경우에만 실제 신청 페이지로 이동
+    router.push(
+      `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
+    );
+  };
+
+  // 로딩 중일 때 로딩 스피너 표시
+  if (isPageLoading) {
+    return (
+      <SubmenuLayout 
+        eventId={params.eventId}
+        breadcrumb={{
+          mainMenu: "참가신청",
+          subMenu: "신청하기"
+        }}
+      >
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">잠시만 기다려주세요</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
 
   return (
-    <SubmenuLayout 
+    <SubmenuLayout
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
-        subMenu: "신청하기"
+        subMenu: "신청하기",
       }}
     >
+      {/* 신청 불가 안내 모달 */}
+      <ErrorModal
+        isOpen={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title="신청이 불가능합니다"
+        message={alertMessage}
+        confirmText="확인"
+      />
+
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* 상단 면책조항 박스 */}
           <div className="bg-gray-100 rounded-lg p-4 mb-6">
             <p className="text-sm sm:text-base text-gray-700 leading-relaxed text-center">
-              * 나는 {agreementData.eventName}에 참가하면서, {agreementData.organizationName}가 규정하는 참가자 동의사항에 대해 다음과 같이 동의하고 확인합니다.
+              나는 {agreementData.eventName}에 참가하면서, {agreementData.organizationName}가 규정하는 참가자 동의사항에 대해 다음과 같이 동의하고 확인합니다.
             </p>
           </div>
 
@@ -342,30 +463,30 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
 
             {/* 버튼 그룹 */}
             <div className="flex flex-row gap-3 justify-center">
-              <Link href={`/event/${params.eventId}/registration/apply/individual`}>
-                <button 
-                  className={`px-8 py-3 rounded font-semibold transition-colors ${
-                    isAgreed 
-                      ? 'bg-black text-white hover:bg-gray-800' 
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={!isAgreed}
-                >
-                  개인신청
-                </button>
-              </Link>
-              <Link href={`/event/${params.eventId}/registration/apply/group`}>
-                <button 
-                  className={`px-8 py-3 rounded font-semibold transition-colors ${
-                    isAgreed 
-                      ? 'bg-black text-white hover:bg-gray-800' 
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                  disabled={!isAgreed}
-                >
-                  단체신청
-                </button>
-              </Link>
+              <button
+                type="button"
+                className={`px-8 py-3 rounded font-semibold transition-colors ${
+                  isAgreed
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+                disabled={!isAgreed}
+                onClick={() => handleApplyClick("individual")}
+              >
+                개인신청
+              </button>
+              <button
+                type="button"
+                className={`px-8 py-3 rounded font-semibold transition-colors ${
+                  isAgreed
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+                disabled={!isAgreed}
+                onClick={() => handleApplyClick("group")}
+              >
+                단체신청
+              </button>
             </div>
           </div>
         </div>

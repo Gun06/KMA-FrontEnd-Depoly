@@ -32,7 +32,7 @@ const PRESETS: Record<CtaCardPreset, {
   group: {
     title: '단체 활용 문의',
     description: '전국마라톤협회에서 마라톤에 대한 다양한 궁금증을\nFAQ를 통해 해결하세요.',
-    href: '/public/notice/inquiry',
+    href: '/notice/faq',
     image: problemImg,
     imageAlt: '퍼즐과 말풍선 일러스트',
     variant: 'primary',
@@ -40,7 +40,7 @@ const PRESETS: Record<CtaCardPreset, {
   payment: {
     title: '결제 관련 문의',
     description: '결제 관련하여 문의가 필요하신 분은 해당 FAQ를 통해 해결하세요.',
-    href: '/public/notice',
+    href: '/notice/faq',
     image: moneyImg,
     imageAlt: '지폐와 카드 일러스트',
     variant: 'teal',

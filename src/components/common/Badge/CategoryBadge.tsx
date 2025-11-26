@@ -7,6 +7,7 @@ const TONE: Record<Category, "primary" | "neutral" | "danger" | "success"> = {
   대회: "danger",
   문의: "primary",
   답변: "success", // 답변은 success 톤 사용 (녹색)
+  일반: "neutral", // 일반은 neutral 톤 사용
 };
 
 export default function CategoryBadge({

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchNoticeDetail } from '../api/noticeDetailApi';
 import { NoticeDetailResponse } from '../types';
 
-export const useNoticeDetail = (noticeId: string) => {
+export const useNoticeDetail = (eventId: string, noticeId: string) => {
   const [noticeDetail, setNoticeDetail] = useState<NoticeDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +13,7 @@ export const useNoticeDetail = (noticeId: string) => {
         setIsLoading(true);
         setError(null);
 
-        const data = await fetchNoticeDetail(noticeId);
+        const data = await fetchNoticeDetail(eventId, noticeId);
         setNoticeDetail(data);
       } catch (error) {
         setError(error instanceof Error ? error.message : '공지사항을 불러올 수 없습니다.');
@@ -23,10 +23,10 @@ export const useNoticeDetail = (noticeId: string) => {
       }
     };
 
-    if (noticeId) {
+    if (eventId && noticeId) {
       fetchData();
     }
-  }, [noticeId]);
+  }, [eventId, noticeId]);
 
   return {
     noticeDetail,

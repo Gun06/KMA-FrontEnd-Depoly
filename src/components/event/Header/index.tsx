@@ -1,24 +1,37 @@
 'use client';
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { useEvents } from '@/contexts/EventsContext';
 
 interface EventHeaderProps {
   eventName?: string;
   year?: string;
   eventId?: string;
-  headerBgClass?: string;
   accentColor?: string;
+  headerBgClass?: string;
+}
+
+interface EventInfo {
+  id: string;
+  nameEng: string;
+  nameKr: string;
+  startDate: string;
+  region: string;
+  mainBannerColor?: string;
 }
 
 export default function EventHeader({
-  eventName = 'CHEONGJU MARATHON',
-  year = '2025',
-  eventId = 'marathon2025',
-  headerBgClass,
+  eventName,
+  year,
+  eventId,
   accentColor,
+  headerBgClass,
 }: EventHeaderProps) {
+  const { mainBannerColor: contextBannerColor } = useEvents();
+  const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [desktopOpenKey, setDesktopOpenKey] = React.useState<string | null>(
     null
@@ -27,21 +40,64 @@ export default function EventHeader({
     string | null
   >(null);
   const { isLoggedIn, user, logout } = useAuthStore();
-  const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
-  
-  // URL의 color 파라미터를 최우선으로 사용
-  const urlColor = searchParams.get('color');
-  const finalAccentColor = useMemo(() => {
-    // URL의 color 파라미터가 있으면 우선 사용
-    if (urlColor) return urlColor;
-    // props로 전달된 accentColor 사용
-    if (accentColor) return accentColor;
-    // 둘 다 없으면 기본값 사용 (테마에 맞는 색상)
-    return undefined;
-  }, [urlColor, accentColor]);
 
+  // API에서 이벤트 정보 가져오기 (캐시 사용)
+  useEffect(() => {
+    if (!eventId) return;
+
+    const fetchEventInfo = async () => {
+      try {
+        // 로컬 스토리지에서 캐시된 데이터 확인
+        const cacheKey = `event_info_${eventId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+        
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          // 캐시된 데이터가 1시간 이내인지 확인
+          const cacheTime = parsedData.timestamp;
+          const now = Date.now();
+          const oneHour = 60 * 60 * 1000;
+          
+          if (now - cacheTime < oneHour) {
+            setEventInfo(parsedData.data);
+            return;
+          }
+        }
+
+        setIsLoading(true);
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/mainpage-images`;
+
+        const response = await fetch(API_ENDPOINT);
+        if (response.ok) {
+          const data = await response.json();
+          setEventInfo(data);
+          
+          // 로컬 스토리지에 캐시 저장
+          localStorage.setItem(cacheKey, JSON.stringify({
+            data: data,
+            timestamp: Date.now()
+          }));
+        }
+      } catch (error) {
+        // 이벤트 정보를 가져오는데 실패했습니다
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEventInfo();
+  }, [eventId]);
+  
+  // 색상 우선순위: prop(accentColor) > 컨텍스트 > API 데이터 > 기본값
+  const finalAccentColor =
+    accentColor || contextBannerColor || eventInfo?.mainBannerColor || undefined;
+
+  // 이벤트명 결정 (API 데이터 우선, fallback은 props)
+  const displayEventName = eventInfo?.nameEng || eventName || 'EVENT';
+  const displayYear = eventInfo?.startDate ? new Date(eventInfo.startDate).getFullYear().toString() : year || '2025';
 
   const menuItems = useMemo(() => [
     { key: 'guide', label: '대회안내' },
@@ -65,10 +121,11 @@ export default function EventHeader({
       },
       { label: '신청하기', href: `/event/${eventId}/registration/apply` },
       { label: '신청 확인', href: `/event/${eventId}/registration/confirm` },
-      { label: '마라톤 버스예약', href: `/event/${eventId}/registration/bus` },
+      // 서비스 준비중: 버스예약 임시 비활성화 → 준비중 페이지로 연결
+      { label: '마라톤 버스예약', href: `/event/${eventId}/registration/bus/coming-soon` },
     ],
     records: [
-      { label: '기록조회', href: `/event/${eventId}/records` },
+      { label: '개인 기록', href: `/event/${eventId}/records` },
       { label: '단체 기록', href: `/event/${eventId}/records/group` },
     ],
     goods: [{ label: '기념품 안내', href: `/event/${eventId}/merchandise` }],
@@ -120,10 +177,9 @@ export default function EventHeader({
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-40 ${headerBgClass ?? 'bg-neutral-900'} text-white/90 shadow-sm`}
-      style={{
-        ['--accent-color' as any]: finalAccentColor || 'inherit',
-        backgroundColor: headerBgClass ? undefined : (finalAccentColor || 'inherit'),
+      className={`fixed top-0 inset-x-0 z-40 text-white/90 shadow-sm ${headerBgClass ?? ''}`}
+      style={headerBgClass ? undefined : {
+        backgroundColor: finalAccentColor || '#1f2937',
       }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -133,15 +189,15 @@ export default function EventHeader({
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center text-[10px] leading-tight font-extrabold">
                 <span className="text-center">
-                  {eventName.split(' ')[0]}
+                  {displayEventName.split(' ')[0]}
                   <br />
-                  {eventName.split(' ')[1]}
+                  {displayEventName.split(' ')[1] || ''}
                 </span>
               </div>
               <div className="h-6 w-px bg-white/20" />
               <div className="text-xs leading-4 text-white/80">
-                <div className="font-semibold">{eventName}</div>
-                <div className="text-white/60">{year}</div>
+                <div className="font-semibold">{displayEventName}</div>
+                <div className="text-white/60">{displayYear}</div>
               </div>
             </div>
           </Link>
@@ -181,17 +237,39 @@ export default function EventHeader({
                       >
                         <div className="rounded-xl bg-white shadow-2xl ring-1 ring-black/5 py-2">
                           <ul className="px-2 space-y-1">
-                            {subMenus[m.key]?.map(s => (
-                              <li key={s.href}>
-                                <Link
-                                  href={s.href}
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  className="block w-full text-center rounded-full px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-[var(--accent-color)] hover:text-white transition-colors duration-150 select-none"
-                                >
-                                  {s.label}
-                                </Link>
-                              </li>
-                            ))}
+                            {subMenus[m.key]?.map(s => {
+                              const isActive = pathname === s.href;
+                              const themeColor = finalAccentColor || '#000000'; // 기본값은 검정색
+                              return (
+                                <li key={s.href}>
+                                  <Link
+                                    href={s.href}
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    className={`block w-full text-center rounded-full px-3 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                      isActive
+                                        ? 'text-white'
+                                        : 'text-gray-800 hover:text-white'
+                                    }`}
+                                    style={{
+                                      backgroundColor: isActive ? themeColor : 'transparent',
+                                      '--hover-bg': themeColor
+                                    } as React.CSSProperties & { '--hover-bg': string }}
+                                    onMouseEnter={(e) => {
+                                      if (!isActive) {
+                                        e.currentTarget.style.backgroundColor = themeColor;
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (!isActive) {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                      }
+                                    }}
+                                  >
+                                    {s.label}
+                                  </Link>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>
@@ -213,13 +291,9 @@ export default function EventHeader({
               (구)전마협
               <span aria-hidden>↗</span>
             </a>
-            <a
-              href="/"
-              className="text-sm text-white/70 hover:text-white flex items-center gap-1 whitespace-nowrap"
-            >
+            <div className="text-sm text-white/50 whitespace-nowrap">
               전국마라톤협회
-              <span aria-hidden>↗</span>
-            </a>
+            </div>
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-white whitespace-nowrap">
@@ -246,12 +320,10 @@ export default function EventHeader({
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="text-sm text-white/70 hover:text-white whitespace-nowrap"
-              >
+              // 로그인 버튼 비활성화
+              <div className="text-sm text-white/50 whitespace-nowrap">
                 로그인
-              </Link>
+              </div>
             )}
           </div>
 
@@ -366,13 +438,9 @@ export default function EventHeader({
                   >
                     (구)전마협 ↗
                   </a>
-                  <a
-                    href="/"
-                    className="text-sm text-white/70 hover:text-white"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    전국마라톤협회 ↗
-                  </a>
+                  <div className="text-sm text-white/50">
+                    전국마라톤협회
+                  </div>
                   {isLoggedIn ? (
                     <>
                       <span className="text-sm text-white whitespace-nowrap">
@@ -389,13 +457,10 @@ export default function EventHeader({
                       </button>
                     </>
                   ) : (
-                    <Link
-                      href="/login"
-                      className="text-sm text-white/70 hover:text-white"
-                      onClick={() => setIsOpen(false)}
-                    >
+                    // 모바일 로그인 버튼 비활성화
+                    <div className="text-sm text-white/50">
                       로그인
-                    </Link>
+                    </div>
                   )}
                 </div>
               </div>

@@ -157,7 +157,6 @@ export default function GallerySection({ className }: GallerySectionProps) {
 									<div className="w-0.5 h-32 md:h-[300px] bg-gray-200"></div>
 									{/* 원형 버튼 - 세로선 중앙에 위치 */}
 									<button 
-										onClick={() => console.log('더보기 클릭됨')}
 										className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer"
 									>
 										{/* 오른쪽을 향하는 화살표 */}

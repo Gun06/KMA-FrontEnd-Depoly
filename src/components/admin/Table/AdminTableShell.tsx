@@ -13,6 +13,7 @@ type Props<T> = {
   rows: T[];
   rowKey: (row: T, index: number) => React.Key;
   rowClassName?: (row: T, index: number) => string | undefined;
+  onRowClick?: (row: T) => void;
 
   renderFilters?: React.ReactNode;
   renderSearch?: React.ReactNode;
@@ -32,6 +33,7 @@ export default function AdminTableShell<T>({
   rows,
   rowKey,
   rowClassName,
+  onRowClick,
   renderFilters,
   renderSearch,
   renderActions,
@@ -77,6 +79,7 @@ export default function AdminTableShell<T>({
           data={rows}                             
           rowKey={rowKey}
           rowClassName={rowClassName}
+          onRowClick={onRowClick}
           headRowClassName={clsx(
             'bg-[#3B3F45] text-white text-center',
             stickyHeader && 'sticky top-0 z-10'

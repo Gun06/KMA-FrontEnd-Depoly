@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import AdminTable from "@/components/admin/Table/AdminTableShell";
 import type { Column } from "@/components/common/Table/BaseTable";
-import type { Faq } from "@/data/faq/types";
+import type { Faq } from "@/types/faq";
 
 type Pagination = {
   page: number;
@@ -17,8 +17,9 @@ type Pagination = {
 type Props = {
   rows?: Faq[];
   linkForRow?: (row: Faq) => string | undefined | null;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
   pagination?: Pagination;
+  isLoading?: boolean;
 };
 
 export default function FaqTable({
@@ -26,6 +27,7 @@ export default function FaqTable({
   linkForRow,
   onDelete,
   pagination,
+  isLoading = false,
 }: Props) {
   const data: Faq[] = Array.isArray(rows) ? rows : [];
 
@@ -35,8 +37,11 @@ export default function FaqTable({
   const offset = (page - 1) * Math.max(1, pageSize);
 
   const getDisplayNo = (row: Faq) => {
-    const idxOnPage = Math.max(0, data.findIndex((r) => r.id === row.id));
-    return Math.max(1, total - offset - idxOnPage);
+    // API에서 제공하는 no 값을 사용, 없으면 계산된 값 사용
+    return row.no ?? (() => {
+      const idxOnPage = Math.max(0, data.findIndex((r) => r.id === row.id));
+      return Math.max(1, total - offset - idxOnPage);
+    })();
   };
 
   const defaultLinkForRow = (r: Faq) => `/admin/boards/faq/events/_/${r.id}`;
@@ -69,9 +74,21 @@ export default function FaqTable({
         );
       },
     },
-    { key: "author", header: "작성자", width: 140, align: "center" },
-    { key: "date", header: "작성일", width: 140, align: "center" },
-    { key: "views", header: "조회수", width: 90, align: "center" },
+    {
+      key: "createdAt",
+      header: "작성일",
+      width: 120,
+      align: "center",
+      render: (r) => {
+        if (!r.createdAt) return "-";
+        const date = new Date(r.createdAt);
+        return date.toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\./g, '.').replace(/ /g, '');
+      },
+    },
     {
       key: "delete",
       header: "삭제",
@@ -93,15 +110,25 @@ export default function FaqTable({
     : {};
 
   return (
-    <AdminTable<Faq>
-      columns={columns}
-      rows={data}
-      rowKey={(r) => r.id}
-      renderFilters={null}
-      renderSearch={null}
-      renderActions={null}
-      minWidth={960}
-      {...(tableProps as any)}
-    />
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute top-0 left-0 right-0 bg-white bg-opacity-50 flex items-center justify-center z-10 rounded-t-lg py-4">
+          <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <div className="text-sm text-gray-600">검색 중...</div>
+          </div>
+        </div>
+      )}
+      <AdminTable<Faq>
+        columns={columns}
+        rows={data}
+        rowKey={(r) => r.id}
+        renderFilters={null}
+        renderSearch={null}
+        renderActions={null}
+        minWidth={960}
+        {...(tableProps as any)}
+      />
+    </div>
   );
 }

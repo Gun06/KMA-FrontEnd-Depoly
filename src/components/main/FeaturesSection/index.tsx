@@ -22,7 +22,7 @@ const features: FeatureCard[] = [
     icon: cartIcon,
     title: '쇼핑몰',
     description: '마라톤 관련 상품을 만나보세요.',
-    link: '/shop',
+    link: '/shop/merchandise',
     linkColor: '#8F6F55',
     hasPlusButton: true
   },
@@ -31,7 +31,7 @@ const features: FeatureCard[] = [
     icon: photoIcon,
     title: '대회사진 갤러리',
     description: '대회 현장의 생생한 감동을 느껴보세요.',
-    link: '/gallery',
+    link: '/galleries',
     linkColor: '#256EF4',
     hasPlusButton: true
   },
@@ -49,7 +49,7 @@ const features: FeatureCard[] = [
     icon: paperIcon,
     title: '접수안내',
     description: '안내사항을 확인하세요.',
-    link: '/guide',
+    link: '/registration/guide',
     linkColor: '#EA753C',
     hasPlusButton: true
   }
@@ -70,9 +70,10 @@ export default function FeaturesSection() {
         {/* 기능 카드 그리드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
-            <div 
+            <Link 
               key={feature.id} 
-              className="rounded-lg p-6 relative hover:shadow-md transition-shadow duration-300"
+              href={feature.link}
+              className="block rounded-lg p-6 relative hover:shadow-md transition-shadow duration-300 cursor-pointer"
               style={{ 
                 backgroundColor: index === 0 ? '#F8F6F2' : 
                               index === 1 ? '#F6F8FA' : 
@@ -102,23 +103,22 @@ export default function FeaturesSection() {
 
               {/* 바로가기 링크 */}
               <div>
-                <Link 
-                  href={feature.link}
+                <span 
                   className="inline-flex items-center gap-2 font-medium hover:opacity-80 transition-opacity text-sm"
                   style={{ color: feature.linkColor }}
                 >
                   바로가기
                   <span className="text-sm">↗</span>
-                </Link>
+                </span>
               </div>
 
               {/* 플러스 버튼 */}
               {feature.hasPlusButton && (
-                <button className="absolute bottom-4 right-4 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors duration-200">
+                <div className="absolute bottom-4 right-4 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors duration-200">
                   <span className="text-lg">+</span>
-                </button>
+                </div>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       </div>

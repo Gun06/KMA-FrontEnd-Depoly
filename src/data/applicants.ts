@@ -1,4 +1,4 @@
-import type { ApplicantManageRow } from '@/components/admin/applications/ApplicantsManageTable';
+import type { ApplicantManageRow } from '@/types/registration';
 
 const family = ['김', '이', '박', '최', '정', '한', '조', '윤', '임', '강'];
 const given  = ['민수', '서준', '도윤', '하린', '지우', '서연', '유진', '예빈', '현우', '지민'];
@@ -16,7 +16,8 @@ const orgs = [
 ];
 
 const courses: Array<'풀' | '하프' | '10K' | '5K'> = ['풀', '하프', '10K', '5K'];
-const payStatuses: Array<'입금' | '미입금' | '확인요망'> = ['입금', '미입금', '확인요망'];
+const payStatuses: Array<'미결제' | '결제완료' | '확인필요' | '차액환불요청' | '전액환불요청' | '전액환불완료'> = 
+  ['미결제', '결제완료', '확인필요', '차액환불요청', '전액환불요청', '전액환불완료'];
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -44,10 +45,8 @@ function randomFeeByCourse(course: '풀' | '하프' | '10K' | '5K') {
 }
 
 /** paid<->payStatus 매핑 */
-function toPaid(status: '입금' | '미입금' | '확인요망'): boolean | null {
-  if (status === '입금') return true;
-  if (status === '미입금') return false;
-  return null; // 확인요망
+function toPaid(status: '미결제' | '결제완료' | '확인필요' | '차액환불요청' | '전액환불요청' | '전액환불완료'): boolean {
+  return status === '결제완료';
 }
 
 /* 1) 우선 id 없이 전부 생성 */
@@ -61,7 +60,8 @@ for (let eventId = 1; eventId <= 25; eventId++) {
     const status = pick(payStatuses);
 
     TEMP_APPLICANTS.push({
-      eventId,
+      no: 0, // 임시값, 나중에 정렬 후 재할당
+      eventId: String(eventId), // UUID로 변경
       name: makeName(),
       org: pick(orgs),
       course,
@@ -71,13 +71,13 @@ for (let eventId = 1; eventId <= 25; eventId++) {
       regDate: `2025-08-${String(1 + Math.floor(Math.random() * 28)).padStart(2, '0')}`,
       fee: randomFeeByCourse(course),
       payStatus: status,
-      paid: status === '입금',
+      paid: toPaid(status),
     });
   }
 }
 
 /* 2) 이벤트별 그룹 → 신청일 오름차순 정렬 → id를 1부터 부여 */
-const grouped: Record<number, Temp[]> = {};
+const grouped: Record<string, Temp[]> = {};
 for (const a of TEMP_APPLICANTS) {
   (grouped[a.eventId] ??= []).push(a);
 }
@@ -86,14 +86,19 @@ const APPLICANTS_ARRAY: ApplicantManageRow[] = [];
 for (const arr of Object.values(grouped)) {
   arr.sort((x, y) => x.regDate.localeCompare(y.regDate));
   arr.forEach((a, i) => {
-    APPLICANTS_ARRAY.push({ id: i + 1, ...a }); // 이벤트별로 1부터
+    const { no: _no, ...rest } = a; // no 필드 제거
+    APPLICANTS_ARRAY.push({ 
+      id: String(i + 1), // UUID로 변경
+      no: i + 1, // 이벤트별로 1부터
+      ...rest 
+    });
   });
 }
 
 export const APPLICANTS: ApplicantManageRow[] = APPLICANTS_ARRAY;
 
 /* 3) 조회: 화면은 최신 신청일이 위로 보이게(내림차순 정렬 후 페이징) */
-export function fetchApplicantsByEvent(eventId: number, page: number, pageSize: number) {
+export function fetchApplicantsByEvent(eventId: string, page: number, pageSize: number) {
   const rows = APPLICANTS.filter((a) => a.eventId === eventId)
     .sort((a, b) => b.regDate.localeCompare(a.regDate)); // 화면 정렬: 최신 ↑
 

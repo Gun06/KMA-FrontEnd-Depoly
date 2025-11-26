@@ -2,11 +2,111 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import FaqListPage from "@/components/admin/boards/faq/FaqListPage";
-import { getMainFaqs, deleteMainFaq } from "@/data/faq/main";
+import { useHomepageFaqs, faqKeys } from "@/hooks/useFaqs";
+import { deleteFaq } from "@/services/admin/faqs";
+import type { FaqSearchParams, FaqListResponse } from "@/types/faq";
 
 export default function Page() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  
+  // 검색 파라미터 상태
+  const [searchParams, setSearchParams] = React.useState<FaqSearchParams>({
+    page: 1,
+    size: 20,
+    // FAQ는 정렬 파라미터를 지원하지 않음
+  });
+
+  // FAQ 목록 조회
+  const { data: faqData, isLoading, error } = useHomepageFaqs(searchParams);
+  const typedFaqData = faqData as FaqListResponse | undefined;
+
+  // FAQ 삭제 핸들러
+  const handleDelete = async (id: string) => {
+    if (!confirm("삭제하시겠습니까?")) return;
+    
+    try {
+      await deleteFaq(id);
+      
+      // 캐시 무효화
+      await queryClient.invalidateQueries({ queryKey: faqKeys.homepage() });
+      
+      // 현재 페이지가 마지막 페이지이고 삭제 후 빈 페이지가 되면 이전 페이지로 이동
+      if (typedFaqData && typedFaqData.content && typedFaqData.content.length === 1 && typedFaqData.number > 0) {
+        setSearchParams(prev => ({
+          ...prev,
+          page: Math.max(1, prev.page! - 1)
+        }));
+      }
+    } catch (error) {
+      alert('FAQ 삭제에 실패했습니다.');
+    }
+  };
+
+  // 검색 파라미터 업데이트 (useCallback으로 최적화)
+  const updateSearchParams = React.useCallback((updates: Partial<FaqSearchParams>) => {
+    setSearchParams(prev => ({
+      ...prev,
+      ...updates,
+      page: updates.page || 1, // 검색 조건 변경 시 첫 페이지로
+    }));
+  }, []);
+
+  // 검색 핸들러
+  const handleSearch = React.useCallback((q: string, _searchMode: string) => {
+    updateSearchParams({
+      keyword: q || undefined,
+      // FAQSearchKey 제거 (API에서 지원하지 않음)
+    });
+  }, [updateSearchParams]);
+
+  // 리셋 핸들러
+  const handleReset = React.useCallback(() => {
+    updateSearchParams({
+      keyword: undefined,
+      // FAQSearchKey 제거
+    });
+  }, [updateSearchParams]);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = React.useCallback((newPage: number) => {
+    updateSearchParams({ page: newPage });
+  }, [updateSearchParams]);
+
+  // provider 함수를 useCallback으로 최적화 (페이지네이션 지원)
+  const provider = React.useCallback((page: number, size: number, opt: { q: string; sort: string; searchMode: string }) => {
+    // 검색 조건이 있으면 onSearch 호출 (실제 API 검색)
+    if (opt.q && opt.q !== searchParams.keyword) {
+      handleSearch(opt.q, opt.searchMode);
+    }
+    
+    if (!typedFaqData || !typedFaqData.content) return { rows: [], total: 0 };
+    
+    // 현재 페이지의 데이터만 반환 (API에서 이미 페이지별로 데이터를 받아옴)
+    return {
+      rows: typedFaqData.content.map((item) => ({
+        id: item.id,
+        no: item.no,
+        title: item.problem,
+        question: item.problem,
+        createdAt: item.createdAt,
+        answer: {
+          content: item.solution,
+        }
+      })),
+      total: typedFaqData.totalElements || 0
+    };
+  }, [typedFaqData, searchParams.keyword, handleSearch]);
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-[1300px] px-4 py-6">
+        <div className="text-center text-red-500">FAQ 목록을 불러오는데 실패했습니다.</div>
+      </div>
+    );
+  }
 
   return (
     <FaqListPage
@@ -17,10 +117,15 @@ export default function Page() {
         tone: "competition",
         onClick: () => router.push("/admin/boards/faq"),
       }}
-      provider={(page, size, opt) => getMainFaqs(page, size, opt)}
+      provider={provider}
       linkForRow={(r) => `/admin/boards/faq/main/${r.id}`}
-      onDelete={(id) => deleteMainFaq(id)}
+      onDelete={handleDelete}
+      onSearch={handleSearch}
+      onReset={handleReset}
+      onPageChange={handlePageChange}
+      currentPage={searchParams.page}
       createHref={`/admin/boards/faq/main/write`}
+      isLoading={isLoading}
     />
   );
 }

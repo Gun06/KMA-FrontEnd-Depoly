@@ -42,7 +42,7 @@ const defaultSponsors: Logo[] = [
   { src: boost04, alt: 'boost04' },
 ]
 
-export default function SponsorsMarquee({ hosts = defaultHosts, organizers = defaultOrganizers, sponsors = defaultSponsors }: SponsorsMarqueeProps) {
+export default function SponsorsMarqueeLegacy({ hosts = defaultHosts, organizers = defaultOrganizers, sponsors = defaultSponsors }: SponsorsMarqueeProps) {
   const all: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = [
     ...hosts.map((l) => ({ type: 'host' as const, logo: l })),
     ...organizers.map((l) => ({ type: 'organizer' as const, logo: l })),

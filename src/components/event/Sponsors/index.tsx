@@ -1,7 +1,9 @@
 "use client"
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React from 'react'
 import Image from 'next/image'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useEventSponsorBanners } from '@/hooks/useEventSponsor'
+import type { EventSponsorBanner } from '@/types/eventSponsor'
 type Logo = {
   src: string
   alt: string
@@ -21,98 +23,40 @@ const SPEED_MS = 50000 // 50초
 
 
 export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
-  const [hosts, setHosts] = useState<Logo[]>([]);
-  const [organizers, setOrganizers] = useState<Logo[]>([]);
-  const [sponsors, setSponsors] = useState<Logo[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   // 모바일 여부 감지
   const isMobile = useMediaQuery('(max-width: 768px)');
   
-  // 이전 API 호출 상태를 저장하여 중복 호출 방지
-  const lastApiCallRef = useRef<{ eventId: string; isMobile: boolean } | null>(null);
+  // 새로운 API 훅 사용
+  const { data: sponsorData, isLoading, error } = useEventSponsorBanners({
+    eventId: eventId || '',
+    serviceType: isMobile ? 'MOBILE' : 'DESKTOP'
+  });
   
-  // API 호출 함수를 useCallback으로 메모이제이션
-  const fetchSponsors = useCallback(async (eventId: string, isMobile: boolean) => {
-    // 이전과 동일한 API 호출인지 확인
-    const currentCall = { eventId, isMobile };
-    if (lastApiCallRef.current && 
-        lastApiCallRef.current.eventId === currentCall.eventId && 
-        lastApiCallRef.current.isMobile === currentCall.isMobile) {
-      return; // 중복 호출 방지
-    }
+  // API 데이터를 기존 Logo 타입으로 변환
+  const convertBannerToLogo = (banner: EventSponsorBanner): Logo => ({
+    src: banner.imgUrl,
+    alt: banner.providerName,
+    href: banner.imglinkedUrl,
+    isFixed: banner.static
+  });
+  
+  // 스폰서 데이터 분류 - 모든 배너를 합쳐서 타입별로 분류
+  const allBanners = [
+    ...(sponsorData?.staticBanner || []),
+    ...(sponsorData?.nonStaticBanner || [])
+  ];
+  
+  const hosts: Logo[] = allBanners
+    .filter(banner => banner.bannerType === 'HOST')
+    .map(convertBannerToLogo);
     
-    setIsLoading(true);
-    setError(null);
+  const organizers: Logo[] = allBanners
+    .filter(banner => banner.bannerType === 'ORGANIZER')
+    .map(convertBannerToLogo);
     
-    try {
-      // 모바일/데스크톱 구분해서 배너 가져오기
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-      const serviceType = isMobile ? 'mobile' : 'desktop';
-      const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/event-banner?serviceType=${serviceType}`;
-      
-      const response = await fetch(API_ENDPOINT);
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // staticBanner와 nonStaticBanner 배열을 합쳐서 처리
-        const allBanners = [
-          ...(data.staticBanner || []),
-          ...(data.nonStaticBanner || [])
-        ];
-        
-        // 배너 타입별로 분류
-        const hosts = allBanners.filter((banner: any) => banner.bannerType === 'HOST').map((banner: any) => ({
-          src: banner.imgUrl,
-          alt: banner.providerName,
-          href: banner.imglinkedUrl,
-          isFixed: banner.static
-        }));
-        
-        const organizers = allBanners.filter((banner: any) => banner.bannerType === 'ORGANIZER').map((banner: any) => ({
-          src: banner.imgUrl,
-          alt: banner.providerName,
-          href: banner.imglinkedUrl,
-          isFixed: banner.static
-        }));
-        
-        const sponsors = allBanners.filter((banner: any) => banner.bannerType === 'SPONSOR').map((banner: any) => ({
-          src: banner.imgUrl,
-          alt: banner.providerName,
-          href: banner.imglinkedUrl,
-          isFixed: banner.static
-        }));
-        
-        setHosts(hosts);
-        setOrganizers(organizers);
-        setSponsors(sponsors);
-        
-        // 성공한 API 호출 상태 저장
-        lastApiCallRef.current = currentCall;
-      } else {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error('스폰서 정보를 가져오는데 실패했습니다:', error);
-      setError('스폰서 정보를 불러올 수 없습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // API에서 스폰서 정보 가져오기 (디바운싱 적용)
-  useEffect(() => {
-    if (!eventId) return;
-
-    // 디바운싱: 300ms 후에 API 호출
-    const timeoutId = setTimeout(() => {
-      fetchSponsors(eventId, isMobile);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [eventId, isMobile, fetchSponsors]);
+  const sponsors: Logo[] = allBanners
+    .filter(banner => banner.bannerType === 'SPONSOR')
+    .map(convertBannerToLogo);
 
 
 
@@ -131,7 +75,9 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
     return (
       <section aria-label="organizer" className="bg-white">
         <div className="mx-auto max-w-[1920px] px-0 md:px-4 py-6 md:py-8">
-          <div className="text-center text-gray-500">스폰서 정보가 없습니다</div>
+          <div className="text-center text-gray-500">
+            {error ? '스폰서 정보를 불러올 수 없습니다' : '스폰서 정보가 없습니다'}
+          </div>
         </div>
       </section>
     );
@@ -179,7 +125,7 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
     sponsor: '후원',
   }
 
-  const item = (entry: { type: 'host' | 'organizer' | 'sponsor'; logo: Logo }, idx: number) => {
+  const item = (entry: { type: 'host' | 'organizer' | 'sponsor'; logo: Logo }, _idx: number) => {
     const badgeColorMap: Record<'host' | 'organizer' | 'sponsor', string> = {
       host: 'bg-red-100 text-red-800',
       organizer: 'bg-blue-100 text-blue-800',

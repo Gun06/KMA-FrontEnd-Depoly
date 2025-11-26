@@ -3,7 +3,7 @@
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
-import type { Faq, FaqFile } from "@/data/faq/types";
+import type { Faq, FaqFile } from "@/types/faq";
 
 type Props = {
   detail: Faq;
@@ -40,16 +40,8 @@ export default function FaqDetailSimple({
 
       {/* 본문 카드 */}
       <article className="rounded-xl border bg-white">
-        <header className="px-6 pt-6 pb-3">
-          <div className="text-md font-semibold mb-2 text-gray-500">자주 묻는 질문</div>
-          <h1 className="text-xl font-semibold">{detail.title}</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            작성자 {detail.author} · 작성일 {detail.date} · 조회 {detail.views}
-          </p>
-        </header>
-
         {/* 질문 */}
-        <section className="px-6 pt-5 pb-4">
+        <section className="px-6 pt-6 pb-4">
           <div className="text-sm font-semibold mb-2 text-gray-500">질문</div>
           {detail.question ? (
             <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: detail.question }} />

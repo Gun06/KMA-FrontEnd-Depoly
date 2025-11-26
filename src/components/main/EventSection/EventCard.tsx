@@ -1,9 +1,10 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { StaticImageData } from 'next/image';
 import clsx from 'clsx';
 interface EventCardProps {
-  imageSrc: StaticImageData;
+  imageSrc: StaticImageData | string;
   imageAlt: string;
   title: string;
   subtitle: string;
@@ -11,6 +12,7 @@ interface EventCardProps {
   price: string;
   status: string;
   eventDate: string; // YYYY-MM-DD 형식
+  eventId?: string; // API에서 받은 이벤트 ID
   className?: string;
   size?: 'small' | 'medium' | 'large' | 'test'; // 추가: 사이즈 설정용
 }
@@ -23,6 +25,7 @@ export default function EventCard({
   price,
   status,
   eventDate,
+  eventId,
   className,
   size = 'large'
 }: EventCardProps) {
@@ -74,7 +77,7 @@ export default function EventCard({
     test: "h-auto"
   };
 
-  return (
+  const cardContent = (
     <div className={clsx(
       sizeClasses[size],
       "select-none bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 ease-in-out cursor-pointer transform hover:-translate-y-2 md:hover:-translate-y-3 lg:hover:-translate-y-5 hover:shadow-2xl",
@@ -82,12 +85,14 @@ export default function EventCard({
     )} style={{ filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.05))' }}>
       {/* 이미지 영역 */}
       <div className={clsx("relative w-full overflow-hidden", imageHeightClasses[size])}>
-                 <Image
-           src={imageSrc}
-           alt={imageAlt}
-           fill
-           className="object-cover select-none pointer-events-none"
-         />
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          className="object-cover select-none pointer-events-none"
+          priority={false}
+          style={{ position: 'absolute' }}
+        />
         {/* 접수 상태 배지 */}
         <div className="absolute top-1.5 md:top-3 left-1.5 md:left-3 bg-white/40 text-blue-600 text-xs md:text-sm px-1.5 md:px-3 py-0.5 md:py-1.5 rounded-full z-10 backdrop-blur-sm">
           {displayStatus}
@@ -129,4 +134,15 @@ export default function EventCard({
       </div>
     </div>
   );
+
+  // eventId가 있으면 Link로 감싸고, 없으면 그대로 반환
+  if (eventId) {
+    return (
+      <Link href={`/event/${eventId}`}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }

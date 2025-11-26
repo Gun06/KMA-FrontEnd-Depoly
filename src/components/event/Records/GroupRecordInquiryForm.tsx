@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { getOrganizationRecord, type OrganizationRecordRequest } from "@/services/record";
 
 type InquiryType = "개인" | "단체";
 
@@ -10,10 +10,6 @@ export default function GroupRecordInquiryForm() {
   const params = useParams();
   const eventId = params.eventId as string;
   const [inquiryType, setInquiryType] = useState<InquiryType>("단체");
-  const [openDropdown, setOpenDropdown] = useState<'year' | 'month' | 'day' | null>(null);
-  const yearRef = useRef<HTMLDivElement>(null);
-  const monthRef = useRef<HTMLDivElement>(null);
-  const dayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (pathname.includes('/group')) {
@@ -23,29 +19,8 @@ export default function GroupRecordInquiryForm() {
     }
   }, [pathname]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        yearRef.current && !yearRef.current.contains(event.target as Node) &&
-        monthRef.current && !monthRef.current.contains(event.target as Node) &&
-        dayRef.current && !dayRef.current.contains(event.target as Node)
-      ) {
-        setOpenDropdown(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   const [formData, setFormData] = useState({
-    groupName: "",
-    representativeName: "",
-    birthYear: "",
-    birthMonth: "",
-    birthDay: "",
+    groupId: "",
     password: "",
   });
 
@@ -64,34 +39,61 @@ export default function GroupRecordInquiryForm() {
     }
   };
 
-  const handleSubmit = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isErrorVisible, setIsErrorVisible] = useState(false);
+
+  const handleSubmit = async () => {
     // 필수 필드 검증
-    if (!formData.groupName || !formData.representativeName || !formData.birthYear || !formData.birthMonth || !formData.birthDay || !formData.password) {
-      alert("모든 필드를 입력해주세요.");
+    if (!formData.groupId.trim()) {
+      alert("단체신청용 ID를 입력해주세요.");
       return;
     }
+    if (!formData.password.trim()) {
+      alert("단체 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setIsErrorVisible(false);
     
-    // 생년월일 형식으로 변환
-    const birthDate = `${formData.birthYear}.${formData.birthMonth}.${formData.birthDay}`;
-    
-    // 결과 페이지로 이동하면서 데이터 전달
-    const queryParams = new URLSearchParams({
-      groupName: formData.groupName,
-      representative: formData.representativeName,
-      birthDate: birthDate
-    });
-    
-    router.push(`/event/${eventId}/records/group/result?${queryParams.toString()}`);
+    try {
+      // API 요청 데이터 구성
+      const requestData: OrganizationRecordRequest = {
+        id: formData.groupId,
+        orgPw: formData.password
+      };
+
+      // API 호출
+      const results = await getOrganizationRecord(eventId, requestData);
+      
+      // 결과를 쿼리 파라미터로 전달하여 결과 페이지로 이동
+      const searchParams = new URLSearchParams({
+        results: JSON.stringify(results)
+      });
+      
+      router.push(`/event/${eventId}/records/group/result?${searchParams.toString()}`);
+    } catch (error) {
+      setError('단체 기록 조회에 실패했습니다. 정보를 다시 입력해주세요.');
+      setIsErrorVisible(true);
+      
+      // 3초 후 에러 메시지 자동 제거 (스무스하게)
+      setTimeout(() => {
+        setIsErrorVisible(false);
+        // 애니메이션 완료 후 에러 메시지 제거
+        setTimeout(() => {
+          setError(null);
+        }, 300);
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePasswordFind = () => {
     // 비밀번호 찾기 로직
-    console.log('Password find clicked');
   };
-
-  const years = Array.from({ length: 100 }, (_, i) => 2025 - i);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,15 +139,15 @@ export default function GroupRecordInquiryForm() {
 
       {/* 폼 */}
       <div className="space-y-4 sm:space-y-6">
-        {/* 단체명 */}
+        {/* 단체 ID */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
           <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-            단체명
+            단체신청용 ID
           </label>
           <input
             type="text"
-            value={formData.groupName}
-            onChange={(e) => handleInputChange("groupName", e.target.value)}
+            value={formData.groupId}
+            onChange={(e) => handleInputChange("groupId", e.target.value)}
             placeholder="띄어쓰기 없이 입력해주세요."
             className="w-full sm:w-[500px] px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
@@ -154,144 +156,17 @@ export default function GroupRecordInquiryForm() {
         {/* 구분선 */}
         <hr className="border-gray-200" />
 
-        {/* 대표자명 */}
+        {/* 단체 비밀번호 */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
           <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-            대표자명
-          </label>
-          <input
-            type="text"
-            value={formData.representativeName}
-            onChange={(e) => handleInputChange("representativeName", e.target.value)}
-            placeholder="띄어쓰기 없이 입력해주세요."
-            className="w-full sm:w-[500px] px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-          />
-        </div>
-
-        {/* 구분선 */}
-        <hr className="border-gray-200" />
-
-        {/* 대표자 생년월일 */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-            대표자 생년월일
-          </label>
-          <div className="flex items-center space-x-1">
-            {/* 년도 선택 */}
-            <div className="relative" ref={yearRef}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'year' ? null : 'year')}
-                className="w-16 sm:w-20 px-2 sm:px-3 py-3 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
-              >
-                <span>{formData.birthYear || "년도"}</span>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-              </button>
-              
-              {openDropdown === 'year' && (
-                <div className="absolute top-full left-0 mt-1 w-16 sm:w-20 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                  {years.map(year => (
-                    <button
-                      key={year}
-                      onClick={() => {
-                        handleInputChange("birthYear", year.toString());
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full px-2 sm:px-3 py-2 text-xs sm:text-sm text-left hover:bg-blue-50 transition-colors ${
-                        year.toString() === formData.birthYear ? 'bg-blue-100 text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* 구분자 */}
-            <span className="text-gray-400 text-xs sm:text-sm mx-1">.</span>
-            
-            {/* 월 선택 */}
-            <div className="relative" ref={monthRef}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'month' ? null : 'month')}
-                className="w-14 sm:w-16 px-2 sm:px-3 py-3 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
-              >
-                <span>{formData.birthMonth || "월"}</span>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-              </button>
-              
-              {openDropdown === 'month' && (
-                <div className="absolute top-full left-0 mt-1 w-14 sm:w-16 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  {months.map(month => (
-                    <button
-                      key={month}
-                      onClick={() => {
-                        handleInputChange("birthMonth", month.toString().padStart(2, '0'));
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full px-2 sm:px-3 py-2 text-xs sm:text-sm text-center hover:bg-blue-50 transition-colors ${
-                        month.toString().padStart(2, '0') === formData.birthMonth ? 'bg-blue-100 text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {String(month).padStart(2, '0')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* 구분자 */}
-            <span className="text-gray-400 text-xs sm:text-sm mx-1">.</span>
-            
-            {/* 일 선택 */}
-            <div className="relative" ref={dayRef}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === 'day' ? null : 'day')}
-                className="w-14 sm:w-16 px-2 sm:px-3 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs sm:text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
-              >
-                <span>{formData.birthDay || "일"}</span>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-              </button>
-              
-              {openDropdown === 'day' && (
-                <div className="absolute top-full left-0 mt-1 w-14 sm:w-16 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                  {days.map(day => (
-                    <button
-                      key={day}
-                      onClick={() => {
-                        handleInputChange("birthDay", day.toString().padStart(2, '0'));
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full px-2 sm:px-3 py-2 text-xs sm:text-sm text-center hover:bg-blue-50 transition-colors ${
-                        day.toString().padStart(2, '0') === formData.birthDay ? 'bg-blue-100 text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {String(day).padStart(2, '0')}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 구분선 */}
-        <hr className="border-gray-200" />
-
-        {/* 비밀번호 */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-            비밀번호
+            단체 비밀번호
           </label>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-[500px]">
             <input
               type="password"
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
-              placeholder="비밀번호를 입력해주세요."
+              placeholder="단체 비밀번호를 입력해주세요."
               className="w-full sm:flex-1 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
             <button
@@ -304,11 +179,30 @@ export default function GroupRecordInquiryForm() {
         </div>
       </div>
 
-      {/* 제출 버튼 */}
+      {/* 에러 메시지 */}
+      {error && (
+        <div className={`mt-4 p-4 bg-red-50 border border-red-200 rounded-lg transition-all duration-300 ease-in-out ${
+          isErrorVisible ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform -translate-y-2'
+        }`}>
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 제출 버튼 - 비활성화 */}
       <div className="mt-6 sm:mt-8 text-center">
         <button
           onClick={handleSubmit}
-          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-base sm:text-lg"
+          disabled
+          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 font-medium text-base sm:text-lg"
         >
           다음
         </button>

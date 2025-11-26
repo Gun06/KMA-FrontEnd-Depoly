@@ -15,6 +15,9 @@ export type ApplicationsOptions = {
   onOpenApplications?: (row: IndividualUserRow) => void;
   makeNameClickable?: boolean;
   addActionColumn?: boolean; // ✅ 기본 false
+  rowIndexOffset?: number;
+  totalCount?: number;
+  descendingNumbering?: boolean;
 };
 
 export function Columns(
@@ -27,9 +30,11 @@ export function Columns(
   if (hooks?.headCheckbox && hooks?.rowCheckbox) {
     cols.push({
       key: '__sel',
-      header: <div className="inline-flex w-full items-center justify-center" data-allow-bubble="true">
-        {hooks.headCheckbox}
-      </div>,
+      header: (
+        <div className="inline-flex w-full items-center justify-center" data-allow-bubble="true">
+          {hooks.headCheckbox}
+        </div>
+      ),
       width: 52,
       align: 'center',
       headerAlign: 'center',
@@ -41,13 +46,31 @@ export function Columns(
 
   // ✅ 1300 안에 들어오도록 총합 슬림화 (선택 컬럼 포함해도 ~1,258px + 여유)
   cols.push(
-    { key: 'id',        header: '번호',     width: 70,  align: 'center', className: 'whitespace-nowrap tabular-nums' },
     {
-      key: 'isMember',  header: '회원여부', width: 96,  align: 'center', headerAlign: 'center',
+      key: '__no',
+      header: '번호',
+      width: 80,
+      align: 'center',
+      headerAlign: 'center',
+      className: 'whitespace-nowrap tabular-nums',
+      render: (_row, idx) => {
+        const baseIndex = (opts?.rowIndexOffset ?? 0) + idx;
+        if (opts?.descendingNumbering && typeof opts.totalCount === 'number') {
+          return Math.max(opts.totalCount - baseIndex, 1);
+        }
+        return baseIndex + 1;
+      },
+    },
+    {
+      key: 'isMember',
+      header: '회원여부',
+      width: 96,
+      align: 'center',
+      headerAlign: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => <MemberBadge isMember={r.isMember} />,
     },
-    { key: 'userId',    header: '아이디',   width: 110, align: 'center' },
+    { key: 'userId', header: '아이디', width: 110, align: 'center' },
     {
       key: 'name',
       header: '이름',
@@ -84,40 +107,31 @@ export function Columns(
       }    
     },
     {
-      key: 'maskedPw',  header: '비밀번호', width: 96,  align: 'center',
-      className: 'whitespace-nowrap tabular-nums',
-      render: (r) => (r.maskedPw.length > 8 ? r.maskedPw.slice(0, 8) + '...' : r.maskedPw),
-    },
-    {
       key: 'birth',     header: '생년월일', width: 110, align: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => fmtBirth(r.birth),
     },
     { key: 'phone',     header: '휴대전화', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    {
-      key: 'address',   header: '주소',     width: 280, align: 'center',
-      className: 'whitespace-nowrap tabular-nums',
-      render: (r) => <span className="block max-w-[900px] truncate mx-auto">{r.address}</span>,
-    },
+    
     { key: 'createdAt', header: '등록일',   width: 100, align: 'center', className: 'whitespace-nowrap tabular-nums' },
   );
 
   if (opts?.addActionColumn) {
     cols.push({
       key: 'list',
-      header: '신청',
+      header: '상세',
       width: 88,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => (
         <Link
-          href={opts?.applicationsHref ? opts.applicationsHref(r) : `/admin/users/individual/${r.id}/events`}
+          href={opts?.applicationsHref ? opts.applicationsHref(r) : `/admin/users/individual/${r.id}`}
           className="text-[#2563EB] hover:underline"
           onClick={(e) => e.stopPropagation()}      // ✅ 행 onClick 방지
           onMouseDown={(e) => e.stopPropagation()}  // ✅ 드래그/포커스 버블도 방지
           data-allow-bubble="true"
         >
-          보기 &rsaquo;
+          상세보기 &rsaquo;
         </Link>
       ),
     });

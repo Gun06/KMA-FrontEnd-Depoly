@@ -12,6 +12,7 @@ import type { EventRow } from '@/components/admin/events/EventTable';
 import { useEventsActions } from '@/contexts/EventsContext';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import { useApiMutation } from '@/hooks/useFetch';
+import { useQueryClient } from '@tanstack/react-query';
 
 // 유틸리티 import
 // 위 배럴에서 일괄 import
@@ -23,6 +24,7 @@ import {
 export default function Client() {
   const router = useRouter();
   const { addOne, saveForm } = useEventsActions();
+  const queryClient = useQueryClient();
 
   // 대회 생성 API 호출 훅
   const createEventMutation = useApiMutation<{ id: number } | string, FormData>(
@@ -31,34 +33,30 @@ export default function Client() {
     'POST',
     true, // 인증 필요
     {
-      onSuccess: data => {
+      onSuccess: async (data) => {
         if (data == null) return;
 
-        // 서버가 문자열(UUID 등)로 응답하는 경우 대비
+        // 서버가 문자열(UUID 등) 또는 숫자로 응답하는 경우 모두 대비
         const idMaybe = typeof data === 'string' ? data : data.id;
+        const stringId = String(idMaybe);
 
-        // 숫자 id를 요구하는 기존 테이블과 일단 호환시키기 위해 임시 음수 id 매핑
-        const numericId =
-          typeof idMaybe === 'number' ? idMaybe : Date.now() * -1;
+        // 관리자 이벤트 목록 캐시 무효화하여 최신 데이터 가져오기
+        await queryClient.invalidateQueries({
+          queryKey: ['admin', 'events', 'list'],
+        });
 
-        // 테이블 표시용 임시 Row 추가
-        const newRow: EventRow = {
-          id: numericId,
-          date: new Date().toISOString().slice(0, 10),
-          title: '새 대회',
-          titleEn: '',
-          place: '',
-          host: '',
-          applyStatus: '접수중' as RegStatus,
-          isPublic: true,
-        };
+        // 추가로 일반 이벤트 목록 캐시도 무효화 (다른 페이지에서 사용할 수 있음)
+        await queryClient.invalidateQueries({
+          queryKey: ['admin', 'events'],
+        });
 
-        addOne(newRow);
-        // 원본 id(문자열/숫자)와 임시 numericId를 form 스냅샷에 함께 저장
-        saveForm(numericId, {
+        // 원본 id(문자열/숫자)를 문자열로 통일하여 스냅샷에 저장
+        saveForm(stringId, {
           __serverId: idMaybe,
         } as unknown as EventCreatePayload);
-        router.replace(`/event/${idMaybe}`);
+        
+        // 대회 상세 페이지로 이동
+        router.replace(`/admin/events/${idMaybe}`);
       },
       onError: (error: Error) => {
         const errorMessage = extractApiErrorMessage(error);
@@ -103,7 +101,6 @@ export default function Client() {
     } catch (error) {
       // 오류 상세 로그
       alert('대회 생성 중 오류가 발생했습니다.');
-      console.error('대회 등록 오류:', error);
     }
   };
 

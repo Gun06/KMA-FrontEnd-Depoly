@@ -16,6 +16,7 @@ interface PersonalInfoSectionProps {
   onIdCheck: () => void;
   onAddressSelect: (postalCode: string, address: string) => void;
   onDropdownToggle: (dropdown: OpenDropdown) => void;
+  onOpenIdPasswordModal: () => void;
   refs: {
     yearRef: React.RefObject<HTMLDivElement>;
     monthRef: React.RefObject<HTMLDivElement>;
@@ -28,9 +29,10 @@ export default function PersonalInfoSection({
   idCheckResult,
   openDropdown,
   onInputChange,
-  onIdCheck,
+  onIdCheck: _onIdCheck,
   onAddressSelect,
   onDropdownToggle,
+  onOpenIdPasswordModal,
   refs
 }: PersonalInfoSectionProps) {
   return (
@@ -46,6 +48,10 @@ export default function PersonalInfoSection({
           <input
             type="text"
             placeholder="띄어쓰기 없이 입력해주세요."
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            name="no-autofill-name"
             value={formData.name}
             onChange={(e) => onInputChange('name', e.target.value)}
             className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
@@ -145,20 +151,14 @@ export default function PersonalInfoSection({
         </FormField>
         <hr className="border-gray-200" />
         
-        {/* 전마협 아이디 */}
-        <FormField label="전마협 아이디">
+        {/* 전마협 아이디 - 주석 처리 (비활성화) */}
+        {/* <FormField label="전마협 아이디">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="전마협 아이디가 있으면 입력해주세요"
-              value={formData.jeonmahyupId}
-              onChange={(e) => onInputChange('jeonmahyupId', e.target.value)}
-              className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
             <button
               type="button"
-              onClick={onIdCheck}
-              className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
+              onClick={onOpenIdPasswordModal}
+              disabled
+              className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
             >
               아이디 확인 →
             </button>
@@ -175,7 +175,7 @@ export default function PersonalInfoSection({
             }
           </div>
         )}
-        <hr className="border-gray-200" />
+        <hr className="border-gray-200" /> */}
         
         {/* 주소 */}
         <FormField label="주소" required>

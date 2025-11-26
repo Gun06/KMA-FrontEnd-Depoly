@@ -50,6 +50,8 @@ export type EventCreatePayload = Omit<
     bannerOrganizer?: UploadItem[];
     bannerSponsor?: UploadItem[];
     bannerInstagram?: UploadItem[];
+    // 사이드메뉴배너(herosection 이미지)
+    bannerSideMenu?: UploadItem[];
     // 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
     bannerGuideDesktop?: UploadItem[];
     bannerGuideMobile?: UploadItem[];
@@ -170,4 +172,144 @@ export interface NoticeSectionInfo {
   first: boolean;
   last: boolean;
   empty: boolean;
+}
+
+// 블록 형식 대회 일정 API 응답 타입
+export interface BlockEventItem {
+  eventId: string;
+  eventImgSrc: string;
+  eventNameKr: string;
+  eventNameEn: string;
+  eventDate: string; // ISO 8601 형식
+  status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  eventDeadLine: string; // ISO 8601 형식
+  lowerPrice: number;
+}
+
+export interface BlockEventResponse {
+  [key: string]: BlockEventItem[];
+}
+
+// 스폰서 배너 API 응답 타입
+export interface SponsorBanner {
+  url: string;
+  imageUrl: string;
+  orderNo: number;
+  visible: boolean;
+}
+
+// 문의사항 API 응답 타입
+export interface QuestionHeader {
+  no: number;
+  id: string;
+  title: string;
+  authorName: string;
+  authorId?: string; // 작성자 ID 추가
+  createdAt: string;
+  secret: boolean;
+  answered: boolean;
+}
+
+export interface AnswerHeader {
+  no: number;
+  id: string;
+  title: string;
+  authorName: string;
+  createdAt: string;
+}
+
+export interface InquiryItem {
+  questionHeader: QuestionHeader;
+  answerHeader: AnswerHeader;
+}
+
+export interface InquiryResponse {
+  totalPages: number;
+  totalElements: number;
+  pageable: {
+    unpaged: boolean;
+    paged: boolean;
+    pageSize: number;
+    pageNumber: number;
+    offset: number;
+    sort: {
+      sorted: boolean;
+      unsorted: boolean;
+      empty: boolean;
+    };
+  };
+  numberOfElements: number;
+  size: number;
+  content: InquiryItem[];
+  number: number;
+  sort: {
+    sorted: boolean;
+    unsorted: boolean;
+    empty: boolean;
+  };
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+}
+
+// 메인 배너 API 타입
+export interface MainBannerItem {
+  title: string;
+  subTitle: string;
+  date: string;
+  imageUrl: string;
+  orderNo: number;
+  eventId: string;
+}
+
+// 개인 기록 조회 API 타입
+export interface PersonalRecordResult {
+  name: string;
+  birth: string;
+  course: string;
+  number: number;
+  resultTime: {
+    hour: number;
+    minute: number;
+    second: number;
+    nano: number;
+  };
+  orgName: string;
+  resultId: string;
+  eventId: string;
+}
+
+// 개인 기록 조회 요청 타입
+export interface PersonalRecordRequest {
+  name: string;
+  phNum: string;
+  birth: string;
+  eventPw: string;
+}
+
+// 대회일정 API 응답 타입
+export interface ScheduleEvent {
+  eventId: string;
+  eventImgSrc: string;
+  eventNameKr: string;
+  eventNameEn: string;
+  eventDate: string;
+  eventType: "KMA" | "LOCAL";
+  status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  eventDeadLine: string;
+  lowerPrice: number;
+}
+
+export interface ScheduleApiResponse {
+  [key: string]: ScheduleEvent[];
+}
+
+// 캘린더 API 응답 타입
+export interface CalendarEvent {
+  date: string;
+  eventName: string;
+}
+
+export interface CalendarApiResponse {
+  [key: string]: CalendarEvent[];
 }

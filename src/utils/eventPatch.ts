@@ -67,7 +67,13 @@ export function payloadToEventPatch(payload: EventCreatePayload, prefill: EventR
 
   // 장소/주최
   if (typeof anyP.place === 'string') patch.place = anyP.place;
-  if (typeof anyP.host === 'string') patch.host = anyP.host;
+  // host는 단일 문자열 또는 hosts 배열(주최 여러 개)로 올 수 있음
+  if (typeof anyP.host === 'string' && anyP.host.trim()) {
+    patch.host = anyP.host.trim();
+  } else if (Array.isArray(anyP.hosts)) {
+    const joined = anyP.hosts.map((h: unknown) => String(h ?? '').trim()).filter(Boolean).join(', ');
+    if (joined) patch.host = joined;
+  }
 
   // 공개여부
   const vis = toPublicVisibility(payload, prefill.isPublic);

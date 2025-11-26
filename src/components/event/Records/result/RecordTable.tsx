@@ -3,8 +3,8 @@ import { Trophy, Medal, Award, Users, User } from "lucide-react";
 
 interface RecordTableProps {
   category: string;
-  gender: string;
-  ageGroup: string;
+  _gender: string;
+  _ageGroup: string;
 }
 
 // 임시 데이터 (실제로는 API에서 가져와야 함)
@@ -63,7 +63,7 @@ const getCategoryIcon = (category: string) => {
   }
 };
 
-export default function RecordTable({ category, gender, ageGroup }: RecordTableProps) {
+export default function RecordTable({ category, _gender, _ageGroup }: RecordTableProps) {
   // 필터링 로직 (실제로는 API에서 처리해야 함)
   let filteredRecords = mockRecords;
   

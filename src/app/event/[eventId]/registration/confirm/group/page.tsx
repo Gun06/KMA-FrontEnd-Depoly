@@ -2,18 +2,22 @@
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import GroupApplicationConfirmForm from "@/components/event/Registration/GroupApplicationConfirmForm";
+import { useParams } from "next/navigation";
 
-export default function GroupApplicationConfirmPage({ params }: { params: { eventId: string } }) {
+export default function GroupApplicationConfirmPage() {
+  const params = useParams();
+  const eventId = params.eventId as string;
+
   return (
     <SubmenuLayout 
-      eventId={params.eventId}
+      eventId={eventId}
       breadcrumb={{
         mainMenu: "참가신청",
         subMenu: "단체 신청 확인"
       }}
     >
       <div className="container mx-auto px-4 py-8">
-        <GroupApplicationConfirmForm eventId={params.eventId} />
+        <GroupApplicationConfirmForm eventId={eventId} />
       </div>
     </SubmenuLayout>
   );

@@ -62,7 +62,6 @@ export const Multiple_ControlledPreview: S = {
           {...args}
           onChange={(items) => {
             setFiles(items);
-            console.log("업로드된 파일들:", items);
           }}
         />
         <pre className="text-xs text-gray-600 bg-gray-50 p-3 rounded-md overflow-auto">
@@ -101,7 +100,6 @@ export const SingleImage_Basic: SAny = {
         accept={args.accept}
         maxSizeMB={args.maxSizeMB}
         disabled={args.disabled}
-        onChange={(file) => console.log("대표 이미지:", file)}
       />
     </div>
   ),

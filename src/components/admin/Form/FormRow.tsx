@@ -33,11 +33,11 @@ export default function FormRow({
       {/* 콘텐츠: 기본 60px 보장 + 세로 패딩 4px */}
       <div
         className={cn(
-          "bg-white flex items-start gap-3 min-h-[60px] py-0.5",
+          "bg-white flex items-start gap-3 min-h-[60px] py-0.5 min-w-0",
           contentClassName
         )}
       >
-        <div className="flex-1 w-full">{children}</div>
+        <div className="flex-1 w-full min-w-0">{children}</div>
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
     </div>

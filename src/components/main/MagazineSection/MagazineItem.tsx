@@ -1,15 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
-import { MagazineItem as MagazineItemType } from './types';
-import CategoryTag from '@/components/common/Badge/CategoryTag';
+import { InquiryItem as InquiryItemType } from './types';
 
-interface MagazineItemProps {
-  item: MagazineItemType;
+interface InquiryItemProps {
+  item: InquiryItemType;
+  onClick?: () => void;
 }
 
-export default function MagazineItem({ item }: MagazineItemProps) {
+export default function InquiryItem({ item, onClick }: InquiryItemProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
-    <Link href={item.link || '#'} className="block">
+    <div 
+      className="block cursor-pointer" 
+      onClick={handleClick}
+    >
       <div className="py-3 hover:bg-gray-50 transition-colors duration-200" style={{ borderBottom: '1px solid #E5E7EB' }}>
         <div className="flex items-start gap-3">
           {/* 날짜 */}
@@ -17,21 +27,16 @@ export default function MagazineItem({ item }: MagazineItemProps) {
             {item.date}
           </div>
           
-          {/* 카테고리 및 제목 */}
+          {/* 제목만 표시 */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-nowrap">
-              {item.category && (
-                <div className="flex-shrink-0">
-                  <CategoryTag category={item.category} />
-                </div>
-              )}
-              <h4 className="text-sm text-gray-900 leading-relaxed truncate min-w-0">
-                {item.title}
-              </h4>
-            </div>
+            <h4 className={`text-sm leading-relaxed truncate min-w-0 ${
+              item.secret ? 'text-gray-500 italic' : 'text-gray-900'
+            }`}>
+              {item.title}
+            </h4>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

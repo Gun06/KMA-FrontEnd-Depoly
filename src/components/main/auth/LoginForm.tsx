@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Check } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Button from '@/components/common/Button/Button';
 import { authService } from '@/services/auth';
 import logoImage from '@/assets/images/main/logo.jpg';
@@ -14,6 +14,7 @@ import { toast } from 'react-toastify';
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -22,6 +23,9 @@ export default function LoginForm() {
     rememberId: false,
   });
   const [errors, setErrors] = useState<{ id?: string; password?: string }>({});
+  
+  // returnUrl 파라미터 가져오기
+  const returnUrl = searchParams.get('returnUrl');
 
   // 저장된 아이디 불러오기
   useEffect(() => {
@@ -69,13 +73,15 @@ export default function LoginForm() {
       // 로그인 성공 시 공용 후처리가 수행되므로 여기서는 라우팅/알림만 담당
       if (response.token || response.accessToken) {
         toast.success('로그인되었습니다.');
-        router.push('/');
+        
+        // returnUrl이 있으면 해당 페이지로, 없으면 홈으로 이동
+        const redirectUrl = returnUrl && returnUrl !== '/login' ? returnUrl : '/';
+        router.push(redirectUrl);
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : '로그인에 실패했습니다.';
       setError(errorMessage);
-      console.error('Login failed:', err);
     } finally {
       setIsLoading(false);
     }

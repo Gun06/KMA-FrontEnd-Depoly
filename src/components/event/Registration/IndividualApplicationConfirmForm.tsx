@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
+import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 
 export default function IndividualApplicationConfirmForm({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -68,54 +69,91 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
     setError(null);
 
     try {
-      // 생년월일을 YYYY-MM-DD 형식으로 변환
-      const birth = `${formData.birthYear}-${formData.birthMonth.padStart(2, '0')}-${formData.birthDay.padStart(2, '0')}`;
+      // 공통 유틸 함수 사용 (신청하기, 관리자 수정, 신청확인 모두 동일한 포맷)
+      // 생년월일을 YYYY-MM-DD 형식으로 변환 (공통 유틸 사용)
+      const birthHyphen = normalizeBirthDate(`${formData.birthYear}-${formData.birthMonth.padStart(2, '0')}-${formData.birthDay.padStart(2, '0')}`) || 
+                          `${formData.birthYear}-${formData.birthMonth.padStart(2, '0')}-${formData.birthDay.padStart(2, '0')}`;
+      const birthDigits = `${formData.birthYear}${formData.birthMonth.padStart(2, '0')}${formData.birthDay.padStart(2, '0')}`;
       
-      // 전화번호를 010-1234-5678 형식으로 변환
-      const phNum = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
-
-      const requestData = {
-        name: formData.name,
-        phNum: phNum,
-        birth: birth,
-        eventPw: formData.password
-      };
+      // 전화번호를 010-1234-5678 형식으로 변환 (공통 유틸 사용)
+      const phNumHyphen = normalizePhoneNumber(`${formData.phone1}-${formData.phone2}-${formData.phone3}`) || 
+                          `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+      const phNumDigits = `${formData.phone1}${formData.phone2}${formData.phone3}`.replace(/\D+/g, '');
 
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
       const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/view-registration-info`;
 
-      const response = await fetch(API_ENDPOINT, {
+      const buildBody = (ph: string, b: string) =>
+        JSON.stringify({
+          name: formData.name.trim(),
+          phNum: ph,
+          birth: b,
+          eventPw: formData.password,
+        });
+
+      // 스펙: 확인 API는 하이픈 포함 포맷 사용 (전화번호/생년월일)
+      let response = await fetch(API_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(requestData),
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: buildBody(phNumHyphen, birthHyphen),
       });
+      // (선택적) 404면 숫자-only 포맷으로 재시도
+      if (response.status === 404) {
+        response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: buildBody(phNumDigits, birthDigits),
+        });
+      }
 
       if (response.ok) {
         const result: IndividualRegistrationResponse = await response.json();
         
-        // 성공 시 결과 페이지로 이동 (데이터와 함께)
+        // 인증 성공한 데이터와 비밀번호를 sessionStorage에 임시 저장 (결과 페이지에서 사용)
+        if (result.registrationId) {
+          const storageKey = `individual_registration_data_${eventId}_${result.registrationId}`;
+          try {
+            const dataToStore = {
+              ...result,
+              _password: formData.password // 비밀번호를 별도 필드로 저장
+            };
+            sessionStorage.setItem(storageKey, JSON.stringify(dataToStore));
+          } catch (e) {
+            // sessionStorage 접근 실패 시 무시
+          }
+          
+          // 성공 시 결과 페이지로 이동 (registrationId만 전달)
+          router.push(`/event/${eventId}/registration/confirm/individual/result?registrationId=${encodeURIComponent(result.registrationId)}`);
+        } else {
+          // registrationId가 없으면 기존 방식으로 fallback
         const encodedData = encodeURIComponent(JSON.stringify(result));
         router.push(`/event/${eventId}/registration/confirm/individual/result?data=${encodedData}`);
+        }
       } else {
         const errorText = await response.text();
-        
-        // 404 에러인 경우 사용자 친화적인 메시지
-        if (response.status === 404) {
-          try {
-            const errorData = JSON.parse(errorText);
-            if (errorData.message) {
-              setError(errorData.message);
-            } else {
-              setError('해당 정보로 신청 내역을 찾을 수 없습니다. 입력 정보를 다시 확인해주세요.');
-            }
-          } catch {
+        try {
+          const errorJson = JSON.parse(errorText);
+          const status = response.status;
+          const code = errorJson?.code || '';
+          const serverMsg = errorJson?.message || '';
+
+          if (status === 400 && (code === 'NOT_MATCHED_PASSWORD' || serverMsg.includes('비밀번호'))) {
+            setError('이름, 생년월일 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+          } else if (status === 404) {
             setError('해당 정보로 신청 내역을 찾을 수 없습니다. 입력 정보를 다시 확인해주세요.');
+          } else if (status >= 500) {
+            setError('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
+          } else {
+            setError(serverMsg || '신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
           }
-        } else {
-          throw new Error(`API 호출 실패: ${response.status} - ${errorText}`);
+        } catch {
+          if (response.status === 404) {
+            setError('해당 정보로 신청 내역을 찾을 수 없습니다. 입력 정보를 다시 확인해주세요.');
+          } else if (response.status >= 500) {
+            setError('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
+          } else {
+            setError('신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
+          }
         }
       }
     } catch (error) {
@@ -128,10 +166,6 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
     }
   };
 
-  const handlePasswordFind = () => {
-    // 비밀번호 찾기 페이지로 이동
-    router.push(`/event/${eventId}/registration/confirm/individual/password-find`);
-  };
 
   const years = Array.from({ length: 100 }, (_, i) => 2025 - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -149,11 +183,8 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
 
       {/* 안내 문구 */}
       <div className="mb-8 sm:mb-12 text-left">
-        <p className="text-sm sm:text-base text-black leading-relaxed mb-1 font-bold">
-          신청 내역을 확인하기 위해 신청서와 동일한 정보를 입력한 후, 확인하기를 클릭하세요.
-        </p>
         <p className="text-sm sm:text-base text-black leading-relaxed font-bold">
-          비밀번호를 잊어버린 경우, 비밀번호 찾기를 클릭하시면 입력하신 이메일 주소로 비밀번호를 보내드립니다.
+          신청 내역을 확인하기 위해 신청서와 동일한 정보를 입력한 후, 확인하기를 클릭하세요.
         </p>
       </div>
 
@@ -169,6 +200,10 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
             value={formData.name}
             onChange={(e) => handleInputChange("name", e.target.value)}
             placeholder="띄어쓰기 없이 입력해주세요."
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            name="no-autofill-individual-name"
             className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
         </div>
@@ -311,21 +346,25 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
               <option value="018">018</option>
               <option value="019">019</option>
             </select>
-            <span className="text-gray-500 text-lg sm:text-xl font-bold self-center">-</span>
+            <span className="text-black text-lg sm:text-xl font-bold self-center select-none" aria-hidden="true">-</span>
             <input
               type="text"
               placeholder=""
               value={formData.phone2}
               onChange={(e) => handleInputChange('phone2', e.target.value)}
+              autoComplete="off"
+              name="no-autofill-individual-phone2"
               className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
               maxLength={4}
             />
-            <span className="text-gray-500 text-lg sm:text-xl font-bold self-center">-</span>
+            <span className="text-black text-lg sm:text-xl font-bold self-center select-none" aria-hidden="true">-</span>
             <input
               type="text"
               placeholder=""
               value={formData.phone3}
               onChange={(e) => handleInputChange('phone3', e.target.value)}
+              autoComplete="off"
+              name="no-autofill-individual-phone3"
               className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
               maxLength={4}
             />
@@ -340,20 +379,22 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
           <label className="w-full sm:w-24 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
             비밀번호 <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-[500px]">
+          <div className="w-full sm:w-[400px]">
             <input
               type="password"
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
               placeholder="입력해주세요."
-              className="w-full sm:flex-1 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              autoComplete="new-password"
+              name="no-autofill-individual-password"
+              className="w-full px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
-            <button
+            {/* <button
               onClick={handlePasswordFind}
               className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap text-sm sm:text-base"
             >
               비밀번호 찾기
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

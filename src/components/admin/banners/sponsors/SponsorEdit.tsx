@@ -6,82 +6,88 @@ import { useRouter } from 'next/navigation';
 import Button from '@/components/common/Button/Button';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
+import { useSponsors, useUpdateSponsor } from '@/hooks/useSponsors';
 
 /* ---------- Types & Storage ---------- */
 export type EditRow = {
-  id: number;
+  id: string;
   url: string;
   image: UploadItem | null;
   visible: boolean;
 };
 
-type PersistRow = {
-  id: number;
-  url: string;
-  visible: boolean;
-  image: null | { name?: string; sizeMB?: number; url: string };
-};
+// PersistRow 타입은 더 이상 사용하지 않음 (API 기반으로 변경)
 
-const LS_KEY = 'kma_admin_sponsors_v1';
-
-function normalizeForStorage(rows: EditRow[]): PersistRow[] {
-  return rows.map(r => {
-    const f: any = r.image;
-    const url =
-      typeof f?.url === 'string' && /^https?:\/\//i.test(f.url)
-        ? f.url
-        : (f?.previewUrl || '');
-    return {
-      id: r.id,
-      url: (r.url || '').trim(),
-      visible: !!r.visible,
-      image: f ? { name: f.name, sizeMB: f.sizeMB, url } : null,
-    };
-  });
-}
-function loadAll(): EditRow[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    const arr: PersistRow[] = raw ? JSON.parse(raw) : [];
-    return arr.map(r => ({
-      id: r.id,
-      url: r.url ?? '',
-      visible: r.visible ?? true,
-      image: (r as any).image ?? null,
-    }));
-  } catch { return []; }
-}
-function saveAll(rows: EditRow[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(normalizeForStorage(rows)));
-}
+// 로컬 스토리지 함수들은 더 이상 사용하지 않음 (API 기반으로 변경)
 
 /* ---------- UI ---------- */
 const inputCls =
   'w-full h-10 px-3 rounded-md bg-white border border-slate-200 hover:border-slate-300 ' +
   'focus:border-[#BFD7FF] outline-none ring-0 transition-colors shadow-none';
 
-export default function SponsorEdit({ idParam }: { idParam: number }) {
+export default function SponsorEdit({ idParam }: { idParam: string }) {
   const router = useRouter();
-  const [rows, setRows] = React.useState<EditRow[]>([]);
   const [row, setRow] = React.useState<EditRow | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
+  
+  // API에서 스폰서 목록을 가져와서 해당 ID의 스폰서를 찾음
+  const { data: sponsors, isLoading, error } = useSponsors();
+  const updateMutation = useUpdateSponsor();
 
   React.useEffect(() => {
-    const all = loadAll();
-    const found = all.find(r => r.id === idParam) || null;
-    setRows(all);
-    setRow(found);
-  }, [idParam]);
+    if (sponsors) {
+      const found = sponsors.find(s => s.id === idParam);
+      if (found) {
+        setRow({
+          id: found.id,
+          url: found.url,
+          image: found.imageUrl ? {
+            id: 'existing',
+            file: new File([], 'existing'),
+            name: found.imageUrl.split('/').pop() || '기존 이미지',
+            size: 0,
+            sizeMB: 0,
+            tooLarge: false
+          } : null,
+          visible: found.visible
+        });
+      }
+    }
+  }, [sponsors, idParam]);
 
+  if (isLoading) return <div className="p-6">로딩 중...</div>;
+  if (error) return <div className="p-6">에러가 발생했습니다: {error.message}</div>;
   if (!row) return <div className="p-6">존재하지 않는 항목입니다.</div>;
 
   const update = (patch: Partial<EditRow>) =>
     setRow(prev => ({ ...(prev as EditRow), ...patch }));
 
-  const onSave = () => {
-    const next = rows.map(r => (r.id === row.id ? row : r));
-    saveAll(next);
-    alert('저장되었습니다.');
-    router.push('/admin/banners/sponsors');
+  const onSave = async () => {
+    if (!row || isSaving) return;
+    
+    try {
+      setIsSaving(true);
+      
+      // 이미지가 새로 업로드된 경우에만 이미지 파일 전송
+      const imageFile = row.image && row.image.file instanceof File ? row.image.file : undefined;
+      
+      // API로 스폰서 업데이트
+      await updateMutation.mutateAsync({
+        sponsorId: row.id,
+        sponsorUpdateInfo: {
+          url: row.url,
+          visible: row.visible
+        },
+        image: imageFile
+      });
+      
+      alert('저장되었습니다.');
+      router.push('/admin/banners/sponsors');
+    } catch (_error) {
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -129,7 +135,15 @@ export default function SponsorEdit({ idParam }: { idParam: number }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm" tone="primary" widthType="pager" onClick={onSave}>저장</Button>
+        <Button 
+          size="sm" 
+          tone="primary" 
+          widthType="pager" 
+          onClick={onSave}
+          disabled={isSaving}
+        >
+          {isSaving ? '저장 중...' : '저장'}
+        </Button>
         <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={() => router.push('/admin/banners/sponsors')}>
           목록으로
         </Button>

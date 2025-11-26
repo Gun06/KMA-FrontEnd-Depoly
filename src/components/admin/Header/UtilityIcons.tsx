@@ -3,13 +3,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import userIcon from '@/assets/icons/main/user.svg';
-import { useAuthStore } from '@/store/authStore';
+import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { authService } from '@/services/auth';
+import { navigationGuard } from '@/utils/navigationGuard';
 
 export default function UtilityIcons() {
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn, user } = useAdminAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -26,14 +30,27 @@ export default function UtilityIcons() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    // localStorage도 정리
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('kmaAdminAccessToken');
-      localStorage.removeItem('kmaAdminRefreshToken');
+  const handleLogout = async () => {
+    // 네비게이션 가드로 중복 요청 방지
+    const canNavigate = navigationGuard.startNavigation();
+    if (!canNavigate) {
+      return;
     }
-    setIsDropdownOpen(false);
+
+    try {
+      await authService.adminLogout();
+
+      // 드롭다운 닫기
+      setIsDropdownOpen(false);
+
+      // 약간의 지연 후 안전하게 리다이렉트 (브라우저 스로틀링 방지)
+      await navigationGuard.safeNavigate(() => {
+        router.replace('/admin/login');
+      }, 100); // 100ms 지연
+      
+    } catch (error) {
+      navigationGuard.endNavigation();
+    }
   };
 
   const toggleDropdown = () => {

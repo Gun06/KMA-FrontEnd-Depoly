@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import TextEditor from '@/components/common/TextEditor';
 import FileUploader from '@/components/common/Upload/FileUploader';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
 import { ArrowLeft } from 'lucide-react';
 import type { UploadItem } from '@/components/common/Upload/types';
+import { fetchInquiryDetail, updateEventInquiry } from '../api/inquiryApi';
+import { authService } from '@/services/auth';
 
 // API 응답 타입 정의
-interface QuestionCreateResponse {
+interface _QuestionCreateResponse {
   id: string;
   result: 'SUCCESS' | 'FAILURE';
 }
@@ -17,19 +20,109 @@ interface QuestionCreateResponse {
 export default function InquiryEditPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const eventId = params.eventId as string;
+  const inquiryId = searchParams.get('id');
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<UploadItem[]>([]);
+  const [originalFiles, setOriginalFiles] = useState<UploadItem[]>([]); // 원본 파일 목록
+  const [isSecret, setIsSecret] = useState(true); // 기본값: 비공개
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
+
+  // 인증 상태 확인
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const token = authService.getToken();
+        const authenticated = !!token;
+        setIsAuthenticated(authenticated);
+        } catch (_error) {
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // 기존 문의사항 내용 불러오기
+  useEffect(() => {
+    const loadInquiryDetail = async () => {
+      if (!inquiryId) {
+        alert('문의사항 ID가 없습니다.');
+        router.push(`/event/${eventId}/notices/inquiry`);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const detail = await fetchInquiryDetail(eventId, inquiryId);
+        
+        
+        setTitle(detail.title);
+        setContent(detail.content);
+        setIsSecret(detail.secret);
+        
+        
+        // 첨부파일 처리
+        if (detail.attachmentInfoList && detail.attachmentInfoList.length > 0) {
+          const existingFiles: UploadItem[] = detail.attachmentInfoList.map((attachment, index) => ({
+            id: `existing-${index}`,
+            name: attachment.originName,
+            size: 0, // 기존 파일의 크기는 알 수 없으므로 0으로 설정
+            sizeMB: 0,
+            tooLarge: false,
+            file: null, // 기존 파일은 File 객체가 없음
+            url: attachment.url,
+            isExisting: true // 기존 파일임을 표시
+          }));
+          setFiles(existingFiles);
+          setOriginalFiles([...existingFiles]); // 원본 파일 목록 저장
+        }
+        
+        // 작성자 확인 - 실제 사용자 ID와 작성자 ID 비교
+        const currentUser = authService.getUserId();
+        if (currentUser && detail.author) {
+          setIsAuthor(currentUser === detail.author);
+        } else {
+          setIsAuthor(false);
+        }
+        
+      } catch (_error) {
+        alert('문의사항을 불러오는데 실패했습니다.');
+        router.push(`/event/${eventId}/notices/inquiry`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInquiryDetail();
+  }, [inquiryId, eventId, router]);
 
   // 뒤로 가기
   const handleGoBack = () => {
     router.back();
   };
 
-  // 글쓰기 제출
+  // 로그인 페이지로 이동
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  // 성공 모달 닫기
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push(`/event/${eventId}/notices/inquiry`);
+  };
+
+  // 수정 제출
   const handleSubmit = async () => {
     if (!title.trim()) {
       alert('제목을 입력해주세요.');
@@ -37,6 +130,12 @@ export default function InquiryEditPage() {
     }
     if (!content.trim()) {
       alert('내용을 입력해주세요.');
+      return;
+    }
+    
+    // content 길이 제한 (DB 컬럼 크기 고려)
+    if (content.length > 10000) {
+      alert('내용이 너무 깁니다. 10,000자 이하로 작성해주세요.');
       return;
     }
     
@@ -51,25 +150,33 @@ export default function InquiryEditPage() {
     setIsSubmitting(true);
     
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-      const API_ENDPOINT = `${API_BASE_URL}/api/v1/event/${eventId}/question`;
-
-      // 인증 토큰 가져오기
-      const token = localStorage.getItem('accessToken');
+      if (!inquiryId) {
+        alert('문의사항 ID가 없습니다.');
+        return;
+      }
 
       // FormData 구성 (multipart/form-data)
       const formData = new FormData();
       
-      // request 객체를 JSON 문자열로 추가
+      // 삭제된 파일 URL 목록 계산
+      const deletedFileUrls = originalFiles
+        .filter(originalFile => !files.some(currentFile => 
+          currentFile.isExisting && currentFile.url === originalFile.url
+        ))
+        .map(file => file.url);
+
+      // request 객체를 JSON 문자열로 추가 (API 스펙에 맞게)
       const requestData = {
         title: title.trim(),
         content: content.trim(),
-        secret: true
+        secret: isSecret,
+        deletedFileUrlList: deletedFileUrls // 삭제된 파일 목록
       };
       formData.append('request', JSON.stringify(requestData));
       
-      // 첨부파일들 추가 (파일명 단순화)
-      files.forEach((file, index) => {
+      // 새로 추가된 파일들만 처리
+      const newFiles = files.filter(file => file.file && !file.isExisting);
+      newFiles.forEach((file, index) => {
         if (file.file) {
           // 파일명을 단순화 (한글 제거, 길이 제한)
           const originalName = file.name;
@@ -87,62 +194,116 @@ export default function InquiryEditPage() {
         }
       });
 
-
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        body: formData
-      });
-
-
-      if (response.ok) {
-        const responseData: QuestionCreateResponse = await response.json();
-        
-        // 성공 응답 처리
-        if (responseData.result === 'SUCCESS') {
-          alert(`문의사항이 성공적으로 등록되었습니다. (ID: ${responseData.id})`);
-          router.push(`/event/${eventId}/notices/inquiry`);
+      // API 호출
+      const response = await updateEventInquiry(inquiryId, formData);
+      
+      if (response.result === 'SUCCESS') {
+        setShowSuccessModal(true);
+      } else {
+        alert('문의사항 수정에 실패했습니다.');
+      }
+      } catch (_err) {
+      if (_err instanceof Error) {
+        if (_err.message.includes('로그인이 필요')) {
+          alert('로그인이 필요합니다. 다시 로그인해주세요.');
+          router.push('/login');
+        } else if (_err.message.includes('403')) {
+          alert('이 문의사항을 수정할 권한이 없습니다.');
+        } else if (_err.message.includes('404')) {
+          alert('문의사항을 찾을 수 없습니다.');
+        } else if (_err.message.includes('500')) {
+          alert('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         } else {
-          alert('문의사항 등록에 실패했습니다.');
+          alert(`수정 중 오류가 발생했습니다: ${_err.message}`);
         }
       } else {
-        const errorText = await response.text();
-        console.error('❌ 글쓰기 API 호출 실패:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
-          endpoint: API_ENDPOINT
-        });
-        console.error('❌ 오류 응답 텍스트:', errorText);
-        console.error('❌ 응답 헤더:', Object.fromEntries(response.headers.entries()));
-        
-        if (response.status === 401) {
-          alert('로그인이 필요합니다. 다시 로그인해주세요.');
-        } else if (response.status === 403) {
-          alert('해당 이벤트에 문의사항을 작성할 권한이 없습니다.');
-        } else if (response.status === 400) {
-          alert('입력한 정보를 다시 확인해주세요.');
-        } else {
-          alert(`문의사항 등록 중 오류가 발생했습니다. (${response.status})`);
-        }
+        alert('수정 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('❌ 글쓰기 네트워크 오류:', error);
-      alert(`네트워크 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <SubmenuLayout 
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "대회안내",
+          subMenu: "문의사항 수정"
+        }}
+      >
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">문의사항을 불러오는 중...</div>
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
+
+  // 인증되지 않은 경우
+  if (!isAuthenticated) {
+    return (
+      <SubmenuLayout 
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "대회안내",
+          subMenu: "문의사항 수정"
+        }}
+      >
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">로그인이 필요합니다.</p>
+              <button
+                onClick={handleLogin}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                로그인하기
+              </button>
+            </div>
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
+
+  // 작성자가 아닌 경우
+  if (!isAuthor) {
+    return (
+      <SubmenuLayout 
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "대회안내",
+          subMenu: "문의사항 수정"
+        }}
+      >
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-2">권한이 없습니다</div>
+              <div className="text-gray-600 mb-4">본인이 작성한 글만 수정할 수 있습니다.</div>
+              <button
+                onClick={handleGoBack}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                목록으로 돌아가기
+              </button>
+            </div>
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
 
   return (
     <SubmenuLayout 
       eventId={eventId}
       breadcrumb={{
         mainMenu: "대회안내",
-        subMenu: "문의사항"
+        subMenu: "문의사항 수정"
       }}
     >
       <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
@@ -201,16 +362,53 @@ export default function InquiryEditPage() {
                 </div>
               </div>
 
+              {/* 공개여부 선택 */}
+              <div className="mb-6">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0">
+                    공개여부
+                  </label>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="secret"
+                        value="false"
+                        checked={!isSecret}
+                        onChange={() => setIsSecret(false)}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">공개</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="secret"
+                        value="true"
+                        checked={isSecret}
+                        onChange={() => setIsSecret(true)}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">비공개</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* 텍스트에디터 */}
               <div className="mb-6">
                 <TextEditor
-                  initialContent="<p></p>"
+                  initialContent={content}
                   height="600px"
                   onChange={setContent}
                   showFormatting={true}
                   showFontSize={true}
                   showTextColor={true}
                   showImageUpload={true}
+                  imageDomainType="QUESTION"
+                  imageServerType="user"
                 />
               </div>
 
@@ -243,6 +441,14 @@ export default function InquiryEditPage() {
           </div>
         </div>
       </div>
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="등록되었습니다!"
+        message="문의사항이 성공적으로 등록되었습니다."
+      />
     </SubmenuLayout>
   );
 }

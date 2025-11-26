@@ -31,6 +31,24 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  const goToNext = React.useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % totalPopups);
+  }, [totalPopups]);
+
+  const goToPrevious = React.useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + totalPopups) % totalPopups);
+  }, [totalPopups]);
+
+  const handleClose = React.useCallback(() => {
+    if (dontShowToday) {
+      onDontShowToday();
+    }
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsOpen(false);
+    }, 300);
+  }, [dontShowToday, onDontShowToday]);
+
   // 키보드 네비게이션 (데스크톱만)
   React.useEffect(() => {
     if (isMobile || !isOpen) return;
@@ -43,7 +61,7 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobile, isOpen]);
+  }, [isMobile, isOpen, goToNext, goToPrevious, handleClose]);
 
   // 모바일 스와이프
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -71,24 +89,6 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
     }
 
     touchStartRef.current = null;
-  };
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % totalPopups);
-  };
-
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + totalPopups) % totalPopups);
-  };
-
-  const handleClose = () => {
-    if (dontShowToday) {
-      onDontShowToday();
-    }
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsOpen(false);
-    }, 300);
   };
 
   const handleDontShowTodayChange = (checked: boolean) => {

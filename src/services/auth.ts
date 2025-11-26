@@ -3,17 +3,9 @@
 import { LoginFormData, LoginResponse } from '@/types/auth';
 import { api, useApiMutation } from '@/hooks/useFetch';
 import { useAuthStore } from '@/store/authStore';
-import { decodeToken } from '@/utils/jwt';
-import {
-  setAccessToken as setMainAccessToken,
-  setRefreshToken as setMainRefreshToken,
-  getAccessToken as getMainAccessToken,
-  getRefreshToken as getMainRefreshToken,
-  clearTokens as clearMainTokens,
-  setAccessTokenByMode,
-  setRefreshTokenByMode,
-  setRememberLogin,
-} from '@/utils/jwt';
+import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { decodeToken, setRememberLogin } from '@/utils/jwt';
+import { tokenService } from '@/utils/tokenService';
 import { useState, useCallback, useEffect } from 'react';
 
 /* ===========================
@@ -25,10 +17,10 @@ const isBrowser = (): boolean => typeof window !== 'undefined';
 const saveTokens = (accessToken?: string, refreshToken?: string) => {
   if (!isBrowser()) return;
   if (accessToken) {
-    setMainAccessToken(accessToken);
+    localStorage.setItem('kmaAccessToken', accessToken);
   }
   if (refreshToken) {
-    setMainRefreshToken(refreshToken);
+    localStorage.setItem('kmaRefreshToken', refreshToken);
   }
 };
 
@@ -48,6 +40,39 @@ const safeParseJson = async (res: Response): Promise<unknown | null> => {
   } catch {
     return null;
   }
+};
+
+/** 역할 문자열 정규화 */
+const normalizeRoleName = (role?: unknown): string | null => {
+  if (typeof role !== 'string') return null;
+  const upper = role.toUpperCase();
+  return upper.startsWith('ROLE_') ? upper.replace(/^ROLE_/i, '') : upper;
+};
+
+/** 디코드된 토큰에서 역할 배열 추출 */
+const extractRolesFromDecoded = (
+  decoded: {
+    role?: Array<{ authority?: string } | string>;
+    roles?: Array<string>;
+  } | null
+): string[] => {
+  const extracted: string[] = [];
+  if (Array.isArray(decoded?.role)) {
+    for (const r of decoded!.role) {
+      const n =
+        typeof r === 'string'
+          ? normalizeRoleName(r)
+          : normalizeRoleName((r as { authority?: string })?.authority);
+      if (n) extracted.push(n);
+    }
+  }
+  if (Array.isArray(decoded?.roles)) {
+    for (const r of decoded!.roles) {
+      const n = normalizeRoleName(r);
+      if (n) extracted.push(n);
+    }
+  }
+  return Array.from(new Set(extracted));
 };
 
 interface PickedTokens {
@@ -198,9 +223,8 @@ export const useSignup = () => {
           saveTokens(data.token, undefined);
         }
       },
-      onError: error => {
+      onError: _error => {
         // eslint-disable-next-line no-console
-        console.error('Signup error:', error);
       },
     }
   );
@@ -240,9 +264,7 @@ export const loginWithHeaders = async (
   });
 
   if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    // eslint-disable-next-line no-console
-    console.error('Login failed:', response.status, errorText);
+    await response.text().catch(() => '');
     throw new Error(`로그인 실패: ${response.status}`);
   }
 
@@ -254,10 +276,11 @@ export const loginWithHeaders = async (
     response.headers.get('refreshtoken')?.replace(/^Bearer\s+/i, '') ||
     undefined;
 
-  // 저장은 remember 모드에 따라 수행
-  const remember = !!credentials.rememberId;
-  if (accessToken) setAccessTokenByMode(accessToken, remember);
-  if (refreshToken) setRefreshTokenByMode(refreshToken, remember);
+  // 토큰을 로컬스토리지에 저장 (정식 키만 사용)
+  if (typeof window !== 'undefined') {
+    if (accessToken) localStorage.setItem('kmaAccessToken', accessToken);
+    if (refreshToken) localStorage.setItem('kmaRefreshToken', refreshToken);
+  }
 
   // 본문 파싱 (현재 서버는 "LOGIN_SUCCESS" 문자열이지만, 타 환경 대비)
   const body = await safeParseJson(response);
@@ -265,14 +288,17 @@ export const loginWithHeaders = async (
     const picked = pickTokensFromBody(body);
     accessToken = accessToken ?? picked.accessToken;
     refreshToken = refreshToken ?? picked.refreshToken;
-    if (accessToken) setAccessTokenByMode(accessToken, remember);
-    if (refreshToken) setRefreshTokenByMode(refreshToken, remember);
+    if (typeof window !== 'undefined') {
+      if (accessToken) localStorage.setItem('kmaAccessToken', accessToken);
+      if (refreshToken) localStorage.setItem('kmaRefreshToken', refreshToken);
+    }
   }
 
   // remember flag 및 ID 처리
   if (isBrowser()) {
-    // 로그인 유지 플래그 저장 (스토리지 모드 동기화용)
-    setRememberLogin(remember);
+    // 로그인 유지 여부 저장 (localStorage에 단일화)
+    setRememberLogin(!!credentials.rememberId);
+
     // 기존 UI 호환: 체크 시 입력한 계정 보관
     if (credentials.rememberId) {
       localStorage.setItem('rememberedId', credentials.id);
@@ -381,7 +407,6 @@ export const authService = {
       );
     } catch (error: unknown) {
       // eslint-disable-next-line no-console
-      console.error('Signup error:', error);
       throw error;
     }
   },
@@ -400,32 +425,7 @@ export const authService = {
           role?: Array<{ authority?: string } | string>;
           roles?: Array<string>;
         } | null;
-
-        const normalizeRoleName = (role?: unknown): string | null => {
-          if (typeof role !== 'string') return null;
-          const upper = role.toUpperCase();
-          return upper.startsWith('ROLE_')
-            ? upper.replace(/^ROLE_/i, '')
-            : upper;
-        };
-
-        const extractedRoles: string[] = [];
-        if (Array.isArray(decoded?.role)) {
-          for (const r of decoded!.role) {
-            const n =
-              typeof r === 'string'
-                ? normalizeRoleName(r)
-                : normalizeRoleName(r?.authority);
-            if (n) extractedRoles.push(n);
-          }
-        }
-        if (Array.isArray(decoded?.roles)) {
-          for (const r of decoded!.roles) {
-            const n = normalizeRoleName(r);
-            if (n) extractedRoles.push(n);
-          }
-        }
-        const roles = Array.from(new Set(extractedRoles));
+        const roles = extractRolesFromDecoded(decoded);
 
         // 전역 auth store 업데이트
         useAuthStore.getState().login(
@@ -441,23 +441,144 @@ export const authService = {
           }
         );
       }
-    } catch (error) {
+    } catch (_error) {
       // eslint-disable-next-line no-console
-      console.error('로그인 후처리 실패:', error);
     }
 
     return result;
   },
 
+  /** 관리자 로그인 (사용자와 동일 정책: 로컬스토리지 저장, 스토어 업데이트) */
+  async adminLogin(credentials: {
+    account: string;
+    password: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN;
+    if (!API_BASE_URL) {
+      throw new Error('API_BASE_URL_ADMIN 환경 변수가 설정되지 않았습니다.');
+    }
+
+    const url = `${API_BASE_URL}/api/v1/admin/login`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        account: credentials.account,
+        password: credentials.password,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `HTTP ${response.status}`);
+    }
+
+    let accessToken =
+      response.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+      undefined;
+    let refreshToken =
+      response.headers.get('refreshtoken')?.replace(/^Bearer\s+/i, '') ||
+      undefined;
+
+    if (typeof window !== 'undefined') {
+      if (accessToken) localStorage.setItem('kmaAdminAccessToken', accessToken);
+      if (refreshToken)
+        localStorage.setItem('kmaAdminRefreshToken', refreshToken);
+    }
+
+    // 본문 폴백
+    const body = await safeParseJson(response);
+    if ((!accessToken || !refreshToken) && body) {
+      if (isRecord(body)) {
+        const b = body as Record<string, unknown>;
+        accessToken =
+          (getString(b['accessToken']) ??
+            getString(
+              (b['data'] as Record<string, unknown> | undefined)?.[
+                'accessToken'
+              ]
+            )) ||
+          accessToken;
+        refreshToken =
+          (getString(b['refreshToken']) ??
+            getString(
+              (b['data'] as Record<string, unknown> | undefined)?.[
+                'refreshToken'
+              ]
+            )) ||
+          refreshToken;
+        if (typeof window !== 'undefined') {
+          if (accessToken)
+            localStorage.setItem('kmaAdminAccessToken', accessToken);
+          if (refreshToken)
+            localStorage.setItem('kmaAdminRefreshToken', refreshToken);
+        }
+      }
+    }
+
+    try {
+      const token = accessToken;
+      if (typeof window !== 'undefined' && token) {
+        const decoded = decodeToken(token) as {
+          sub?: string;
+          name?: string;
+          role?: Array<{ authority?: string } | string>;
+          roles?: Array<string>;
+          admin_id?: string;
+        } | null;
+        const roles = extractRolesFromDecoded(decoded);
+
+        useAdminAuthStore.getState().login(
+          { accessToken: token, refreshToken },
+          {
+            id: decoded?.sub || decoded?.admin_id || 'admin',
+            account: decoded?.name || credentials.account,
+            role: roles[0] || 'ADMIN',
+            roles,
+          }
+        );
+      }
+    } catch (_e) {}
+
+    return { success: true, message: '로그인 성공', accessToken, refreshToken };
+  },
+
+  /** 관리자 로그아웃 (토큰/스토어 정리 + 브로드캐스트) */
+  async adminLogout(): Promise<void> {
+    try {
+      // 서버 로그아웃 엔드포인트가 있다면 여기에 호출
+    } catch {
+    } finally {
+      if (isBrowser()) {
+        localStorage.removeItem('kmaAdminAccessToken');
+        localStorage.removeItem('kmaAdminRefreshToken');
+      }
+      try {
+        useAdminAuthStore.getState().logout();
+      } catch {}
+      try {
+        tokenService.broadcastLogout();
+      } catch {}
+    }
+  },
+
   async logout(): Promise<void> {
     try {
       await api.authPost('user', '/auth/logout');
-    } catch (error) {
+    } catch (_error) {
       // eslint-disable-next-line no-console
-      console.error('Logout error:', error);
     } finally {
       if (isBrowser()) {
-        clearMainTokens();
+        localStorage.removeItem('kmaAccessToken');
+        localStorage.removeItem('kmaRefreshToken');
         localStorage.removeItem('user');
       }
       // 전역 auth store 정리
@@ -471,21 +592,36 @@ export const authService = {
 
   getToken(): string | null {
     if (!isBrowser()) return null;
-    return getMainAccessToken();
+    return localStorage.getItem('kmaAccessToken') || null;
   },
 
   getAccessToken(): string | null {
     if (!isBrowser()) return null;
-    return getMainAccessToken();
+    return localStorage.getItem('kmaAccessToken') || null;
   },
 
   getRefreshToken(): string | null {
     if (!isBrowser()) return null;
-    return getMainRefreshToken();
+    return localStorage.getItem('kmaRefreshToken') || null;
   },
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    if (!isBrowser()) return false;
+    const token = localStorage.getItem('kmaAccessToken');
+    return !!token;
+  },
+
+  getUserId(): string | null {
+    if (!isBrowser()) return null;
+    try {
+      const token = this.getToken();
+      if (!token) return null;
+
+      const decoded = decodeToken(token) as { sub?: string } | null;
+      return decoded?.sub || null;
+    } catch {
+      return null;
+    }
   },
 
   getRememberedId(): string | null {
@@ -493,36 +629,60 @@ export const authService = {
     return localStorage.getItem('rememberedId');
   },
 
-  async findId(data: { name: string; email?: string; phone?: string }): Promise<{ id: string }> {
+  async findId(data: {
+    name: string;
+    email?: string;
+    phone?: string;
+  }): Promise<{ id: string }> {
     try {
-      const endpoint = '/api/v1/public/find-id'
-      const response = await api.post<{ id: string }>('user', endpoint, data)
-      return response ?? { id: '' }
+      const endpoint = '/api/v1/public/find-id';
+      const response = await api.post<{ id: string }>('user', endpoint, data);
+      return response ?? { id: '' };
     } catch (error: unknown) {
-      console.error('Find ID error:', error)
-      throw error
+      throw error;
     }
   },
 
-  async findPassword(data: { accountId: string; name: string; email: string }): Promise<{ success: boolean; message: string }> {
+  async findPassword(data: {
+    accountId: string;
+    name: string;
+    email: string;
+  }): Promise<{ success: boolean; message: string }> {
     try {
-      const endpoint = '/api/v1/public/find-password'
-      const response = await api.post<{ success: boolean; message: string }>('user', endpoint, data)
-      return response ?? { success: false, message: '비밀번호 찾기에 실패했습니다.' }
+      const endpoint = '/api/v1/public/find-password';
+      const response = await api.post<{ success: boolean; message: string }>(
+        'user',
+        endpoint,
+        data
+      );
+      return (
+        response ?? { success: false, message: '비밀번호 찾기에 실패했습니다.' }
+      );
     } catch (error: unknown) {
-      console.error('Find Password error:', error)
-      throw error
+      throw error;
     }
   },
 
-  async resetPassword(data: { accountId: string; newPassword: string; confirmPassword: string }): Promise<{ success: boolean; message: string }> {
+  async resetPassword(data: {
+    accountId: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ success: boolean; message: string }> {
     try {
-      const endpoint = '/api/v1/public/reset-password'
-      const response = await api.post<{ success: boolean; message: string }>('user', endpoint, data)
-      return response ?? { success: false, message: '비밀번호 재설정에 실패했습니다.' }
+      const endpoint = '/api/v1/public/reset-password';
+      const response = await api.post<{ success: boolean; message: string }>(
+        'user',
+        endpoint,
+        data
+      );
+      return (
+        response ?? {
+          success: false,
+          message: '비밀번호 재설정에 실패했습니다.',
+        }
+      );
     } catch (error: unknown) {
-      console.error('Reset Password error:', error)
-      throw error
+      throw error;
     }
   },
-}
+};

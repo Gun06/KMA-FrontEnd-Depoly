@@ -4,38 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import type { PopupRow } from './PopupListManager';
 
-/* ===== 튜닝 포인트 ===== */
-const DESKTOP_MODAL = { width: 400, height: 560 }; // px
-const MOBILE_SHEET_VH = 60;                        // 이미지 영역 높이 (vh)
 
-/* -------- UploadItem -> src -------- */
-function readAsDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => resolve(String(fr.result || ''));
-    fr.onerror = () => reject(fr.error);
-    fr.readAsDataURL(file);
-  });
-}
-function extractFileObject(f: any): File | undefined {
-  return f instanceof File
-    ? f
-    : f?.file instanceof File
-    ? f.file
-    : f?.rawFile instanceof File
-    ? f.rawFile
-    : f?.originFileObj instanceof File
-    ? f.originFileObj
-    : undefined;
-}
-async function chooseSrc(u: any): Promise<string | null> {
-  if (!u) return null;
-  if (typeof u?.previewUrl === 'string' && u.previewUrl) return u.previewUrl;
-  if (typeof u?.url === 'string' && /^https?:\/\//i.test(u.url)) return u.url;
-  const fo = extractFileObject(u);
-  if (fo) { try { return await readAsDataURL(fo); } catch { return null; } }
-  return null;
-}
 
 /* -------- 기간 체크(미리보기 기본 무시) -------- */
 function inRange(now: number, start?: string, end?: string) {
@@ -76,35 +45,43 @@ export default function PopupPreview({
     return () => mq.removeEventListener?.('change', on);
   }, [defaultView]);
 
-  // 아이템 빌드(공개만, 기간은 옵션)
+  // 아이템 빌드(공개만, 기간은 옵션, 디바이스별 필터링)
   React.useEffect(() => {
-    let alive = true;
-    (async () => {
-      const now = Date.now();
-      const visible = rows.filter(r => r.visible && (ignorePeriod ? true : inRange(now, r.startAt, r.endAt)));
-      const built = (await Promise.all(
-        visible.map(async (r) => {
-          const src = await chooseSrc(r.image);
-          if (!src) return null;
-          return { src, href: r.url || '#' };
-        })
-      )).filter(Boolean) as { src: string; href: string }[];
-      if (alive) {
-        setItems(built);
-        setIndex(0);
-      }
-    })();
-    return () => { alive = false; };
-  }, [rows, ignorePeriod]);
+    const now = Date.now();
+    const visible = rows.filter(r => {
+      // 공개 여부 체크
+      if (!r.visible) return false;
+      
+      // 기간 체크 (옵션)
+      if (!ignorePeriod && !inRange(now, r.startAt, r.endAt)) return false;
+      
+      // 디바이스별 필터링
+      if (r.device === 'PC' && isMobileView) return false;      // PC 전용은 모바일에서 숨김
+      if (r.device === 'MOBILE' && !isMobileView) return false; // 모바일 전용은 데스크탑에서 숨김
+      // device === 'ALL'인 경우는 모든 디바이스에서 표시
+      
+      return true;
+    });
+    
+    const built = visible.map((r) => {
+      // 스폰서와 동일하게 r.url 직접 사용 (UploadItem의 url 필드)
+      const src = r.image?.url || '';
+      if (!src) return null;
+      return { src, href: r.url || '#' };
+    }).filter(Boolean) as { src: string; href: string }[];
+    
+    setItems(built);
+    setIndex(0);
+  }, [rows, ignorePeriod, isMobileView]);
 
   const active = items[index] || null;
   const total = items.length;
 
   /* ---------- 캐러셀 네비 ---------- */
-  const go = (dir: 1 | -1) => {
+  const go = React.useCallback((dir: 1 | -1) => {
     if (!total) return;
     setIndex(i => (i + dir + total) % total);
-  };
+  }, [total]);
 
   // 키보드 ← → (데스크탑만)
   React.useEffect(() => {
@@ -115,7 +92,7 @@ export default function PopupPreview({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isMobileView, open, total]);
+  }, [isMobileView, open, go]);
 
   // 모바일 스와이프
   const touchRef = React.useRef<{ x: number; y: number } | null>(null);
@@ -179,145 +156,194 @@ export default function PopupPreview({
 
         {active && open && (
           <>
-            {/* 데스크톱: 400×560 고정, cover, 네비 버튼 + 오늘하루 체크 */}
+            {/* 데스크톱: 메인 사이트와 동일한 스타일 */}
             {!isMobileView && (
-              <div className="absolute inset-0 grid place-items-center p-[clamp(6px,1.6vw,18px)]">
-                <div
-                  className="relative rounded-2xl shadow-2xl overflow-hidden bg-white"
-                  style={{ width: DESKTOP_MODAL.width, height: DESKTOP_MODAL.height }}
-                >
-                  {/* 닫기 */}
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-200 p-4">
+                <div className="relative w-full max-w-[400px] h-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden">
+                  {/* 닫기 버튼 */}
                   <button
-                    type="button"
-                    className="absolute right-2.5 top-2.5 h-8 w-8 rounded-full bg-black/80 text-white grid place-items-center z-10"
                     onClick={() => setOpen(false)}
+                    className="absolute right-2.5 top-2.5 z-20 w-8 h-8 rounded-full bg-black/80 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
                     aria-label="닫기"
                   >
                     ✕
                   </button>
 
-                  {/* 좌/우 네비 (여러 개일 때만) */}
+                  {/* 네비게이션 버튼 (여러 개일 때만) */}
                   {total > 1 && (
                     <>
                       <button
                         onClick={() => go(-1)}
-                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/55 text-white grid place-items-center"
+                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                         aria-label="이전"
-                      >‹</button>
+                      >
+                        ‹
+                      </button>
                       <button
                         onClick={() => go(1)}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full bg-black/55 text-white grid place-items-center"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
                         aria-label="다음"
-                      >›</button>
+                      >
+                        ›
+                      </button>
                     </>
                   )}
 
-                  {/* 본문 이미지 */}
+                  {/* 이미지 */}
                   <a
                     href={active.href || '#'}
                     target={active.href && active.href !== '#' ? '_blank' : undefined}
                     rel="noopener noreferrer"
-                    className="block h-full w-full"
+                    className="block w-full h-full relative"
                   >
                     <Image
                       src={active.src}
-                      alt=""
+                      alt="팝업 이미지"
                       fill
-                      unoptimized
-                      sizes={`${DESKTOP_MODAL.width}px`}
                       className="object-cover"
                       priority
+                      sizes="400px"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 에러 메시지 표시
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-500 text-sm p-4';
+                        errorDiv.innerHTML = `
+                          <div class="text-center">
+                            <div class="text-lg mb-2">⚠️</div>
+                            <div class="mb-1">이미지를 불러올 수 없습니다</div>
+                            <div class="text-xs text-gray-400">S3 권한 설정을 확인해주세요</div>
+                          </div>
+                        `;
+                        target.parentElement?.appendChild(errorDiv);
+                      }}
                     />
                   </a>
 
-                  {/* 하단 바: 오늘 하루 보지 않음 + 닫기 */}
-                  <div className="absolute inset-x-0 bottom-0 h-12 bg-white/95 border-t flex items-center justify-between px-3">
-                    <label className="inline-flex items-center gap-2 text-[12px] text-gray-700 select-none">
+                  {/* 하단 컨트롤 */}
+                  <div className="absolute bottom-0 left-0 right-0 h-12 bg-white/95 border-t flex items-center justify-between px-3">
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={dontShowToday}
                         onChange={(e) => setDontShowToday(e.target.checked)}
-                        className="h-4 w-4"
+                        className="w-4 h-4"
                       />
                       오늘 하루 보지 않음
                     </label>
                     <button
-                      type="button"
-                      className="text-[12px] text-gray-900 font-medium"
                       onClick={() => setOpen(false)}
-                    >닫기</button>
+                      className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors"
+                    >
+                      닫기
+                    </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 모바일: half-sheet(60vh), 스와이프, 상단 1/N, 오늘하루 체크 */}
+            {/* 모바일: 미리보기 영역 안에 표시 */}
             {isMobileView && (
-              <div className="absolute inset-x-0 bottom-0" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-                {/* 핸들 여백 최소화 */}
-                <div className="relative mx-auto w-full max-w-[520px]">
-                  <div className="mx-auto mt-1 mb-1 h-1 w-10 rounded-full bg-white/80" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div 
+                  className="relative w-full max-w-sm mx-auto"
+                  onTouchStart={onTouchStart}
+                  onTouchEnd={onTouchEnd}
+                >
+                {/* 핸들 */}
+                <div className="flex justify-center mb-1 px-4">
+                  <div className="w-10 h-1 rounded-full bg-white/80" />
                 </div>
 
-                <div className="relative mx-auto w-full max-w-[520px] rounded-t-3xl shadow-2xl overflow-hidden bg-white">
+                <div className="relative w-full rounded-t-3xl shadow-2xl overflow-hidden bg-white">
                   {/* 상단 인디케이터 */}
                   {total > 1 && (
-                    <div className="absolute left-1/2 -translate-x-1/2 top-2 z-10 text-[11px] px-2 py-0.5 rounded-full bg-black/60 text-white">
+                    <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
                       {index + 1} / {total}
                     </div>
                   )}
 
-                  {/* 닫기 */}
+                  {/* 닫기 버튼 */}
                   <button
-                    type="button"
-                    className="absolute right-2.5 top-2.5 h-8 w-8 rounded-full bg-black text-white grid place-items-center z-10"
                     onClick={() => setOpen(false)}
+                    className="absolute right-2.5 top-2.5 z-20 w-8 h-8 rounded-full bg-black text-white flex items-center justify-center"
                     aria-label="닫기"
                   >
                     ✕
                   </button>
 
+                  {/* 이미지 */}
                   <a
                     href={active.href || '#'}
                     target={active.href && active.href !== '#' ? '_blank' : undefined}
                     rel="noopener noreferrer"
-                    className="block"
+                    className="block relative"
                   >
-                    <div className="relative w-full" style={{ height: `${MOBILE_SHEET_VH}vh` }}>
+                    <div className="relative w-full h-[40vh] min-h-[250px] max-h-[350px]">
                       <Image
                         src={active.src}
-                        alt=""
+                        alt="팝업 이미지"
                         fill
-                        unoptimized
-                        sizes="(max-width: 520px) 100vw, 520px"
                         className="object-cover"
                         priority
+                        sizes="(max-width: 520px) 100vw, 520px"
+                        onError={(e) => {
+                          // 이미지 로드 실패 시 에러 메시지 표시
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const errorDiv = document.createElement('div');
+                          errorDiv.className = 'absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-500 text-sm p-4';
+                          errorDiv.innerHTML = `
+                            <div class="text-center">
+                              <div class="text-lg mb-2">⚠️</div>
+                              <div class="mb-1">이미지를 불러올 수 없습니다</div>
+                              <div class="text-xs text-gray-400">S3 권한 설정을 확인해주세요</div>
+                            </div>
+                          `;
+                          target.parentElement?.appendChild(errorDiv);
+                        }}
                       />
                     </div>
                   </a>
 
-                  <div className="flex items-center justify-between px-4 h-12 border-top border-t bg-white">
-                    <label className="inline-flex items-center gap-2 text-[12px] text-gray-700 select-none">
+                  {/* 하단 컨트롤 */}
+                  <div className="flex items-center justify-between px-4 h-12 border-t bg-white">
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={dontShowToday}
                         onChange={(e) => setDontShowToday(e.target.checked)}
-                        className="h-4 w-4"
+                        className="w-4 h-4"
                       />
                       오늘 하루 보지 않음
                     </label>
                     <div className="flex items-center gap-2">
                       {total > 1 && (
                         <>
-                          <button className="text-[12px]" onClick={() => go(-1)}>이전</button>
-                          <button className="text-[12px]" onClick={() => go(1)}>다음</button>
+                          <button
+                            onClick={() => go(-1)}
+                            className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
+                          >
+                            이전
+                          </button>
+                          <button
+                            onClick={() => go(1)}
+                            className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
+                          >
+                            다음
+                          </button>
                         </>
                       )}
-                      <button type="button" className="text-[12px] text-gray-900 font-medium" onClick={() => setOpen(false)}>
+                      <button
+                        onClick={() => setOpen(false)}
+                        className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors"
+                      >
                         닫기
                       </button>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             )}

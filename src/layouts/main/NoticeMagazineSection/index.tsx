@@ -1,6 +1,6 @@
 import React from 'react';
 import NoticeSection from '@/components/main/NoticeSection';
-import MagazineSection from '@/components/main/MagazineSection';
+import InquirySection from '@/components/main/MagazineSection';
 
 export default function NoticeMagazineSection() {
   return (
@@ -10,8 +10,8 @@ export default function NoticeMagazineSection() {
           {/* 공지사항 섹션 */}
           <NoticeSection />
           
-          {/* 매거진 섹션 */}
-          <MagazineSection />
+          {/* 문의사항 섹션 */}
+          <InquirySection />
         </div>
       </div>
     </section>

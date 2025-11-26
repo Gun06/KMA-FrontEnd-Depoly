@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import Image from 'next/image'  
 import downIcon from '@/assets/icons/main/down.svg'
 import upIcon from '@/assets/icons/main/up.svg'
@@ -9,6 +9,17 @@ import SectionPanel from '@/components/main/SectionPanel'
 interface FaqItem {
   question: string
   answer: string
+}
+
+// API 응답 타입 정의
+interface ApiFaqItem {
+  problem: string
+  solution: string
+}
+
+interface FaqResponse {
+  faqResponseList: ApiFaqItem[]
+  empty: boolean
 }
 
 interface FaqSectionProps {
@@ -32,7 +43,61 @@ export default function FaqSection({
   items,
   allowMultipleOpen = false,
 }: FaqSectionProps) {
-  const faqItems = useMemo(() => items ?? DefaultItems(), [items])
+  const [apiFaqData, setApiFaqData] = useState<FaqItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // API 데이터 가져오기
+  useEffect(() => {
+    const fetchFaqData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER
+        if (!API_BASE_URL) {
+          throw new Error('API 기본 URL이 설정되지 않았습니다. 환경 변수를 확인해주세요.')
+        }
+        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/homepage/FAQ`
+        const response = await fetch(API_ENDPOINT, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        })
+        if (response.ok) {
+          const data: FaqResponse = await response.json()
+          if (data.faqResponseList && data.faqResponseList.length > 0) {
+            const mappedData = data.faqResponseList.map(item => ({
+              question: item.problem,
+              answer: item.solution
+            }))
+            setApiFaqData(mappedData)
+          } else {
+            setApiFaqData([])
+          }
+        } else {
+          const errorText = await response.text()
+          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+        }
+      } catch (error) {
+        // 서버 에러 시 기본 데이터 사용
+        setApiFaqData([])
+        setError(null) // 에러 상태를 null로 설정하여 기본 데이터 표시
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchFaqData()
+  }, [])
+
+  // 표시할 데이터 결정 (API 데이터가 있으면 사용, 없으면 기본 데이터)
+  const faqItems = useMemo(() => {
+    if (apiFaqData.length > 0) {
+      return apiFaqData
+    }
+    return items ?? DefaultItems()
+  }, [apiFaqData, items])
 
   const [openSet, setOpenSet] = useState<Set<number>>(new Set())
 
@@ -64,51 +129,64 @@ export default function FaqSection({
       {/* FAQ 내용을 SectionPanel 아래에 별도 배치 */}
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6">
         <div className="px-6 md:px-20">
-          <div className="divide-y divide-gray-200 bg-white rounded-md">
-            {faqItems.map((item, index) => {
-              const isOpen = openSet.has(index)
-              const buttonId = `faq-button-${index}`
-              const panelId = `faq-panel-${index}`
-              return (
-                <div key={index} className="">
-                  <button
-                    id={buttonId}
-                    aria-controls={panelId}
-                    aria-expanded={isOpen}
-                    onClick={() => toggle(index)}
-                    className="w-full flex items-center gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 pl-0 pr-0"
-                  >
-                    <span aria-hidden className="text-gray-800 font-giants text-[22px] md:text-[28px] leading-none">
-                      Q
-                    </span>
-                    <span className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900">
-                      {item.question}
-                    </span>
-                    <span aria-hidden>
-                      <Image
-                        src={isOpen ? upIcon : downIcon}
-                        alt=""
-                        width={16}
-                        height={16}
-                        className="w-4 h-4 md:w-5 md:h-5"
-                      />
-                    </span>
-                  </button>
-                  <div
-                    id={panelId}
-                    role="region"
-                    aria-labelledby={buttonId}
-                    hidden={!isOpen}
-                    className="pb-6 pl-10 pr-0"
-                  >
-                    <div className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] whitespace-pre-line">
-                      {item.answer}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
+                <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
+              </div>
+            </div>
+          ) : faqItems.length > 0 ? (
+            <div className="divide-y divide-gray-200 bg-white rounded-md">
+              {faqItems.map((item, index) => {
+                const isOpen = openSet.has(index)
+                const buttonId = `faq-button-${index}`
+                const panelId = `faq-panel-${index}`
+                return (
+                  <div key={index} className="">
+                    <button
+                      id={buttonId}
+                      aria-controls={panelId}
+                      aria-expanded={isOpen}
+                      onClick={() => toggle(index)}
+                      className="w-full flex items-center gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 pl-0 pr-0"
+                    >
+                      <span aria-hidden className="text-gray-800 font-giants text-[22px] md:text-[28px] leading-none">
+                        Q
+                      </span>
+                      <span className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900">
+                        {item.question}
+                      </span>
+                      <span aria-hidden>
+                        <Image
+                          src={isOpen ? upIcon : downIcon}
+                          alt=""
+                          width={16}
+                          height={16}
+                          className="w-4 h-4 md:w-5 md:h-5"
+                        />
+                      </span>
+                    </button>
+                    <div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={buttonId}
+                      hidden={!isOpen}
+                      className="pb-6 pl-10 pr-0"
+                    >
+                      <div className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] whitespace-pre-line">
+                        {item.answer}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">FAQ가 없습니다.</div>
+            </div>
+          )}
         </div>
       </div>
     </section>

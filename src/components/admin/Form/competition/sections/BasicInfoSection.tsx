@@ -25,6 +25,12 @@ type CompetitionFormHandle = {
   setHh: (value: string) => void;
   mm: string;
   setMm: (value: string) => void;
+  registStartDate: string;
+  setRegistStartDate: (value: string) => void;
+  registStartHh: string;
+  setRegistStartHh: (value: string) => void;
+  registStartMm: string;
+  setRegistStartMm: (value: string) => void;
   deadlineDate: string;
   setDeadlineDate: (value: string) => void;
   deadlineHh: string;
@@ -33,6 +39,10 @@ type CompetitionFormHandle = {
   setDeadlineMm: (value: string) => void;
   place: string;
   setPlace: (value: string) => void;
+  bank?: string;
+  setBank?: (value: string) => void;
+  virtualAccount?: string;
+  setVirtualAccount?: (value: string) => void;
   eventPageUrl: string;
   setEventPageUrl: (value: string) => void;
   maxParticipants: string;
@@ -105,6 +115,66 @@ export default function BasicInfoSection({
               { value: '접수마감', label: '접수마감' },
             ]}
           />
+        </div>
+      </FormRow>
+
+      {/* 신청시작일 */}
+      <FormRow label="신청시작일" contentClassName="items-left mr-auto">
+        <div
+          className="grid w-full items-center gap-3 mr-20"
+          style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+        >
+          <BirthDateInput
+            value={f.registStartDate}
+            onChange={readOnly ? noop : f.setRegistStartDate}
+            placeholder="날짜를 선택하세요"
+            variant="flat"
+            className={cn('min-w-[280px]', dimCls)}
+            disabled={readOnly}
+            readOnly={true}
+          />
+
+          <Select
+            value={f.registStartHh}
+            onChange={
+              readOnly ? undefined : e => f.setRegistStartHh(e.currentTarget.value)
+            }
+            size="md"
+            variant="flat"
+            className={cn('text-center', dimCls)}
+            disabled={readOnly}
+          >
+            {f.hours.map((h: string) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </Select>
+
+          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+            시
+          </span>
+
+          <Select
+            value={f.registStartMm}
+            onChange={
+              readOnly ? undefined : e => f.setRegistStartMm(e.currentTarget.value)
+            }
+            size="md"
+            variant="flat"
+            className={cn('text-center', dimCls)}
+            disabled={readOnly}
+          >
+            {f.minutes.map((m: string) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </Select>
+
+          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+            분
+          </span>
         </div>
       </FormRow>
 
@@ -319,6 +389,28 @@ export default function BasicInfoSection({
           readOnly={readOnly}
         />
       </FormRow>
+
+  {/* 결제 정보: 은행명 */}
+  <FormRow label="은행명">
+    <TextField
+      placeholder="예: 국민은행"
+      value={f.bank ?? ''}
+      onChange={e => (readOnly || !f.setBank ? noop() : f.setBank(e.currentTarget.value))}
+      className={cn(fieldCls, inputColorCls)}
+      readOnly={readOnly}
+    />
+  </FormRow>
+
+  {/* 결제 정보: 계좌번호 */}
+  <FormRow label="계좌번호">
+    <TextField
+      placeholder="예: 123456-01-123456"
+      value={f.virtualAccount ?? ''}
+      onChange={e => (readOnly || !f.setVirtualAccount ? noop() : f.setVirtualAccount(e.currentTarget.value))}
+      className={cn(fieldCls, inputColorCls)}
+      readOnly={readOnly}
+    />
+  </FormRow>
 
       {/* 대회 페이지 주소명 */}
       <FormRow label="대회 페이지 주소명">

@@ -1,10 +1,31 @@
 "use client";
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import { getAgreementData } from "./data";
+import { getAgreementData, AgreementData } from "./data";
+import { useEffect, useState } from "react";
 
 export default function AgreementPage({ params }: { params: { eventId: string } }) {
-  const agreementData = getAgreementData(params.eventId);
+  // SSR/CSR 일치: 초기에는 비워두고 클라이언트에서 채움
+  const [agreementData, setAgreementData] = useState<AgreementData>({ eventName: '', organizationName: '' });
+
+  // 마운트 후 API로 정확한 한글 대회명 재확인 (초기 진입 시 캐시가 없는 경우 대비)
+  useEffect(() => {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+    if (!API_BASE_URL) return;
+    const endpoint = `${API_BASE_URL}/api/v1/public/event/${params.eventId}/mainpage-images`;
+    fetch(endpoint)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.nameKr) {
+          setAgreementData({ eventName: data.nameKr, organizationName: `${data.nameKr} 조직위원회` });
+        } else {
+          // 캐시/기본값 폴백
+          const fallback = getAgreementData(params.eventId);
+          setAgreementData(fallback);
+        }
+      })
+      .catch(() => {});
+  }, [params.eventId]);
 
   return (
     <SubmenuLayout 

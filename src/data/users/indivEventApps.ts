@@ -1,5 +1,6 @@
 // src/data/users/indivEventApps.ts
 import { MOCK_EVENTS } from '@/data/events';
+import type { UserRegistrationData } from '@/types/user';
 
 /* ======================= Types ======================= */
 export type AppStatus = '참가완료' | '접수중' | '접수취소';
@@ -8,7 +9,7 @@ export type SortKey   = 'regDate' | 'eventDate' | 'fee' | 'id';
 export type SortDir   = 'asc' | 'desc';
 
 export type UserEventAppRow = {
-  eventId: number;
+  eventId: string;
   userId: number;
 
   title: string;      // 대회명
@@ -16,12 +17,67 @@ export type UserEventAppRow = {
   course: '5K' | '10K' | '하프' | '풀';
   souvenir: string;   // 기념품
   fee: number;        // 금액(원)
-  regDate: string;    // 신청일 YYYY-MM-DD
+  regDate: string;    // 신청일시 (YYYY-MM-DD HH:MM:SS)
 
   paid?: boolean;     // true/false
   payStatus?: '입금' | '미입금' | '확인요망';
   appStatus?: AppStatus;
 };
+
+const dateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+});
+
+const formatDateTime = (iso?: string) => {
+  if (!iso) return '-';
+  const date = new Date(iso);
+  if (!Number.isNaN(date.getTime())) return dateTimeFormatter.format(date);
+  return iso.replace('T', ' ').split('.')[0] || iso;
+};
+
+// API 데이터를 테이블 형식으로 변환하는 함수
+export function transformRegistrationDataToTableRow(apiData: UserRegistrationData, userId: string): UserEventAppRow {
+  // 이벤트 상태를 앱 상태로 매핑
+  const getAppStatus = (eventStatus: string): AppStatus => {
+    switch (eventStatus) {
+      case 'PENDING': return '접수중';
+      case 'ONGOING': return '참가완료';
+      case 'COMPLETED': return '참가완료';
+      case 'CANCELLED': return '접수취소';
+      default: return '접수중';
+    }
+  };
+
+  // 기본값들 (API에서 제공하지 않는 정보들)
+  const courses: Array<UserEventAppRow['course']> = ['5K', '10K', '하프', '풀'];
+  const souvenirs = ['기념티', '모자', '양말', '텀블러', '타월'];
+  
+  // 결정적 생성 (API 데이터 기반)
+  const seed = parseInt(apiData.eventId) + parseInt(userId);
+  const course = courses[Math.abs(seed) % courses.length];
+  const souvenir = souvenirs[Math.abs(seed * 3) % souvenirs.length];
+  const fee = 30000 + (Math.abs(seed) % 4) * 10000 + (Math.abs(seed) % 3) * 5000;
+
+  return {
+    eventId: String(apiData.eventId),
+    userId: Number(userId),
+    title: apiData.nameKr,
+    eventDate: apiData.startDate.split('T')[0], // ISO 날짜에서 날짜 부분만 추출
+    course,
+    souvenir,
+    fee,
+    regDate: formatDateTime(apiData.registeredAt),
+    appStatus: getAppStatus(apiData.eventStatus),
+    // 기본적으로 입금 완료로 설정 (실제로는 API에서 제공해야 함)
+    paid: true,
+    payStatus: '입금',
+  };
+}
 
 /* ======================= Helpers ======================= */
 const COURSES: Array<UserEventAppRow['course']> = ['5K', '10K', '하프', '풀'];
@@ -39,10 +95,13 @@ function regDateBy(eventDate: string, seed: number) {
   const d = new Date(eventDate + 'T00:00:00');
   const delta = 5 + (Math.abs(seed) % 16); // 5~20일 전
   d.setDate(d.getDate() - delta);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  const hours = (Math.abs(seed) % 24);
+  const minutes = (Math.abs(seed * 7) % 60);
+  const seconds = (Math.abs(seed * 11) % 60);
+  d.setHours(hours);
+  d.setMinutes(minutes);
+  d.setSeconds(seconds);
+  return dateTimeFormatter.format(d);
 }
 
 function paymentBy(userId: number, eventId: number): Pick<UserEventAppRow, 'paid' | 'payStatus'> {
@@ -65,10 +124,11 @@ function matchesDateQuery(qRaw: string, r: Pick<UserEventAppRow, 'regDate' | 'ev
   const full   = /^\d{4}-\d{2}-\d{2}$/.test(q); // YYYY-MM-DD
   const ym     = /^\d{4}-\d{2}$/.test(q);       // YYYY-MM
   const year   = /^\d{4}$/.test(q);             // YYYY
+  const regDateOnly = r.regDate.split(' ')[0];
 
-  if (full) return r.regDate === q || r.eventDate === q;
-  if (ym)   return r.regDate.startsWith(q) || r.eventDate.startsWith(q);
-  if (year) return r.regDate.startsWith(`${q}-`) || r.eventDate.startsWith(`${q}-`);
+  if (full) return regDateOnly === q || r.eventDate === q;
+  if (ym)   return regDateOnly.startsWith(q) || r.eventDate.startsWith(q);
+  if (year) return regDateOnly.startsWith(`${q}-`) || r.eventDate.startsWith(`${q}-`);
   return false;
 }
 
@@ -98,10 +158,11 @@ export function listUserEventApps(params: {
 
   // 1) 사용자 기준 샘플 매핑
   let rows: UserEventAppRow[] = MOCK_EVENTS.map((e) => {
-    const seed = userId + e.id;
-    const pay = paymentBy(userId, e.id);
+    const eidNum = Number(e.id);
+    const seed = userId + (Number.isFinite(eidNum) ? eidNum : 0);
+    const pay = paymentBy(userId, Number.isFinite(eidNum) ? eidNum : 0);
     return {
-      eventId: e.id,
+      eventId: String(e.id),
       userId,
       title: e.title,
       eventDate: e.date,
@@ -109,13 +170,13 @@ export function listUserEventApps(params: {
       souvenir: pickBy(SOUVENIRS, seed * 3),
       fee: feeBy(seed * 11),
       regDate: regDateBy(e.date, seed),
-      appStatus: appStatusBy(userId, e.id),
+      appStatus: appStatusBy(userId, Number.isFinite(eidNum) ? eidNum : 0),
       ...pay,
     };
   });
 
   // 2) “해당 사용자가 신청한 것만” 샘플 필터 (결정적)
-  rows = rows.filter((r) => (userId + r.eventId) % 2 === 0);
+  rows = rows.filter((r) => (userId + Number(r.eventId)) % 2 === 0);
 
   // 3) 검색/필터
   const q = query.trim();
@@ -148,10 +209,17 @@ export function listUserEventApps(params: {
   const dir = sortDir === 'asc' ? 1 : -1;
   rows.sort((a, b) => {
     switch (sortKey) {
-      case 'regDate':   return dir * a.regDate.localeCompare(b.regDate);
+      case 'regDate': {
+        const tsA = new Date(a.regDate).getTime();
+        const tsB = new Date(b.regDate).getTime();
+        if (!Number.isNaN(tsA) && !Number.isNaN(tsB)) {
+          return dir * (tsA - tsB);
+        }
+        return dir * a.regDate.localeCompare(b.regDate);
+      }
       case 'eventDate': return dir * a.eventDate.localeCompare(b.eventDate);
       case 'fee':       return dir * (a.fee - b.fee);
-      case 'id':        return dir * (a.eventId - b.eventId);
+      case 'id':        return dir * (Number(a.eventId) - Number(b.eventId));
       default:          return 0;
     }
   });

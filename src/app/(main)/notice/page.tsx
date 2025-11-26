@@ -7,7 +7,6 @@ import { noticeData } from '@/data/notices';
 export default function NoticePage() {
   // 행 클릭 시 처리 (상세 페이지로 이동)
   const handleRowClick = (id: number) => {
-    console.log(`공지사항 ${id} 클릭`);
     // TODO: 상세 페이지로 이동 로직 구현
   };
 

@@ -14,9 +14,12 @@ function pickLatestEventId(): number | null {
   const latest = [...MOCK_EVENTS]
     .sort((a, b) => {
       const diff = toUtcDate(b.date) - toUtcDate(a.date);
-      return diff !== 0 ? diff : (b.id ?? 0) - (a.id ?? 0);
+      const idA = Number(a.id) || 0;
+      const idB = Number(b.id) || 0;
+      return diff !== 0 ? diff : idB - idA;
     })[0];
-  return latest?.id ?? null;
+  const id = Number(latest?.id);
+  return Number.isFinite(id) ? id : null;
 }
 
 /* ② 만약 "가장 최근에 개최한(과거 중 최신)"을 원하면 이 함수를 대신 쓰세요.
@@ -27,7 +30,9 @@ function pickMostRecentlyHeldId(): number | null {
     .filter(e => toUtcDate(e.date) <= todayUTC)
     .sort((a, b) => {
       const diff = toUtcDate(b.date) - toUtcDate(a.date);
-      return diff !== 0 ? diff : (b.id ?? 0) - (a.id ?? 0);
+      const idA = Number(a.id) || 0;
+      const idB = Number(b.id) || 0;
+      return diff !== 0 ? diff : idB - idA;
     });
   // 과거가 없다면 전체 최신으로 대체
   return past[0]?.id ?? pickLatestEventId();

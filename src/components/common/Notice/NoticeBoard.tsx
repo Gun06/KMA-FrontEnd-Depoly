@@ -35,6 +35,18 @@ type Props = {
   pinnedClickable?: boolean;
   showSearch?: boolean; // 검색 기능 표시 여부
   className?: string;
+  
+  // 외부 페이지네이션 제어
+  currentPage?: number;
+  totalElements?: number;
+  onPageChange?: (page: number) => void;
+  
+  // 외부 검색 제어
+  searchQuery?: string;
+  onSearch?: (query: string) => void;
+  selectedSearchType?: string;
+  onSearchTypeChange?: (type: string) => void;
+  onResetSearch?: () => void;
 };
 
 export default function NoticeBoard({
@@ -49,11 +61,29 @@ export default function NoticeBoard({
   pinnedClickable = true,
   showSearch = true,
   className,
+  currentPage: externalCurrentPage,
+  totalElements: externalTotalElements,
+  onPageChange: externalOnPageChange,
+  searchQuery: externalSearchQuery,
+  onSearch: externalOnSearch,
+  selectedSearchType: externalSelectedSearchType,
+  onSearchTypeChange: externalOnSearchTypeChange,
+  onResetSearch: externalOnResetSearch,
 }: Props) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // 외부에서 페이지를 제어하는 경우 외부 값을 사용, 아니면 내부 상태 사용
+  const currentPage = externalCurrentPage ?? internalCurrentPage;
+  const setCurrentPage = externalOnPageChange ?? setInternalCurrentPage;
+  
+  // 외부에서 검색을 제어하는 경우 외부 값을 사용, 아니면 내부 상태 사용
+  const searchQuery = externalSearchQuery ?? internalSearchQuery;
+  const setSearchQuery = externalOnSearch ? (query: string) => {
+    externalOnSearch(query);
+  } : setInternalSearchQuery;
 
   // API 사용 시 데이터 fetching
   const apiFilters = useMemo(() => ({
@@ -72,7 +102,8 @@ export default function NoticeBoard({
   // 대회별 공지사항 API 호출
   const { data: eventNoticesData, isLoading: isEventLoading, error: eventError } = useEventNotices(
     eventId || '',
-    apiFilters,
+    apiFilters.page || 1,
+    apiFilters.pageSize || 20,
     useApi && !!eventId
   );
 
@@ -96,19 +127,47 @@ export default function NoticeBoard({
   }, [data, selectedCategory, searchQuery, useApi]);
 
   // 최종 데이터 결정
-  const finalData = useMemo(() => {
+  const finalData: {
+    rows: NoticeItem[];
+    total: number;
+    effectivePageSize: number;
+  } = useMemo(() => {
     if (useApi) {
       return {
-        rows: apiData?.notices || [],
-        total: apiData?.total || 0,
+        rows: (apiData as { content?: NoticeItem[] })?.content || [],
+        total: (apiData as { totalElements?: number })?.totalElements || 0,
+        effectivePageSize: pageSize,
       };
     } else {
-      const total = filteredStaticData.length;
-      const start = (currentPage - 1) * pageSize;
-      const rows = filteredStaticData.slice(start, start + pageSize);
-      return { rows, total };
+      // 외부에서 totalElements를 제공하는 경우 사용 (페이지네이션용)
+      // 고정 공지사항과 일반 공지사항 분리
+      const pinnedItems = filteredStaticData.filter(item => item.pinned);
+      const regularItems = filteredStaticData.filter(item => !item.pinned);
+      
+      // 일반 공지사항만 페이지네이션 적용 (고정 공지사항은 제외)
+      // 일반 공지사항은 항상 10개씩 표시
+      const regularPageSize = 10;
+      const totalRegularItems = regularItems.length;
+      const totalPages = Math.ceil(totalRegularItems / regularPageSize);
+      
+      // 페이지네이션 계산 (일반 공지사항만)
+      const start = (currentPage - 1) * regularPageSize;
+      const end = start + regularPageSize;
+      const paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
+        ...item,
+        __displayNo: totalRegularItems - start - index, // 내림차순 번호
+      }));
+      
+      
+      // 고정 공지사항 + 현재 페이지의 일반 공지사항
+      const rows = [...pinnedItems, ...paginatedRegularItems];
+      
+      // 전체 개수는 일반 공지사항 개수만 (페이지네이션용)
+      const total = totalRegularItems;
+      
+      return { rows, total, effectivePageSize: regularPageSize };
     }
-  }, [useApi, apiData, filteredStaticData, currentPage, pageSize]);
+  }, [useApi, apiData, filteredStaticData, currentPage, pageSize, externalTotalElements]);
 
   // 페이지 변경 시 처리
   const handlePageChange = (page: number) => {
@@ -160,106 +219,19 @@ export default function NoticeBoard({
 
   return (
     <div className={`bg-white h-full ${className || ''}`}>
-      {/* 검색 및 필터 */}
-      {showSearch && (
-        <div className="px-1 py-2 bg-white sm:px-6 sm:py-4">
-        {/* 모바일용 커스텀 필터 */}
-        <div className="flex flex-col gap-2 sm:hidden">
-          {/* 커스텀 드롭다운 */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-32 h-8 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
-            >
-              <span className="text-[15px] leading-[26px] text-[#1E2124]">
-                {CATEGORY_OPTIONS.find(opt => opt.value === selectedCategory)?.label || '전체'}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {isDropdownOpen && (
-              <>
-                {/* 백드롭 */}
-                <div 
-                  className="fixed inset-0 z-10" 
-                  onClick={() => setIsDropdownOpen(false)}
-                />
-                {/* 드롭다운 메뉴 */}
-                <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-[#CDD1D5] rounded-md shadow-lg z-20 py-1">
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        handleFieldChange('카테고리', option.value);
-                        setIsDropdownOpen(false);
-                      }}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
-                        selectedCategory === option.value ? 'bg-[#EEF2F7]' : ''
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            <div className="flex-1 h-8 rounded-[5px] border border-[#898989] px-3 py-2 flex items-center">
-              <input
-                type="text"
-                placeholder="검색어를 입력해주세요"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                className="text-sm font-semibold tracking-[-0.08px] outline-none w-full"
-              />
-            </div>
-            <button
-              onClick={() => handleSearch(searchQuery)}
-              className="px-3 h-8 bg-[#256EF4] text-white text-sm font-medium rounded-[5px] hover:bg-[#1E56C7] focus:outline-none whitespace-nowrap"
-            >
-              검색
-            </button>
-          </div>
-        </div>
-
-        {/* 데스크톱용 FilterBar */}
-        <div className="hidden sm:block">
-          <FilterBar
-            fields={[
-              {
-                label: '카테고리',
-                options: CATEGORY_OPTIONS,
-              }
-            ]}
-            searchPlaceholder="검색어를 입력해주세요"
-            buttons={[
-              {
-                label: '검색',
-                tone: 'primary',
-              }
-            ]}
-            onFieldChange={handleFieldChange}
-            onSearch={handleSearch}
-            className="w-full"
-          />
-        </div>
-        </div>
-      )}
 
       {/* 테이블 */}
       <div className="overflow-hidden sm:px-6">
                   <NoticeTable
             data={finalData.rows}
-            onRowClick={onRowClick}
+            onRowClick={onRowClick as (id: string | number) => void}
             pinLimit={pinLimit}
             numberDesc={numberDesc}
             showPinnedBadgeInNo={showPinnedBadgeInNo}
             pinnedClickable={pinnedClickable}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalElements={finalData.total}
           />
         </div>
 
@@ -267,7 +239,7 @@ export default function NoticeBoard({
         <PaginationBar
           page={currentPage}
           total={finalData.total}
-          pageSize={pageSize}
+          pageSize={finalData.effectivePageSize}
           onChange={handlePageChange}
           showTotalText={true}
           showPageIndicator={true}
@@ -279,13 +251,14 @@ export default function NoticeBoard({
           <Pagination
             page={currentPage}
             total={finalData.total}
-            pageSize={pageSize}
+            pageSize={finalData.effectivePageSize}
             onChange={handlePageChange}
             groupSize={10}
             responsive={true}
             showEdge={true}
           />
         </div>
+
     </div>
   );
 }

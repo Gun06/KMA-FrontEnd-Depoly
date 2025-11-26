@@ -2,9 +2,25 @@
 
 import React from "react";
 import { cn } from "@/utils/cn";
-import type { NoticeFile } from "@/data/notice/types";
+import type { NoticeFile } from "@/types/notice";
 
 /* ================= utils ================= */
+// 파일명을 줄이는 유틸리티 함수
+const truncateFileName = (fileName: string, maxLength: number = 30): string => {
+  if (fileName.length <= maxLength) {
+    return fileName
+  }
+  
+  const extension = fileName.substring(fileName.lastIndexOf('.'))
+  const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'))
+  
+  if (nameWithoutExt.length <= maxLength - extension.length) {
+    return fileName
+  }
+  
+  const truncatedName = nameWithoutExt.substring(0, maxLength - extension.length - 3) + '...'
+  return truncatedName + extension
+}
 type UploadLike = {
   id?: string | number;
   name: string;
@@ -12,6 +28,7 @@ type UploadLike = {
   url?: string;
   mime?: string;
   tooLarge?: boolean;
+  file?: File; // 실제 File 객체 추가
 };
 
 const toNoticeFiles = (items: UploadLike[] = []): NoticeFile[] =>
@@ -23,6 +40,7 @@ const toNoticeFiles = (items: UploadLike[] = []): NoticeFile[] =>
       sizeMB: x.sizeMB ?? 0,
       url: x.url,
       mime: x.mime,
+      file: x.file, // File 객체 보존
     }));
 
 const keyOf = (f: NoticeFile) =>
@@ -62,7 +80,7 @@ type Props = {
 };
 
 /* ================= component ================= */
-export default function BoardFileBox({
+function BoardFileBox({
   variant = "edit",
   files,
   onChange,
@@ -83,9 +101,13 @@ export default function BoardFileBox({
   const list = controlled ? (files as NoticeFile[]) : inner;
 
   const setList = (next: NoticeFile[] | ((prev: NoticeFile[]) => NoticeFile[])) => {
-    const value = typeof next === "function" ? (next as any)(list) : next;
+    const value = typeof next === "function" ? next(list) : next;
     const deduped = dedup(value);
-    controlled ? onChange?.(deduped) : setInner(deduped);
+    if (controlled) {
+      onChange?.(deduped);
+    } else {
+      setInner(deduped);
+    }
   };
 
   // 파일 인풋 (내장 업로더)
@@ -108,6 +130,7 @@ export default function BoardFileBox({
       sizeMB: bytesToMB(f.size),
       mime: f.type || undefined,
       url: URL.createObjectURL(f), // 로컬에서 열기/다운로드 가능
+      file: f, // 실제 File 객체 저장
     }));
 
     const added = toNoticeFiles(addedRaw);
@@ -197,23 +220,63 @@ export default function BoardFileBox({
             key={`${f.id}-${idx}`}
             className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-5 py-3"
           >
-            <div className="min-w-0">
-              <div className="truncate text-[15px] font-medium">{f.name}</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[15px] font-medium" title={f.name}>
+                {truncateFileName(f.name)}
+              </div>
               {typeof f.sizeMB === "number" && (
                 <div className="text-xs text-gray-500">[{f.sizeMB}MB]</div>
               )}
             </div>
 
             <div className="ml-4 flex items-center gap-4">
+              {/* 다운로드/보기 버튼 - view 모드에서만 표시 */}
               {variant === "view" && (
-                <a
+                <button
                   className="text-gray-700 text-sm hover:underline"
-                  href={f.url ?? "#"}
-                  download={f.name || true}
+                  onClick={() => {
+                    if (f.url) {
+                      // 파일 확장자 확인
+                      const fileName = f.name || '';
+                      const extension = fileName.toLowerCase().split('.').pop();
+                      
+                      // 이미지 파일인지 확인
+                      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+                      const isImage = extension && imageExtensions.includes(extension);
+                      
+                      if (isImage) {
+                        // 이미지는 새 창에서 열기
+                        window.open(f.url, '_blank');
+                      } else {
+                        // PDF나 다른 파일은 다운로드
+                        // 파일명 디코딩
+                        const decodedFileName = decodeURIComponent(fileName);
+                        
+                        const link = document.createElement('a');
+                        link.href = f.url!;
+                        link.download = decodedFileName;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        link.style.display = 'none';
+                        
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }
+                  }}
                 >
-                  다운로드
-                </a>
+                  {(() => {
+                    const fileName = f.name || '';
+                    const extension = fileName.toLowerCase().split('.').pop();
+                    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+                    const isImage = extension && imageExtensions.includes(extension);
+                    return isImage ? '보기' : '다운로드';
+                  })()}
+                </button>
               )}
+              
+              {/* 삭제 버튼 - edit 모드에서만 */}
               {variant === "edit" && (
                 <button
                   className="text-[#D12D2D] text-sm hover:underline"
@@ -235,3 +298,5 @@ export default function BoardFileBox({
     </div>
   );
 }
+
+export default React.memo(BoardFileBox);

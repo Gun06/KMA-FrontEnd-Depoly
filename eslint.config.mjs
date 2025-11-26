@@ -14,6 +14,18 @@ const eslintConfig = [
   {
     ignores: ['node_modules', 'build', '.next', 'coverage', '.github', 'docs'], // 무시할 폴더
   },
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

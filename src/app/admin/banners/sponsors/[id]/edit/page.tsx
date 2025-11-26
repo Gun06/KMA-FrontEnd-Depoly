@@ -6,9 +6,9 @@ type PageProps = {
 };
 
 export default function Page({ params }: PageProps) {
-  const id = Number(params.id);
+  const id = params.id;
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!id || typeof id !== 'string') {
     return <div className="p-6">잘못된 경로입니다. (id: {params.id})</div>;
   }
 

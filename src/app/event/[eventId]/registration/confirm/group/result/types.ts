@@ -2,6 +2,7 @@
 
 // 기념품 정보 타입
 export interface SouvenirInfo {
+  souvenirId?: string;
   souvenirName: string;
   souvenirSize: string;
 }
@@ -14,9 +15,11 @@ export interface InnerUserRegistration {
   gender: "M" | "F";
   birth: string;
   phNum: string;
+  email?: string; // 새로운 스키마에서 추가된 필드
   eventCategoryName: string;
   souvenir: SouvenirInfo[];
   amount: number;
+  paymentStatus?: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED"; // 개인별 결제 상태
 }
 
 // 단체신청 확인 데이터 타입
@@ -27,13 +30,14 @@ export interface GroupRegistrationConfirmData {
   birth: string;
   address: string;
   zipCode: string;
+  addressDetail?: string; // 상세주소 추가
   phNum: string;
   email: string;
   sumAmount: number;
   organizationHeadCount: number;
   paymentType: "CARD" | "ACCOUNT_TRANSFER";
   paymenterName: string;
-  paymentStatus: "UNPAID" | "PAID";
+  paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
   innerUserRegistrationList: InnerUserRegistration[];
 }
 

@@ -1,16 +1,21 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import AdminTable from "@/components/admin/Table/AdminTableShell";
 import type { Column } from "@/components/common/Table/BaseTable";
-import type { Inquiry } from "@/data/inquiry/types";
+import type { Inquiry } from "@/types/inquiry";
+import InquiryStatusBadge from "@/components/common/Badge/InquiryStatusBadge";
+import { Lock } from "lucide-react";
 
-type ViewRow = Inquiry & { __replyOf?: number }; // 가상 답글행 표식
+type ViewRow = Inquiry & { __replyOf?: string; __answerId?: string; secret?: boolean }; // 가상 답글행 표식
 
 type Props = {
   rows?: ViewRow[];
   linkForRow?: (row: ViewRow) => string | undefined;
-  onDelete?: (id: number) => void;
+  showEventNameColumn?: boolean;
+  onDelete?: (id: string) => void;
+  onDeleteAnswer?: (answerId: string) => void;
   pagination?: {
     page: number;
     pageSize: number;
@@ -21,42 +26,18 @@ type Props = {
   };
 };
 
-export default function InquiryTable({ rows, linkForRow, onDelete, pagination }: Props) {
+function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, pagination, showEventNameColumn }: Props) {
   const data: ViewRow[] = Array.isArray(rows) ? rows : [];
 
-  // 페이지 정보 (방어)
-  const page = Math.max(1, pagination?.page ?? 1);
-  const pageSize = Math.max(1, pagination?.pageSize ?? data.length);
-  const totalBase = Math.max(0, pagination?.total ?? data.filter(r => !r.__replyOf).length); // 질문 개수
+  // 페이지 정보는 pagination 객체에서 직접 사용
 
   const isReply = (r: ViewRow) => !!r.__replyOf;
 
-  // 이 페이지에서 "질문" 행들만
-  const baseRowsOnPage = data.filter(r => !isReply(r));
-
-  // 기준 시작 번호(질문 기준). 위쪽 페이지에 있는 질문 수만큼 빼고 시작
-  // 예: 총 57개, 페이지당 10개, 1페이지 start=57, 2페이지 start=47 ...
-  const baseStartNo = totalBase - (page - 1) * pageSize;
-
-  // 페이지 안에서 **실제 보이는 순서**대로 번호를 내려가며 매긴다.
-  // - 질문/답변 모두 하나의 번호를 소비
-  // - 시작 수는 baseStartNo에서 시작한다(답변 개수만큼 더 내려간다)
-  // - 절대 1 아래로는 내려가지 않게 clamp
-  let currentNo = Math.max(1, baseStartNo);
-  const numberMap = new Map<string, number>(); // rowKey -> no
-
-  for (const row of data) {
-    const key = row.__replyOf ? `reply-${row.__replyOf}` : String(row.id);
-    numberMap.set(key, currentNo);
-    // 다음 행으로 이동할 때 1 감소, 단 1 아래로는 떨어지지 않게
-    currentNo = Math.max(1, currentNo - 1);
-  }
-
-  // 번호 표시 헬퍼
+  // 번호 표시 헬퍼 - InquiryListPage에서 전달받은 no 값 사용
   const getDisplayNo = (row: ViewRow) => {
-    const key = row.__replyOf ? `reply-${row.__replyOf}` : String(row.id);
-    const n = numberMap.get(key);
-    return typeof n === "number" ? n : "";
+    // 답변 행은 번호를 표시하지 않음
+    if (isReply(row)) return "";
+    return row.no || "";
   };
 
   const columns: Column<ViewRow>[] = [
@@ -65,7 +46,7 @@ export default function InquiryTable({ rows, linkForRow, onDelete, pagination }:
       header: "번호",
       width: 80,
       align: "center",
-      render: (r) => <span className="font-medium">{getDisplayNo(r) as any}</span>,
+      render: (r) => <span className="font-medium">{getDisplayNo(r)}</span>,
     },
     {
       key: "title",
@@ -73,39 +54,51 @@ export default function InquiryTable({ rows, linkForRow, onDelete, pagination }:
       className: "text-left",
       render: (r) => {
         const href = linkForRow?.(r);
-        const prefix = isReply(r) ? (
-          <span className="inline-flex items-center gap-2 mr-2">
-            <span className="text-[#1E5EFF]">➥</span>
-            <span className="text-gray-500">[RE]</span>
-          </span>
-        ) : null;
 
         // 제목 앞에 [RE]가 이미 있으면 한 번만 보이도록 제거
         const safeTitle = isReply(r) ? r.title.replace(/^\s*\[RE\]\s*/i, "") : r.title;
 
-        const text = (
-          <span className="truncate inline-block align-middle" title={safeTitle}>
-            {safeTitle}
-          </span>
-        );
-
         return (
           <div className="max-w-[820px]">
-            {href ? (
-              <Link href={href} className="hover:underline">
-                {prefix}
-                {text}
-              </Link>
-            ) : (
-              <>
-                {prefix}
-                {text}
-              </>
-            )}
+            <div className="flex items-center">
+              {isReply(r) && (
+                <>
+                  <span className="text-[#1E5EFF] mr-1">➥</span>
+                  <span className="text-gray-500 mr-2">[RE]</span>
+                </>
+              )}
+              {!isReply(r) && r.secret && <Lock className="w-4 h-4 text-gray-500 mr-1" />}
+              {href ? (
+                <Link href={href} className="hover:underline truncate" title={safeTitle}>
+                  {safeTitle}
+                </Link>
+              ) : (
+                <span className="truncate" title={safeTitle}>
+                  {safeTitle}
+                </span>
+              )}
+            </div>
           </div>
         );
       },
     },
+  ];
+
+  if (showEventNameColumn) {
+    columns.push({
+      key: "eventName",
+      header: "대회명",
+      width: 220,
+      className: "text-left",
+      render: (r) => (
+        isReply(r)
+          ? <span className="text-gray-300">—</span>
+          : <span className="truncate block max-w-[250px]">{r.eventName || '-'}</span>
+      ),
+    });
+  }
+
+  columns.push(
     {
       key: "author",
       header: "작성자",
@@ -115,22 +108,59 @@ export default function InquiryTable({ rows, linkForRow, onDelete, pagination }:
     },
     { key: "date", header: "작성일", width: 140, align: "center" },
     {
-      key: "delete",
-      header: "삭제",
-      width: 90,
+      key: "status",
+      header: "상태",
+      width: 80,
       align: "center",
       render: (r) =>
         isReply(r) ? (
           <span className="text-gray-300">—</span>
         ) : (
-          <button className="text-[#D12D2D] hover:underline" onClick={() => onDelete?.(r.id)}>
-            삭제
-          </button>
+          <InquiryStatusBadge answered={r.answered || false} size="pill" />
         ),
     },
-  ];
+    {
+      key: "delete",
+      header: "삭제",
+      width: 90,
+      align: "center",
+      render: (r) => {
+        if (isReply(r)) {
+          // 답변 행: 답변 삭제 버튼
+          return r.__answerId ? (
+            <button 
+              className="text-[#D12D2D] hover:underline" 
+              onClick={() => onDeleteAnswer?.(r.__answerId!)}
+            >
+              삭제
+            </button>
+          ) : (
+            <span className="text-gray-300">—</span>
+          );
+        } else {
+          // 문의사항 행: 문의사항 삭제 버튼
+          return (
+            <button 
+              className="text-[#D12D2D] hover:underline" 
+              onClick={() => onDelete?.(String(r.id))}
+            >
+              삭제
+            </button>
+          );
+        }
+      },
+    }
+  );
 
-  const tableProps = pagination ? { pagination: { align: "center", ...pagination } } : {};
+  const tableProps = pagination
+    ? {
+        pagination: {
+          align: "right" as const,
+          ...pagination,
+        },
+        contentMinHeight: data.length >= (pagination?.pageSize ?? 0) ? "100vh" : "auto",
+      }
+    : {};
 
   return (
     <AdminTable<ViewRow>
@@ -140,8 +170,10 @@ export default function InquiryTable({ rows, linkForRow, onDelete, pagination }:
       renderFilters={null}
       renderSearch={null}
       renderActions={null}
-      minWidth={1000}
-      {...(tableProps as any)}
+      minWidth={1200}
+      {...tableProps}
     />
   );
 }
+
+export default React.memo(InquiryTable);

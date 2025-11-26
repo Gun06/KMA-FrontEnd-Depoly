@@ -3,7 +3,7 @@ import { NoticeDetailResponse } from '../types';
 /**
  * 공지사항 상세 조회 API
  */
-export const fetchNoticeDetail = async (noticeId: string): Promise<NoticeDetailResponse> => {
+export const fetchNoticeDetail = async (eventId: string, noticeId: string): Promise<NoticeDetailResponse> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
   const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/notice/${noticeId}`;
 

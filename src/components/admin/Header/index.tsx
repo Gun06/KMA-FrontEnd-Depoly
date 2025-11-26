@@ -9,7 +9,7 @@ import xIcon from '@/assets/icons/main/x.svg';
 import menuIcon from '@/assets/icons/main/menu.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoints } from '@/hooks/useMediaQuery';
-import { useAuthStore } from '@/store/authStore';
+import { useAdminAuthStore } from '@/store/adminAuthStore';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -34,15 +34,13 @@ interface HeaderState {
 const subMenus: Record<string, SubMenu> = {
   참가신청: {
     items: [
-      { label: '신청자 목록', href: '/admin/applications/list' },
-      { label: '신청자 관리', href: '/admin/applications/management' },
+      { label: '신청자 관리', href: '/admin/applications/list' },
     ],
   },
   대회관리: {
     items: [
       { label: '대회관리', href: '/admin/events/management' },
       { label: '대회등록', href: '/admin/events/register' },
-      { label: '대회공지사항', href: '/admin/events/notice' },
     ],
   },
   게시판관리: {
@@ -59,13 +57,12 @@ const subMenus: Record<string, SubMenu> = {
     ],
   },
 
-  메인배너관리: {
+  배너관리: {
     items: [
       { label: '메인 배너등록', href: '/admin/banners/main' },
       { label: '스폰서 배너등록', href: '/admin/banners/sponsors' },
       { label: '팝업 등록', href: '/admin/banners/popups' },
     ],
-
   },
   갤러리관리: {
     items: [{ label: '갤러리 등록', href: '/admin/galleries' }],
@@ -77,7 +74,7 @@ const navItems = [
   { label: '대회관리', href: '/admin/events/management', key: '대회관리' },
   { label: '게시판관리', href: '/admin/boards/notice', key: '게시판관리' },
   { label: '회원관리', href: '/admin/users/individual', key: '회원관리' },
-  { label: '메인배너관리', href: '/admin/banners', key: '메인배너관리' },
+  { label: '배너관리', href: '/admin/banners', key: '배너관리' },
   { label: '갤러리관리', href: '/admin/galleries', key: '갤러리관리' },
 ];
 
@@ -89,7 +86,7 @@ const dropdownVariants = {
 export default function Header() {
   // useBreakpoints 훅을 사용하여 세밀한 반응형 감지
   const { isCustom } = useBreakpoints();
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const { isLoggedIn, user, logout } = useAdminAuthStore();
 
   // 모든 상태를 하나의 객체로 통합
   const [state, setState] = useState<HeaderState>({

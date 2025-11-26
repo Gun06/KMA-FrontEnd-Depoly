@@ -120,7 +120,7 @@ export default function SponsorUploader({
   const padX = dense ? "px-3" : "px-5";
 
   return (
-    <div className={cn("w-full min-w-0", className)} aria-readonly={readOnly || undefined}>
+    <div className={cn("w-full min-w-0 max-w-full", className)} aria-readonly={readOnly || undefined}>
       {!hasFile && (
         readOnly ? (
           <div className="text-sm text-[#8A949E] py-2" role="status">{emptyText}</div>
@@ -149,17 +149,17 @@ export default function SponsorUploader({
           )}
           aria-live="polite"
         >
-          <div className={cn("flex items-center gap-3 min-w-0", hasError ? "" : "h-full")}>
-            <div className="flex-1 min-w-0 flex items-center gap-2 whitespace-nowrap">
-              <span className="truncate text-[15px] text-[#0F1113]" title={file?.name}>
+          <div className={cn("flex items-center gap-3 min-w-0 w-full", hasError ? "" : "h-full")}>
+            <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
+              <span className="truncate text-[15px] text-[#0F1113] w-full" title={file?.name}>
                 {truncateMiddle(file?.name ?? "", nameMaxChars)}
               </span>
-              {file?.sizeMB != null && <span className="text-[12px] text-[#6B7280]">[{file.sizeMB}MB]</span>}
+              {file?.sizeMB != null && <span className="text-[12px] text-[#6B7280] shrink-0">[{file.sizeMB}MB]</span>}
             </div>
             {!readOnly && (
               <button
                 type="button"
-                className="shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727]"
+                className="shrink-0 flex-shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
                 onClick={removeOne}
                 aria-label={`${file?.name ?? "이미지"} 삭제`}
               >

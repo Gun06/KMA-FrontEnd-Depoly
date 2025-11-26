@@ -55,7 +55,8 @@ function toISOStringSafe(
   const H = Number.isFinite(hNum) && hNum >= 0 && hNum < 24 ? hNum : 6;
   const M = Number.isFinite(mNum) && mNum >= 0 && mNum < 60 ? mNum : 0;
 
-  const dt = new Date(Number(y), Number(mo) - 1, Number(d), H, M, 0, 0);
+  // UTC 시간으로 명시적으로 생성하여 시간대 변환 문제 방지
+  const dt = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), H, M, 0, 0));
   if (isNaN(dt.getTime())) return null;
 
   return dt.toISOString();
@@ -75,26 +76,29 @@ const toStartAtISO = (
 type PrefillUploads = {
   // 🔹 파트너(주최/주관/후원) 배너
   // 🔹 파트너(주최/주관/후원) 배너 새로 추가
-  bannerHost?: UploadItem[];
-  bannerOrganizer?: UploadItem[];
-  bannerSponsor?: UploadItem[];
+  bannerHost?: UploadItem[] | Array<{ url: string }>;
+  bannerOrganizer?: UploadItem[] | Array<{ url: string }>;
+  bannerSponsor?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 홍보용(Instagram)
-  bannerInstagram?: UploadItem[];
+  bannerInstagram?: UploadItem[] | Array<{ url: string }>;
+
+  // 🔹 사이드메뉴배너(herosection 이미지)
+  bannerSideMenu?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일) 새로 추가
-  bannerGuideDesktop?: UploadItem[];
-  bannerGuideMobile?: UploadItem[];
-  bannerMainDesktop?: UploadItem[];
-  bannerMainMobile?: UploadItem[];
+  bannerGuideDesktop?: UploadItem[] | Array<{ url: string }>;
+  bannerGuideMobile?: UploadItem[] | Array<{ url: string }>;
+  bannerMainDesktop?: UploadItem[] | Array<{ url: string }>;
+  bannerMainMobile?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 페이지별 이미지
-  imgNotice?: UploadItem[];
-  imgPost?: UploadItem[];
-  imgCourse?: UploadItem[];
-  imgGift?: UploadItem[];
-  imgConfirm?: UploadItem[];
-  imgResult?: UploadItem[];
+  imgNotice?: UploadItem[] | Array<{ url: string }>;
+  imgPost?: UploadItem[] | Array<{ url: string }>;
+  imgCourse?: UploadItem[] | Array<{ url: string }>;
+  imgGift?: UploadItem[] | Array<{ url: string }>;
+  imgConfirm?: UploadItem[] | Array<{ url: string }>;
+  imgResult?: UploadItem[] | Array<{ url: string }>;
 };
 
 // 프리필 데이터의 레거시 타입을 위한 인터페이스
@@ -116,27 +120,31 @@ export type UseCompetitionPrefill = Partial<
     courses?: string[];
     gifts?: string[];
     groups?: Array<{
-      course: { name: string; price?: number };
-      gifts: { label?: string; price?: number }[];
+      course: { name: string; price?: number | string };
+      gifts: { label?: string; size?: string }[];
     }>;
+    /** 선택: 테마 표현 확장 필드 (레거시/디버그 호환) */
+    themeStyle?: 'base' | 'grad';
+    baseColor?: EventTheme;
+    gradColor?: EventTheme;
     /** ✅ 파트너 상세 프리필 (이름/링크/첨부) */
     partners?: {
       hosts?: Array<{
         name?: string;
         link?: string;
-        file?: UploadItem[];
+        file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
       }>;
       organizers?: Array<{
         name?: string;
         link?: string;
-        file?: UploadItem[];
+        file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
       }>;
       sponsors?: Array<{
         name?: string;
         link?: string;
-        file?: UploadItem[];
+        file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
       }>;
     };
@@ -144,6 +152,17 @@ export type UseCompetitionPrefill = Partial<
     applyStatus?: RegStatus;
     /** ✅ 선착순 접수 인원수 프리필 */
     maxParticipants?: number;
+    /** ✅ 개최일시 시각 프리필 */
+    hh?: string;
+    mm?: string;
+    /** ✅ 접수마감일자 프리필 */
+    deadlineDate?: string;
+    deadlineHh?: string;
+    deadlineMm?: string;
+    /** ✅ 입금마감일자 프리필 */
+    paymentDeadlineDate?: string;
+    paymentDeadlineHh?: string;
+    paymentDeadlineMm?: string;
   }
 > &
   LegacyPrefillData;
@@ -160,6 +179,10 @@ export type HydrateSnapshotInput = {
   date?: string;
   hh?: string;
   mm?: string;
+  /** 신청시작일 스냅샷 */
+  registStartDate?: string;
+  registStartHh?: string;
+  registStartMm?: string;
   place?: string;
   account?: string;
   homeUrl?: string;
@@ -172,10 +195,12 @@ export type HydrateSnapshotInput = {
   themeStyle?: 'base' | 'grad';
   baseColor?: EventTheme;
   gradColor?: EventTheme;
+  eventTheme?: EventTheme;
   bannerHost?: UploadItem[];
   bannerOrganizer?: UploadItem[];
   bannerSponsor?: UploadItem[];
   bannerInstagram?: UploadItem[];
+  bannerSideMenu?: UploadItem[];
   bannerGuideDesktop?: UploadItem[];
   bannerGuideMobile?: UploadItem[];
   bannerMainDesktop?: UploadItem[];
@@ -187,6 +212,14 @@ export type HydrateSnapshotInput = {
   imgConfirm?: UploadItem[];
   imgResult?: UploadItem[];
   applyStatus?: RegStatus;
+  /** ✅ 접수마감일자 스냅샷 */
+  deadlineDate?: string;
+  deadlineHh?: string;
+  deadlineMm?: string;
+  /** ✅ 입금마감일자 스냅샷 */
+  paymentDeadlineDate?: string;
+  paymentDeadlineHh?: string;
+  paymentDeadlineMm?: string;
 };
 
 export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
@@ -209,6 +242,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [mm, setMm] = React.useState('00');
 
   // 접수마감 필드들
+  // 신청시작일 필드들
+  const [registStartDate, setRegistStartDate] = React.useState('');
+  const [registStartHh, setRegistStartHh] = React.useState('06');
+  const [registStartMm, setRegistStartMm] = React.useState('00');
+
+  // 접수마감 필드들
   const [deadlineDate, setDeadlineDate] = React.useState('');
   const [deadlineHh, setDeadlineHh] = React.useState('06');
   const [deadlineMm, setDeadlineMm] = React.useState('00');
@@ -223,6 +262,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
 
   const [place, setPlace] = React.useState('');
   const [account, setAccount] = React.useState('');
+  // 은행/계좌
+  const [bank, setBank] = React.useState<string>('');
+  const [virtualAccount, setVirtualAccount] = React.useState<string>('');
   const [homeUrl, setHomeUrl] = React.useState('');
   const [eventPageUrl, setEventPageUrl] = React.useState('');
 
@@ -261,6 +303,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     []
   );
 
+  // 🔹 사이드메뉴배너(herosection 이미지)
+  const [bannerSideMenu, setBannerSideMenu] = React.useState<UploadItem[]>([]);
+
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
   const [bannerGuideDesktop, setBannerGuideDesktop] = React.useState<
     UploadItem[]
@@ -289,10 +334,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [themeStyle, setThemeStyle] = React.useState<'base' | 'grad'>('base');
   const [baseColor, setBaseColor] = React.useState<EventTheme>('blue');
   const [gradColor, setGradColor] = React.useState<EventTheme>('grad-blue');
-  const finalEventTheme: EventTheme = React.useMemo(
-    () => (themeStyle === 'base' ? baseColor : gradColor),
-    [themeStyle, baseColor, gradColor]
-  );
+  const finalEventTheme: EventTheme = React.useMemo(() => {
+    const result = themeStyle === 'base' ? baseColor : gradColor;
+    return result;
+  }, [themeStyle, baseColor, gradColor]);
 
   // 시간 옵션
   const hours = React.useMemo(
@@ -305,6 +350,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   React.useEffect(() => {
     if (!prefill) return;
 
+
     setTitleKo(prefill.titleKo ?? '');
     setTitleEn(prefill.titleEn ?? '');
 
@@ -314,6 +360,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (prefill.shuttle) setShuttle(prefill.shuttle);
     setPlace(prefill.place ?? '');
     setAccount(prefill.account ?? '');
+    setBank((prefill as any)?.bank ?? '');
+    setVirtualAccount((prefill as any)?.virtualAccount ?? '');
     setHomeUrl(prefill.homeUrl ?? '');
     setEventPageUrl(prefill.eventPageUrl ?? '');
 
@@ -322,6 +370,26 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setMaxParticipants(String(prefill.maxParticipants));
 
     if (prefill.applyStatus) setApplyStatus(prefill.applyStatus);
+
+    // eventTheme 프리필 처리
+    if (prefill.eventTheme) {
+
+      const isGradient = prefill.eventTheme.startsWith('grad-');
+      if (isGradient) {
+
+        setThemeStyle('grad');
+        setGradColor(prefill.eventTheme as EventTheme);
+        setBaseColor('blue'); // 기본값
+      } else {
+
+        setThemeStyle('base');
+        setBaseColor(prefill.eventTheme as EventTheme);
+        setGradColor('grad-blue'); // 기본값
+      }
+    } else {
+      // eventTheme이 없으면 기존 로직 사용
+
+    }
 
     if (prefill.startAt) {
       const d = new Date(prefill.startAt);
@@ -336,6 +404,31 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setDate(prefill.date);
     }
 
+    // 개최일시 시각 프리필 처리
+    if (prefill.hh) setHh(prefill.hh);
+    if (prefill.mm) setMm(prefill.mm);
+
+    // 신청시작일자 프리필 처리
+    if ((prefill as any).registStartDate)
+      setRegistStartDate((prefill as any).registStartDate);
+    if ((prefill as any).registStartHh)
+      setRegistStartHh((prefill as any).registStartHh);
+    if ((prefill as any).registStartMm)
+      setRegistStartMm((prefill as any).registStartMm);
+
+    // 접수마감일자 프리필 처리
+    if (prefill.deadlineDate) setDeadlineDate(prefill.deadlineDate);
+    if (prefill.deadlineHh) setDeadlineHh(prefill.deadlineHh);
+    if (prefill.deadlineMm) setDeadlineMm(prefill.deadlineMm);
+
+    // 입금마감일자 프리필 처리
+    if (prefill.paymentDeadlineDate)
+      setPaymentDeadlineDate(prefill.paymentDeadlineDate);
+    if (prefill.paymentDeadlineHh)
+      setPaymentDeadlineHh(prefill.paymentDeadlineHh);
+    if (prefill.paymentDeadlineMm)
+      setPaymentDeadlineMm(prefill.paymentDeadlineMm);
+
     // groups
     if (prefill.groups && prefill.groups.length) {
       setGroups(
@@ -345,11 +438,13 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
             price:
               typeof g.course.price === 'number'
                 ? formatKRW(String(g.course.price))
-                : '',
+                : typeof g.course.price === 'string'
+                  ? formatKRW(g.course.price)
+                  : '',
           },
           gifts: (g.gifts ?? []).map(x => ({
             label: x.label ?? '',
-            size: '',
+            size: x.size ?? '',
           })),
         }))
       );
@@ -369,14 +464,41 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     const toItem = (p?: {
       name?: string;
       link?: string;
-      file?: UploadItem[];
+      file?: UploadItem[] | Array<{ url: string }>;
       enabled?: boolean;
-    }): PartyItem => ({
-      name: p?.name ?? '',
-      link: p?.link ?? '',
-      file: p?.file ?? [],
-      enabled: p?.enabled !== false,
-    });
+    }): PartyItem => {
+      // API에서 받은 URL만 있는 형태를 UploadItem 형태로 변환
+      const convertFiles = (
+        files?: UploadItem[] | Array<{ url: string }>
+      ): UploadItem[] => {
+        if (!files) return [];
+
+        return files.map((item, index) => {
+          // 이미 UploadItem 형태인 경우 그대로 반환
+          if ('id' in item && 'file' in item) {
+            return item as UploadItem;
+          }
+
+          // URL만 있는 경우 UploadItem 형태로 변환
+          const urlItem = item as { url: string };
+          return {
+            id: `api-${index}-${Date.now()}`,
+            file: new File([], urlItem.url), // 빈 File 객체 (API 이미지는 File이 없음)
+            name: urlItem.url.split('/').pop() || 'image',
+            size: 0,
+            sizeMB: 0,
+            tooLarge: false,
+          };
+        });
+      };
+
+      return {
+        name: p?.name ?? '',
+        link: p?.link ?? '',
+        file: convertFiles(p?.file),
+        enabled: p?.enabled !== false,
+      };
+    };
 
     if (prefill.partners) {
       setHostItems((prefill.partners.hosts ?? []).map(toItem));
@@ -414,27 +536,63 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
 
     // 업로드
     if (prefill.uploads) {
+      // URL을 UploadItem으로 변환하는 함수
+      const convertToUploadItems = (
+        files?: UploadItem[] | Array<{ url: string }>
+      ): UploadItem[] => {
+        if (!files) return [];
+
+        return files.map((item, index) => {
+          // 이미 UploadItem 형태인 경우 그대로 반환
+          if ('id' in item && 'file' in item) {
+            return item as UploadItem;
+          }
+
+          // URL만 있는 경우 UploadItem 형태로 변환
+          const urlItem = item as { url: string };
+          return {
+            id: `api-upload-${index}-${Date.now()}`,
+            file: new File([], urlItem.url), // 빈 File 객체 (API 이미지는 File이 없음)
+            name: urlItem.url.split('/').pop() || 'image',
+            size: 0,
+            sizeMB: 0,
+            tooLarge: false,
+          };
+        });
+      };
+
       // 파트너 배너
-      setBannerHost(prefill.uploads.bannerHost ?? []);
-      setBannerOrganizer(prefill.uploads.bannerOrganizer ?? []);
-      setBannerSponsor(prefill.uploads.bannerSponsor ?? []);
+      setBannerHost(convertToUploadItems(prefill.uploads.bannerHost));
+      setBannerOrganizer(convertToUploadItems(prefill.uploads.bannerOrganizer));
+      setBannerSponsor(convertToUploadItems(prefill.uploads.bannerSponsor));
 
       // 홍보용
-      setBannerInstagram(prefill.uploads.bannerInstagram ?? []);
+      setBannerInstagram(convertToUploadItems(prefill.uploads.bannerInstagram));
+
+      // 사이드메뉴배너
+      setBannerSideMenu(convertToUploadItems(prefill.uploads.bannerSideMenu));
 
       // 페이지 상단 배너 (요강/메인 D/M)
-      setBannerGuideDesktop(prefill.uploads.bannerGuideDesktop ?? []);
-      setBannerGuideMobile(prefill.uploads.bannerGuideMobile ?? []);
-      setBannerMainDesktop(prefill.uploads.bannerMainDesktop ?? []);
-      setBannerMainMobile(prefill.uploads.bannerMainMobile ?? []);
+      setBannerGuideDesktop(
+        convertToUploadItems(prefill.uploads.bannerGuideDesktop)
+      );
+      setBannerGuideMobile(
+        convertToUploadItems(prefill.uploads.bannerGuideMobile)
+      );
+      setBannerMainDesktop(
+        convertToUploadItems(prefill.uploads.bannerMainDesktop)
+      );
+      setBannerMainMobile(
+        convertToUploadItems(prefill.uploads.bannerMainMobile)
+      );
 
       // 페이지별 이미지
-      setImgNotice(prefill.uploads.imgNotice ?? []);
-      setImgPost(prefill.uploads.imgPost ?? []);
-      setImgCourse(prefill.uploads.imgCourse ?? []);
-      setImgGift(prefill.uploads.imgGift ?? []);
-      setImgConfirm(prefill.uploads.imgConfirm ?? []);
-      setImgResult(prefill.uploads.imgResult ?? []);
+      setImgNotice(convertToUploadItems(prefill.uploads.imgNotice));
+      setImgPost(convertToUploadItems(prefill.uploads.imgPost));
+      setImgCourse(convertToUploadItems(prefill.uploads.imgCourse));
+      setImgGift(convertToUploadItems(prefill.uploads.imgGift));
+      setImgConfirm(convertToUploadItems(prefill.uploads.imgConfirm));
+      setImgResult(convertToUploadItems(prefill.uploads.imgResult));
     }
   }, [prefill]);
 
@@ -511,6 +669,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     time: `${hh}:${mm}`,
     place,
     account,
+    bank,
+    virtualAccount,
     homeUrl,
     eventPageUrl,
     maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
@@ -525,6 +685,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   });
 
   const toStartAt = () => toStartAtISO(date, hh, mm);
+  const toRegistStartDate = () =>
+    toISOStringSafe(registStartDate, registStartHh, registStartMm);
   const toRegistDeadline = () =>
     toISOStringSafe(deadlineDate, deadlineHh, deadlineMm);
   const toPaymentDeadline = () =>
@@ -535,6 +697,40 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (!titleKo.trim()) errors.push('대회명(한글)');
     if (!date.trim()) errors.push('개최일(YYYY.MM.DD)');
     if (!hh || !mm) errors.push('개최 시/분');
+    if (!registStartDate.trim()) errors.push('신청시작일(YYYY.MM.DD)');
+    if (!registStartHh || !registStartMm)
+      errors.push('신청시작 시/분');
+    if (!deadlineDate.trim()) errors.push('접수마감일(YYYY.MM.DD)');
+    if (!deadlineHh || !deadlineMm) errors.push('접수마감 시/분');
+    if (!paymentDeadlineDate.trim()) errors.push('입금마감일(YYYY.MM.DD)');
+    if (!paymentDeadlineHh || !paymentDeadlineMm) errors.push('입금마감 시/분');
+    
+    // 날짜 순서 검증: 접수마감 < 입금마감 < 개최일시
+    const startAtISO = toStartAt();
+    const registStartISO = toRegistStartDate();
+    const registDeadlineISO = toRegistDeadline();
+    const paymentDeadlineISO = toPaymentDeadline();
+    
+    if (startAtISO && registStartISO && registDeadlineISO && paymentDeadlineISO) {
+      const startAt = new Date(startAtISO);
+      const registStart = new Date(registStartISO);
+      const registDeadline = new Date(registDeadlineISO);
+      const paymentDeadline = new Date(paymentDeadlineISO);
+      
+      // 날짜가 유효한지 확인
+      if (!isNaN(startAt.getTime()) && !isNaN(registStart.getTime()) && !isNaN(registDeadline.getTime()) && !isNaN(paymentDeadline.getTime())) {
+        if (registStart >= registDeadline) {
+          errors.push('신청시작일은 접수마감일보다 이전이어야 합니다');
+        }
+        if (registDeadline >= paymentDeadline) {
+          errors.push('접수마감일은 입금마감일보다 이전이어야 합니다');
+        }
+        if (paymentDeadline >= startAt) {
+          errors.push('입금마감일은 개최일시보다 이전이어야 합니다');
+        }
+      }
+    }
+    
     const hasValidCoursePrice = groups.some(g => parseKRW(g.course.price) > 0);
     if (!hasValidCoursePrice) errors.push('참가부문 참가비');
     const hasGiftWithSize = groups.some(g =>
@@ -554,31 +750,6 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       item => item.name.trim() && item.file.length > 0
     );
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log('PartiesSection 이미지 검증:', {
-        hostItems: hostItems.map(item => ({
-          name: item.name,
-          enabled: item.enabled,
-          fileLength: item.file.length,
-          file: item.file,
-        })),
-        organizerItems: organizerItems.map(item => ({
-          name: item.name,
-          enabled: item.enabled,
-          fileLength: item.file.length,
-          file: item.file,
-        })),
-        sponsorItems: sponsorItems.map(item => ({
-          name: item.name,
-          enabled: item.enabled,
-          fileLength: item.file.length,
-          file: item.file,
-        })),
-        hasHostImage,
-        hasOrganizerImage,
-        hasSponsorImage,
-      });
-    }
 
     if (!hasHostImage) errors.push('주최 이미지 (주최 항목에 이미지 필요)');
     if (!hasOrganizerImage)
@@ -591,6 +762,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const buildApiBody = (): EventCreatePayload => {
     const form = buildFormState();
     const startAt = toStartAt();
+    const registStartISO = toRegistStartDate();
     const registDeadlineISO = toRegistDeadline();
     const paymentDeadlineISO = toPaymentDeadline();
 
@@ -630,28 +802,22 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       sponsors: sponsorItems,
     };
 
-    // 백엔드 배너(파트너) 리스트 예시 — 유지
-    const eventBannerInfoList = [
-      ...bannerHost.map(item => ({ ...item, type: 'HOST' })),
-      ...bannerOrganizer.map(item => ({ ...item, type: 'ORGANIZER' })),
-      ...bannerSponsor.map(item => ({ ...item, type: 'SPONSOR' })),
-    ];
-
     const payload = {
       ...form,
       ...(startAt ? { startAt } : {}),
+      ...(registStartISO ? { registStartDate: registStartISO } : {}),
       ...(registDeadlineISO ? { registDeadline: registDeadlineISO } : {}),
       ...(paymentDeadlineISO ? { paymentDeadline: paymentDeadlineISO } : {}),
       fees,
       groups: groupsPayload,
       partners,
-      eventBannerInfoList, // 백엔드가 요구하는 형식
       uploads: {
         // 🔹 파트너 배너 + 홍보용
         bannerHost: hostImages, // 🔧 hostItems에서 변환된 이미지들
         bannerOrganizer: organizerImages, // 🔧 organizerItems에서 변환된 이미지들
         bannerSponsor: sponsorImages, // 🔧 sponsorItems에서 변환된 이미지들
         bannerInstagram,
+        bannerSideMenu, // 사이드메뉴배너(herosection 이미지)
 
         // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
         bannerGuideDesktop,
@@ -685,8 +851,15 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setDate(s.date ?? '');
     setHh(s.hh ?? '06');
     setMm(s.mm ?? '00');
+
+    // 신청시작일 스냅샷 처리
+    setRegistStartDate(s.registStartDate ?? '');
+    setRegistStartHh(s.registStartHh ?? '06');
+    setRegistStartMm(s.registStartMm ?? '00');
     setPlace(s.place ?? '');
     setAccount(s.account ?? '');
+    setBank((s as any).bank ?? '');
+    setVirtualAccount((s as any).virtualAccount ?? '');
     setHomeUrl(s.homeUrl ?? '');
     setEventPageUrl(s.eventPageUrl ?? '');
     setMaxParticipants(s.maxParticipants ?? '');
@@ -694,15 +867,42 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setHostItems(s.hostItems ?? []);
     setOrganizerItems(s.organizerItems ?? []);
     setSponsorItems(s.sponsorItems ?? []);
-    setThemeStyle(s.themeStyle ?? 'base');
-    setBaseColor(s.baseColor ?? 'blue');
-    setGradColor(s.gradColor ?? 'grad-blue');
+
+    // eventTheme이 있으면 themeStyle, baseColor, gradColor 설정
+    if (s.eventTheme) {
+      const isGradient = s.eventTheme.startsWith('grad-');
+      if (isGradient) {
+        setThemeStyle('grad');
+        setGradColor(s.eventTheme as EventTheme);
+        setBaseColor('blue'); // 기본값
+      } else {
+        setThemeStyle('base');
+        setBaseColor(s.eventTheme as EventTheme);
+        setGradColor('grad-blue'); // 기본값
+      }
+    } else {
+      // eventTheme이 없으면 기존 로직 사용
+      setThemeStyle(s.themeStyle ?? 'base');
+      setBaseColor(s.baseColor ?? 'blue');
+      setGradColor(s.gradColor ?? 'grad-blue');
+    }
+
+    // 접수마감일자 스냅샷 처리
+    setDeadlineDate(s.deadlineDate ?? '');
+    setDeadlineHh(s.deadlineHh ?? '06');
+    setDeadlineMm(s.deadlineMm ?? '00');
+
+    // 입금마감일자 스냅샷 처리
+    setPaymentDeadlineDate(s.paymentDeadlineDate ?? '');
+    setPaymentDeadlineHh(s.paymentDeadlineHh ?? '06');
+    setPaymentDeadlineMm(s.paymentDeadlineMm ?? '00');
 
     // 🔹 업로드들
     setBannerHost(s.bannerHost ?? []);
     setBannerOrganizer(s.bannerOrganizer ?? []);
     setBannerSponsor(s.bannerSponsor ?? []);
     setBannerInstagram(s.bannerInstagram ?? []);
+    setBannerSideMenu(s.bannerSideMenu ?? []);
 
     setBannerGuideDesktop(s.bannerGuideDesktop ?? []);
     setBannerGuideMobile(s.bannerGuideMobile ?? []);
@@ -747,6 +947,14 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     mm,
     setMm,
 
+    // 신청시작일 필드들
+    registStartDate,
+    setRegistStartDate,
+    registStartHh,
+    setRegistStartHh,
+    registStartMm,
+    setRegistStartMm,
+
     // 접수마감 필드들
     deadlineDate,
     setDeadlineDate,
@@ -771,6 +979,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setPlace,
     account,
     setAccount,
+    bank,
+    setBank,
+    virtualAccount,
+    setVirtualAccount,
     homeUrl,
     setHomeUrl,
     eventPageUrl,
@@ -810,6 +1022,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBannerSponsor,
     bannerInstagram,
     setBannerInstagram,
+    bannerSideMenu,
+    setBannerSideMenu,
 
     // uploads — 페이지 상단 배너 (요강/메인 - D/M)
     bannerGuideDesktop,

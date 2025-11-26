@@ -100,8 +100,12 @@ export default function SelectMenu({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const currentLabel = options.find((o) => o.value === value)?.label ?? "";
-  const buttonText = buttonTextMode === "label" ? label : (currentLabel || label);
+  const currentOption = options.find((o) => o.value === value);
+  const currentLabel = currentOption?.label ?? "";
+  // value가 빈 문자열이고 currentLabel이 "전체"인 경우, 버튼에는 label을 표시
+  const buttonText = buttonTextMode === "label" 
+    ? label 
+    : (value === "" && currentLabel === "전체" ? label : (currentLabel || label));
 
   return (
     <div className={cn("relative", className)}>

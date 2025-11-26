@@ -13,6 +13,7 @@ type Props = {
   showTotalText?: boolean;
   showPageIndicator?: boolean;
   className?: string;
+  totalTextFormatter?: (total: number) => React.ReactNode;
 };
 
 export default function PaginationBar({
@@ -24,6 +25,7 @@ export default function PaginationBar({
   showTotalText = true,
   showPageIndicator = true,
   className,
+  totalTextFormatter,
 }: Props) {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
@@ -42,7 +44,15 @@ export default function PaginationBar({
         >
           <div className="text-xs sm:text-sm text-[#111827]">
             {showTotalText && (
-              <>총 <b>{total.toLocaleString()}</b>개의 게시물</>
+              <>
+                {totalTextFormatter
+                  ? totalTextFormatter(total)
+                  : (
+                    <>
+                      총 <b>{total.toLocaleString()}</b>개의 게시물
+                    </>
+                  )}
+              </>
             )}
           </div>
 

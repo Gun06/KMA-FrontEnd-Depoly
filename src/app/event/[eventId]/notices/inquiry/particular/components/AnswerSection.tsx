@@ -28,6 +28,7 @@ interface AnswerSectionProps {
   currentUserId: string | null;
   showOnlyAnswer?: boolean; // 답변만 표시할지 여부
   onGoBack?: () => void; // 뒤로가기 함수
+  urlPassword?: string | null; // URL에서 전달된 비밀번호
 }
 
 export const AnswerSection = ({ 
@@ -37,49 +38,11 @@ export const AnswerSection = ({
   inquiryDetail, 
   currentUserId,
   showOnlyAnswer = false,
-  onGoBack
+  onGoBack,
+  urlPassword
 }: AnswerSectionProps) => {
-  // 답변만 표시하는 경우 권한 체크 후 답변 표시
+  // 답변만 표시하는 경우
   if (showOnlyAnswer && answerHeader) {
-    // 권한 체크: 답변은 원본 문의글 작성자만 볼 수 있음
-    if (!currentUserId || !inquiryDetail || inquiryDetail.author !== currentUserId) {
-      return (
-        <>
-          {/* 헤더 버튼들 */}
-          {onGoBack && (
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={onGoBack}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span>뒤로가기</span>
-              </button>
-            </div>
-          )}
-          
-          <div className="mt-6">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="border-b border-gray-200 p-4 sm:p-6 bg-gray-100">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-                  비밀글입니다.
-                </h1>
-              </div>
-              <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
-                <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
-                  <div className="text-center py-8">
-                    <div className="text-gray-500 text-4xl mb-4">🔒</div>
-                    <p className="text-gray-700 text-lg font-medium">
-                      비밀글입니다.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      );
-    }
 
     // 비밀글인 경우
     if (answerDetail?.id === 'secret') {
@@ -141,13 +104,13 @@ export const AnswerSection = ({
           {/* 답변 헤더 */}
           <div className="border-b border-gray-200 p-4 sm:p-6 bg-gray-100">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-              {answerHeader.title}
+              {answerDetail?.title || answerHeader.title}
             </h1>
             
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변자:</span>
-                <span className="truncate max-w-[100px] sm:max-w-none">{maskAuthorName(answerHeader.authorName, currentUserId)}</span>
+                <span className="truncate max-w-[100px] sm:max-w-none">{answerHeader.authorName}</span>
               </div>
               
               <div className="flex items-center gap-1 whitespace-nowrap">
@@ -164,7 +127,7 @@ export const AnswerSection = ({
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (
                 <div>
-                  <p>{answerDetail.content || '답변 내용이 없습니다.'}</p>
+                  <div dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} />
                   
                   {/* 답변 첨부파일 */}
                   {answerDetail.attachmentDetailList && answerDetail.attachmentDetailList.length > 0 && (
@@ -197,11 +160,8 @@ export const AnswerSection = ({
                     </div>
                   )}
                 </div>
-              ) : answerHeader?.content && 
-                  answerHeader.content !== inquiryDetail?.content ? (
-                <div>
-                  <p>{answerHeader.content}</p>
-                </div>
+              ) : answerHeader?.content ? (
+                <div dangerouslySetInnerHTML={{ __html: answerHeader.content }} />
               ) : (
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>
@@ -218,54 +178,8 @@ export const AnswerSection = ({
     );
   }
 
-  // 답변이 있지만 권한이 없는 경우 안내
-  if (answerHeader && (!currentUserId || inquiryDetail?.author !== currentUserId)) {
-    return (
-      <div className="mt-6">
-        {/* 답변 권한 안내 - 문의글과 유사한 형식 */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {/* 답변 헤더 */}
-          <div className="border-b border-gray-200 p-4 sm:p-6 bg-yellow-50">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-              {answerHeader.title}
-              <div className="flex flex-wrap gap-2 mt-2">
-                <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-yellow-600 bg-yellow-100 rounded-full border border-yellow-200">
-                  🔒 답변 권한 필요
-                </span>
-              </div>
-            </h1>
-            
-            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1 whitespace-nowrap">
-                <span className="font-medium">답변자:</span>
-                <span className="truncate max-w-[100px] sm:max-w-none">{maskAuthorName(answerHeader.authorName, currentUserId)}</span>
-              </div>
-              
-              <div className="flex items-center gap-1 whitespace-nowrap">
-                <span className="font-medium">답변일:</span>
-                <span className="truncate">{formatDate(answerHeader.createdAt)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 권한 안내 내용 */}
-          <div className="p-4 sm:p-6 md:p-8 min-h-[200px] sm:min-h-[300px]">
-            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
-              <div className="text-center py-8">
-                <div className="text-yellow-600 text-4xl mb-4">🔒</div>
-                <p className="text-gray-700 text-lg font-medium mb-2">
-                  비밀글입니다.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // 답변이 있고 권한이 있는 경우
-  if (answerHeader && currentUserId && inquiryDetail?.author === currentUserId) {
+  // 답변이 있는 경우
+  if (answerHeader) {
     return (
       <div className="mt-6">
         {/* 답변 상세 내용 - 문의글과 동일한 형식 */}
@@ -273,13 +187,13 @@ export const AnswerSection = ({
           {/* 답변 헤더 */}
           <div className="border-b border-gray-200 p-4 sm:p-6 bg-gray-100">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-              {answerHeader.title}
+              {answerDetail?.title || answerHeader.title}
             </h1>
             
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변자:</span>
-                <span className="truncate max-w-[100px] sm:max-w-none">{maskAuthorName(answerHeader.authorName, currentUserId)}</span>
+                <span className="truncate max-w-[100px] sm:max-w-none">{answerHeader.authorName}</span>
               </div>
               
               <div className="flex items-center gap-1 whitespace-nowrap">
@@ -296,7 +210,7 @@ export const AnswerSection = ({
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (
                 <div>
-                  <p>{answerDetail.content || '답변 내용이 없습니다.'}</p>
+                  <div dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} />
                   
                   {/* 답변 첨부파일 */}
                   {answerDetail.attachmentDetailList && answerDetail.attachmentDetailList.length > 0 && (
@@ -329,11 +243,8 @@ export const AnswerSection = ({
                     </div>
                   )}
                 </div>
-              ) : answerHeader?.content && 
-                  answerHeader.content !== inquiryDetail?.content ? (
-                <div>
-                  <p>{answerHeader.content}</p>
-                </div>
+              ) : answerHeader?.content ? (
+                <div dangerouslySetInnerHTML={{ __html: answerHeader.content }} />
               ) : (
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>

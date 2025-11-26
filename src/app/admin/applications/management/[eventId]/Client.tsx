@@ -2,145 +2,440 @@
 'use client';
 
 import React from 'react';
-import ApplicantsManageTable, { type ApplicantManageRow } from '@/components/admin/applications/ApplicantsManageTable';
-
-type SortKey = 'id' | 'name' | 'org' | 'birth';
-type SortDir = 'asc' | 'desc';
-type PaidFilter = '' | '입금' | '미입금' | '확인요망';
+import { useRegistrationList, useRegistrationSearch, useRegistrationDetail } from '@/hooks/useRegistration';
+import { useEventList } from '@/hooks/useNotices';
+import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
+import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
+import { downloadRegistrationList, uploadPaymentHistory } from '@/services/registration';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast, type Id } from 'react-toastify';
+import type {
+  SortKey,
+  PaidFilter,
+  ApplicantManageRow
+} from '@/types/registration';
+import {
+  convertRegistrationToManageRow,
+  convertFiltersToApiParams
+} from '@/types/registration';
 
 type Props = {
-  eventId: number;
-  eventTitle: string;
-  applicants: ApplicantManageRow[];
+  eventId: string;
   initialPage: number;
   pageSize: number;
 };
 
 export default function Client({
-  eventId, eventTitle, applicants, initialPage, pageSize,
+  eventId, initialPage, pageSize,
 }: Props) {
+  const queryClient = useQueryClient();
   const [page, setPage] = React.useState<number>(initialPage);
 
-  // ✅ 수정 반영을 위해 로컬 상태로 복사
-  const [data, setData] = React.useState<ApplicantManageRow[]>(applicants);
-
   const [query, setQuery] = React.useState<string>('');
-  const [searchField, setSearchField] = React.useState<'name' | 'tel' | 'all'>('all');
   const [paidFilter, setPaidFilter] = React.useState<PaidFilter>('');
   const [sortKey, setSortKey] = React.useState<SortKey>('id');
-  const [sortDir, setSortDir] = React.useState<SortDir>('asc');
-  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
+  const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>('all');
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
-  const filtered = React.useMemo<ApplicantManageRow[]>(() => {
-    let list = [...data];
+  // API 파라미터 구성
+  const listParams = React.useMemo(() => ({ eventId, page, size: pageSize }), [eventId, page, pageSize]);
+  const searchParams = React.useMemo(() => ({
+    eventId,
+    page,
+    size: pageSize,
+    ...convertFiltersToApiParams(sortKey, paidFilter, query, searchField),
+  }), [eventId, page, pageSize, sortKey, paidFilter, query, searchField]);
 
-    const t = query.trim();
-    if (t) {
-      if (searchField === 'name') list = list.filter(r => r.name.includes(t));
-      else if (searchField === 'tel') list = list.filter(r => r.phone.includes(t));
-      else list = list.filter(r => r.name.includes(t) || r.org.includes(t) || r.phone.includes(t));
+  // 검색 조건이 있는지 확인 (검색어, 결제상태 필터, 정렬기준 변경 시)
+  // 입금여부가 "전체"가 아니거나, 정렬 기준이 기본값('id')이 아니거나, 검색어가 있으면 검색 API 사용
+  // 또는 검색 필드가 기본값('all')이 아니면 검색 API 사용
+  const hasSearchConditions = !!query || !!paidFilter || sortKey !== 'id' || searchField !== 'all';
+
+  // 검색 조건에 따라 다른 API 사용
+  const listResult = useRegistrationList(listParams);
+  const searchResult = useRegistrationSearch(searchParams, searchField as any);
+
+  const { data: registrationData, isLoading, error } = hasSearchConditions ? searchResult : listResult;
+
+  // 대회 정보 조회 (제목용)
+  const { data: eventListData } = useEventList(1, 100);
+  const currentEvent = (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string }> })?.content?.find((e) => e.id === eventId);
+
+  // API 데이터를 테이블 형식으로 변환
+  const data = React.useMemo(() => {
+    if (!registrationData?.content) return [];
+    
+    // 변환
+    const converted = registrationData.content.map(convertRegistrationToManageRow);
+    
+    // 검색 필드에 따라 클라이언트 측 필터링
+    if (query && searchField === 'paymenterName') {
+      // 입금자명으로 검색할 때: account(입금자명) 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const account = (row.account || '').trim().toLowerCase();
+        return account.includes(keyword);
+      });
+    } else if (query && searchField === 'name') {
+      // 이름으로 검색할 때: name 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const name = (row.name || '').trim().toLowerCase();
+        return name.includes(keyword);
+      });
+    } else if (query && searchField === 'org') {
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const orgName = (row.org || '').trim().toLowerCase();
+        return orgName.includes(keyword);
+      });
+    } else if (query && searchField === 'birth') {
+      const keyword = query.trim().replace(/[^0-9]/g, '');
+      return converted.filter(row => {
+        const birth = (row.birth || '').replace(/[^0-9]/g, '');
+        return birth.includes(keyword);
+      });
+    } else if (query && searchField === 'tel') {
+      const keyword = query.trim().replace(/[^0-9]/g, '');
+      return converted.filter(row => {
+        const phone = (row.phone || '').replace(/[^0-9]/g, '');
+        return phone.includes(keyword);
+      });
+    } else if (query && searchField === 'memo') {
+      // 메모로 검색할 때: memo 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const memo = (row.memo || '').trim().toLowerCase();
+        return memo.includes(keyword);
+      });
+    } else if (query && searchField === 'note') {
+      // 비고로 검색할 때: note 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const note = (row.note || '').trim().toLowerCase();
+        return note.includes(keyword);
+      });
+    } else if (query && searchField === 'detailMemo') {
+      // 상세메모로 검색할 때: detailMemo 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const detailMemo = (row.detailMemo || '').trim().toLowerCase();
+        return detailMemo.includes(keyword);
+      });
+    } else if (query && searchField === 'matchingLog') {
+      // 매칭로그로 검색할 때: matchingLog 필드만 매칭
+      const keyword = query.trim().toLowerCase();
+      return converted.filter(row => {
+        const matchingLog = (row.matchingLog || '').trim().toLowerCase();
+        return matchingLog.includes(keyword);
+      });
+    } else if (query && searchField === 'all') {
+      // 전체 검색: 모든 필드에서 검색
+      const keyword = query.trim().toLowerCase();
+      const keywordNumbers = query.trim().replace(/[^0-9]/g, '');
+      return converted.filter(row => {
+        const name = (row.name || '').trim().toLowerCase();
+        const account = (row.account || '').trim().toLowerCase();
+        const memo = (row.memo || '').trim().toLowerCase();
+        const note = (row.note || '').trim().toLowerCase();
+        const detailMemo = (row.detailMemo || '').trim().toLowerCase();
+        const matchingLog = (row.matchingLog || '').trim().toLowerCase();
+        const orgName = (row.org || '').trim().toLowerCase();
+        const birth = (row.birth || '').replace(/[^0-9]/g, '');
+        const phone = (row.phone || '').replace(/[^0-9]/g, '');
+        
+        // 하나라도 매칭되면 반환
+        return name.includes(keyword) ||
+               account.includes(keyword) ||
+               memo.includes(keyword) ||
+               note.includes(keyword) ||
+               detailMemo.includes(keyword) ||
+               matchingLog.includes(keyword) ||
+               orgName.includes(keyword) ||
+               birth.includes(keywordNumbers) ||
+               phone.includes(keywordNumbers);
+      });
     }
+    
+    // 검색어가 없으면 전체 반환
+    return converted;
+  }, [registrationData, query, searchField]);
 
-    if (paidFilter) {
-      if (paidFilter === '확인요망') list = list.filter(r => r.payStatus === '확인요망');
-      else if (paidFilter === '입금') list = list.filter(r => r.paid === true || r.payStatus === '입금');
-      else if (paidFilter === '미입금') list = list.filter(r => r.paid === false || r.payStatus === '미입금');
+  // 검색 필드에 따라 total 계산 (클라이언트 필터링 적용)
+  const total = React.useMemo(() => {
+    if (query) {
+      return data.length;
     }
+    // 그 외에는 API에서 받은 전체 개수 사용
+    return registrationData?.totalElements || 0;
+  }, [data.length, registrationData?.totalElements, query]);
 
-    list.sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      const A = a[sortKey]; const B = b[sortKey];
-      if (typeof A === 'number' && typeof B === 'number') return (A - B) * dir;
-      return String(A).localeCompare(String(B), 'ko') * dir;
-    });
+  const rows = data;
 
-    return list;
-  }, [data, query, searchField, paidFilter, sortKey, sortDir]);
+  // 상세 드로어 상태
+  const [open, setOpen] = React.useState(false);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [isUploadingPayments, setIsUploadingPayments] = React.useState(false);
+  const [isUploadStatusVisible, setIsUploadStatusVisible] = React.useState(false);
+  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [uploadController, setUploadController] = React.useState<AbortController | null>(null);
+  const uploadToastIdRef = React.useRef<Id | null>(null);
+  const uploadStartRef = React.useRef<number | null>(null);
+  const uploadSessionRef = React.useRef<symbol | null>(null);
 
-  const total = filtered.length;
-  const start = (page - 1) * pageSize;
-  const rows = filtered.slice(start, start + pageSize);
+  React.useEffect(() => {
+    if (!isUploadingPayments) return;
 
-  const onToggleSelectAll = (checked: boolean, _idsOnPage: number[]) => {
-    if (checked) setSelectedIds(data.map(a => a.id)); // 전체 선택(필요시 _idsOnPage로 페이지 선택만도 가능)
+    const start = uploadStartRef.current ?? performance.now();
+    uploadStartRef.current = start;
+
+    let frameId = 0;
+    const tick = () => {
+      const elapsed = performance.now() - start;
+      const minDuration = 3000;
+      let progressRatio: number;
+      if (elapsed <= minDuration) {
+        progressRatio = (elapsed / minDuration) * 0.9;
+      } else {
+        const extra = elapsed - minDuration;
+        progressRatio = 0.9 + Math.min(extra / 5000, 0.09);
+      }
+      const nextProgress = Math.min(progressRatio * 100, 99);
+      setUploadProgress((prev) => (nextProgress > prev ? nextProgress : prev));
+      frameId = requestAnimationFrame(tick);
+    };
+
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [isUploadingPayments]);
+  
+  // 상세 API 호출
+  const { data: detailData, isLoading: isLoadingDetail } = useRegistrationDetail(selectedId);
+  
+  // 상세 데이터 우선, 없으면 목록 데이터에서 찾기
+  const selectedItem = React.useMemo(() => {
+    if (detailData) return detailData;
+    return registrationData?.content?.find?.((it: any) => it.id === selectedId) ?? null;
+  }, [detailData, registrationData, selectedId]);
+
+  const onToggleSelectAll = (checked: boolean, _idsOnPage: string[]) => {
+    if (checked) setSelectedIds(data.map(a => a.id));
     else setSelectedIds([]);
   };
-  const onToggleSelectOne = (id: number, checked: boolean) => {
+  const onToggleSelectOne = (id: string, checked: boolean) => {
     setSelectedIds(prev => (checked ? [...prev, id] : prev.filter(x => x !== id)));
   };
 
   const reset = () => {
     setQuery('');
-    setSearchField('all');
     setPaidFilter('');
     setSortKey('id');
-    setSortDir('asc');
+    setSearchField('all');
     setPage(1);
     setSelectedIds([]);
   };
 
-  /** ✅ 전역 편집 저장(다건) */
-  const handleBulkUpdateRows = (nextRows: ApplicantManageRow[]) => {
-    setData(prev =>
-      prev.map(r => {
-        const found = nextRows.find(n => n.id === r.id);
-        return found ?? r;
-      })
-    );
-  };
-
-  const handleToolbarAction = (a: 'downloadApplicants' | 'uploadPayments') => {
-    if (a === 'downloadApplicants') {
-      const header = ['번호','성명','개인/단체','코스','성별','생년월일','연락처','신청일','금액','입금여부'];
-      const rowsToExport = filtered.map(r => [
-        r.id, r.name, r.org, r.course, r.gender, r.birth, r.phone, r.regDate, r.fee,
-        r.payStatus ?? (r.paid ? '입금' : '미입금'),
-      ]);
-      const esc = (val: unknown) => `"${String(val ?? '').replace(/"/g, '""')}"`;
-      const csvBody = [header, ...rowsToExport].map(line => line.map(esc).join(',')).join('\n');
-      const bom = '\uFEFF';
-      const blob = new Blob([bom + csvBody], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const aTag = document.createElement('a');
-      aTag.href = url;
-      aTag.download = `${eventTitle}_신청자목록.csv`;
-      aTag.click();
-      URL.revokeObjectURL(url);
-    } else {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.csv,.xlsx';
-      input.onchange = () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        console.log('[Upload] selected file:', file.name);
-        // TODO: parse & POST to backend
-      };
-      input.click();
+  // Excel 다운로드 처리
+  const handleDownloadApplicants = async () => {
+    try {
+      await downloadRegistrationList(eventId);
+      toast.success('Excel 다운로드가 완료되었습니다!');
+    } catch (_error) {
+      toast.error('다운로드에 실패했습니다.');
     }
   };
 
+  // Excel 업로드 처리
+  const handleUploadPayments = () => {
+    if (isUploadingPayments) {
+      toast.info('이미 업로드가 진행 중입니다.');
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const sessionId = Symbol('upload-session');
+      uploadSessionRef.current = sessionId;
+
+      setUploadProgress(0);
+      setIsUploadStatusVisible(true);
+      setIsUploadingPayments(true);
+
+      const controller = new AbortController();
+      setUploadController(controller);
+      const toastId = toast.loading('입금 내역을 업로드 중입니다...');
+      uploadToastIdRef.current = toastId;
+      const startedAt = performance.now();
+      uploadStartRef.current = startedAt;
+
+      try {
+        await uploadPaymentHistory(eventId, file, { signal: controller.signal });
+        
+        // 데이터 새로고침
+        await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
+        await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+
+        toast.update(toastId, {
+          render: '입금 내역 업로드가 완료되었습니다!',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+          closeOnClick: true,
+        });
+      } catch (error) {
+        const isAborted = error instanceof DOMException && error.name === 'AbortError';
+        toast.update(toastId, {
+          render: isAborted ? '업로드가 취소되었습니다.' : '업로드에 실패했습니다. 다시 시도해주세요.',
+          type: isAborted ? 'info' : 'error',
+          isLoading: false,
+          autoClose: isAborted ? 2500 : 4000,
+          closeOnClick: true,
+        });
+      } finally {
+        const elapsed = performance.now() - startedAt;
+        const minDuration = 3000;
+        if (elapsed < minDuration) {
+          await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+        }
+
+        if (uploadSessionRef.current !== sessionId) {
+          return;
+        }
+
+        setUploadProgress(100);
+        setIsUploadingPayments(false);
+
+        await new Promise((resolve) => setTimeout(resolve, 600));
+
+        if (uploadSessionRef.current === sessionId) {
+          setIsUploadStatusVisible(false);
+          setUploadProgress(0);
+          uploadSessionRef.current = null;
+        }
+
+        setUploadController(null);
+        uploadToastIdRef.current = null;
+        uploadStartRef.current = null;
+      }
+    };
+    input.click();
+  };
+
+  const handleCancelUploadPayments = () => {
+    if (!uploadController) return;
+    uploadController.abort();
+    if (uploadToastIdRef.current !== null) {
+      toast.update(uploadToastIdRef.current, {
+        render: '업로드를 취소 요청했습니다...',
+        type: 'info',
+        isLoading: true,
+        autoClose: false,
+        closeOnClick: false,
+      });
+    }
+  };
+
+  // 툴바 액션 처리
+  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments') => {
+    if (action === 'downloadApplicants') {
+      handleDownloadApplicants();
+    } else if (action === 'uploadPayments') {
+      handleUploadPayments();
+    }
+  };
+
+  /** ✅ 전역 편집 저장(다건) */
+  const handleBulkUpdateRows = async (nextRows: ApplicantManageRow[]) => {
+    try {
+      // 수정할 데이터가 없으면 조기 반환
+      if (nextRows.length === 0) {
+        toast.warning('수정할 데이터가 없습니다.');
+        return;
+      }
+
+      // ApplicantsManageTable에서 이미 API 호출을 완료했으므로
+      // 여기서는 쿼리 캐시만 무효화하여 데이터 새로고침
+      await queryClient.invalidateQueries({
+        queryKey: ['registrationList', eventId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['registrationSearch', eventId],
+      });
+      
+      toast.success('수정이 완료되었습니다!');
+    } catch (_error) {
+      toast.error('수정에 실패했습니다. 다시 시도해주세요.');
+    }
+  };
+
+  if (error) {
+    return <div className="p-6">에러가 발생했습니다: {error.message}</div>;
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <ApplicantsManageTable
         rows={rows}
         total={total}
         page={page}
         pageSize={pageSize}
+        isLoading={isLoading}
         onPageChange={setPage}
         onSearch={(q) => { setQuery(q); setPage(1); }}
-        onSearchFieldChange={(f) => { setSearchField(f); setPage(1); }}
+        onSearchFieldChange={(f) => { setSearchField(f as 'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'); setPage(1); }}
         onFilterPaidChange={(v) => { setPaidFilter(v); setPage(1); }}
         onSortKeyChange={(k) => { setSortKey(k); setPage(1); }}
-        onSortDirChange={(d) => { setSortDir(d); setPage(1); }}
         onResetFilters={reset}
         selectedIds={selectedIds}
         onToggleSelectOne={onToggleSelectOne}
         onToggleSelectAll={onToggleSelectAll}
         onToolbarAction={handleToolbarAction}
-
+        initialSearchField={searchField}
+        isUploadingPayments={isUploadingPayments}
+        isUploadStatusVisible={isUploadStatusVisible}
+        uploadProgress={uploadProgress}
+        onCancelUploadPayments={handleCancelUploadPayments}
         /** ⬇️ 전역 수정 모드 저장 콜백(다건) */
         onBulkUpdateRows={handleBulkUpdateRows}
+
+        // 행 클릭 -> 상세 드로어 열기
+        onRowClick={(row) => { setSelectedId(row.id); setOpen(true); }}
+      />
+
+      {/* 상세 드로어 */}
+      <RegistrationDetailDrawer
+        open={open}
+        item={selectedItem}
+        isLoading={isLoadingDetail}
+        eventId={eventId}
+        onClose={() => {
+          setOpen(false);
+          setSelectedId(null);
+        }}
+        onEdit={() => {
+          if (!selectedItem) return;
+          // 신청 수정 페이지로 이동 (관리자용 수정 페이지가 있다면 해당 경로로, 없으면 알림 표시)
+          toast.info('신청 수정 기능은 준비 중입니다.');
+          // TODO: 관리자 신청 수정 페이지로 이동
+          // router.push(`/admin/applications/management/${eventId}/edit/${selectedId}`);
+        }}
+        onSave={async () => {
+          if (!selectedId) return;
+          try {
+            // 저장 후 목록 및 상세 새로고침
+            await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
+            await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+            await queryClient.invalidateQueries({ queryKey: ['registrationDetail', selectedId] });
+            toast.success('신청 정보가 수정되었습니다.');
+          } catch (_e) {
+            toast.error('데이터 새로고침에 실패했습니다.');
+          }
+        }}
       />
     </div>
   );

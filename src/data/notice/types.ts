@@ -34,7 +34,5 @@ export type NoticeEventRow = {
   content?: string;
 };
 
-/** 🔹 메인 전용 타입: 제목 키만 eventTitle 로 다름 */
-export type NoticeMainRow = Omit<NoticeEventRow, "title"> & {
-  eventTitle: string;      // 메인 보드는 eventTitle 사용
-};
+/** 🔹 메인 전용 타입: 기본 NoticeEventRow와 동일 */
+export type NoticeMainRow = NoticeEventRow;

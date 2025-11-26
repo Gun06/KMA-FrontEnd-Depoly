@@ -47,35 +47,34 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttonTextMode: "current",
       fields: [
         {
-          label: "번호",
-          options: [
-            { label: "번호", value: "no" },
-            { label: "이름", value: "name" },
-            { label: "단체", value: "org" },
-            { label: "생년월일", value: "birth" },
-            { label: "아이디", value: "id" },
-            { label: "신청일", value: "date" },
-            { label: "주소", value: "addr" },
-          ],
-        },
-        {
-          label: "오름차순",
-          options: [
-            { label: "오름차순", value: "asc" },
-            { label: "내림차순", value: "desc" },
-          ],
-        },
-        {
           label: "입금여부",
           options: [
-            { label: "입금", value: "paid" },
-            { label: "미입금", value: "unpaid" },
-            { label: "확인요망", value: "pending" },
-
+            { label: "전체", value: "" },
+            { label: "미결제", value: "unpaid" },
+            { label: "결제완료", value: "completed" },
+            { label: "확인필요", value: "must_check" },
+            { label: "차액환불요청", value: "need_partial_refund" },
+            { label: "전액환불요청", value: "need_refund" },
+            { label: "전액환불완료", value: "refunded" },
+          ],
+        },
+        {
+          label: "이름",
+          options: [
+            { label: "전체", value: "all" },
+            { label: "이름", value: "name" },
+            { label: "단체명", value: "org" },
+            { label: "생년월일", value: "birth" },
+            { label: "휴대전화", value: "tel" },
+            { label: "입금자명", value: "paymenterName" },
+            { label: "메모", value: "memo" },
+            { label: "비고", value: "note" },
+            { label: "상세메모", value: "detailMemo" },
+            { label: "매칭로그", value: "matchingLog" },
           ],
         },
       ],
-      searchPlaceholder: "검색어를 입력해주세요.",
+      searchPlaceholder: "내용을 입력해주세요.",
       buttons: [
         { label: "검색", tone: "dark" },
         {
@@ -184,13 +183,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
 
           ],
         },
-        {
-          label: "공개여부",
-          options: [
-            { label: "공개", value: "open" },
-            { label: "비공개", value: "closed" },
-          ],
-        },
       ],
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [{ label: "검색", tone: "dark" }],
@@ -206,19 +198,27 @@ export const PRESETS: Record<string, FilterBarPreset> = {
           label: "정렬",
           options: [
             { label: "최신순", value: "new" },
-            { label: "조회수순", value: "hit" },
             { label: "이름순", value: "name" },
-
           ],
         },
         {
-          label: "이름",
+          label: "검색키",
           options: [
             { label: "작성자명", value: "name" },
             { label: "게시글명", value: "post" },
           ],
         },
       ],
+      searchPlaceholder: "검색어를 입력해주세요.",
+      buttons: [{ label: "검색", tone: "dark" }],
+      showReset: true,
+    },
+  },
+
+  "관리자 / FAQ": {
+    props: {
+      buttonTextMode: "current",
+      fields: [], // 간단한 검색만 지원
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [{ label: "검색", tone: "dark" }],
       showReset: true,
@@ -235,13 +235,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "번호", value: "id" },
             { label: "이름", value: "name" },
             { label: "생년월일순", value: "birth" },
-          ],
-        },
-        {
-          label: "오름차순",
-          options: [
-            { label: "오름차순", value: "asc" },
-            { label: "내림차순", value: "desc" },
           ],
         },
         {
@@ -265,13 +258,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
     props: {
       buttonTextMode: "current",
       fields: [
-        {
-          label: "오름차순",
-          options: [
-            { label: "오름차순", value: "asc" },
-            { label: "내림차순", value: "desc" },
-          ],
-        },
         {
           label: "신청상태",
           options: [
@@ -322,13 +308,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "대표자 ID", value: "ownerId" },
           ],
         },
-        {
-          label: "오름차순",
-          options: [
-            { label: "오름차순", value: "asc" },
-            { label: "내림차순", value: "desc" },
-          ],
-        },
       ],
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [
@@ -350,13 +329,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "번호", value: "id" },
             { label: "이름", value: "name" },
             { label: "생년월일", value: "birth" },
-          ],
-        },
-        {
-          label: "오름차순",
-          options: [
-            { label: "오름차순", value: "asc" },
-            { label: "내림차순", value: "desc" },
           ],
         },
         {

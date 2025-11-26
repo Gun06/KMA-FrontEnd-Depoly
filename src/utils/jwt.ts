@@ -25,20 +25,7 @@ export const setAccessToken = (token: string): void => {
   localStorage.setItem(TOKEN_KEY, token);
 };
 
-/** remember 여부에 따라 저장소 분기 저장 (true: localStorage, false: sessionStorage) */
-export const setAccessTokenByMode = (
-  token: string,
-  remember: boolean
-): void => {
-  if (typeof window === 'undefined') return;
-  if (remember) {
-    localStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.removeItem(TOKEN_KEY);
-  } else {
-    sessionStorage.setItem(TOKEN_KEY, token);
-    localStorage.removeItem(TOKEN_KEY);
-  }
-};
+
 
 /**
  * 로컬 스토리지에서 리프레시 토큰을 가져옵니다
@@ -60,21 +47,6 @@ export const setRefreshToken = (token: string): void => {
   localStorage.setItem(REFRESH_TOKEN_KEY, token);
 };
 
-/** remember 여부에 따라 저장소 분기 저장 (true: localStorage, false: sessionStorage) */
-export const setRefreshTokenByMode = (
-  token: string,
-  remember: boolean
-): void => {
-  if (typeof window === 'undefined') return;
-  if (remember) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, token);
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  } else {
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, token);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-  }
-};
-
 /**
  * 모든 토큰을 제거합니다
  */
@@ -90,19 +62,11 @@ export const clearTokens = (): void => {
 /** 로그인 상태 유지 플래그 저장/조회 */
 export const setRememberLogin = (remember: boolean): void => {
   if (typeof window === 'undefined') return;
-  if (remember) {
-    localStorage.setItem(REMEMBER_LOGIN_KEY, 'true');
-    sessionStorage.removeItem(REMEMBER_LOGIN_KEY);
-  } else {
-    sessionStorage.setItem(REMEMBER_LOGIN_KEY, 'false');
-    localStorage.removeItem(REMEMBER_LOGIN_KEY);
-  }
+  localStorage.setItem(REMEMBER_LOGIN_KEY, remember ? 'true' : 'false');
 };
 
 export const getRememberLogin = (): boolean | null => {
   if (typeof window === 'undefined') return null;
-  const inSession = sessionStorage.getItem(REMEMBER_LOGIN_KEY);
-  if (inSession != null) return inSession === 'true';
   const inLocal = localStorage.getItem(REMEMBER_LOGIN_KEY);
   if (inLocal != null) return inLocal === 'true';
   return null;

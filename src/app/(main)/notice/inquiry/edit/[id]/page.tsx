@@ -1,81 +1,72 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import SubmenuLayout from '@/layouts/main/SubmenuLayout/SubmenuLayout';
-import { getMainInquiryDetail, createMainInquiry, deleteMainInquiry } from '@/data/inquiry/main';
-import type { Inquiry } from '@/data/inquiry/types';
+import { useParams, useRouter } from 'next/navigation';
+import { SubmenuLayout } from '@/layouts/main/SubmenuLayout';
+import { fetchHomepageQuestionDetail, updateHomepageQuestion } from '../../api/inquiryApi';
 import TextEditor from '@/components/common/TextEditor';
 import FileUploader from '@/components/common/Upload/FileUploader';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import { ArrowLeft } from 'lucide-react';
 import type { UploadItem } from '@/components/common/Upload/types';
+import { authService } from '@/services/auth';
 
 export default function InquiryEditPage() {
-  const router = useRouter();
   const params = useParams();
-  const [inquiry, setInquiry] = useState<Inquiry | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const questionId = params.id as string;
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
 
   // 폼 상태
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('');
   const [files, setFiles] = useState<UploadItem[]>([]);
+  const [isSecret, setIsSecret] = useState(true); // 기본값: 비공개
 
-  const inquiryId = params?.id ? Number(params.id) : null;
-
+  // 문의사항 상세 정보 로드
   useEffect(() => {
-    if (!inquiryId) {
-      setError('잘못된 문의사항 ID입니다.');
-      setLoading(false);
-      return;
-    }
-
-    const fetchInquiry = async () => {
+    const loadInquiryDetail = async () => {
       try {
-        const data = getMainInquiryDetail(inquiryId);
-        if (!data) {
-          setError('문의사항을 찾을 수 없습니다.');
-        } else {
-          setInquiry(data);
-          setTitle(data.title);
-          setContent(data.content || '');
-          setAuthor(data.author);
-          
-          // 기존 첨부파일을 UploadItem 형태로 변환
-          if (data.files && data.files.length > 0) {
-            const uploadItems: UploadItem[] = data.files.map((file, index) => ({
-              id: file.id.toString(),
-              name: file.name,
-              size: file.sizeMB * 1024 * 1024, // MB를 bytes로 변환
-              sizeMB: file.sizeMB,
-              tooLarge: false,
-              file: new File([], file.name), // 빈 File 객체 생성
-              url: file.url || '#'
-            }));
-            setFiles(uploadItems);
-          }
-        }
-      } catch (err) {
-        setError('문의사항을 불러오는 중 오류가 발생했습니다.');
-        console.error('Error fetching inquiry:', err);
+        setIsLoading(true);
+        const detail = await fetchHomepageQuestionDetail(questionId);
+        
+        setTitle(detail.title);
+        setContent(detail.content);
+        setIsSecret(detail.secret);
+        
+        // 작성자 확인
+        const currentUserId = authService.getUserId();
+        setIsAuthor(currentUserId === detail.authorId);
+        
+      } catch (error) {
+        alert('문의사항을 불러오는데 실패했습니다.');
+        router.push('/notice/inquiry');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchInquiry();
-  }, [inquiryId]);
+    if (questionId) {
+      loadInquiryDetail();
+    }
+  }, [questionId, router]);
 
   // 뒤로 가기
   const handleGoBack = () => {
     router.back();
   };
 
-  // 글쓰기 제출
+  // 성공 모달 닫기
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    router.push('/notice/inquiry');
+  };
+
+  // 수정 제출
   const handleSubmit = async () => {
     if (!title.trim()) {
       alert('제목을 입력해주세요.');
@@ -85,8 +76,10 @@ export default function InquiryEditPage() {
       alert('내용을 입력해주세요.');
       return;
     }
-    if (!author.trim()) {
-      alert('작성자명을 입력해주세요.');
+    
+    // content 길이 제한 (DB 컬럼 크기 고려)
+    if (content.length > 10000) {
+      alert('내용이 너무 깁니다. 10,000자 이하로 작성해주세요.');
       return;
     }
     
@@ -101,49 +94,62 @@ export default function InquiryEditPage() {
     setIsSubmitting(true);
     
     try {
-      // 기존 문의사항 삭제
-      if (inquiryId) {
-        deleteMainInquiry(inquiryId);
-      }
-
-      // 새 문의사항 생성
-      createMainInquiry({
+      // FormData 구성 (multipart/form-data)
+      const formData = new FormData();
+      
+      // request 객체를 JSON 문자열로 추가
+      const requestData = {
         title: title.trim(),
         content: content.trim(),
-        author: author.trim(),
-        files: files.map((file, index) => ({
-          id: `file-${Date.now()}-${index}`,
-          name: file.name,
-          sizeMB: file.size / (1024 * 1024),
-          mime: file.file?.type || 'application/octet-stream',
-          url: file.file ? URL.createObjectURL(file.file) : (file as any).url || '#'
-        }))
+        secret: isSecret
+      };
+      formData.append('request', JSON.stringify(requestData));
+      
+      // 첨부파일들 추가 (파일명 단순화)
+      files.forEach((file, index) => {
+        if (file.file) {
+          // 파일명을 단순화 (한글 제거, 길이 제한)
+          const originalName = file.name;
+          const extension = originalName.split('.').pop() || '';
+          const timestamp = Date.now();
+          const simpleName = `file_${timestamp}_${index}.${extension}`;
+          
+          // 새로운 파일 객체 생성 (파일명 변경)
+          const renamedFile = new File([file.file], simpleName, {
+            type: file.file.type,
+            lastModified: file.file.lastModified
+          });
+          
+          formData.append('files', renamedFile);
+        }
       });
 
-      alert('문의사항이 수정되었습니다.');
-      router.push('/notice/inquiry');
+      // API 호출
+      const response = await updateHomepageQuestion(questionId, formData);
+      
+      if (response.result === 'SUCCESS') {
+        setShowSuccessModal(true);
+      } else {
+        alert('문의사항 수정에 실패했습니다.');
+      }
     } catch (err) {
-      console.error('Error saving inquiry:', err);
-      alert('저장 중 오류가 발생했습니다.');
+      if (err instanceof Error) {
+        if (err.message.includes('로그인이 필요')) {
+          alert('로그인이 필요합니다. 다시 로그인해주세요.');
+          router.push('/login');
+        } else {
+          alert(`수정 중 오류가 발생했습니다: ${err.message}`);
+        }
+      } else {
+        alert('수정 중 오류가 발생했습니다.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = () => {
-    if (!inquiryId) return;
-    
-    try {
-      deleteMainInquiry(inquiryId);
-      alert('문의사항이 삭제되었습니다.');
-      router.push('/notice/inquiry');
-    } catch (err) {
-      console.error('Error deleting inquiry:', err);
-      alert('삭제 중 오류가 발생했습니다.');
-    }
-  };
-
-  if (loading) {
+  // 로딩 상태
+  if (isLoading) {
     return (
       <SubmenuLayout
         breadcrumb={{
@@ -151,16 +157,17 @@ export default function InquiryEditPage() {
           subMenu: "문의사항 수정"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
-          <div className="text-center">
-            <div className="text-gray-500 text-base sm:text-lg">문의사항을 불러오는 중...</div>
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-gray-500">문의사항을 불러오는 중...</div>
           </div>
         </div>
       </SubmenuLayout>
     );
   }
 
-  if (error || !inquiry) {
+  // 작성자가 아닌 경우
+  if (!isAuthor) {
     return (
       <SubmenuLayout
         breadcrumb={{
@@ -168,15 +175,18 @@ export default function InquiryEditPage() {
           subMenu: "문의사항 수정"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
-          <div className="text-center">
-            <div className="text-red-500 text-base sm:text-lg mb-2">{error}</div>
-            <button 
-              onClick={handleGoBack}
-              className="mt-4 w-full sm:w-auto px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-              목록으로 돌아가기
-            </button>
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="text-red-500 text-lg mb-2">권한이 없습니다</div>
+              <div className="text-gray-600 mb-4">본인이 작성한 글만 수정할 수 있습니다.</div>
+              <button
+                onClick={handleGoBack}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                목록으로 돌아가기
+              </button>
+            </div>
           </div>
         </div>
       </SubmenuLayout>
@@ -205,14 +215,6 @@ export default function InquiryEditPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isSubmitting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-              >
-                <Trash2 className="w-4 h-4 inline mr-1" />
-                삭제
-              </button>
               <button
                 onClick={handleGoBack}
                 disabled={isSubmitting}
@@ -254,33 +256,53 @@ export default function InquiryEditPage() {
                 </div>
               </div>
 
-              {/* 작성자 입력 영역 */}
+              {/* 공개여부 선택 */}
               <div className="mb-6">
                 <div className="flex items-center gap-4">
                   <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0">
-                    작성자
+                    공개여부
                   </label>
-                  <input
-                    type="text"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="작성자명을 입력해주세요."
-                    className="flex-1 h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isSubmitting}
-                  />
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="secret"
+                        value="false"
+                        checked={!isSecret}
+                        onChange={() => setIsSecret(false)}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">공개</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="secret"
+                        value="true"
+                        checked={isSecret}
+                        onChange={() => setIsSecret(true)}
+                        disabled={isSubmitting}
+                        className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">비공개</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
               {/* 텍스트에디터 */}
               <div className="mb-6">
                 <TextEditor
-                  initialContent={content || "<p></p>"}
+                  initialContent={content}
                   height="600px"
                   onChange={setContent}
                   showFormatting={true}
                   showFontSize={true}
                   showTextColor={true}
                   showImageUpload={true}
+                  imageDomainType="QUESTION"
+                  imageServerType="user"
                 />
               </div>
 
@@ -305,43 +327,21 @@ export default function InquiryEditPage() {
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-800 mb-2">문의사항 수정 안내</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• 문의사항을 수정하면 기존 답변이 삭제될 수 있습니다.</li>
+              <li>• 수정된 내용은 즉시 반영됩니다.</li>
               <li>• 개인정보가 포함된 내용은 작성하지 마세요.</li>
               <li>• 문의사항과 관련된 내용만 작성해주세요.</li>
-              <li>• 수정 후 관리자 검토를 거쳐 답변이 등록됩니다.</li>
             </ul>
           </div>
         </div>
-
-        {/* 삭제 확인 모달 */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                문의사항 삭제
-              </h3>
-              <p className="text-sm sm:text-base text-gray-600 mb-6">
-                정말로 이 문의사항을 삭제하시겠습니까?<br />
-                삭제된 문의사항은 복구할 수 없습니다.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors order-2 sm:order-1"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="w-full sm:w-auto px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors order-1 sm:order-2"
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="수정되었습니다!"
+        message="문의사항이 성공적으로 수정되었습니다."
+      />
     </SubmenuLayout>
   );
 }

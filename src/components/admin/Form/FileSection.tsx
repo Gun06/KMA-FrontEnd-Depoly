@@ -16,6 +16,7 @@ type Props = {
   maxSizeMB?: number;
   multiple?: boolean;
   single?: boolean;
+  helper?: string;
 
   /** ✅ FormRow의 content 쪽 클래스 (라벨에는 영향 없음) */
   contentClassName?: string;
@@ -31,6 +32,7 @@ export default function FileSection({
   maxSizeMB = 20,
   multiple = true,
   single,
+  helper,
   contentClassName = "px-4",      // ← 기본값
 }: Props) {
   return (
@@ -41,6 +43,7 @@ export default function FileSection({
           maxSizeMB={maxSizeMB}
           multiple={multiple}
           single={single}
+          helper={helper}
           value={valueEditable}
           onChange={onChangeEditable}
         />
