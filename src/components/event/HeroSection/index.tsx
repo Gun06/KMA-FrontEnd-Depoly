@@ -70,7 +70,9 @@ export default function HeroSection({
       return null;
     }
   };
-  const [sideBannerImageUrl, setSideBannerImageUrl] = useState<string | null>(readCachedSideBanner());
+  const [sideBannerImageUrl, setSideBannerImageUrl] = useState<string | null>(
+    readCachedSideBanner()
+  );
   const [isLoadingSideBanner, setIsLoadingSideBanner] = useState<boolean>(false);
 
   // CSR 시 로컬 캐시 우선 반영
@@ -197,6 +199,8 @@ export default function HeroSection({
     }
   }, [eventId]);
 
+  const hasSideBanner = !!sideBannerImageUrl;
+
   // 항상 동일한 마크업 구조 유지 (SSR/CSR 경고 방지)
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
@@ -213,21 +217,21 @@ export default function HeroSection({
         <div className="hidden lg:block" style={{ height: '200px' }}></div>
         {/* 배너 이미지 */}
         {sideBannerImageUrl && (
-        <Image
+          <Image
             src={sideBannerImageUrl}
-          alt=""
-          aria-hidden={true}
-          fill
-          className="object-cover relative z-10"
-          priority
-          sizes="(max-width: 768px) 100vw, 100vw"
-        />
+            alt=""
+            aria-hidden={true}
+            fill
+            className="object-cover relative z-10"
+            priority
+            sizes="(max-width: 768px) 100vw, 100vw"
+          />
         )}
 
         {/* 텍스트 오버레이 */}
         <div className="absolute inset-0 flex items-center z-20">
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-white">
+            <div className={`text-white ${hasSideBanner ? 'opacity-0' : ''}`}>
               <h1 className="text-sm sm:text-lg md:text-lg lg:text-2xl xl:text-2xl font-vitro-core mb-1 sm:mb-2">
                 {titleEng}
               </h1>

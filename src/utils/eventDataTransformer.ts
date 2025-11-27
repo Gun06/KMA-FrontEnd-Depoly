@@ -47,6 +47,14 @@ export class EventDataTransformer {
    * 대회 기본 정보 생성
    */
   private static createEventInfo(data: EventCreatePayload): EventInfo {
+    // applyStatus(접수중/비접수/접수마감)를 서버 eventStatus로 매핑
+    const eventStatus: 'OPEN' | 'PENDING' | 'CLOSED' =
+      data.applyStatus === '접수중'
+        ? 'OPEN'
+        : data.applyStatus === '접수마감'
+          ? 'CLOSED'
+          : 'PENDING';
+
     return {
       registMaximum: data.maxParticipants || 0,
       registStartDate: data.registStartDate,
@@ -59,6 +67,7 @@ export class EventDataTransformer {
       eventPageUrl: data.eventPageUrl || '',
       mainBannerColor: data.eventTheme, // 테마 이름을 그대로 전송
       paymentDeadline: data.paymentDeadline || this.getDefaultDeadline(),
+      eventStatus,
       // 결제 정보
       bank: data.bank || undefined,
       virtualAccount: data.virtualAccount || undefined,
@@ -179,6 +188,10 @@ export class EventDataTransformer {
       resultImage: this.getFileFromUpload(uploads.imgResult?.[0]),
       // 코스 이미지는 별도 필드(imgCourse)를 우선 사용
       courseImage: this.getFileFromUpload(uploads.imgCourse?.[0]),
+      // 사이드메뉴 배너(herosection 이미지) - 서버 NPE 방지를 위해 항상 File 생성
+      sideMenuBannerImage: this.getFileFromUpload(
+        uploads.bannerSideMenu?.[0]
+      ),
     };
 
     // 주최/주관/후원 배너 이미지들 (순서 중요!)

@@ -161,14 +161,29 @@ export default function Client({
     return converted;
   }, [registrationData, query, searchField]);
 
-  // 검색 필드에 따라 total 계산 (클라이언트 필터링 적용)
+  // 검색 필드에 따라 total 계산
   const total = React.useMemo(() => {
-    if (query) {
+    if (!registrationData) return 0;
+
+    // 메모/상세메모/매칭로그/입금자명 등은 아직 완전한 서버 검색 키가 없어
+    // 일부를 클라이언트에서 필터링하고 있으므로,
+    // 이 필드들에 한해서만 "현재 페이지에서 필터된 개수"를 사용한다.
+    const clientOnlyFields: Array<typeof searchField> = [
+      'paymenterName',
+      'memo',
+      'note',
+      'detailMemo',
+      'matchingLog',
+    ];
+
+    if (query && clientOnlyFields.includes(searchField)) {
       return data.length;
     }
-    // 그 외에는 API에서 받은 전체 개수 사용
-    return registrationData?.totalElements || 0;
-  }, [data.length, registrationData?.totalElements, query]);
+
+    // 그 외에는 항상 API에서 내려주는 전체 개수 사용
+    // (검색 결과도 totalElements 기준으로 전체 페이지 계산)
+    return registrationData.totalElements ?? data.length;
+  }, [registrationData, data.length, query, searchField]);
 
   const rows = data;
 

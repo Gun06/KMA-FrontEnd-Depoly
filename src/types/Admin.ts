@@ -19,6 +19,8 @@ export interface EventInfo {
   eventPageUrl: string; // 대회 페이지 주소명
   mainBannerColor: string; // 메인 배너 색상
   paymentDeadline: string; // 결제 마감일 (ISO 8601 형식)
+  /** 신청 상태 (서버 Event.eventStatus와 매핑) */
+  eventStatus?: EventStatus;
   /** 은행명 (예: 국민은행) */
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
@@ -76,7 +78,8 @@ export interface EventImageFiles {
   meetingPlaceImage: File; // 집결 장소 페이지 이미지 (필수)
   resultImage: File; // 인증서 배경 이미지 (필수)
   courseImage: File; // 코스 페이지 이미지 (필수)
-
+  // 사이드메뉴 배너(herosection 이미지) - 선택
+  sideMenuBannerImage?: File;
   // 주최/주관/후원 배너 이미지 배열 (eventBannerInfoList와 순서 일치)
   eventBannerImages?: File[];
 }

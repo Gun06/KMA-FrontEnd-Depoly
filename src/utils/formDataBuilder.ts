@@ -118,6 +118,8 @@ export class FormDataBuilder {
       { key: 'meetingPlaceImage', file: imageFiles.meetingPlaceImage },
       { key: 'resultImage', file: imageFiles.resultImage },
       { key: 'courseImage', file: imageFiles.courseImage },
+      // 선택: 사이드메뉴 배너(herosection 이미지)
+      { key: 'sideMenuBannerImage', file: imageFiles.sideMenuBannerImage },
     ];
 
     for (const { key, file } of otherImages) {
