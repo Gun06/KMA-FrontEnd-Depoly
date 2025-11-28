@@ -65,125 +65,17 @@ export default function Client({
   const data = React.useMemo(() => {
     if (!registrationData?.content) return [];
     
-    // 변환
-    const converted = registrationData.content.map(convertRegistrationToManageRow);
-    
-    // 검색 필드에 따라 클라이언트 측 필터링
-    if (query && searchField === 'paymenterName') {
-      // 입금자명으로 검색할 때: account(입금자명) 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const account = (row.account || '').trim().toLowerCase();
-        return account.includes(keyword);
-      });
-    } else if (query && searchField === 'name') {
-      // 이름으로 검색할 때: name 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const name = (row.name || '').trim().toLowerCase();
-        return name.includes(keyword);
-      });
-    } else if (query && searchField === 'org') {
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const orgName = (row.org || '').trim().toLowerCase();
-        return orgName.includes(keyword);
-      });
-    } else if (query && searchField === 'birth') {
-      const keyword = query.trim().replace(/[^0-9]/g, '');
-      return converted.filter(row => {
-        const birth = (row.birth || '').replace(/[^0-9]/g, '');
-        return birth.includes(keyword);
-      });
-    } else if (query && searchField === 'tel') {
-      const keyword = query.trim().replace(/[^0-9]/g, '');
-      return converted.filter(row => {
-        const phone = (row.phone || '').replace(/[^0-9]/g, '');
-        return phone.includes(keyword);
-      });
-    } else if (query && searchField === 'memo') {
-      // 메모로 검색할 때: memo 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const memo = (row.memo || '').trim().toLowerCase();
-        return memo.includes(keyword);
-      });
-    } else if (query && searchField === 'note') {
-      // 비고로 검색할 때: note 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const note = (row.note || '').trim().toLowerCase();
-        return note.includes(keyword);
-      });
-    } else if (query && searchField === 'detailMemo') {
-      // 상세메모로 검색할 때: detailMemo 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const detailMemo = (row.detailMemo || '').trim().toLowerCase();
-        return detailMemo.includes(keyword);
-      });
-    } else if (query && searchField === 'matchingLog') {
-      // 매칭로그로 검색할 때: matchingLog 필드만 매칭
-      const keyword = query.trim().toLowerCase();
-      return converted.filter(row => {
-        const matchingLog = (row.matchingLog || '').trim().toLowerCase();
-        return matchingLog.includes(keyword);
-      });
-    } else if (query && searchField === 'all') {
-      // 전체 검색: 모든 필드에서 검색
-      const keyword = query.trim().toLowerCase();
-      const keywordNumbers = query.trim().replace(/[^0-9]/g, '');
-      return converted.filter(row => {
-        const name = (row.name || '').trim().toLowerCase();
-        const account = (row.account || '').trim().toLowerCase();
-        const memo = (row.memo || '').trim().toLowerCase();
-        const note = (row.note || '').trim().toLowerCase();
-        const detailMemo = (row.detailMemo || '').trim().toLowerCase();
-        const matchingLog = (row.matchingLog || '').trim().toLowerCase();
-        const orgName = (row.org || '').trim().toLowerCase();
-        const birth = (row.birth || '').replace(/[^0-9]/g, '');
-        const phone = (row.phone || '').replace(/[^0-9]/g, '');
-        
-        // 하나라도 매칭되면 반환
-        return name.includes(keyword) ||
-               account.includes(keyword) ||
-               memo.includes(keyword) ||
-               note.includes(keyword) ||
-               detailMemo.includes(keyword) ||
-               matchingLog.includes(keyword) ||
-               orgName.includes(keyword) ||
-               birth.includes(keywordNumbers) ||
-               phone.includes(keywordNumbers);
-      });
-    }
-    
-    // 검색어가 없으면 전체 반환
-    return converted;
-  }, [registrationData, query, searchField]);
+    // 변환 (서버에서 이미 검색이 완료된 결과를 사용)
+    return registrationData.content.map(convertRegistrationToManageRow);
+  }, [registrationData]);
 
   // 검색 필드에 따라 total 계산
   const total = React.useMemo(() => {
     if (!registrationData) return 0;
 
-    // 메모/상세메모/매칭로그/입금자명 등은 아직 완전한 서버 검색 키가 없어
-    // 일부를 클라이언트에서 필터링하고 있으므로,
-    // 이 필드들에 한해서만 "현재 페이지에서 필터된 개수"를 사용한다.
-    const clientOnlyFields: Array<typeof searchField> = [
-      'paymenterName',
-      'memo',
-      'note',
-      'detailMemo',
-      'matchingLog',
-    ];
-
-    if (query && clientOnlyFields.includes(searchField)) {
-      return data.length;
-    }
-
-    // 그 외에는 항상 API에서 내려주는 전체 개수 사용
-    // (검색 결과도 totalElements 기준으로 전체 페이지 계산)
+    // 서버에서 검색이 완료된 결과이므로 API에서 내려주는 전체 개수 사용
     return registrationData.totalElements ?? data.length;
-  }, [registrationData, data.length, query, searchField]);
+  }, [registrationData, data.length]);
 
   const rows = data;
 

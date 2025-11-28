@@ -80,7 +80,7 @@ export interface RegistrationSearchRequest {
   eventId: string;
   page?: number;
   size?: number;
-  registrationSearchKey?: 'NAME' | 'ORGANIZATION' | 'BIRTH' | 'REGISTRATION_DATE' | 'ADDRESS' | 'PH_NUM';
+  registrationSearchKey?: 'NAME' | 'ORGANIZATION' | 'BIRTH' | 'REGISTRATION_DATE' | 'ADDRESS' | 'PH_NUM' | 'PAYMENTER_NAME' | 'MEMO' | 'NOTE' | 'DETAIL_MEMO' | 'MATCHING_LOG';
   direction?: 'ASC' | 'DESC';
   paymentStatus?: 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   keyword?: string;
@@ -226,38 +226,24 @@ export function convertFiltersToApiParams(
       apiParams.keyword = keyword.replace(/[^0-9]/g, '');
     } else if (searchField === 'paymenterName') {
       // 입금자명으로 검색
-      // 백엔드가 입금자명 전용 검색 키를 지원하지 않으므로,
-      // registrationSearchKey를 설정하지 않고 키워드만 전송
-      // 백엔드가 키워드만으로 여러 필드(이름, 입금자명 등)에서 검색하도록 구현되어 있어야 함
-      // 만약 백엔드가 키워드만으로는 검색하지 않는다면, NAME으로 검색하고
-      // 클라이언트에서 입금자명으로 필터링하는 방법도 고려할 수 있음
-      // 현재는 키워드만 전송 (백엔드가 전역 검색을 지원하는지 확인 필요)
+      apiParams.registrationSearchKey = 'PAYMENTER_NAME';
       apiParams.keyword = keyword;
-      // registrationSearchKey는 명시적으로 설정하지 않음
     } else if (searchField === 'memo') {
       // 메모로 검색
-      // 백엔드가 메모 전용 검색 키를 지원하지 않으므로,
-      // 키워드만 전송하고 클라이언트에서 메모 필드로 필터링
+      apiParams.registrationSearchKey = 'MEMO';
       apiParams.keyword = keyword;
-      // registrationSearchKey는 명시적으로 설정하지 않음
     } else if (searchField === 'note') {
       // 비고로 검색
-      // 백엔드가 비고 전용 검색 키를 지원하지 않으므로,
-      // 키워드만 전송하고 클라이언트에서 note 필드로 필터링
+      apiParams.registrationSearchKey = 'NOTE';
       apiParams.keyword = keyword;
-      // registrationSearchKey는 명시적으로 설정하지 않음
     } else if (searchField === 'detailMemo') {
       // 상세메모로 검색
-      // 백엔드가 상세메모 전용 검색 키를 지원하지 않으므로,
-      // 키워드만 전송하고 클라이언트에서 detailMemo 필드로 필터링
+      apiParams.registrationSearchKey = 'DETAIL_MEMO';
       apiParams.keyword = keyword;
-      // registrationSearchKey는 명시적으로 설정하지 않음
     } else if (searchField === 'matchingLog') {
       // 매칭로그로 검색
-      // 백엔드가 매칭로그 전용 검색 키를 지원하지 않으므로,
-      // 키워드만 전송하고 클라이언트에서 matchingLog 필드로 필터링
+      apiParams.registrationSearchKey = 'MATCHING_LOG';
       apiParams.keyword = keyword;
-      // registrationSearchKey는 명시적으로 설정하지 않음
     } else {
       // 'all'인 경우 registrationSearchKey 설정하지 않음 (백엔드가 모든 필드에서 검색)
       apiParams.keyword = keyword;
