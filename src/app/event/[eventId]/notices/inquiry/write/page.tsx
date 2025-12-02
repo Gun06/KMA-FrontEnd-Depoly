@@ -59,7 +59,7 @@ export default function EventInquiryWritePage() {
         setContent(editData.content);
         setAuthorName(editData.authorName);
         setPassword(editPassword); // 기존 비밀번호 설정
-        setIsSecret(editData.secret);
+        // isSecret은 항상 true로 하드코딩되어 있으므로 설정 불필요
       } catch (error) {
         setErrorMessage('문의사항 데이터를 불러오는데 실패했습니다.');
         setShowErrorModal(true);
