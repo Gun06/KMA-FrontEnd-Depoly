@@ -7,7 +7,7 @@ import { createHomepageQuestion } from '../api/inquiryApi';
 import TextEditor from '@/components/common/TextEditor';
 import FileUploader from '@/components/common/Upload/FileUploader';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import type { UploadItem } from '@/components/common/Upload/types';
 import { authService } from '@/services/auth';
 
@@ -22,7 +22,7 @@ export default function InquiryWritePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<UploadItem[]>([]);
-  const [isSecret, setIsSecret] = useState(true); // 기본값: 비공개
+  const [isSecret] = useState(true); // 하드코딩: 항상 비공개
 
   // 인증 상태 확인
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function InquiryWritePage() {
       const requestData = {
         title: title.trim(),
         content: content.trim(),
-        secret: isSecret
+        secret: true // 하드코딩: 항상 비공개
       };
       
       // JSON 문자열로 전송
@@ -258,36 +258,48 @@ export default function InquiryWritePage() {
               {/* 공개여부 선택 */}
               <div className="mb-6">
                 <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0">
-                    공개여부
-                  </label>
+                  <div className="flex items-center gap-2 w-16 flex-shrink-0">
+                    <label className="text-sm font-medium text-gray-700">
+                      공개여부
+                    </label>
+                    <div className="relative group">
+                      <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-lg">
+                          현재 모든 문의사항은 비공개로만 작성됩니다
+                          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
                       <input
                         type="radio"
                         name="secret"
                         value="false"
-                        checked={!isSecret}
-                        onChange={() => setIsSecret(false)}
-                        disabled={isSubmitting}
+                        checked={false}
+                        disabled={true}
                         className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                       />
                       <span className="text-sm text-gray-700">공개</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
                       <input
                         type="radio"
                         name="secret"
                         value="true"
-                        checked={isSecret}
-                        onChange={() => setIsSecret(true)}
-                        disabled={isSubmitting}
+                        checked={true}
+                        disabled={true}
                         className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                       />
                       <span className="text-sm text-gray-700">비공개</span>
                     </label>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-2 ml-20">
+                  현재 모든 문의사항은 비공개로만 작성됩니다.
+                </p>
               </div>
 
               {/* 텍스트에디터 */}
@@ -330,6 +342,7 @@ export default function InquiryWritePage() {
               <li>• 개인정보가 포함된 내용은 작성하지 마세요.</li>
               <li>• 문의사항과 관련된 내용만 작성해주세요.</li>
               <li>• 답변은 보통 1-2일 내에 등록됩니다.</li>
+              <li>• 현재 모든 문의사항은 비공개로만 작성됩니다.</li>
             </ul>
           </div>
         </div>

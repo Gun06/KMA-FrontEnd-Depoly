@@ -4,7 +4,6 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import { marathonSlides } from './carouselData';
 import { MainBannerItem } from '@/types/event';
 import HeroButton from '@/components/common/Button/HeroButton';
 // Swiper 스타일
@@ -48,46 +47,83 @@ export default function MarathonHeroCarousel() {
     fetchBannerData();
   }, []);
 
-  // 첫 번째 슬라이드는 하드코딩, 나머지는 API 데이터 사용
-  const allSlides = [
-    marathonSlides[0], // 첫 번째는 하드코딩된 슬라이드
-    ...bannerData.map((banner, index) => ({
-      id: index + 2, // 2번부터 시작
-      image: banner.imageUrl,
-      badge: "대회 안내",
-      title: banner.title,
-      subtitle: banner.subTitle,
-      date: banner.date,
-      eventId: banner.eventId,
-      buttons: [
-        { text: "신청하기", variant: "default" as const },
-        { text: "대회 요강", variant: "outline" as const },
-        { text: "신청 확인", variant: "outline" as const },
-      ],
-    }))
-  ];
+  // API 데이터만 사용
+  const allSlides = bannerData.map((banner, index) => ({
+    id: index + 1, // 1번부터 시작
+    image: banner.imageUrl,
+    badge: "대회 안내",
+    title: banner.title,
+    subtitle: banner.subTitle,
+    date: banner.date,
+    eventId: banner.eventId,
+    buttons: [
+      { text: "신청하기", variant: "default" as const },
+      { text: "대회 요강", variant: "outline" as const },
+      { text: "신청 확인", variant: "outline" as const },
+    ],
+  }));
 
   const total = allSlides.length;
-
-  // 로딩 상태 처리
-  if (isLoading) {
-    return (
-      <div className="relative w-full hero-section mt-2 sm:mt-4 md:mt-6 lg:mt-0 motion-safe:transition-all motion-safe:duration-300 flex items-center justify-center" style={{ height: 'var(--heroH)' }}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">배너를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 에러 상태 처리 - 기본 슬라이드만 사용
-  if (error) {
-    
-  }
+  // 스켈레톤은 로딩 중이거나 데이터가 없을 때 표시 (기본값: true)
+  const showSkeleton = isLoading || allSlides.length === 0;
 
   return (
-    <div className="relative w-full hero-section mt-2 sm:mt-4 md:mt-6 lg:mt-0 motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH)' }}>
+    <div 
+      className="relative w-full hero-section mt-2 sm:mt-4 md:mt-6 lg:mt-0 motion-safe:transition-all motion-safe:duration-300" 
+      style={{ 
+        height: 'var(--heroH, clamp(220px, 48vw, 680px))',
+        minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))' // 최소 높이 보장 + fallback
+      }}
+    >
+      {/* 스켈레톤 UI - 항상 먼저 렌더링하여 레이아웃 유지 (기본값: 보임) */}
+      <div 
+        className="absolute inset-0 w-full h-full bg-gray-300 rounded-lg lg:rounded-none overflow-hidden transition-opacity duration-300"
+        style={{ 
+          height: '100%',
+          minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))',
+          // 초기 렌더링 시 항상 보이도록 강제 (showSkeleton이 false가 될 때까지)
+          opacity: showSkeleton ? 1 : 0,
+          zIndex: showSkeleton ? 20 : 0,
+          pointerEvents: showSkeleton ? 'auto' : 'none'
+        }}
+      >
+        <div className="w-full h-full bg-gray-300 rounded-lg lg:rounded-none overflow-hidden relative animate-pulse">
+          {/* 배경 그라데이션 오버레이 */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
+          
+          {/* 스켈레톤 내용 영역 */}
+          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-16 xl:px-24 z-10">
+            <div className="w-full max-w-4xl space-y-3 md:space-y-4 lg:space-y-5">
+              {/* 배지 스켈레톤 */}
+              <div className="h-5 md:h-6 lg:h-8 w-20 md:w-24 lg:w-32 bg-white/30 rounded-full" />
+              {/* 제목 스켈레톤 */}
+              <div className="space-y-2 md:space-y-3">
+                <div className="h-6 md:h-10 lg:h-14 w-3/4 bg-white/40 rounded" />
+                <div className="h-6 md:h-10 lg:h-14 w-2/3 bg-white/40 rounded" />
+              </div>
+              {/* 날짜 스켈레톤 */}
+              <div className="h-4 md:h-5 lg:h-6 w-36 md:w-44 lg:w-52 bg-white/30 rounded" />
+              {/* 버튼 스켈레톤 */}
+              <div className="flex gap-2 md:gap-3 mt-3 md:mt-4">
+                <div className="h-7 md:h-9 lg:h-11 w-20 md:w-28 lg:w-32 bg-white/40 rounded" />
+                <div className="h-7 md:h-9 lg:h-11 w-20 md:w-28 lg:w-32 bg-white/40 rounded" />
+                <div className="h-7 md:h-9 lg:h-11 w-20 md:w-28 lg:w-32 bg-white/40 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 실제 콘텐츠 - 항상 렌더링하되 조건부로 표시 */}
+      <div 
+        className={`relative w-full h-full transition-opacity duration-300 ${
+          showSkeleton ? 'opacity-0' : 'opacity-100'
+        }`}
+        style={{ 
+          height: '100%', 
+          minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))' // fallback 추가
+        }}
+      >
       <Swiper
         modules={[Navigation, Pagination, Autoplay]}
         navigation={{
@@ -136,7 +172,7 @@ export default function MarathonHeroCarousel() {
       >
         {allSlides.map((slide, idx) => (
           <SwiperSlide key={slide.id}>
-            <a href={slide.eventId ? `/event/${slide.eventId}/guide/overview` : "/event/[eventId]/guide/overview"} className="relative block w-full hero-slide rounded-lg lg:rounded-none overflow-hidden motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH)' }}>
+            <a href={slide.eventId ? `/event/${slide.eventId}/guide/overview` : "/event/[eventId]/guide/overview"} className="relative block w-full hero-slide rounded-lg lg:rounded-none overflow-hidden motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH, clamp(220px, 48vw, 680px))' }}>
               <Image
                 src={slide.image || '/placeholder.svg'}
                 alt={slide.title}
@@ -150,52 +186,27 @@ export default function MarathonHeroCarousel() {
               />
 
               {/* Dark overlay */}
-              {slide.id !== 1 ? (
-                <div className="absolute inset-0 bg-black/40" />
-              ) : (
-                // 첫 슬라이드는 텍스트 가독성을 위해 좌->우 그라데이션 스크림
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
-              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
 
               {/* Content overlay */}
-              {slide.id === 1 ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-white w-full max-w-none px-4 sm:px-8 md:px-10 lg:px-24">
-                    <div className="w-fit mx-auto flex flex-col items-center text-center">
-                      <div className="hero-anim hero-badge self-start text-left font-semibold text-[clamp(8px,1.2vw,16px)] mb-0.5 sm:mb-1 md:mb-1.5 lg:mb-2">
-                        <span className="gradient-text">RENEWAL</span>
+              <div className="absolute inset-0 flex items-center justify-start">
+                  <div className="text-left text-white max-w-4xl px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-16 xl:px-24 flex flex-col relative">
+                    <div className="relative z-10 w-full">
+                      {/* Category badge */}
+                      <div className="hero-anim hero-badge inline-block w-fit bg-white/30 backdrop-blur-sm rounded-full text-[10px] sm:text-xs md:text-sm lg:text-base font-medium px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-0.5 md:py-1 mb-2 sm:mb-3 md:mb-4 lg:mb-6 border border-white/20 hero-text-shadow">
+                        {slide.badge}
                       </div>
-                      <h1 className="hero-anim hero-title font-giants leading-tight font-bold text-[clamp(10px,3.4vw,56px)] whitespace-nowrap tracking-tight mb-4 sm:mb-6 md:mb-10">
-                        회원 수 <span className="gradient-text">3만명</span>, 누적 완주 거리 <span className="gradient-text">120만 Km</span> 달성!
+
+                      {/* Main title */}
+                      <h1 className="hero-anim hero-title font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6 leading-tight text-left hero-text-shadow">
+                        <div className="whitespace-nowrap">{slide.title}</div>
+                        <div className="whitespace-nowrap">{slide.subtitle}</div>
                       </h1>
-                      <p className="hero-anim hero-date text-white/90 text-[clamp(10px,2vw,20px)] mb-0 sm:mb-0.5 md:mb-1">
-                        누적된 발걸음이 하나의 큰 꿈이 되었습니다.
-                      </p>
-                      <p className="hero-anim hero-buttons text-white/90 text-[clamp(10px,2vw,20px)] mb-0 sm:mb-0.5 md:mb-1">
-                        그 길 위에서, 우리는 함께 꿈을 완주합니다.
-                      </p>
-                      <p className="hero-anim hero-buttons text-white/80 text-[clamp(9px,1.6vw,14px)]">전국마라톤협회</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-start">
-                  <div className="text-left text-white max-w-4xl px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-48 flex flex-col">
-                    {/* Category badge */}
-                    <div className="hero-anim hero-badge inline-block w-fit bg-white/20 rounded-full text-[10px] sm:text-xs md:text-sm lg:text-base font-medium px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-0.5 md:py-1 mb-2 sm:mb-3 md:mb-4 lg:mb-6">
-                      {slide.badge}
-                    </div>
 
-                    {/* Main title */}
-                    <h1 className="hero-anim hero-title font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6 leading-tight text-left">
-                      <div className="whitespace-nowrap">{slide.title}</div>
-                      <div className="whitespace-nowrap">{slide.subtitle}</div>
-                    </h1>
-
-                    {/* Date */}
-                    <p className="hero-anim hero-date text-xs sm:text-sm md:text-base lg:text-xl text-white/90 mb-2 sm:mb-3 md:mb-5 lg:mb-6">
-                      {slide.date}
-                    </p>
+                      {/* Date */}
+                      <p className="hero-anim hero-date text-xs sm:text-sm md:text-base lg:text-xl text-white/95 mb-2 sm:mb-3 md:mb-5 lg:mb-6 hero-text-shadow">
+                        {slide.date}
+                      </p>
 
                     {/* Action buttons: 모바일에서 숨김, 태블릿 이상 노출 */}
                     <div className="hero-anim hero-buttons hidden sm:flex sm:flex-row gap-2 md:gap-3 mt-2">
@@ -288,7 +299,7 @@ export default function MarathonHeroCarousel() {
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
               {/* per-slide fraction at right-bottom inside slide */}
               <div className="absolute right-4 bottom-3 z-10">
                 <div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-xs md:text-sm backdrop-blur-sm border border-white/20">
@@ -332,7 +343,7 @@ export default function MarathonHeroCarousel() {
           </svg>
         </div>
       </Swiper>
-
+      </div>
 
       {/* Custom Pagination Styles & Text Animations */}
       <style jsx global>{`

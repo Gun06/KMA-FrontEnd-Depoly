@@ -336,7 +336,7 @@ export class FormDataBuilder {
     ) => {
       const k = keyOf(type, name);
       const url = link || '';
-      const staticFlag = !(enabled !== false); // enabled가 false면 static=true
+      const staticFlag = enabled === true; // ON이 고정, OFF가 고정 아님
       if (indexMap.has(k)) {
         const i = indexMap.get(k)!;
         // 기존 항목을 업데이트: url/static 갱신, 새 파일 있으면 imageUrl=null로 표시

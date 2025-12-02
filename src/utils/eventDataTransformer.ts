@@ -141,7 +141,7 @@ export class EventDataTransformer {
           providerName,
           url: p?.link ?? '',
           bannerType: type,
-          static: p?.enabled !== false,
+          static: p?.enabled === true, // ON이 고정, OFF가 고정 아님
         });
       }
     };

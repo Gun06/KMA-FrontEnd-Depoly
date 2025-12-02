@@ -136,7 +136,14 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
             href={currentPopup.url || '#'}
             target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
             rel="noopener noreferrer"
-            className="block w-full h-full"
+            className={`block w-full h-full ${isClosing || !isOpen ? 'pointer-events-none' : ''}`}
+            onClick={(e) => {
+              if (isClosing || !isOpen) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+              }
+            }}
           >
             <Image
               src={currentPopup.image!}

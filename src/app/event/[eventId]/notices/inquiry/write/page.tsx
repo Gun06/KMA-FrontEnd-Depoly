@@ -8,7 +8,7 @@ import TextEditor from '@/components/common/TextEditor';
 import FileUploader from '@/components/common/Upload/FileUploader';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import type { UploadItem } from '@/components/common/Upload/types';
 // import { authService } from '@/services/auth'; // 비회원 작성으로 변경
 
@@ -33,20 +33,16 @@ export default function EventInquiryWritePage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<UploadItem[]>([]);
-  const [isSecret, setIsSecret] = useState(true); // 기본값: 비공개
+  const [isSecret] = useState(true); // 하드코딩: 항상 비공개
   const [authorName, setAuthorName] = useState('');
   const [password, setPassword] = useState('');
 
   // 비밀번호 유효성 검사 함수
   const isPasswordValid = (value: string) => {
-    if (!value || value.length < 8 || value.length > 20) return false;
+    if (!value || value.length < 4) return false;
     // 공백이 있으면 안됨
     if (/\s/.test(value)) return false;
-    // 영문이 있고, (숫자 또는 특수문자)가 있어야 함
-    const hasLetter = /[a-zA-Z]/.test(value);
-    const hasNumber = /\d/.test(value);
-    const hasSpecial = /[~!@#$%^&*()_+\-={}\[\]\\|;:\"'<>,.?/]/.test(value);
-    return hasLetter && (hasNumber || hasSpecial);
+    return true;
   };
 
   // 수정 모드일 때 기존 데이터 불러오기
@@ -129,7 +125,7 @@ export default function EventInquiryWritePage() {
       return;
     }
     if (!isPasswordValid(password)) {
-      setErrorMessage('비밀번호는 8~20자, 영문 + (숫자 또는 특수문자) 조합으로 입력해주세요. (공백 불가)');
+      setErrorMessage('비밀번호는 4자리 이상 입력해주세요. (공백 불가)');
       setShowErrorModal(true);
       return;
     }
@@ -165,7 +161,7 @@ export default function EventInquiryWritePage() {
             title: title.trim(),
             content: content.trim(),
             deletedFileUrlList: [], // 파일 삭제는 현재 지원하지 않음
-            secret: isSecret  // API 문서에 맞게 secret 사용
+            secret: true // 하드코딩: 항상 비공개
           },
           password: password
         };
@@ -178,7 +174,7 @@ export default function EventInquiryWritePage() {
           post: {
             title: title.trim(),
             content: content.trim(),
-            secret: isSecret
+            secret: true // 하드코딩: 항상 비공개
           }
         };
       }
@@ -329,6 +325,9 @@ export default function EventInquiryWritePage() {
                   <div>
                     <strong>비공개글:</strong> 작성자와 관리자만 볼 수 있으며, 비밀번호로 본인 확인 후 조회/수정/삭제가 가능합니다.
                   </div>
+                  <div className="text-red-600 font-medium">
+                    <strong>※ 현재 모든 문의사항은 비공개로만 작성됩니다.</strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -361,7 +360,7 @@ export default function EventInquiryWritePage() {
                       type="password"
                       value={password}
                       onChange={handlePasswordChange}
-                      placeholder="비밀번호 (8~20자, 영문+숫자+특수문자)"
+                      placeholder="비밀번호 (4자리 이상)"
                       className={`w-full h-10 px-3 border rounded-md text-sm focus:outline-none focus:ring-2 ${
                         password && password.length > 0
                           ? isPasswordValid(password)
@@ -376,26 +375,26 @@ export default function EventInquiryWritePage() {
                     {password && password.length > 0 && (
                       <div className="mt-2 space-y-1">
                         <div className={`flex items-center text-xs ${
-                          password.length >= 8 && password.length <= 20 ? 'text-green-600' : 'text-red-500'
+                          password.length >= 4 ? 'text-green-600' : 'text-red-500'
                         }`}>
                           <span className={`w-2 h-2 rounded-full mr-2 ${
-                            password.length >= 8 && password.length <= 20 ? 'bg-green-500' : 'bg-red-500'
+                            password.length >= 4 ? 'bg-green-500' : 'bg-red-500'
                           }`}></span>
-                          길이: 8~20자 ({password.length}/20)
+                          길이: 4자리 이상 ({password.length}자)
                         </div>
                         <div className={`flex items-center text-xs ${
-                          isPasswordValid(password) ? 'text-green-600' : 'text-red-500'
+                          !/\s/.test(password) ? 'text-green-600' : 'text-red-500'
                         }`}>
                           <span className={`w-2 h-2 rounded-full mr-2 ${
-                            isPasswordValid(password) ? 'bg-green-500' : 'bg-red-500'
+                            !/\s/.test(password) ? 'bg-green-500' : 'bg-red-500'
                           }`}></span>
-                          조합: 영문 + (숫자 또는 특수문자), 공백 불가
+                          공백 불가
                         </div>
                       </div>
                     )}
                     
                     <p className="text-xs text-gray-500 mt-2">
-                      비밀글 조회/수정/삭제 시 필요합니다. (8~20자, 영문+숫자+특수문자)
+                      비밀글 조회/수정/삭제 시 필요합니다. (4자리 이상, 공백 불가)
                     </p>
                   </div>
                 </div>
@@ -420,30 +419,39 @@ export default function EventInquiryWritePage() {
               {/* 공개여부 선택 */}
               <div className="mb-6">
                 <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0">
-                    공개여부
-                  </label>
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      공개여부
+                    </label>
+                    <div className="relative group">
+                      <Info className="w-4 h-4 text-gray-400 cursor-help flex-shrink-0" />
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap shadow-lg">
+                          현재 모든 문의사항은 비공개로만 작성됩니다
+                          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6 flex-shrink-0">
+                    <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
                       <input
                         type="radio"
                         name="secret"
                         value="false"
-                        checked={!isSecret}
-                        onChange={() => setIsSecret(false)}
-                        disabled={isSubmitting}
+                        checked={false}
+                        disabled={true}
                         className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                       />
                       <span className="text-sm text-gray-700">공개</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
                       <input
                         type="radio"
                         name="secret"
                         value="true"
-                        checked={isSecret}
-                        onChange={() => setIsSecret(true)}
-                        disabled={isSubmitting}
+                        checked={true}
+                        disabled={true}
                         className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                       />
                       <span className="text-sm text-gray-700">비공개</span>
@@ -493,6 +501,7 @@ export default function EventInquiryWritePage() {
               <li>• 개인정보가 포함된 내용은 작성하지 마세요.</li>
               <li>• 문의사항과 관련된 내용만 작성해주세요.</li>
               <li>• 답변은 보통 1-2일 내에 등록됩니다.</li>
+              <li>• 현재 모든 문의사항은 비공개로만 작성됩니다.</li>
             </ul>
           </div>
         </div>

@@ -1,12 +1,15 @@
 // src/components/filters/presets.ts
 import type { FilterBarProps } from "./FilterBar";
 
-/** 2004 ~ 현재년도, 내림차순 */
+/** 2004 ~ 현재년도+1, 내림차순 + 전체 옵션 */
 const currentYear = new Date().getFullYear();
-const yearOptions = Array.from({ length: currentYear - 2003 }, (_, i) => {
-  const y = currentYear - i;
-  return { label: String(y), value: String(y) };
-});
+const yearOptions = [
+  { label: "전체", value: "" }, // 전체 필터 추가
+  ...Array.from({ length: currentYear + 1 - 2003 }, (_, i) => {
+    const y = currentYear + 1 - i; // 올해 +1까지 포함
+    return { label: String(y), value: String(y) };
+  }),
+];
 
 export type FilterBarPreset = {
   props: FilterBarProps; // buttons, showReset 포함

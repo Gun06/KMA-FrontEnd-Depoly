@@ -12,7 +12,7 @@ export default function PartiesSection({
 }) {
   const noop = () => {};
   const add        = (setter: any) => () =>
-    setter((p: any[]) => [...p, { name: "", link: "", file: [], enabled: true }]);
+    setter((p: any[]) => [...p, { name: "", link: "", file: [], enabled: false }]); // 기본값 OFF
   const remove     = (setter: any) => (i: number) =>
     setter((p: any[]) => p.filter((_, idx) => idx !== i));
   const changeName = (setter: any) => (i: number, v: string) =>

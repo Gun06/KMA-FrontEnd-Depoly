@@ -283,7 +283,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [groups, setGroups] = React.useState<CourseGroup[]>([emptyGroup]);
 
   // 파티
-  const emptyParty: PartyItem = { name: '', link: '', file: [], enabled: true };
+  const emptyParty: PartyItem = { name: '', link: '', file: [], enabled: false }; // 기본값 OFF
   const [hostItems, setHostItems] = React.useState<PartyItem[]>([emptyParty]);
   const [organizerItems, setOrganizerItems] = React.useState<PartyItem[]>([
     emptyParty,

@@ -109,11 +109,18 @@ export const handleGroupAddressSelect = (
 export const handleGroupNameCheck = async (
   eventId: string, 
   groupName: string,
-  setNameCheckResult: Dispatch<SetStateAction<'none' | 'available' | 'unavailable' | 'error'>>
+  setNameCheckResult: Dispatch<SetStateAction<'none' | 'available' | 'unavailable' | 'error'>>,
+  originalGroupName?: string // 수정 모드에서 원래 단체명
 ) => {
   if (!groupName.trim()) {
     setNameCheckResult('none');
     return false;
+  }
+
+  // 수정 모드이고 원래 값과 동일하면 사용 가능
+  if (originalGroupName && groupName.trim() === originalGroupName.trim()) {
+    setNameCheckResult('available');
+    return true;
   }
 
   setNameCheckResult('none'); // 로딩 상태 초기화

@@ -194,13 +194,26 @@ export default function EventSection() {
                 {/* 첫 번째 트랙 - API 데이터 또는 기본 데이터 표시 */}
                 <ul className="flex items-center gap-2 md:gap-4 lg:gap-6 px-0 h-full pl-2 md:pl-6 lg:pl-20">
                   {isLoading ? (
-                    // 로딩 상태
-                    <div className="flex items-center justify-center w-full h-full">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
-                        <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
+                    // 로딩 스켈레톤
+                    Array.from({ length: 4 }).map((_, index) => (
+                      <li key={`skeleton-${index}`} className="shrink-0">
+                        <div className="w-[160px] md:w-[280px] lg:w-[300px] h-[200px] md:h-[350px] lg:h-[370px] bg-white rounded-lg shadow-lg overflow-hidden">
+                          {/* 이미지 영역 스켈레톤 */}
+                          <div className="h-24 md:h-44 lg:h-48 bg-gray-200 animate-pulse" />
+                          {/* 정보 영역 스켈레톤 */}
+                          <div className="p-2 md:p-4 flex flex-col h-[128px] md:h-[180px] lg:h-[200px]">
+                            <div className="space-y-2 md:space-y-3">
+                              <div className="h-4 md:h-5 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-5 md:h-6 w-3/4 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 md:h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+                            </div>
+                            <div className="mt-2 md:mt-5 lg:mt-6">
+                              <div className="h-6 md:h-8 w-24 md:w-32 bg-gray-200 rounded animate-pulse" />
+                            </div>
                       </div>
                     </div>
+                      </li>
+                    ))
                   ) : error ? (
                     // 에러 상태 - 기본 데이터 사용
                     EVENT_ITEMS.map((event, index) => (

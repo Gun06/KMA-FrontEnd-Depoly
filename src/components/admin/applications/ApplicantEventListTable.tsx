@@ -50,6 +50,9 @@ type Props = {
 
   /** ✅ 필터바 오른쪽에 붙일 임의 요소(예: 파란 CTA 버튼) */
   rightExtra?: ReactNode;
+  
+  /** ✅ 모든 대회 데이터 (년도 필터용) */
+  allEvents?: ApplicantListRow[];
 };
 
 export default function ApplicantEventListTable({
@@ -67,6 +70,7 @@ export default function ApplicantEventListTable({
   filterPresetKey,
   onPresetFieldChange,
   rightExtra,
+  allEvents,
 }: Props) {
   const columns: Column<ApplicantListRow>[] = [
     { key: 'id', header: '번호', width: 80, align: 'center' },
@@ -141,9 +145,44 @@ export default function ApplicantEventListTable({
     },
   ];
 
+  // 모든 대회 데이터에서 실제 있는 년도만 추출 (allEvents가 있으면 사용, 없으면 rows 사용)
+  const availableYears = React.useMemo(() => {
+    const source = allEvents || rows;
+    const years = new Set<number>();
+    source.forEach(row => {
+      if (row.date) {
+        const year = new Date(row.date).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    const currentYear = new Date().getFullYear();
+    const yearList = Array.from(years)
+      .filter(y => y <= currentYear + 1) // 올해 +1까지
+      .sort((a, b) => b - a); // 내림차순
+    
+    return [
+      { label: "전체", value: "" },
+      ...yearList.map(y => ({ label: String(y), value: String(y) }))
+    ];
+  }, [allEvents, rows]);
+
   const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
   const presetKey = (filterPresetKey ?? ('참가신청 / 기본' as keyof typeof PRESETS));
-  const preset = PRESETS[presetKey]?.props;
+  const originalPreset = PRESETS[presetKey]?.props;
+  
+  // 년도 필드만 동적으로 수정
+  const preset = React.useMemo(() => {
+    if (!originalPreset) return undefined;
+    return {
+      ...originalPreset,
+      fields: originalPreset.fields?.map(field => 
+        field.label === '년도' 
+          ? { ...field, options: availableYears }
+          : field
+      ),
+    };
+  }, [originalPreset, availableYears]);
 
   const RightControls = preset ? (
     <div className="ml-auto flex items-center gap-2">

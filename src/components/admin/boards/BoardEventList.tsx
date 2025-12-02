@@ -230,9 +230,48 @@ export const BoardEventList = ({
     },
   ];
 
+  // 대회 데이터에서 실제 있는 년도만 추출
+  const allEventsQuery = useEventList(1, 1000, true);
+  const allEventsData = allEventsQuery.data as EventListResponse | undefined;
+  
+  const availableYears = React.useMemo(() => {
+    if (!allEventsData?.content) return [];
+    
+    const years = new Set<number>();
+    allEventsData.content.forEach((event: EventListItem) => {
+      if (event.startDate) {
+        const year = new Date(event.startDate).getFullYear();
+        years.add(year);
+      }
+    });
+    
+    const currentYear = new Date().getFullYear();
+    const yearList = Array.from(years)
+      .filter(y => y <= currentYear + 1) // 올해 +1까지
+      .sort((a, b) => b - a); // 내림차순
+    
+    return [
+      { label: "전체", value: "" },
+      ...yearList.map(y => ({ label: String(y), value: String(y) }))
+    ];
+  }, [allEventsData]);
+
   const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
   const presetKey = (filterPresetKey ?? ('참가신청 / 기본' as keyof typeof PRESETS));
-  const preset = PRESETS[presetKey]?.props;
+  const originalPreset = PRESETS[presetKey]?.props;
+  
+  // 년도 필드만 동적으로 수정
+  const preset = React.useMemo(() => {
+    if (!originalPreset) return undefined;
+    return {
+      ...originalPreset,
+      fields: originalPreset.fields?.map(field => 
+        field.label === '년도' 
+          ? { ...field, options: availableYears }
+          : field
+      ),
+    };
+  }, [originalPreset, availableYears]);
 
 const filterControls = (preset || tableCtaLabel) && (
     <div className="flex flex-wrap items-center gap-2">

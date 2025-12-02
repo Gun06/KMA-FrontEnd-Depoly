@@ -69,12 +69,19 @@ export default function ApplicantsClient({
     router.replace(`?${sp.toString()}`, { scroll: false });
   };
 
+  // 모든 대회 데이터에서 실제 있는 년도만 추출
+  const allMappedRows = React.useMemo(() => {
+    const source = ALL.length ? ALL : [];
+    return source.map(mapRow);
+  }, [ALL, mapRow]);
+
   return (
     <ApplicantEventListTable
       rows={rows}
       total={totalCount}
       page={page}
       pageSize={pageSize}
+      allEvents={allMappedRows} // 모든 대회 데이터 전달
       onPageChange={(p) => { setPage(p); replaceQuery({ page: String(p) }); }}
       onSearch={(value) => { setQ(value); setPage(1); replaceQuery({ page: '1', q: value }); }}
       onFilterStatusChange={(s) => {

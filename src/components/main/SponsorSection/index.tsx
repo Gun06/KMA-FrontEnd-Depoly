@@ -1,14 +1,9 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import sponsor01 from '@/assets/images/main/sponsor01.png'
-import sponsor02 from '@/assets/images/main/sponsor02.png'
-import sponsor03 from '@/assets/images/main/sponsor03.png'
 import { SponsorBanner } from '@/types/event'
 
 export default function SponsorSection() {
-  const sources = [sponsor01, sponsor02, sponsor03]
-  const defaultBanners = Array.from({ length: 12 }, (_, i) => sources[i % sources.length])
   
   // API 데이터 상태
   const [sponsorData, setSponsorData] = useState<SponsorBanner[]>([])
@@ -63,10 +58,10 @@ export default function SponsorSection() {
     fetchSponsorData()
   }, [])
 
-  // 표시할 배너 결정 (API 데이터가 있으면 사용, 없으면 기본 데이터)
+  // 표시할 배너 결정 (API 데이터만 사용, 더미 데이터 제거)
   const baseBanners = sponsorData.length > 0 
     ? sponsorData.map(banner => ({ src: banner.imageUrl, alt: banner.url, url: banner.url }))
-    : defaultBanners.map((src, i) => ({ src, alt: `sponsor-${i % sources.length}`, url: '#' }))
+    : []
   
   // 중복 제거 (URL 기준) - 관리자 미리보기와 동일한 로직
   const uniqueBanners = baseBanners.filter((banner, index, arr) => 
@@ -78,8 +73,17 @@ export default function SponsorSection() {
     ? Array.from({ length: Math.max(12, uniqueBanners.length * 3) }, (_, i) => uniqueBanners[i % uniqueBanners.length])
     : []
 
+  // 로딩 중이거나 데이터가 없을 때도 스켈레톤 표시 (기본값: true)
+  const showSkeleton = isLoading || banners.length === 0;
+
   return (
-    <section className="relative bg-white sponsor-section" style={{ height: 'var(--sectionH)' }}>
+    <section 
+      className="relative bg-white sponsor-section" 
+      style={{ 
+        height: 'var(--sectionH, 140px)',
+        minHeight: 'var(--sectionH, 140px)' // 최소 높이 보장 + fallback
+      }}
+    >
       {/* 타이틀: SectionPanel과 동일 래퍼/패딩으로 정렬 */}
       <div className="absolute inset-0 pointer-events-none z-30">
         <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 h-full">
@@ -88,16 +92,55 @@ export default function SponsorSection() {
           </div>
         </div>
       </div>
-      {/* 움직이는 영역 배경 제거 (요청에 따라 빨간 배경 사용 안 함) */}
 
       {/* 이미지 트랙 (12개 반복, 중앙 정렬, 무한 이동) */}
       <div
         className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden z-10"
-        style={{ height: 'var(--imgH)' }}
+        style={{ 
+          height: 'var(--imgH, 80px)',
+          minHeight: 'var(--imgH, 80px)' // 최소 높이 보장 + fallback
+        }}
       >
-        <div className="marquee flex w-max items-center h-full leading-[0]">
-          <ul className="flex items-center gap-0 px-0 h-full">
-            {banners.map((banner, idx) => (
+        {/* 로딩 스켈레톤 - 항상 먼저 렌더링하여 레이아웃 유지 (기본값: 보임) */}
+        <div 
+          className="absolute inset-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-6 lg:px-8 h-full w-full overflow-hidden transition-opacity duration-300"
+          style={{ 
+            height: '100%',
+            minHeight: 'var(--imgH, 80px)',
+            // 초기 렌더링 시 항상 보이도록 강제 (showSkeleton이 false가 될 때까지)
+            opacity: showSkeleton ? 1 : 0,
+            zIndex: showSkeleton ? 20 : 0,
+            pointerEvents: showSkeleton ? 'auto' : 'none'
+          }}
+        >
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <div
+              key={`skeleton-${idx}`}
+              className="shrink-0 w-32 md:w-40 lg:w-48 h-full rounded-lg"
+              style={{ 
+                height: 'var(--imgH, 80px)',
+                minWidth: '128px',
+                background: 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 50%, #e5e7eb 100%)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 2s infinite linear'
+              }}
+            />
+          ))}
+        </div>
+
+        {/* 실제 콘텐츠 - 항상 렌더링하되 조건부로 표시 */}
+        <div 
+          className={`relative w-full h-full transition-opacity duration-300 ${
+            showSkeleton ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{ 
+            height: '100%', 
+            minHeight: 'var(--imgH, 80px)' // fallback 추가
+          }}
+        >
+          <div className="marquee flex w-max items-center h-full leading-[0]">
+            <ul className="flex items-center gap-0 px-0 h-full">
+              {banners.map((banner, idx) => (
               <li key={`s-${idx}`} className="shrink-0 flex items-center justify-center h-full">
                 <a 
                   href={banner.url} 
@@ -110,7 +153,7 @@ export default function SponsorSection() {
                     alt={banner.alt} 
                     height={100} 
                     width={200}
-                    style={{ height: 'var(--imgH)' }} 
+                    style={{ height: 'var(--imgH, 80px)' }} 
                     className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
@@ -134,7 +177,7 @@ export default function SponsorSection() {
                     alt={banner.alt} 
                     height={100} 
                     width={200}
-                    style={{ height: 'var(--imgH)' }} 
+                    style={{ height: 'var(--imgH, 80px)' }} 
                     className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
                     draggable={false}
                     onDragStart={(e) => e.preventDefault()}
@@ -143,6 +186,7 @@ export default function SponsorSection() {
               </li>
             ))}
           </ul>
+        </div>
         </div>
       </div>
 
@@ -170,6 +214,11 @@ export default function SponsorSection() {
       <style jsx>{`
         .marquee { animation: marquee 60s linear infinite; will-change: transform; }
         @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
         
         /* 이미지 드래그 방지 */
         .marquee img {

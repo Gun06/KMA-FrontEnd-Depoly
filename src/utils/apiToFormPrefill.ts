@@ -72,7 +72,7 @@ export function transformApiToFormPrefill(
         name: banner.providerName,
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [], // API에서 이미지 URL을 파일로 변환
-        enabled: !banner.static, // static이 false면 ON(true), true면 OFF(false)
+        enabled: banner.static, // static이 true면 ON(true), false면 OFF(false)
       })),
     organizers: eventBanners
       .filter(banner => banner.bannerType === 'ORGANIZER')
@@ -80,7 +80,7 @@ export function transformApiToFormPrefill(
         name: banner.providerName,
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
-        enabled: !banner.static,
+        enabled: banner.static,
       })),
     sponsors: eventBanners
       .filter(banner => banner.bannerType === 'SPONSOR')
@@ -88,7 +88,7 @@ export function transformApiToFormPrefill(
         name: banner.providerName,
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
-        enabled: !banner.static,
+        enabled: banner.static,
       })),
   };
 
