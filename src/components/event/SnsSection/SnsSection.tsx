@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import snsImage from '@/assets/images/event/snssection.png';
 
 interface PromotionBannerInfo {
   eventPromotionBannerUrl: string;
@@ -97,11 +96,10 @@ export default function SnsSection({
     fetchEventInfo();
   }, [eventId, propEventInfo, isMounted]);
 
-  // 이미지 우선순위: API 데이터 > 기본 이미지
-  // SSR/CSR 일치를 위해 마운트 전에는 기본 이미지만 사용
-  const imageUrl = (isMounted && eventInfo?.eventPromotionBannerUrl) || snsImage;
+  // 이미지 우선순위: API 데이터만 사용 (더미 이미지 제거)
+  const imageUrl = (isMounted && eventInfo?.eventPromotionBannerUrl) || null;
 
-  // 로딩 상태를 표시하지 않음 - 캐시된 데이터를 즉시 사용
+  const showSkeleton = (isLoading || !isMounted) && !eventInfo && !propEventInfo;
 
   if (error && !eventInfo) {
     return (
@@ -119,20 +117,36 @@ export default function SnsSection({
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
       <div className="relative w-full">
-        {/* 이미지 원본 비율 유지 */}
-        <div className="relative w-full">
-          <Image
-            src={imageUrl}
-            alt="프로모션 배너"
-            width={0}
-            height={0}
-            className="w-full h-auto object-contain"
-            priority={true}
-            quality={85}
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-          />
+        {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-gray-50 transition-opacity duration-300"
+          style={{
+            opacity: showSkeleton ? 1 : 0,
+            zIndex: showSkeleton ? 50 : 0,
+            pointerEvents: showSkeleton ? 'auto' : 'none'
+          }}
+        >
+            <div className="relative w-full">
+              <div className="w-full h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] bg-gray-200 animate-pulse" />
+            </div>
         </div>
+
+        {/* 이미지 원본 비율 유지 - 스켈레톤이 아닐 때만 표시 */}
+        {!showSkeleton && imageUrl && (
+          <div className="relative w-full">
+            <Image
+              src={imageUrl}
+              alt="프로모션 배너"
+              width={0}
+              height={0}
+              className="w-full h-auto object-contain"
+              priority={true}
+              quality={85}
+              sizes="100vw"
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

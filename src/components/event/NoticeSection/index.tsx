@@ -139,18 +139,17 @@ export default function NoticeSection({
     return () => clearInterval(interval);
   }, [autoRotate, rotateInterval, notices.length]);
   
-  // SSR/CSR 일치를 위해 마운트 전에는 빈 상태 렌더링
-  if (!isMounted) {
+  // SSR/CSR 일치를 위해 마운트 전 또는 로딩 중에는 스켈레톤 UI 표시
+  if (!isMounted || isLoading) {
     return (
       <div className={`text-center py-1 sm:py-2 lg:py-3 px-2 sm:px-4 ${className}`}>
         <div className="inline-flex items-center gap-1 sm:gap-2">
-          <span className="font-semibold text-sm sm:text-base lg:text-lg text-red-600">
-            공지
-          </span>
+          {/* 공지 태그 스켈레톤 */}
+          <div className="h-4 sm:h-5 lg:h-6 w-10 sm:w-12 bg-gray-200 rounded animate-pulse" />
+          {/* 구분자 */}
           <span className="text-gray-400 text-sm sm:text-base">•</span>
-          <span className="text-gray-900 text-sm sm:text-base lg:text-lg font-medium">
-            로딩 중...
-          </span>
+          {/* 제목 텍스트 스켈레톤 */}
+          <div className="h-4 sm:h-5 lg:h-6 w-48 sm:w-64 lg:w-80 bg-gray-200 rounded animate-pulse" />
         </div>
       </div>
     );

@@ -152,7 +152,7 @@ export default function TopSection({
     return null;
   }
 
-  // 로딩 상태를 표시하지 않음 - 캐시된 데이터를 즉시 사용
+  const showSkeleton = (isLoading || !isMounted) && !eventInfo && !propEventInfo;
 
   if (error && !eventInfo) {
     return (
@@ -169,8 +169,44 @@ export default function TopSection({
 
   return (
     <div className={`relative w-full overflow-hidden ${hasImages ? '' : 'bg-gray-900'}`}>
-      {/* 데스크톱 배경 이미지 */}
-      {desktopImage && (
+      {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
+      <div 
+        className="absolute inset-0 w-full h-full bg-gray-900 transition-opacity duration-300"
+        style={{
+          opacity: showSkeleton ? 1 : 0,
+          zIndex: showSkeleton ? 50 : 0,
+          pointerEvents: showSkeleton ? 'auto' : 'none',
+          minHeight: '500px'
+        }}
+      >
+          {/* 배경 이미지 스켈레톤 */}
+          <div className="absolute inset-0 bg-gray-800 animate-pulse">
+            {/* 데스크톱 배경 스켈레톤 */}
+            <div className="hidden md:block w-full h-full bg-gray-700" />
+            {/* 모바일 배경 스켈레톤 */}
+            <div className="block md:hidden w-full h-full bg-gray-700" />
+          </div>
+          
+          {/* 메인 콘텐츠 스켈레톤 */}
+          <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
+            <div className="container mx-auto">
+              <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24">
+                {/* 제목 스켈레톤 */}
+                <div className="mb-4 md:mb-6 lg:mb-8">
+                  {/* 영어 제목 스켈레톤 */}
+                  <div className="h-5 sm:h-6 md:h-7 lg:h-8 xl:h-9 w-32 sm:w-40 md:w-48 bg-gray-600 rounded animate-pulse mb-2 sm:mb-3" />
+                  {/* 한글 제목 스켈레톤 */}
+                  <div className="h-8 sm:h-10 md:h-12 lg:h-16 xl:h-20 w-48 sm:w-64 md:w-80 lg:w-96 bg-gray-600 rounded animate-pulse" />
+                </div>
+                {/* 부제목 스켈레톤 */}
+                <div className="h-4 sm:h-5 md:h-6 lg:h-7 w-56 sm:w-64 md:w-72 lg:w-80 bg-gray-600 rounded animate-pulse mb-6 sm:mb-8 md:mb-10 lg:mb-12" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+      {/* 데스크톱 배경 이미지 - 스켈레톤이 아닐 때만 표시 */}
+      {!showSkeleton && desktopImage && (
         <Image
           src={desktopImage}
           alt="Background"
@@ -182,8 +218,8 @@ export default function TopSection({
         />
       )}
 
-      {/* 모바일 배경 이미지 */}
-      {mobileImage && (
+      {/* 모바일 배경 이미지 - 스켈레톤이 아닐 때만 표시 */}
+      {!showSkeleton && mobileImage && (
         <Image
           src={mobileImage}
           alt="Mobile Background"
@@ -195,8 +231,8 @@ export default function TopSection({
         />
       )}
 
-      {/* 배경 장식 원형 요소들 (그라데이션 배경일 때만 표시) */}
-      {!hasImages && useGradient && (
+      {/* 배경 장식 원형 요소들 (그라데이션 배경일 때만 표시, 스켈레톤이 아닐 때만) */}
+      {!showSkeleton && !hasImages && useGradient && (
         <div className="absolute inset-0">
           {/* 큰 원형 요소 - 우상단 */}
           <div className="absolute -top-20 -right-20 w-96 h-96 md:w-[500px] md:h-[500px] rounded-full border-4 border-white/20" />
@@ -212,80 +248,82 @@ export default function TopSection({
         </div>
       )}
 
-      {/* 메인 콘텐츠 */}
-      <div
-        className={`${
-          hasImages
-            ? 'absolute inset-0 z-10 flex items-center px-4 md:px-8'
-            : 'relative z-10 flex items-center min-h-[500px] md:min-h-[600px] px-4 md:px-8'
-        }`}
-      >
-        <div className="container mx-auto">
-          <div
-            className={`text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 ${sectionConfig.textColor || 'text-white'}`}
-          >
-            {/* 제목 */}
-            {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
-            {/* <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-              <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
-                {title.english}
-              </div>
-              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
-                {title.korean}
-              </div>
-            </h1> */}
+      {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 */}
+      {!showSkeleton && (
+        <div
+          className={`${
+            hasImages
+              ? 'absolute inset-0 z-10 flex items-center px-4 md:px-8'
+              : 'relative z-10 flex items-center min-h-[500px] md:min-h-[600px] px-4 md:px-8'
+          }`}
+        >
+          <div className="container mx-auto">
+            <div
+              className={`text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 ${sectionConfig.textColor || 'text-white'}`}
+            >
+              {/* 제목 */}
+              {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
+              {/* <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
+                <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
+                  {title.english}
+                </div>
+                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
+                  {title.korean}
+                </div>
+              </h1> */}
 
-            {/* 날짜 */}
-            {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
-            {/* <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
-              {subtitle}
-            </p> */}
+              {/* 날짜 */}
+              {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
+              {/* <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
+                {subtitle}
+              </p> */}
 
-            {/* 사진 부분용 투명 텍스트 */}
-            {hasImages && (
-              <>
-                <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-                  <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3 opacity-0">
-                    {title.english}
-                  </div>
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core opacity-0">
-                    {title.korean}
-                  </div>
-                </h1>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium opacity-0">
-                  {subtitle}
-                </p>
-              </>
-            )}
+              {/* 사진 부분용 투명 텍스트 */}
+              {hasImages && (
+                <>
+                  <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
+                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3 opacity-0">
+                      {title.english}
+                    </div>
+                    <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core opacity-0">
+                      {title.korean}
+                    </div>
+                  </h1>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium opacity-0">
+                    {subtitle}
+                  </p>
+                </>
+              )}
 
-            {/* 그라데이션 배경용 기존 텍스트 */}
-            {!hasImages && (
-              <>
-                <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-                  <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
-                    {title.english}
-                  </div>
-                  <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
-                    {title.korean}
-                  </div>
-                </h1>
-                <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
-                  {subtitle}
-                </p>
-              </>
-            )}
+              {/* 그라데이션 배경용 기존 텍스트 */}
+              {!hasImages && (
+                <>
+                  <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
+                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
+                      {title.english}
+                    </div>
+                    <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
+                      {title.korean}
+                    </div>
+                  </h1>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
+                    {subtitle}
+                  </p>
+                </>
+              )}
 
-            {/* 버튼 그룹 - 플로팅 버튼으로 이동 */}
-            {/* <ActionButtons
-              eventId={eventId || eventInfo?.id || sectionConfig.eventId}
-              className="justify-start"
-            /> */}
+              {/* 버튼 그룹 - 플로팅 버튼으로 이동 */}
+              {/* <ActionButtons
+                eventId={eventId || eventInfo?.id || sectionConfig.eventId}
+                className="justify-start"
+              /> */}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 하단 그라데이션 오버레이 (그라데이션 배경일 때만) */}
-      {!hasImages && useGradient && (
+      {/* 하단 그라데이션 오버레이 (그라데이션 배경일 때만, 스켈레톤이 아닐 때만) */}
+      {!showSkeleton && !hasImages && useGradient && (
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent" />
       )}
     </div>

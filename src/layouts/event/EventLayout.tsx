@@ -54,9 +54,70 @@ function EventLayoutContent({
   urlColor,
 }: EventLayoutContentProps) {
   const { mainBannerColor: contextMainBannerColor, setMainBannerColor } = useEvents();
-  const [showOverlay, setShowOverlay] = React.useState(true);
   const [cachedColor, setCachedColor] = React.useState<string | null>(null);
   const [heroEventData, setHeroEventData] = React.useState<HeroEventData | null>(null);
+
+  // 글로벌 스크롤 위치 저장 및 복원
+  React.useEffect(() => {
+    if (!eventId || typeof window === 'undefined') return;
+
+    const scrollKey = `scroll_position_${eventId}`;
+    let scrollRestored = false;
+
+    // 저장된 스크롤 위치 복원 (페이지 로드 시 즉시)
+    const restoreScroll = () => {
+      if (scrollRestored) return;
+      try {
+        const savedScrollPosition = sessionStorage.getItem(scrollKey);
+        if (savedScrollPosition) {
+          const scrollY = parseInt(savedScrollPosition, 10);
+          if (!isNaN(scrollY) && scrollY > 0) {
+            // requestAnimationFrame을 사용하여 DOM이 준비된 후 복원
+            requestAnimationFrame(() => {
+              window.scrollTo(0, scrollY);
+              scrollRestored = true;
+            });
+          }
+        }
+      } catch (e) {
+        // sessionStorage 접근 실패 시 무시
+      }
+    };
+
+    // 즉시 복원 시도
+    restoreScroll();
+
+    // DOMContentLoaded 후에도 복원 시도 (안전장치)
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', restoreScroll);
+    } else {
+      restoreScroll();
+    }
+
+    // 스크롤 이벤트 리스너: 스크롤 위치를 sessionStorage에 저장
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          try {
+            sessionStorage.setItem(scrollKey, window.scrollY.toString());
+          } catch (e) {
+            // sessionStorage 저장 실패 시 무시
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // 페이지 언마운트 시 정리
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('DOMContentLoaded', restoreScroll);
+    };
+  }, [eventId]);
 
   // 클라이언트에서만 캐시된 색상 복구
   React.useEffect(() => {
@@ -222,20 +283,6 @@ function EventLayoutContent({
     } catch {}
   }, [eventId, urlColor, contextMainBannerColor, setMainBannerColor]);
 
-  const isThemeReady = Boolean(mainBannerColor);
-
-  // 최초 페인트 시 전 화면 로딩 오버레이 유지 → 테마 색상 결정 후 제거
-  React.useEffect(() => {
-    if (!isThemeReady) return;
-    const id = requestAnimationFrame(() => setShowOverlay(false));
-    return () => cancelAnimationFrame(id);
-  }, [isThemeReady]);
-
-  // 안전장치: 2초 후에는 강제로 오버레이 제거
-  React.useEffect(() => {
-    const timeout = window.setTimeout(() => setShowOverlay(false), 2000);
-    return () => window.clearTimeout(timeout);
-  }, []);
   
   // 그라데이션 키가 넘어온 경우 끝색으로 포인트색 결정
   const gradEndMap: Record<string, string> = {
@@ -297,15 +344,6 @@ function EventLayoutContent({
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      {/* Full-page loading overlay: header~footer 전체 덮개 */}
-      {showOverlay && (
-        <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mx-auto mb-3" />
-            <div className="text-gray-600 text-sm">잠시만 기다려주세요</div>
-          </div>
-        </div>
-      )}
       <EventHeader eventId={eventId} accentColor={accentColor} headerBgClass={headerBgClass} />
       <main className="pt-16 flex-1">
         {children}

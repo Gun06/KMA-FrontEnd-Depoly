@@ -101,21 +101,7 @@ export default function BottomNoticeSection({
     return null;
   }
 
-  if (isLoading) {
-    return (
-      <section className={`bg-white py-8 md:py-16 ${className}`}>
-        <div className="container mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 text-center mb-8 md:mb-12">
-            공지사항
-          </h2>
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
-            <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const showSkeleton = isLoading && !noticeInfo;
 
   if (error && !noticeInfo) {
     return (
@@ -142,9 +128,46 @@ export default function BottomNoticeSection({
         </h2>
         
         {/* 공지사항 목록 */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto relative">
+          {/* 스켈레톤 UI - 레이아웃에 포함 */}
+          {showSkeleton && (
+            <div 
+              className="relative bg-white transition-opacity duration-300"
+              style={{
+                opacity: showSkeleton ? 1 : 0,
+                pointerEvents: showSkeleton ? 'auto' : 'none',
+                position: showSkeleton ? 'relative' : 'absolute',
+                zIndex: showSkeleton ? 50 : 0
+              }}
+            >
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <div 
+                    key={`skeleton-${idx}`}
+                    className={`flex items-center justify-between p-4 sm:p-6 ${
+                      idx !== 4 ? 'border-b border-gray-100' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                      {/* 공지 태그 스켈레톤 */}
+                      <div className="h-5 sm:h-6 w-12 sm:w-14 bg-gray-200 rounded animate-pulse flex-shrink-0" />
+                      {/* 제목 스켈레톤 */}
+                      <div className="h-5 sm:h-6 bg-gray-200 rounded animate-pulse flex-1" style={{ maxWidth: '70%' }} />
+                    </div>
+                    {/* 날짜 스켈레톤 */}
+                    <div className="h-4 sm:h-5 w-16 sm:w-20 bg-gray-200 rounded animate-pulse flex-shrink-0 ml-2 sm:ml-4" />
+                  </div>
+                ))}
+              </div>
+              {/* 더보기 버튼 스켈레톤 */}
+              <div className="text-center mt-6 sm:mt-8">
+                <div className="inline-flex items-center gap-2 h-8 sm:h-10 w-20 sm:w-24 bg-gray-200 rounded animate-pulse" />
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {noticeData.map((notice, index) => (
+            {!showSkeleton && noticeData.map((notice, index) => (
               <div 
                 key={notice.id}
                 className={`flex items-center justify-between p-4 sm:p-6 hover:bg-gray-50 transition-colors cursor-pointer ${
@@ -183,16 +206,18 @@ export default function BottomNoticeSection({
             ))}
           </div>
           
-          {/* 더보기 버튼 */}
-          <div className="text-center mt-6 sm:mt-8">
-            <button 
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base px-4 py-2 hover:bg-gray-50 rounded-md"
-              onClick={() => window.location.href = `/event/${eventId}/notices/notice`}
-            >
-              더보기
-              <span className="text-red-500 text-lg">+</span>
-            </button>
-          </div>
+          {/* 더보기 버튼 - 스켈레톤이 아닐 때만 표시 */}
+          {!showSkeleton && (
+            <div className="text-center mt-6 sm:mt-8">
+              <button 
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base px-4 py-2 hover:bg-gray-50 rounded-md"
+                onClick={() => window.location.href = `/event/${eventId}/notices/notice`}
+              >
+                더보기
+                <span className="text-red-500 text-lg">+</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>

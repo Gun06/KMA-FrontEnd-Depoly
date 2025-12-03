@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import SectionPanel from '@/components/main/SectionPanel'
 import type { GallerySectionProps } from './Gallery'
@@ -15,7 +15,17 @@ export default function GallerySection({ className }: GallerySectionProps) {
 	const [startX, setStartX] = useState(0)
 	const [currentTransform, setCurrentTransform] = useState(0)
 	const [dragStartTransform, setDragStartTransform] = useState(0)
+	const [isLoading, setIsLoading] = useState(true)
 	const marqueeRef = useRef<HTMLDivElement>(null)
+
+	// 초기 로딩 시뮬레이션 (실제 API 연동 시 수정)
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setIsLoading(false)
+		}, 500) // 0.5초 후 로딩 완료
+
+		return () => clearTimeout(timer)
+	}, [])
 
 	const handleMouseDown = (e: React.MouseEvent) => {
 		setIsDragging(true)
@@ -116,6 +126,46 @@ export default function GallerySection({ className }: GallerySectionProps) {
 			{/* 갤러리 영역 표시 */}
 			<div className="relative w-screen left-1/2 -translate-x-1/2 h-[350px] md:h-[450px] flex items-center justify-center bg-gray-50">
 				<div className="w-full max-w-6xl px-4 md:px-6">
+					{/* 스켈레톤 UI - 로딩 중일 때 표시 */}
+					<div 
+						className="absolute left-0 right-0 top-0 overflow-hidden z-10 transition-opacity duration-300"
+						style={{
+							opacity: isLoading ? 1 : 0,
+							zIndex: isLoading ? 20 : 0,
+							pointerEvents: isLoading ? 'auto' : 'none'
+						}}
+					>
+						<div className="flex w-max items-center h-full leading-[0] pl-4 md:pl-20">
+							<ul className="flex items-center gap-3 md:gap-6 px-0 h-full">
+								{Array.from({ length: 10 }).map((_, idx) => (
+									<li key={`skeleton-${idx}`} className="shrink-0">
+										<div className="w-[250px] md:w-[350px] h-[320px] md:h-[425px] bg-gray-200 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 relative animate-pulse">
+											{/* 이미지 영역 스켈레톤 - 전체 카드 크기 */}
+											<div className="absolute inset-0 bg-gray-300" />
+											{/* 오른쪽 상단 배지 스켈레톤 */}
+											<div className="absolute top-0 right-0 w-[120px] md:w-[150px] h-[40px] md:h-[50px] bg-gray-400 rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px]" />
+											{/* 하단 텍스트 영역 스켈레톤 */}
+											<div className="absolute bottom-6 md:bottom-10 left-0 right-0 p-3 md:p-4 space-y-2">
+												<div className="h-5 md:h-6 w-3/4 bg-gray-400 rounded" />
+												<div className="h-3 md:h-4 w-1/2 bg-gray-400 rounded" />
+											</div>
+											{/* 오른쪽 하단 버튼 스켈레톤 */}
+											<div className="absolute bottom-0 right-0 w-[56px] md:w-[70px] h-[56px] md:h-[70px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-br-[16px] md:rounded-br-[15px]" />
+											<div className="absolute bottom-2 md:bottom-3 right-2 md:right-3 w-[48px] md:w-[60px] h-[48px] md:h-[60px] bg-gray-400 rounded-full" />
+										</div>
+									</li>
+								))}
+							</ul>
+							{/* 더보기 버튼 스켈레톤 */}
+							<div className="flex items-center justify-center ml-6 md:ml-12">
+								<div className="relative">
+									<div className="w-0.5 h-32 md:h-[300px] bg-gray-200"></div>
+									<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-gray-200 rounded-full"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					{/* 통합된 갤러리 카드 영역 */}
 					<div 
 						ref={marqueeRef}
@@ -127,7 +177,10 @@ export default function GallerySection({ className }: GallerySectionProps) {
 						onTouchStart={handleTouchStart}
 						onTouchMove={handleTouchMove}
 						onTouchEnd={handleTouchEnd}
-						className="absolute left-0 right-0 top-0 overflow-hidden z-10 border-2 border-gray-50"
+						className="absolute left-0 right-0 top-0 overflow-hidden z-10 border-2 border-gray-50 transition-opacity duration-300"
+						style={{
+							opacity: isLoading ? 0 : 1
+						}}
 					>
 						<div 
 							className="flex w-max items-center h-full leading-[0] transition-transform duration-300 ease-out"

@@ -361,6 +361,13 @@ export default function RegistrationDetailDrawer({
 
   if (!open || !item) return null;
 
+  // 미결제가 아닌 경우: 기본 정보(성명, 코스, 기념품, 주소 등)는 수정 불가
+  // - 미결제(UNPAID): 수정하기 클릭 시 모든 필드 수정 가능
+  // - 그 외 상태   : 수정하기 클릭 시 '입금여부', 메모, 상세메모만 수정 가능
+  const isUnpaid = item.paymentStatus === 'UNPAID';
+  const canEditFields = isEditing && isUnpaid; // 기본 정보 필드
+  const canEditMemo = isEditing; // 메모와 상세메모는 항상 수정 가능
+
   const genderLabel = (() => {
     const g = String(item.gender || '').toUpperCase();
     if (g === 'M' || g.includes('남')) return '남';
@@ -583,11 +590,11 @@ export default function RegistrationDetailDrawer({
                 </button>
               </div>
               <div className="px-5 py-4">
-              {!isEditing ? line('성명', item.name || item.userName) : editLine('성명', (
+              {!canEditFields ? line('성명', item.name || item.userName) : editLine('성명', (
                 <input className="w-full rounded border px-2 py-1" value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} />
               ))}
               {line('단체명', organizationNameDisplay)}
-              {!isEditing ? line('코스', courseName) : editLine('코스', (
+              {!canEditFields ? line('코스', courseName) : editLine('코스', (
                 <>
                   {!eventId ? (
                     <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
@@ -620,7 +627,7 @@ export default function RegistrationDetailDrawer({
                   )}
                 </>
               ))}
-              {!isEditing ? line('기념품', souvenirDisplay.names) : editLine('기념품', (
+              {!canEditFields ? line('기념품', souvenirDisplay.names) : editLine('기념품', (
                 <div className="space-y-2">
                   {form.eventCategoryId && eventData?.eventCategories?.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
                     const isSelected = form.souvenirJsonList.some(s => s.souvenirId === souvenir.id);
@@ -652,7 +659,7 @@ export default function RegistrationDetailDrawer({
                   }) || <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>}
                 </div>
               ))}
-              {!isEditing ? line('사이즈', souvenirDisplay.sizes) : editLine('사이즈', (
+              {!canEditFields ? line('사이즈', souvenirDisplay.sizes) : editLine('사이즈', (
                 <div className="space-y-2">
                   {form.souvenirJsonList.length > 0 ? (
                     form.souvenirJsonList.map((selectedSouvenir, idx) => {
@@ -698,17 +705,17 @@ export default function RegistrationDetailDrawer({
                   )}
                 </div>
               ))}
-              {!isEditing ? line('성별', genderLabel) : editLine('성별', (
+              {!canEditFields ? line('성별', genderLabel) : editLine('성별', (
                 <select className="w-full rounded border px-2 py-1" value={form.gender} onChange={e => setForm(v => ({ ...v, gender: e.target.value as 'M' | 'F' | '' }))}>
                   <option value="">선택</option>
                   <option value="M">남</option>
                   <option value="F">여</option>
                 </select>
               ))}
-              {!isEditing ? line('생년월일', (String(item.birth || '').replace(/\D+/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))) : editLine('생년월일', (
+              {!canEditFields ? line('생년월일', (String(item.birth || '').replace(/\D+/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))) : editLine('생년월일', (
                 <input className="w-full rounded border px-2 py-1" value={form.birth} onChange={e => setForm(v => ({ ...v, birth: formatBirthInput(e.target.value) }))} placeholder="YYYY-MM-DD" />
               ))}
-              {!isEditing ? line('연락처', (String(item.phNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3'))) : editLine('연락처', (
+              {!canEditFields ? line('연락처', (String(item.phNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3'))) : editLine('연락처', (
                 <input className="w-full rounded border px-2 py-1" value={form.phNum} onChange={e => setForm(v => ({ ...v, phNum: formatPhoneInput(e.target.value) }))} />
               ))}
               {line('신청일시', formatDateTime(item.registrationDate))}
@@ -727,10 +734,10 @@ export default function RegistrationDetailDrawer({
                   <option value="REFUNDED">전액환불완료</option>
                 </select>
               ))}
-              {!isEditing ? line('입금자명', item.paymenterName || '-') : editLine('입금자명', (
+              {!canEditFields ? line('입금자명', item.paymenterName || '-') : editLine('입금자명', (
                 <input className="w-full rounded border px-2 py-1" value={form.paymenterName} onChange={e => setForm(v => ({ ...v, paymenterName: e.target.value }))} />
               ))}
-              {!isEditing ? line('우편번호', zipCode || '-') : editLine('우편번호', (
+              {!canEditFields ? line('우편번호', zipCode || '-') : editLine('우편번호', (
                 <div className="flex items-center gap-2" data-allow-bubble="true">
                 <input 
                     className="w-28 rounded border px-2 py-1 bg-gray-50 cursor-not-allowed" 
@@ -747,7 +754,7 @@ export default function RegistrationDetailDrawer({
                   </button>
                 </div>
               ))}
-              {!isEditing ? line('주소', cleanAddress || '-') : editLine('주소', (
+              {!canEditFields ? line('주소', cleanAddress || '-') : editLine('주소', (
                 <input
                   className="w-full rounded border px-2 py-1 bg-gray-50 cursor-not-allowed"
                   value={form.address}
@@ -755,7 +762,7 @@ export default function RegistrationDetailDrawer({
                   placeholder="주소 검색 버튼으로 입력"
                 />
               ))}
-              {!isEditing ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
+              {!canEditFields ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
                 <input className="w-full rounded border px-2 py-1" value={form.addressDetail} onChange={e => setForm(v => ({ ...v, addressDetail: e.target.value }))} />
               ))}
 
@@ -773,15 +780,15 @@ export default function RegistrationDetailDrawer({
                 <textarea
                   className={clsx(
                     'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
-                    isEditing ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
+                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
                   )}
                   value={memo}
-                  readOnly={!isEditing}
-                  disabled={!isEditing}
+                  readOnly={!canEditMemo}
+                  disabled={!canEditMemo}
                   onChange={e => setMemo(e.target.value)}
                   placeholder="메모를 입력하세요"
                 />
-                {!isEditing && (
+                {!canEditMemo && (
                   <p className="mt-1 text-xs text-gray-400">메모는 상단의 &apos;수정하기&apos; 버튼을 눌러야 입력할 수 있습니다.</p>
                 )}
               </div>
@@ -792,15 +799,15 @@ export default function RegistrationDetailDrawer({
                 <textarea
                   className={clsx(
                     'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
-                    isEditing ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
+                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
                   )}
                   value={detailMemo}
-                  readOnly={!isEditing}
-                  disabled={!isEditing}
+                  readOnly={!canEditMemo}
+                  disabled={!canEditMemo}
                   onChange={e => setDetailMemo(e.target.value)}
                   placeholder="상세메모를 입력하세요"
                 />
-                {!isEditing && (
+                {!canEditMemo && (
                   <p className="mt-1 text-xs text-gray-400">상세메모도 &apos;수정하기&apos; 버튼을 눌러야 입력 가능합니다.</p>
                 )}
               </div>

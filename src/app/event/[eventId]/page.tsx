@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from 'react';
 import { TopSection } from '@/components/event/TopSection';
 import { MiddleSection } from '@/components/event/MiddleSection';
 import { SnsSection } from '@/components/event/SnsSection';
@@ -20,26 +19,6 @@ interface EventPageProps {
 
 export default function EventPage({ params }: EventPageProps) {
   const { eventId } = params;
-  const [isReady, setIsReady] = useState(false);
-
-  // 전체 페이지 로딩: 클라이언트 마운트 전까지 흰 화면 + 로더 표시
-  useEffect(() => {
-    // 즉시 마운트 완료 처리 (필요 시 프리페치/캐시 확인 로직 추가 가능)
-    setIsReady(true);
-  }, []);
-
-  if (!isReady) {
-    return (
-      <div className="bg-white">
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-700 mx-auto mb-3"></div>
-            <div className="text-gray-600 text-sm">잠시만 기다려주세요</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>

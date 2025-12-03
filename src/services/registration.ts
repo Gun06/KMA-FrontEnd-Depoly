@@ -120,7 +120,7 @@ export async function downloadRegistrationList(eventId: string): Promise<void> {
   }
 }
 
-// 입금 내역 Excel 업로드
+// 입금 내역 Excel 업로드 (기존 - 호환성 유지)
 export async function uploadPaymentHistory(
   eventId: string,
   file: File,
@@ -142,6 +142,45 @@ export async function uploadPaymentHistory(
       throw error;
     }
     throw error instanceof Error ? error : new Error('업로드에 실패했습니다.');
+  }
+}
+
+// 입금 내역 Excel 체크 (매칭 결과 확인)
+export async function checkPaymentUpload(
+  eventId: string,
+  file: File,
+  options?: { signal?: AbortSignal }
+) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const url = `/api/v1/registration/event/${eventId}/excel/check`;
+  
+  try {
+    const response = await request('admin', url, 'POST', formData, true, {
+      signal: options?.signal,
+    });
+    return response as import('@/types/paymentUpload').PaymentUploadCheckResponse;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+    throw error instanceof Error ? error : new Error('체크에 실패했습니다.');
+  }
+}
+
+// 입금 내역 Excel 최종 업로드 (수정 후 최종 반영)
+export async function finalizePaymentUpload(
+  eventId: string,
+  data: import('@/types/paymentUpload').PaymentUploadFinalRequest
+): Promise<string> {
+  const url = `/api/v1/registration/event/${eventId}/excel/final`;
+  
+  try {
+    const response = await request('admin', url, 'POST', data, true);
+    return response as string;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('최종 업로드에 실패했습니다.');
   }
 }
 

@@ -6,9 +6,10 @@ import { useRegistrationList, useRegistrationSearch, useRegistrationDetail } fro
 import { useEventList } from '@/hooks/useNotices';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
-import { downloadRegistrationList, uploadPaymentHistory } from '@/services/registration';
+import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
+import { downloadRegistrationList } from '@/services/registration';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast, type Id } from 'react-toastify';
+import { toast } from 'react-toastify';
 import type {
   SortKey,
   PaidFilter,
@@ -82,6 +83,11 @@ export default function Client({
   // 상세 드로어 상태
   const [open, setOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  
+  // 입금내역 업로드 모달 상태
+  const [isPaymentUploadModalOpen, setIsPaymentUploadModalOpen] = React.useState(false);
+  
+  // 기존 업로드 관련 상태 (호환성 유지)
   const [isUploadingPayments, setIsUploadingPayments] = React.useState(false);
   const [isUploadStatusVisible, setIsUploadStatusVisible] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
@@ -152,85 +158,16 @@ export default function Client({
     }
   };
 
-  // Excel 업로드 처리
+  // Excel 업로드 처리 (모달 열기)
   const handleUploadPayments = () => {
-    if (isUploadingPayments) {
-      toast.info('이미 업로드가 진행 중입니다.');
-      return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx,.xls';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      const sessionId = Symbol('upload-session');
-      uploadSessionRef.current = sessionId;
-
-      setUploadProgress(0);
-      setIsUploadStatusVisible(true);
-      setIsUploadingPayments(true);
-
-      const controller = new AbortController();
-      setUploadController(controller);
-      const toastId = toast.loading('입금 내역을 업로드 중입니다...');
-      uploadToastIdRef.current = toastId;
-      const startedAt = performance.now();
-      uploadStartRef.current = startedAt;
-
-      try {
-        await uploadPaymentHistory(eventId, file, { signal: controller.signal });
-        
-        // 데이터 새로고침
-        await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
-        await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
-
-        toast.update(toastId, {
-          render: '입금 내역 업로드가 완료되었습니다!',
-          type: 'success',
-          isLoading: false,
-          autoClose: 3000,
-          closeOnClick: true,
-        });
-      } catch (error) {
-        const isAborted = error instanceof DOMException && error.name === 'AbortError';
-        toast.update(toastId, {
-          render: isAborted ? '업로드가 취소되었습니다.' : '업로드에 실패했습니다. 다시 시도해주세요.',
-          type: isAborted ? 'info' : 'error',
-          isLoading: false,
-          autoClose: isAborted ? 2500 : 4000,
-          closeOnClick: true,
-        });
-      } finally {
-        const elapsed = performance.now() - startedAt;
-        const minDuration = 3000;
-        if (elapsed < minDuration) {
-          await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
-        }
-
-        if (uploadSessionRef.current !== sessionId) {
-          return;
-        }
-
-        setUploadProgress(100);
-        setIsUploadingPayments(false);
-
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        if (uploadSessionRef.current === sessionId) {
-          setIsUploadStatusVisible(false);
-          setUploadProgress(0);
-          uploadSessionRef.current = null;
-        }
-
-        setUploadController(null);
-        uploadToastIdRef.current = null;
-        uploadStartRef.current = null;
-      }
-    };
-    input.click();
+    setIsPaymentUploadModalOpen(true);
+  };
+  
+  // 입금내역 업로드 성공 후 처리
+  const handlePaymentUploadSuccess = async () => {
+    // 데이터 새로고침
+    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
   };
 
   const handleCancelUploadPayments = () => {
@@ -343,6 +280,14 @@ export default function Client({
             toast.error('데이터 새로고침에 실패했습니다.');
           }
         }}
+      />
+
+      {/* 입금내역 업로드 모달 */}
+      <PaymentUploadModal
+        isOpen={isPaymentUploadModalOpen}
+        onClose={() => setIsPaymentUploadModalOpen(false)}
+        eventId={eventId}
+        onSuccess={handlePaymentUploadSuccess}
       />
     </div>
   );

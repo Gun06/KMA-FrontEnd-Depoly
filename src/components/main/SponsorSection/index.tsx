@@ -103,14 +103,17 @@ export default function SponsorSection() {
       >
         {/* 로딩 스켈레톤 - 항상 먼저 렌더링하여 레이아웃 유지 (기본값: 보임) */}
         <div 
-          className="absolute inset-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-6 lg:px-8 h-full w-full overflow-hidden transition-opacity duration-300"
+          className="absolute top-0 right-0 bottom-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-6 lg:px-8 h-full overflow-hidden transition-opacity duration-300"
           style={{ 
             height: '100%',
             minHeight: 'var(--imgH, 80px)',
             // 초기 렌더링 시 항상 보이도록 강제 (showSkeleton이 false가 될 때까지)
             opacity: showSkeleton ? 1 : 0,
             zIndex: showSkeleton ? 20 : 0,
-            pointerEvents: showSkeleton ? 'auto' : 'none'
+            pointerEvents: showSkeleton ? 'auto' : 'none',
+            background: 'transparent',
+            // 타이틀 영역 제외 (왼쪽에서 시작 위치 조정)
+            left: 'clamp(200px, 20vw, 320px)'
           }}
         >
           {Array.from({ length: 8 }).map((_, idx) => (

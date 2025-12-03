@@ -2,10 +2,10 @@
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { MainBannerItem } from '@/types/event';
-import HeroButton from '@/components/common/Button/HeroButton';
+import AssociationBanner from './AssociationBanner';
+import ApiBannerSlide from './ApiBannerSlide';
 // Swiper 스타일
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -15,6 +15,7 @@ export default function MarathonHeroCarousel() {
   const [bannerData, setBannerData] = useState<MainBannerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   // API에서 메인 배너 데이터 가져오기
   useEffect(() => {
@@ -47,25 +48,11 @@ export default function MarathonHeroCarousel() {
     fetchBannerData();
   }, []);
 
-  // API 데이터만 사용
-  const allSlides = bannerData.map((banner, index) => ({
-    id: index + 1, // 1번부터 시작
-    image: banner.imageUrl,
-    badge: "대회 안내",
-    title: banner.title,
-    subtitle: banner.subTitle,
-    date: banner.date,
-    eventId: banner.eventId,
-    buttons: [
-      { text: "신청하기", variant: "default" as const },
-      { text: "대회 요강", variant: "outline" as const },
-      { text: "신청 확인", variant: "outline" as const },
-    ],
-  }));
-
-  const total = allSlides.length;
+  // 협회 기본 배너 + API 배너들을 함께 사용
+  // 협회 배너는 항상 첫 번째 슬라이드 (인덱스 0)
+  const total = 1 + bannerData.length; // 협회 배너 1개 + API 배너들
   // 스켈레톤은 로딩 중이거나 데이터가 없을 때 표시 (기본값: true)
-  const showSkeleton = isLoading || allSlides.length === 0;
+  const showSkeleton = isLoading || bannerData.length === 0;
 
   return (
     <div 
@@ -92,7 +79,7 @@ export default function MarathonHeroCarousel() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
           
           {/* 스켈레톤 내용 영역 */}
-          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-16 xl:px-24 z-10">
+          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-28 xl:px-36 2xl:px-44 z-10">
             <div className="w-full max-w-4xl space-y-3 md:space-y-4 lg:space-y-5">
               {/* 배지 스켈레톤 */}
               <div className="h-5 md:h-6 lg:h-8 w-20 md:w-24 lg:w-32 bg-white/30 rounded-full" />
@@ -169,146 +156,32 @@ export default function MarathonHeroCarousel() {
           },
         }}
         className="h-full"
+        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
       >
-        {allSlides.map((slide, idx) => (
-          <SwiperSlide key={slide.id}>
-            <a href={slide.eventId ? `/event/${slide.eventId}/guide/overview` : "/event/[eventId]/guide/overview"} className="relative block w-full hero-slide rounded-lg lg:rounded-none overflow-hidden motion-safe:transition-all motion-safe:duration-300" style={{ height: 'var(--heroH, clamp(220px, 48vw, 680px))' }}>
-              <Image
-                src={slide.image || '/placeholder.svg'}
-                alt={slide.title}
-                fill
-                priority={idx === 0}
-                fetchPriority={idx === 0 ? 'high' : 'auto'}
-                placeholder={typeof slide.image === 'object' ? 'blur' : 'empty'}
-                quality={70}
-                sizes="(max-width: 639px) 100vw, (max-width: 1023px) 100vw, 1200px"
-                className="object-cover object-center"
+        {/* 협회 기본 배너 - 항상 첫 번째 슬라이드 */}
+        <SwiperSlide key="association-banner">
+          <AssociationBanner total={total} currentIndex={activeIndex} />
+        </SwiperSlide>
+
+        {/* API 배너들 */}
+        {bannerData.map((banner, index) => {
+          const slideIndex = index + 1; // 협회 배너가 0번이므로 API 배너는 1번부터
+          return (
+            <SwiperSlide key={`api-banner-${banner.eventId}-${index}`}>
+              <ApiBannerSlide
+                id={slideIndex}
+                imageUrl={banner.imageUrl}
+                title={banner.title}
+                subtitle={banner.subTitle}
+                date={banner.date}
+                eventId={banner.eventId}
+                total={total}
+                currentIndex={activeIndex}
               />
-
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
-
-              {/* Content overlay */}
-              <div className="absolute inset-0 flex items-center justify-start">
-                  <div className="text-left text-white max-w-4xl px-4 sm:px-8 md:px-10 min-[900px]:px-12 lg:px-16 xl:px-24 flex flex-col relative">
-                    <div className="relative z-10 w-full">
-                      {/* Category badge */}
-                      <div className="hero-anim hero-badge inline-block w-fit bg-white/30 backdrop-blur-sm rounded-full text-[10px] sm:text-xs md:text-sm lg:text-base font-medium px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-0.5 md:py-1 mb-2 sm:mb-3 md:mb-4 lg:mb-6 border border-white/20 hero-text-shadow">
-                        {slide.badge}
-                      </div>
-
-                      {/* Main title */}
-                      <h1 className="hero-anim hero-title font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 md:mb-6 leading-tight text-left hero-text-shadow">
-                        <div className="whitespace-nowrap">{slide.title}</div>
-                        <div className="whitespace-nowrap">{slide.subtitle}</div>
-                      </h1>
-
-                      {/* Date */}
-                      <p className="hero-anim hero-date text-xs sm:text-sm md:text-base lg:text-xl text-white/95 mb-2 sm:mb-3 md:mb-5 lg:mb-6 hero-text-shadow">
-                        {slide.date}
-                      </p>
-
-                    {/* Action buttons: 모바일에서 숨김, 태블릿 이상 노출 */}
-                    <div className="hero-anim hero-buttons hidden sm:flex sm:flex-row gap-2 md:gap-3 mt-2">
-                      {/* 신청하기: sm+md 동일, lg는 그대로 */}
-                      <HeroButton
-                        variant="main"
-                        tone="blue"
-                        size="xs"
-                        className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
-                      >
-                        신청하기
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="blue"
-                        size="sm"
-                        className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
-                      >
-                        신청하기
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="blue"
-                        size="md"
-                        className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/apply` : '/event/[eventId]/registration/apply'; }}
-                      >
-                        신청하기
-                      </HeroButton>
-
-                      {/* 대회 요강: sm+md 동일 */}
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="xs"
-                        className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
-                      >
-                        대회 요강
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="sm"
-                        className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
-                      >
-                        대회 요강
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="md"
-                        className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/guide/overview` : '/event/[eventId]/guide/overview'; }}
-                      >
-                        대회 요강
-                      </HeroButton>
-
-                      {/* 신청 확인: sm+md 동일 */}
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="xs"
-                        className="hidden sm:inline-flex md:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
-                      >
-                        신청 확인
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="sm"
-                        className="hidden md:inline-flex lg:hidden"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
-                      >
-                        신청 확인
-                      </HeroButton>
-                      <HeroButton
-                        variant="main"
-                        tone="white"
-                        size="md"
-                        className="hidden lg:inline-flex"
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = slide.eventId ? `/event/${slide.eventId}/registration/confirm` : '/event/[eventId]/registration/confirm'; }}
-                      >
-                        신청 확인
-                      </HeroButton>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* per-slide fraction at right-bottom inside slide */}
-              <div className="absolute right-4 bottom-3 z-10">
-                <div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-xs md:text-sm backdrop-blur-sm border border-white/20">
-                  {idx + 1}/{total}
-                </div>
-              </div>
-            </a>
-          </SwiperSlide>
-        ))}
+            </SwiperSlide>
+          );
+        })}
+      </Swiper>
 
         {/* Custom Navigation Buttons - 데스크톱에서만 표시 */}
         <div className="swiper-button-prev-custom absolute left-4 top-1/2 -translate-y-1/2 z-10 p-3 transition-colors cursor-pointer hidden lg:block">
@@ -342,7 +215,6 @@ export default function MarathonHeroCarousel() {
             />
           </svg>
         </div>
-      </Swiper>
       </div>
 
       {/* Custom Pagination Styles & Text Animations */}

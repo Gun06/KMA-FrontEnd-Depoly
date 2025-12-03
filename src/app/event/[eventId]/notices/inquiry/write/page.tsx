@@ -8,7 +8,7 @@ import TextEditor from '@/components/common/TextEditor';
 import FileUploader from '@/components/common/Upload/FileUploader';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
-import { ArrowLeft, Info } from 'lucide-react';
+import { ArrowLeft, Info, Eye, EyeOff } from 'lucide-react';
 import type { UploadItem } from '@/components/common/Upload/types';
 // import { authService } from '@/services/auth'; // 비회원 작성으로 변경
 
@@ -36,6 +36,7 @@ export default function EventInquiryWritePage() {
   const [isSecret] = useState(true); // 하드코딩: 항상 비공개
   const [authorName, setAuthorName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // 비밀번호 유효성 검사 함수
   const isPasswordValid = (value: string) => {
@@ -340,14 +341,16 @@ export default function EventInquiryWritePage() {
               <div className="mb-6">
                 <div className="flex items-center gap-4">
                   <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0">작성자</label>
-                  <input
-                    type="text"
-                    value={authorName}
-                    onChange={(e) => setAuthorName(e.target.value)}
-                    placeholder="작성자명을 입력해주세요."
-                    className="flex-1 h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isSubmitting}
-                  />
+                  <div className="w-80">
+                    <input
+                      type="text"
+                      value={authorName}
+                      onChange={(e) => setAuthorName(e.target.value)}
+                      placeholder="작성자명을 입력해주세요."
+                      className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isSubmitting}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -355,21 +358,36 @@ export default function EventInquiryWritePage() {
               <div className="mb-6">
                 <div className="flex items-start gap-4">
                   <label className="text-sm font-medium text-gray-700 w-16 flex-shrink-0 mt-2.5">비밀번호</label>
-                  <div className="flex-1">
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={handlePasswordChange}
-                      placeholder="비밀번호 (4자리 이상)"
-                      className={`w-full h-10 px-3 border rounded-md text-sm focus:outline-none focus:ring-2 ${
-                        password && password.length > 0
-                          ? isPasswordValid(password)
-                            ? 'border-green-500 focus:ring-green-500'
-                            : 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 focus:ring-blue-500'
-                      }`}
-                      disabled={isSubmitting}
-                    />
+                  <div className="w-80">
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={handlePasswordChange}
+                        placeholder="비밀번호 (4자리 이상)"
+                        className={`w-full h-10 px-3 pr-10 border rounded-md text-sm focus:outline-none focus:ring-2 ${
+                          password && password.length > 0
+                            ? isPasswordValid(password)
+                              ? 'border-green-500 focus:ring-green-500'
+                              : 'border-red-500 focus:ring-red-500'
+                            : 'border-gray-300 focus:ring-blue-500'
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        disabled={isSubmitting}
+                        aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                     
                     {/* 비밀번호 유효성 검사 안내 */}
                     {password && password.length > 0 && (

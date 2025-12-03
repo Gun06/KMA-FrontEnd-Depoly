@@ -260,8 +260,8 @@ export default function InquiryWritePage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 w-16 flex-shrink-0">
                     <label className="text-sm font-medium text-gray-700">
-                      공개여부
-                    </label>
+                    공개여부
+                  </label>
                     <div className="relative group">
                       <Info className="w-4 h-4 text-gray-400 cursor-help" />
                       <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">

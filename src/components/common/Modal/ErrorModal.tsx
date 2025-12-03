@@ -38,22 +38,22 @@ export default function ErrorModal({
         </button>
 
         <div className="px-5 pt-6 pb-3 sm:px-8 sm:pt-8 sm:pb-4 flex-shrink-0">
-          {/* 아이콘 */}
+        {/* 아이콘 */}
           <div className="mx-auto mb-3 sm:mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-yellow-100">
             <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
-          </div>
+        </div>
 
-          {/* 제목 */}
+        {/* 제목 */}
           <h3 className="mb-2 sm:mb-3 text-lg sm:text-xl font-extrabold text-gray-900">
-            {title}
-          </h3>
+          {title}
+        </h3>
         </div>
 
         {/* 본문 메시지 - 스크롤 가능 영역 */}
         <div className="px-5 pb-3 sm:px-8 sm:pb-4 flex-1 overflow-y-auto min-h-0 max-h-[45vh] sm:max-h-[50vh]">
           <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-600 break-words whitespace-pre-wrap text-left">
-            {message || '알 수 없는 오류가 발생했습니다.'}
-          </p>
+          {message || '알 수 없는 오류가 발생했습니다.'}
+        </p>
         </div>
 
         {/* 확인 버튼 */}

@@ -130,11 +130,23 @@ export default function FaqSection({
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6">
         <div className="px-6 md:px-20">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
-                <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
-              </div>
+            // 스켈레톤 UI
+            <div className="divide-y divide-gray-200 bg-white rounded-md">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div key={`skeleton-${idx}`} className="py-6">
+                  <div className="w-full flex items-center gap-4">
+                    {/* Q 마크 스켈레톤 */}
+                    <div className="w-6 md:w-7 h-6 md:h-7 bg-gray-200 rounded animate-pulse flex-shrink-0" />
+                    {/* 질문 텍스트 스켈레톤 */}
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 md:h-6 w-full bg-gray-200 rounded animate-pulse" />
+                      <div className="h-5 md:h-6 w-3/4 bg-gray-200 rounded animate-pulse" />
+                    </div>
+                    {/* 화살표 아이콘 스켈레톤 */}
+                    <div className="w-4 h-4 md:w-5 md:h-5 bg-gray-200 rounded animate-pulse flex-shrink-0" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : faqItems.length > 0 ? (
             <div className="divide-y divide-gray-200 bg-white rounded-md">

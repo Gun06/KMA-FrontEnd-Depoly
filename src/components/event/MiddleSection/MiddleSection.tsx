@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import middleImage from '@/assets/images/event/middle.png';
-import middleMobileImage from '@/assets/images/event/middlemobile.png';
 
 interface MainPageImagesInfo {
   mainBannerColor: string;
@@ -102,12 +100,11 @@ export default function MiddleSection({
     fetchEventInfo();
   }, [eventId, propEventInfo, isMounted]);
 
-  // 이미지 우선순위: API 데이터 > 기본 이미지
-  // SSR/CSR 일치를 위해 마운트 전에는 기본 이미지만 사용
-  const desktopImage = (isMounted && eventInfo?.mainOutlinePcImageUrl) || middleImage;
-  const mobileImage = (isMounted && eventInfo?.mainOutlineMobileImageUrl) || middleMobileImage;
+  // 이미지 우선순위: API 데이터만 사용 (더미 이미지 제거)
+  const desktopImage = (isMounted && eventInfo?.mainOutlinePcImageUrl) || null;
+  const mobileImage = (isMounted && eventInfo?.mainOutlineMobileImageUrl) || null;
 
-  // 로딩 상태를 표시하지 않음 - 캐시된 데이터를 즉시 사용
+  const showSkeleton = (isLoading || !isMounted) && !eventInfo && !propEventInfo;
 
   if (error && !eventInfo) {
     return (
@@ -125,35 +122,59 @@ export default function MiddleSection({
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
       <div className="relative w-full">
-        {/* 데스크톱용 이미지 (768px 이상) */}
-        <div className="relative w-full hidden md:block">
-          <Image
-            src={desktopImage}
-            alt="청주 마라톤 중간 섹션"
-            width={0}
-            height={0}
-            className="w-full h-auto object-contain"
-            priority={true}
-            quality={85}
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-          />
+        {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-gray-50 transition-opacity duration-300"
+          style={{
+            opacity: showSkeleton ? 1 : 0,
+            zIndex: showSkeleton ? 50 : 0,
+            pointerEvents: showSkeleton ? 'auto' : 'none'
+          }}
+        >
+            {/* 데스크톱용 이미지 스켈레톤 (768px 이상) */}
+            <div className="relative w-full hidden md:block">
+              <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-200 animate-pulse" />
+            </div>
+            
+            {/* 모바일용 이미지 스켈레톤 (768px 미만) */}
+            <div className="relative w-full block md:hidden">
+              <div className="w-full h-[300px] sm:h-[350px] bg-gray-200 animate-pulse" />
+            </div>
         </div>
+
+        {/* 데스크톱용 이미지 (768px 이상) - 스켈레톤이 아닐 때만 표시 */}
+        {!showSkeleton && desktopImage && (
+          <div className="relative w-full hidden md:block">
+            <Image
+              src={desktopImage}
+              alt="청주 마라톤 중간 섹션"
+              width={0}
+              height={0}
+              className="w-full h-auto object-contain"
+              priority={true}
+              quality={85}
+              sizes="100vw"
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </div>
+        )}
         
-        {/* 모바일용 이미지 (768px 미만) */}
-        <div className="relative w-full block md:hidden">
-          <Image
-            src={mobileImage}
-            alt="청주 마라톤 중간 섹션 모바일"
-            width={0}
-            height={0}
-            className="w-full h-auto object-contain"
-            priority={true}
-            quality={85}
-            sizes="100vw"
-            style={{ width: '100%', height: 'auto' }}
-          />
-        </div>
+        {/* 모바일용 이미지 (768px 미만) - 스켈레톤이 아닐 때만 표시 */}
+        {!showSkeleton && mobileImage && (
+          <div className="relative w-full block md:hidden">
+            <Image
+              src={mobileImage}
+              alt="청주 마라톤 중간 섹션 모바일"
+              width={0}
+              height={0}
+              className="w-full h-auto object-contain"
+              priority={true}
+              quality={85}
+              sizes="100vw"
+              style={{ width: '100%', height: 'auto' }}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

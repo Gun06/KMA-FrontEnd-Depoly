@@ -135,12 +135,21 @@ export default function InquirySection() {
       {/* 문의사항 리스트 */}
       <div className="space-y-0">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
-              <div className="text-gray-500 text-sm">잠시만 기다려주세요</div>
+          // 스켈레톤 UI
+          Array.from({ length: 5 }).map((_, idx) => (
+            <div key={`skeleton-${idx}`} className="py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
+              <div className="flex items-start gap-3">
+                {/* 날짜 스켈레톤 */}
+                <div className="min-w-[80px]">
+                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                </div>
+                {/* 제목 스켈레톤 */}
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 flex-1 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
             </div>
-          </div>
+          ))
         ) : displayData.length > 0 ? (
           displayData.slice(0, 5).map((item) => (
             <InquiryItem 

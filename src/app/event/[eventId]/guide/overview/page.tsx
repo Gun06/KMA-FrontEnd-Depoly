@@ -78,7 +78,12 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
       }}
     >
       <div className="container mx-auto px-4 py-8">
-          {imageUrl && (
+          {isLoading ? (
+            // 스켈레톤 UI
+            <div className="flex justify-center mb-6">
+              <div className="w-full max-w-4xl h-[600px] bg-gray-200 rounded-lg animate-pulse" />
+            </div>
+          ) : imageUrl ? (
             <div className="flex justify-center mb-6">
               <Image
                 src={imageUrl}
@@ -96,7 +101,7 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
                 }}
               />
             </div>
-          )}
+          ) : null}
       </div>
     </SubmenuLayout>
   );
