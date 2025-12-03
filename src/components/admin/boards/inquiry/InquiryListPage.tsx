@@ -12,8 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-type Sort = "new" | "old" | "hit" | "name";
-type SearchMode = "name" | "post";
+type SearchMode = "all" | "name" | "post";
 export type ViewRow = Inquiry & { __replyOf?: string; __answerId?: string; secret?: boolean };
 
 type Props = {
@@ -25,7 +24,7 @@ type Props = {
   
   // 기존 props (하위 호환성을 위해 유지)
   provider?: (page: number, pageSize: number, opt: {
-    q: string; sort: Sort; searchMode: SearchMode;
+    q: string; searchMode: SearchMode;
   }) => { rows: ViewRow[]; total: number };
   
   linkForRow: (row: ViewRow) => string;
@@ -76,8 +75,7 @@ export default function InquiryListPage({
 
   const [page, setPage] = React.useState<number>(normalizedCurrentPage ?? pageFromSearchParams ?? 1);
   const [q, setQ] = React.useState("");
-  const [sort, setSort] = React.useState<Sort>("new");
-  const [searchMode, setSearchMode] = React.useState<SearchMode>("post");
+  const [searchMode, setSearchMode] = React.useState<SearchMode>("all");
   const [_rev, setRev] = React.useState(0);
 
   React.useEffect(() => {
@@ -108,11 +106,10 @@ export default function InquiryListPage({
   // API 연동 (검색 기능 포함)
   const searchParams = React.useMemo(() => ({
     keyword: q || undefined,
-    questionSearchKey: q ? (searchMode === 'name' ? 'AUTHOR' as const : 'TITLE' as const) : undefined,
-    questionSortKey: q ? (sort === 'new' ? 'LATEST' as const : 'TITLE' as const) : undefined,
+    questionSearchKey: q && searchMode !== 'all' ? (searchMode === 'name' ? 'AUTHOR' as const : 'TITLE' as const) : undefined,
     page,
     size: pageSize,
-  }), [q, searchMode, sort, page, pageSize]);
+  }), [q, searchMode, page, pageSize]);
 
   const { data: homepageData, isLoading: homepageLoading, error: homepageError } = useHomepageInquiries(
     searchParams,
@@ -210,10 +207,9 @@ export default function InquiryListPage({
     if (!provider) return { rows: [], total: 0 };
     return provider(page, pageSize, {
       q,
-      sort,
       searchMode,
     });
-  }, [provider, page, pageSize, q, sort, searchMode]);
+  }, [provider, page, pageSize, q, searchMode]);
 
   // 최종 데이터 선택
   const finalRows = apiType ? viewRows : legacyRows.rows;
@@ -227,14 +223,14 @@ export default function InquiryListPage({
       <FilterBar
         {...preset}
         className="!gap-3"
+        initialValues={["all"]}
         onFieldChange={(label, value) => {
           const L = norm(String(label));
-          if (L === "정렬") setSort(value as Sort);
-          if (L === "이름") setSearchMode(value as SearchMode);
+          if (L === "검색키") setSearchMode(value as SearchMode);
           setPage(1);
         }}
         onSearch={(value) => { setQ(value); setPage(1); }}
-        onReset={() => { setQ(""); setSort("new"); setSearchMode("post"); setPage(1); }}
+        onReset={() => { setQ(""); setSearchMode("all"); setPage(1); }}
       />
     </div>
   );

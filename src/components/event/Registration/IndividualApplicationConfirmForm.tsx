@@ -351,7 +351,10 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
               type="text"
               placeholder=""
               value={formData.phone2}
-              onChange={(e) => handleInputChange('phone2', e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, '');
+                handleInputChange('phone2', value);
+              }}
               autoComplete="off"
               name="no-autofill-individual-phone2"
               className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
@@ -362,7 +365,10 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
               type="text"
               placeholder=""
               value={formData.phone3}
-              onChange={(e) => handleInputChange('phone3', e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9]/g, '');
+                handleInputChange('phone3', value);
+              }}
               autoComplete="off"
               name="no-autofill-individual-phone3"
               className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"

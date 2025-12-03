@@ -100,14 +100,8 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttonTextMode: "current",
       fields: [
         {
-          label: "정렬 기준",
-          options: [
-            { label: "번호 순", value: "no" },
-            { label: "개최일 순", value: "date" },
-            { label: "대회명 순", value: "title" },
-            { label: "개최지 순", value: "place" },
-            { label: "주최 순", value: "host" },
-          ],
+          label: "년도",
+          options: yearOptions,
         },
         {
           label: "신청여부",
@@ -198,15 +192,9 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttonTextMode: "current",
       fields: [
         {
-          label: "정렬",
-          options: [
-            { label: "최신순", value: "new" },
-            { label: "이름순", value: "name" },
-          ],
-        },
-        {
           label: "검색키",
           options: [
+            { label: "전체", value: "all" },
             { label: "작성자명", value: "name" },
             { label: "게시글명", value: "post" },
           ],

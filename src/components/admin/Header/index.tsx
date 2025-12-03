@@ -35,6 +35,7 @@ const subMenus: Record<string, SubMenu> = {
   참가신청: {
     items: [
       { label: '신청자 관리', href: '/admin/applications/list' },
+      { label: '기록관리', href: '/admin/applications/records' },
     ],
   },
   대회관리: {

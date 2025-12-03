@@ -45,7 +45,10 @@ export default function PhoneField({
         type="text"
         maxLength={4}
         value={phone2}
-        onChange={(e) => onPhone2Change(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value.replace(/[^0-9]/g, '');
+          onPhone2Change(value);
+        }}
         className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
         placeholder="0000"
       />
@@ -56,7 +59,10 @@ export default function PhoneField({
         type="text"
         maxLength={4}
         value={phone3}
-        onChange={(e) => onPhone3Change(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value.replace(/[^0-9]/g, '');
+          onPhone3Change(value);
+        }}
         className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
         placeholder="0000"
       />

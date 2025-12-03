@@ -23,7 +23,6 @@ export type EventRow = {
   isPublic: boolean;
 };
 
-type SortKey = 'no' | 'date' | 'title' | 'place' | 'host';
 type PublicFilter = '' | '공개' | '비공개';
 
 // 프리셋 값 → 도메인 값 매핑
@@ -47,13 +46,16 @@ type Props = {
   onPageChange: (p: number) => void;
 
   onSearch?: (q: string) => void;
-  onSortChange?: (key: SortKey) => void;
+  onYearChange?: (year: string) => void;
   onFilterStatusChange?: (status: RegStatus | '') => void;
   onFilterPublicChange?: (v: PublicFilter) => void;
 
   onClickRegister?: () => void;
   onTitleClick?: (row: EventRow) => void;
   onResetFilters?: () => void;
+
+  /** 모든 대회 데이터 (년도 필터용) */
+  allEvents?: EventRow[];
 };
 
 export default function EventTable({
@@ -63,12 +65,13 @@ export default function EventTable({
   pageSize,
   onPageChange,
   onSearch,
-  onSortChange,
+  onYearChange,
   onFilterStatusChange,
   onFilterPublicChange,
   onClickRegister,
   onTitleClick,
   onResetFilters,
+  allEvents,
 }: Props) {
   const columns: Column<EventRow>[] = [
     { key: 'no', header: '번호', width: 80, align: 'center' },
@@ -119,7 +122,43 @@ export default function EventTable({
     },
   ];
 
-  const preset = PRESETS['관리자 / 대회관리']?.props;
+  // 참가신청과 동일하게, 실제 존재하는 년도만 필터에 노출
+  const availableYears = React.useMemo(() => {
+    const source = allEvents || rows;
+    const years = new Set<number>();
+
+    source.forEach(row => {
+      if (row.date) {
+        const year = new Date(row.date).getFullYear();
+        years.add(year);
+      }
+    });
+
+    const currentYear = new Date().getFullYear();
+    const yearList = Array.from(years)
+      .filter(y => y <= currentYear + 1) // 올해 +1까지
+      .sort((a, b) => b - a); // 내림차순
+
+    return [
+      { label: '전체', value: '' },
+      ...yearList.map(y => ({ label: String(y), value: String(y) })),
+    ];
+  }, [allEvents, rows]);
+
+  const presetBase = PRESETS['관리자 / 대회관리']?.props;
+
+  // 프리셋의 '년도' 필드만 동적으로 교체
+  const preset = React.useMemo(() => {
+    if (!presetBase) return undefined;
+    return {
+      ...presetBase,
+      fields: presetBase.fields?.map(field =>
+        field.label === '년도'
+          ? { ...field, options: availableYears }
+          : field
+      ),
+    };
+  }, [presetBase, availableYears]);
 
   // 버튼 순서: 검색 → 대회등록 → 초기화(쇼Reset)
   const RightControls = preset ? (
@@ -132,7 +171,7 @@ export default function EventTable({
       ]}
       showReset={true} // 3) 초기화
       onFieldChange={(label, value) => {
-        if (label === '정렬 기준') onSortChange?.(value as SortKey);
+        if (label === '년도') onYearChange?.(value);
         else if (label === '신청여부') onFilterStatusChange?.(mapStatus(value));
         else if (label === '공개여부') onFilterPublicChange?.(mapPublic(value));
       }}

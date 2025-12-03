@@ -455,7 +455,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                       disabled={isDisabled}
                       onChange={(e) => {
                         if (isDisabled) return;
-                        const phone2Value = e.target.value;
+                        const phone2Value = e.target.value.replace(/[^0-9]/g, '');
                         
                         // 한 번에 모든 변경사항을 적용
                         const newParticipants = participants.map((p, i) => {
@@ -481,7 +481,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                       disabled={isDisabled}
                       onChange={(e) => {
                         if (isDisabled) return;
-                        const phone3Value = e.target.value;
+                        const phone3Value = e.target.value.replace(/[^0-9]/g, '');
                         
                         // 한 번에 모든 변경사항을 적용
                         const newParticipants = participants.map((p, i) => {
