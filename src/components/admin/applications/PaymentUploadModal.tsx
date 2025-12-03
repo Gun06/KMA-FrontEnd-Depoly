@@ -222,7 +222,7 @@ export default function PaymentUploadModal({
             return (
               <div className="px-6 py-2 border-b border-gray-200">
                 <p className="text-sm font-medium text-red-600">
-                  * 체크된건은 '입금완료', 체크 해제된것은 '확인필요' 처리되어 저장됩니다
+                  * 체크된건은 &apos;입금완료&apos;, 체크 해제된것은 &apos;확인필요&apos; 처리되어 저장됩니다
                   <span className="ml-2 text-gray-700">
                     (일치: {checkedCount}건, 불일치: {uncheckedCount}건)
                   </span>

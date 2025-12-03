@@ -9,7 +9,7 @@ import RegistrationDetailDrawer from '@/components/admin/applications/Registrati
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
 import { downloadRegistrationList } from '@/services/registration';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
+import { toast, type Id } from 'react-toastify';
 import type {
   SortKey,
   PaidFilter,
