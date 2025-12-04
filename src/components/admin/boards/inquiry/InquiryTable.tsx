@@ -16,6 +16,7 @@ type Props = {
   showEventNameColumn?: boolean;
   onDelete?: (id: string) => void;
   onDeleteAnswer?: (answerId: string) => void;
+  onResetPassword?: (id: string) => void;
   pagination?: {
     page: number;
     pageSize: number;
@@ -26,7 +27,7 @@ type Props = {
   };
 };
 
-function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, pagination, showEventNameColumn }: Props) {
+function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, onResetPassword, pagination, showEventNameColumn }: Props) {
   const data: ViewRow[] = Array.isArray(rows) ? rows : [];
 
   // 페이지 정보는 pagination 객체에서 직접 사용
@@ -118,6 +119,29 @@ function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, pagination, 
         ) : (
           <InquiryStatusBadge answered={r.answered || false} size="pill" />
         ),
+    },
+    {
+      key: "resetPassword",
+      header: "비번 초기화",
+      width: 120,
+      align: "center",
+      render: (r) => {
+        if (isReply(r)) {
+          return <span className="text-gray-300">—</span>;
+        } else {
+          // 비밀글인 경우에만 비밀번호 초기화 버튼 표시
+          return r.secret ? (
+            <button 
+              className="text-blue-600 hover:underline text-sm" 
+              onClick={() => onResetPassword?.(String(r.id))}
+            >
+              초기화
+            </button>
+          ) : (
+            <span className="text-gray-300">—</span>
+          );
+        }
+      },
     },
     {
       key: "delete",

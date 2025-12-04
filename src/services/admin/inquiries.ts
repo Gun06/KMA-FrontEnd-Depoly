@@ -198,3 +198,21 @@ export async function deleteAnswer(answerId: string): Promise<string> {
     true
   ) as Promise<string>;
 }
+
+// 8) 문의사항 비밀번호 초기화
+export interface ResetPasswordRequest {
+  password: string;
+}
+
+export async function resetInquiryPassword(
+  inquiryId: string,
+  password: string
+): Promise<string> {
+  return request<string>(
+    'admin',
+    `/api/v1/question/${inquiryId}`,
+    'PATCH',
+    { password },
+    true
+  ) as Promise<string>;
+}

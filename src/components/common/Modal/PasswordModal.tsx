@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface PasswordModalProps {
@@ -10,6 +10,7 @@ interface PasswordModalProps {
   title?: string;
   message?: string;
   isLoading?: boolean;
+  externalError?: string;
 }
 
 export default function PasswordModal({
@@ -18,11 +19,19 @@ export default function PasswordModal({
   onConfirm,
   title = "비밀글입니다!",
   message = "이 글은 비밀글로 설정되어 있어 작성자만 볼 수 있습니다.",
-  isLoading = false
+  isLoading = false,
+  externalError = ''
 }: PasswordModalProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  
+  // 외부 에러가 있으면 표시
+  useEffect(() => {
+    if (externalError) {
+      setError(externalError);
+    }
+  }, [externalError]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

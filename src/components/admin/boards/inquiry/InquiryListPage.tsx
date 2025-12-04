@@ -7,10 +7,14 @@ import { PRESETS } from "@/components/common/filters/presets";
 import InquiryTable from "@/components/admin/boards/inquiry/InquiryTable";
 import type { Inquiry } from "@/types/inquiry";
 import { useHomepageInquiries, useEventInquiries, useAllInquiries } from "@/hooks/useInquiries";
-import { InquiryItem, deleteInquiry, deleteAnswer } from "@/services/admin/inquiries";
+import { InquiryItem, deleteInquiry, deleteAnswer, resetInquiryPassword } from "@/services/admin/inquiries";
 import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import ConfirmModal from "@/components/common/Modal/ConfirmModal";
+import PasswordModal from "@/components/common/Modal/PasswordModal";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 
 type SearchMode = "all" | "name" | "post";
 export type ViewRow = Inquiry & { __replyOf?: string; __answerId?: string; secret?: boolean };
@@ -77,6 +81,15 @@ export default function InquiryListPage({
   const [q, setQ] = React.useState("");
   const [searchMode, setSearchMode] = React.useState<SearchMode>("all");
   const [_rev, setRev] = React.useState(0);
+  
+  // 비밀번호 초기화 모달 상태
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+  const [showPasswordModal, setShowPasswordModal] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [selectedInquiryId, setSelectedInquiryId] = React.useState<string | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   React.useEffect(() => {
     if (normalizedCurrentPage && normalizedCurrentPage !== page) {
@@ -289,6 +302,68 @@ export default function InquiryListPage({
     }
   };
 
+  const handleResetPasswordClick = (id: string) => {
+    setSelectedInquiryId(id);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmReset = () => {
+    setShowConfirmModal(false);
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSubmit = async (password: string) => {
+    if (!selectedInquiryId) return;
+    
+    if (password.length < 4) {
+      setErrorMessage('비밀번호는 최소 4자 이상이어야 합니다.');
+      return;
+    }
+    
+    setErrorMessage(''); // 에러 메시지 초기화
+    setIsResettingPassword(true);
+    
+    try {
+      await resetInquiryPassword(selectedInquiryId, password);
+      
+      // 캐시 무효화
+      if (apiType === 'homepage' || !apiType) {
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.homepage() });
+      }
+      if (apiType === 'event' && eventId) {
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.event(eventId) });
+      }
+      if (apiType === 'all') {
+        queryClient.invalidateQueries({ queryKey: inquiryKeys.all });
+      }
+      
+      setShowPasswordModal(false);
+      setShowSuccessModal(true);
+      setSelectedInquiryId(null);
+    } catch (_error) {
+      setShowPasswordModal(false);
+      setShowErrorModal(true);
+      setSelectedInquiryId(null);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleCloseModals = () => {
+    setShowConfirmModal(false);
+    setShowPasswordModal(false);
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    setSelectedInquiryId(null);
+    setErrorMessage("");
+    setIsResettingPassword(false);
+  };
+  
+  const handlePasswordModalClose = () => {
+    setShowPasswordModal(false);
+    setErrorMessage("");
+  };
+
   const composeLinkWithPage = React.useCallback((row: ViewRow) => {
     const base = linkForRow(row);
     if (!base) return base;
@@ -336,8 +411,49 @@ export default function InquiryListPage({
           pagination={{ page, pageSize, total: finalTotal, onChange: handlePageChange, align: "right" }}
           onDelete={handleDelete}
           onDeleteAnswer={handleDeleteAnswer}
+          onResetPassword={handleResetPasswordClick}
         />
       )}
+
+      {/* 비밀번호 초기화 확인 모달 */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={handleCloseModals}
+        onConfirm={handleConfirmReset}
+        title="비밀번호 초기화"
+        message="문의사항 비밀번호를 초기화하시겠습니까?"
+        confirmText="확인"
+        cancelText="취소"
+        isLoading={isResettingPassword}
+      />
+
+      {/* 비밀번호 입력 모달 */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={handlePasswordModalClose}
+        onConfirm={handlePasswordSubmit}
+        title="비밀번호 초기화"
+        message="새 비밀번호를 입력해주세요."
+        isLoading={isResettingPassword}
+        externalError={errorMessage}
+      />
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseModals}
+        title="초기화 완료"
+        message="비밀번호가 성공적으로 초기화되었습니다."
+      />
+
+      {/* 에러 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={handleCloseModals}
+        title="초기화 실패"
+        message={errorMessage || "비밀번호 초기화에 실패했습니다."}
+        confirmText="확인"
+      />
     </div>
   );
 }
