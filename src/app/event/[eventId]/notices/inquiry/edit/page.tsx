@@ -439,6 +439,28 @@ export default function InquiryEditPage() {
               <li>• 답변은 보통 1-2일 내에 등록됩니다.</li>
             </ul>
           </div>
+
+          {/* 하단 버튼 영역 */}
+          <div className="mt-8 flex items-center justify-center gap-3 pb-8">
+            <button
+              onClick={handleGoBack}
+              disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              취소
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className={`px-6 py-2.5 text-sm font-medium rounded-md focus:outline-none focus:ring-2 transition-colors ${
+                isSubmitting
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed border border-gray-300'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 border border-transparent'
+              }`}
+            >
+              {isSubmitting ? '수정 중...' : '수정하기'}
+            </button>
+          </div>
         </div>
       </div>
 

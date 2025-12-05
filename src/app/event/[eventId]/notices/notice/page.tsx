@@ -5,8 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { NoticeBoard } from '@/components/common/Notice';
 import { useNoticeData } from './hooks/useNoticeData';
-import { LoadingState } from './components/LoadingState';
 import { ErrorState } from './components/ErrorState';
+import NoticeSkeleton from './components/NoticeSkeleton';
 
 export default function EventNoticePage() {
   const params = useParams();
@@ -55,7 +55,10 @@ export default function EventNoticePage() {
           subMenu: "공지사항"
         }}
       >
-        <LoadingState eventId={eventId} />
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          {/* 스켈레톤 UI */}
+          <NoticeSkeleton />
+        </div>
       </SubmenuLayout>
     );
   }

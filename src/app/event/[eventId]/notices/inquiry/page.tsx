@@ -12,6 +12,7 @@ import type { NoticeItem as TableNoticeItem } from '@/components/common/Table/ty
 import { fetchInquiryList, type InquiryResponse, type InquiryItem, type SearchTarget } from './api/inquiryApi';
 import { formatDate, maskAuthorName } from './utils/formatters';
 import { SecretPostModal } from './components/SecretPostModal';
+import InquirySkeleton from './components/InquirySkeleton';
 
 // 문의사항 상세보기 API 응답 인터페이스
 interface AttachmentInfo {
@@ -273,9 +274,106 @@ export default function EventInquiryPage() {
         }}
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-            <span className="ml-4 text-gray-600">로딩 중...</span>
+          {/* 안내문구 */}
+          <div className="mb-6">
+            <div className="bg-gray-100 rounded-lg p-4 text-center">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                대회 관련 문의사항을 남겨주시면 빠른 시간 내에 답변드리겠습니다. 
+                문의하실 때는 구체적인 내용을 작성해 주시기 바라며, 
+                비밀글 설정 시 비밀번호를 잊지 않도록 주의해 주세요.
+              </p>
+            </div>
+          </div>
+
+          {/* 스켈레톤 UI */}
+          <InquirySkeleton />
+          
+          {/* 검색 영역 - 로딩 중에도 표시 */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
+            {/* 카테고리 드롭다운 */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
+              >
+                <span className="text-[15px] leading-[26px] text-[#1E2124]">
+                  {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '전체'}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isDropdownOpen && (
+                <>
+                  {/* 백드롭 */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  {/* 드롭다운 메뉴 */}
+                  <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-[#CDD1D5] rounded-md shadow-lg z-20 py-1">
+                    {searchOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          handleSearchTypeChange(option.value as SearchTarget);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
+                          selectedSearchType === option.value ? 'bg-[#EEF2F7]' : ''
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {/* 검색 입력창 */}
+            <div className="relative">
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={handleKeywordChange}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                  }
+                }}
+                placeholder="검색어를 입력하세요"
+                className="h-10 pl-4 pr-12 border border-gray-300 rounded-md text-sm w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <button 
+                onClick={handleSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* 검색 초기화 버튼 */}
+            {(appliedSearchKeyword || appliedSearchType !== 'ALL') && (
+              <button
+                onClick={handleSearchReset}
+                className="h-10 px-4 bg-gray-500 text-white text-sm font-medium rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors whitespace-nowrap"
+              >
+                초기화
+              </button>
+            )}
+
+            {/* 글쓰기 버튼 */}
+            <button 
+              onClick={handleGoToWrite}
+              className="h-10 px-6 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              글쓰기
+            </button>
           </div>
         </div>
       </SubmenuLayout>

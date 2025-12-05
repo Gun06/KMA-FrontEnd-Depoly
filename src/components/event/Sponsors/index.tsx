@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useEventSponsorBanners } from '@/hooks/useEventSponsor'
 import type { EventSponsorBanner } from '@/types/eventSponsor'
+import SponsorSkeleton from './components/SponsorSkeleton'
 type Logo = {
   src: string
   alt: string
@@ -60,15 +61,9 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
 
 
 
-  // API 데이터가 없으면 렌더링하지 않음
+  // 로딩 중일 때 스켈레톤 표시
   if (isLoading) {
-    return (
-      <section aria-label="organizer" className="bg-white">
-        <div className="mx-auto max-w-[1920px] px-0 md:px-4 py-6 md:py-8">
-          <div className="text-center text-gray-500">스폰서 정보를 불러오는 중...</div>
-        </div>
-      </section>
-    );
+    return <SponsorSkeleton />;
   }
 
   if (error || (!hosts.length && !organizers.length && !sponsors.length)) {
