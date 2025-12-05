@@ -8,7 +8,6 @@ import EventTable, {
 } from '@/components/admin/events/EventTable';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import { useEventsState } from '@/contexts/EventsContext';
-import { MOCK_EVENTS } from '@/data/events';
 import {
   useAdminEventList,
   transformAdminEventToEventRow,
@@ -28,9 +27,7 @@ export default function EventsClient({
   const search = useSearchParams();
   const { rows: storeRows } = useEventsState();
 
-  // ✅ API 붙기 전까지는 로컬(mock) 전체 목록 사용
-  //    나중에 API 붙으면 NEXT_PUBLIC_USE_MOCK=0 으로 바꿔서 서버 페이징으로 전환
-  const USE_LOCAL_MOCK = false; // 임시로 API 데이터 사용하도록 설정
+  // 더미 데이터 제거됨 - API 데이터만 사용
 
   // API에서 이벤트 목록 조회
   const {
@@ -50,16 +47,13 @@ export default function EventsClient({
     return transformed;
   }, [apiData]);
 
-  // base: mock 전체 or SSR 한 페이지 or API 데이터
+  // base: SSR 한 페이지 or API 데이터
   const base: EventRow[] = React.useMemo(() => {
-    if (USE_LOCAL_MOCK) {
-      return [...MOCK_EVENTS];
-    }
     if (apiRows.length > 0) {
       return [...apiRows];
     }
     return [...initialRows];
-  }, [USE_LOCAL_MOCK, apiRows, initialRows]);
+  }, [apiRows, initialRows]);
 
   // base + 컨텍스트(로컬 변경분) 병합 (같은 id는 컨텍스트가 덮어씀)
   const all = React.useMemo(() => {
@@ -123,10 +117,8 @@ export default function EventsClient({
       return bd.localeCompare(ad); // 최신일자 먼저
     });
 
-    // API 데이터를 사용하는 경우 서버의 총 개수 사용, 아니면 로컬 필터링 결과 사용
-    const totalCount = USE_LOCAL_MOCK
-      ? list.length
-      : apiData?.totalElements || 0;
+    // API 데이터의 총 개수 사용
+    const totalCount = apiData?.totalElements || 0;
     const start = (page - 1) * pageSize;
     const pageRows = list.slice(start, start + pageSize);
 
@@ -137,7 +129,7 @@ export default function EventsClient({
     })) as EventRow[];
 
     return { rows: withNo, totalCount };
-  }, [all, q, year, status, pub, page, pageSize, USE_LOCAL_MOCK, apiData]);
+  }, [all, q, year, status, pub, page, pageSize, apiData]);
 
   // ---------- URL 동기화 ----------
   const replaceQuery = (next: Record<string, string | undefined>) => {

@@ -349,6 +349,20 @@ const filterControls = (preset || tableCtaLabel) && (
     );
   }
 
+  // 빈 상태 처리
+  if (rows.length === 0 && totalCount === 0 && !isLoading) {
+    return (
+      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
+        {renderHeader()}
+        {filterControls}
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
+          <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1300px] px-4 space-y-4">
       {renderHeader()}

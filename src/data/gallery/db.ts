@@ -2,7 +2,6 @@
 // 기존 파일 전체 교체
 
 import type { Gallery, GalleryFilter, Paged } from "./types";
-import { MOCK_EVENTS } from "@/data/events";
 
 /** 'YYYY-MM-DD' → 'YYYY.MM.DD' */
 const toDots = (s: string) => s.replaceAll("-", ".");
@@ -18,41 +17,16 @@ const ymd = (d = new Date()) => {
 /** 메모리 DB: eventId -> Gallery */
 const DB: Record<string, Gallery> = Object.create(null);
 
-/** 제목에서 연도/꼬리표 제거해 태그명 만들기 */
-function toTagName(title: string) {
-  // 앞 연도 제거, 마지막의 '대회' 제거
-  return title.replace(/^\s*\d{4}\s*/,"").replace(/\s*대회\s*$/,"").trim();
-}
 
-/** 이벤트 더미로부터 시드하기 (최초 1회) */
+/** 이벤트 더미로부터 시드하기 (최초 1회) - 더미 데이터 제거됨 */
 function ensureSeed() {
-  if (Object.keys(DB).length) return;
-
-  // 최신 날짜가 위로 오도록 정렬한 뒤 삽입(선택 사항)
-  const sorted = [...MOCK_EVENTS].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
-  for (const ev of sorted) {
-    const id = String(ev.id);
-    DB[id] = {
-      eventId: id,
-      date: toDots(ev.date),                 // 표시는 기존처럼 YYYY.MM.DD
-      tagName: toTagName(ev.title),          // 태그명 = 제목에서 연/‘대회’ 제거
-      title: ev.title,                       // 대회명 = 이벤트 제목 그대로
-      googlePhotosUrl: "https://photos.google.com/", // 더미 링크
-      visible: !!ev.isPublic,                // 공개여부 = 이벤트 공개여부
-      views: Math.floor(50 + Math.random() * 400),
-      periodFrom: ev.date,                   // 기간 정보가 없으니 동일 날짜로 세팅
-      periodTo: ev.date,
-    };
-  }
+  // 더미 데이터 생성 로직 제거됨
+  // DB는 빈 상태로 시작하며, 실제 데이터는 등록 기능을 통해 추가됨
 }
 
-/** 필요 시 강제 재시드용(개발 편의) */
+/** 필요 시 강제 재시드용(개발 편의) - 더미 데이터 제거로 인해 빈 DB로 리셋만 수행 */
 export function reseedFromEvents() {
   for (const k of Object.keys(DB)) delete DB[k];
-  ensureSeed();
 }
 
 /** 현재 최대 eventId + 1 반환 */

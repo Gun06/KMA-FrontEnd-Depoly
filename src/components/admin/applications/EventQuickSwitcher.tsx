@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { MOCK_EVENTS } from '@/data/events';
+import { useAdminEventList, transformAdminEventToEventRow } from '@/services/admin';
 
 export default function EventQuickSwitcher({ compact = false }: { compact?: boolean }) {
   const pathname = usePathname();
@@ -12,10 +12,24 @@ export default function EventQuickSwitcher({ compact = false }: { compact?: bool
   const m = pathname?.match(/\/admin\/applications\/management\/(\d+)/);
   const currentId = m ? Number(m[1]) : undefined;
 
-  const events = React.useMemo(
-    () => [...MOCK_EVENTS].sort((a, b) => b.date.localeCompare(a.date)),
-    []
-  );
+  // API에서 대회 목록 가져오기
+  const { data: apiData, isLoading } = useAdminEventList({ page: 1, size: 100 });
+
+  const events = React.useMemo(() => {
+    if (!apiData?.content) return [];
+    return apiData.content
+      .map(transformAdminEventToEventRow)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [apiData]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-gray-600">{compact ? '대회:' : '대회선택:'}</span>
+        <div className="h-10 w-[260px] bg-gray-200 animate-pulse rounded-md" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -23,7 +37,7 @@ export default function EventQuickSwitcher({ compact = false }: { compact?: bool
       <select
         value={currentId ?? ''}
         onChange={(e) => {
-          const id = Number(e.target.value);
+          const id = e.target.value;
           if (id) router.push(`/admin/applications/management/${id}`);
         }}
         aria-label="대회 선택"

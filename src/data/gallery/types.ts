@@ -4,6 +4,7 @@ export type Gallery = {
     tagName: string;        // 대회 태그명
     title: string;          // 대회명
     googlePhotosUrl: string;
+    thumbnailImageUrl?: string; // 썸네일 이미지 URL
     visible: boolean;       // 공개여부
     views: number;
     periodFrom: string;     // YYYY-MM-DD

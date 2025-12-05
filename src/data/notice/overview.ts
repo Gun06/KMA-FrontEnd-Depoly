@@ -1,21 +1,6 @@
 // src/data/notice/overview.ts
 import type { ApplicantListRow } from "@/components/admin/applications/ApplicantEventListTable";
-import { MOCK_EVENTS } from "@/data/events";
 import type { NoticeFilter } from "./types";
-import { buildEventUrl } from "@/utils/url";
-import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadge";
-
-/** Event -> ApplicantListRow 매핑 (테이블 스키마에 정확히 맞춤) */
-function toRow(e: (typeof MOCK_EVENTS)[number]): ApplicantListRow {
-  return {
-    id: e.id,            // 번호
-    date: e.date,        // YYYY-MM-DD (렌더에서 [YYYY.MM.DD]로 변환)
-    title: e.title,      // 대회명
-    applyStatus: e.applyStatus as RegStatus,
-    isPublic: e.isPublic,
-    url: buildEventUrl(e.id), // 공개 사이트의 대회 URL로 통일
-  };
-}
 
 /** 목록/검색/필터/정렬 + 페이징 */
 export function fetchNoticeOverview(
@@ -32,8 +17,8 @@ export function fetchNoticeOverview(
   const status = filter?.status;                 // '접수중' | '접수마감' | '비접수'
   const year = (filter?.year ?? "").trim();      // "2025" 같은 4자리
 
-  // 1) 원천 rows
-  let rows: ApplicantListRow[] = MOCK_EVENTS.map(toRow);
+  // 1) 원천 rows - 더미 데이터 제거됨, 빈 배열 반환
+  let rows: ApplicantListRow[] = [];
 
   // 2) 공개여부 필터
   if (visibility) {

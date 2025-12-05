@@ -185,7 +185,7 @@ export default function ApplicantEventListTable({
   }, [originalPreset, availableYears]);
 
   const RightControls = preset ? (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <FilterBar
         {...preset}
         className="!gap-3"
@@ -209,6 +209,21 @@ export default function ApplicantEventListTable({
       {rightExtra /* ✅ 검색/초기화 바로 옆에 외부 요소 주입 */}
     </div>
   ) : null;
+
+  // 빈 상태 처리
+  if (rows.length === 0 && total === 0) {
+    return (
+      <div className="w-full">
+        <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="shrink-0">{RightControls}</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
+          <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AdminTable<ApplicantListRow>

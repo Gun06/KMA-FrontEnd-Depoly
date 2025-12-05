@@ -1,6 +1,5 @@
 // 단체 회원 더미 데이터 + 조회 유틸 (결정적 생성)
 
-import { MOCK_EVENTS } from '@/data/events';
 import { APPLICANTS } from '@/data/applicants';
 import type { OrganizationApiData } from '@/types/user';
 
@@ -64,10 +63,8 @@ const norm = (s: unknown) =>
     .replace(/[·•\-_/]/g, '')
     .replace(/A$/i, '');
 
-type MockEvent = { id: number; title: string; date: string; host?: string };
-const EVENT_BY_ID = new Map<number, { title: string; date: string; host?: string }>(
-  (MOCK_EVENTS as unknown as MockEvent[]).map((e) => [e.id, { title: e.title, date: e.date, host: e.host }])
-);
+// 더미 데이터 제거됨 - 빈 Map으로 처리
+const EVENT_BY_ID = new Map<number, { title: string; date: string; host?: string }>();
 
 // APPLICANTS에서 org별 최신 eventId
 const LATEST_EVENT_ID_BY_ORG = (() => {
@@ -94,21 +91,8 @@ function cityFromOrg(orgName: string): string | null {
 }
 
 function findLatestEventByCityKeyword(city: string | null) {
-  const events = MOCK_EVENTS as unknown as MockEvent[];
-  const getTime = (e: MockEvent) => new Date(e?.date || '1970-01-01').getTime();
-  if (city) {
-    const candidates = events.filter(e =>
-      String(e.title).includes(city) ||
-      String(e.host).includes(`${city}시체육회`) ||
-      String(e.host).includes(`${city}군체육회`)
-    );
-    if (candidates.length) {
-      candidates.sort((a,b) => getTime(b)-getTime(a));
-      return candidates[0]?.title;
-    }
-  }
-  const latest = [...events].sort((a,b) => getTime(b)-getTime(a))[0];
-  return latest?.title;
+  // 더미 데이터 제거됨 - null 반환
+  return null;
 }
 
 function findLatestEventTitleByOrg(org: OrganizationRow): string | undefined {

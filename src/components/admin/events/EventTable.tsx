@@ -164,7 +164,7 @@ export default function EventTable({
   const RightControls = preset ? (
     <FilterBar
       {...preset}
-      className="ml-auto !gap-3" // 오른쪽 정렬
+      className="!gap-3" // 왼쪽 정렬
       buttons={[
         { label: '검색', tone: 'dark' }, // 1) 검색
         { label: '대회등록', tone: 'primary', iconRight: true }, // 2) 대회등록
@@ -182,6 +182,29 @@ export default function EventTable({
       onReset={() => onResetFilters?.()}
     />
   ) : null;
+
+  // 빈 상태 처리
+  if (rows.length === 0 && total === 0) {
+    return (
+      <div className="w-full">
+        <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="shrink-0">{RightControls}</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
+          <div className="text-sm text-gray-400 mb-6">첫 번째 대회를 등록해보세요</div>
+          {onClickRegister && (
+            <button
+              onClick={onClickRegister}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              대회 등록하기
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AdminTable<EventRow>

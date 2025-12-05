@@ -111,6 +111,47 @@ export default function GalleryListTable({
     return undefined;
     };
 
+  // 빈 상태 처리
+  if (rows.length === 0 && total === 0) {
+    return (
+      <div className="max-w-[1300px] mx-auto w-full mb-10">
+        <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="flex items-center">
+            <FilterBar
+              {...preset}
+              onFieldChange={(label, value) => {
+                const L = String(label).replace(/\s/g, "");
+                if (L === "정렬") onChangeSort?.(value as Sort);
+                else if (L === "공개여부") onChangeVisible?.(toOnOff(value));
+              }}
+              onActionClick={(label) => {
+                if (label === "등록하기") onClickRegister?.();
+              }}
+              onSearch={(q) => onSearch?.(q)}
+              onReset={() => {
+                onChangeSort?.("no");
+                onChangeVisible?.(undefined);
+                onSearch?.("");
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 갤러리가 없습니다</div>
+          <div className="text-sm text-gray-400 mb-6">첫 번째 갤러리를 등록해보세요</div>
+          {onClickRegister && (
+            <button
+              onClick={onClickRegister}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              갤러리 등록하기
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1300px] mx-auto w-full mb-10">
       <AdminTable<GalleryListRow>
@@ -120,7 +161,7 @@ export default function GalleryListTable({
         renderFilters={null}
         renderSearch={null}
         renderActions={
-          <div className="ml-auto flex items-center">
+          <div className="flex items-center">
             <FilterBar
               {...preset}
               onFieldChange={(label, value) => {

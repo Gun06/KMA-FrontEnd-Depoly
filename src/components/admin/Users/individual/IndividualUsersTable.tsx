@@ -130,7 +130,7 @@ export default function IndividualUsersTable({
   const Actions = presetProps ? (
     <FilterBar
       {...presetProps}
-      className="ml-auto !gap-3"
+      className="!gap-3"
       showReset
       onFieldChange={(label, value) => {
         const L = norm(label);
@@ -144,6 +144,21 @@ export default function IndividualUsersTable({
       onReset={onResetFilters}
     />
   ) : null;
+
+  // 빈 상태 처리
+  if (rows.length === 0 && total === 0) {
+    return (
+      <div className="w-full">
+        <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
+          <div className="shrink-0">{Actions}</div>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 회원이 없습니다</div>
+          <div className="text-sm text-gray-400">회원이 등록되면 여기에 표시됩니다</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <AdminTable<IndividualUserRow>

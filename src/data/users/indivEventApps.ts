@@ -1,5 +1,4 @@
 // src/data/users/indivEventApps.ts
-import { MOCK_EVENTS } from '@/data/events';
 import type { UserRegistrationData } from '@/types/user';
 
 /* ======================= Types ======================= */
@@ -156,27 +155,8 @@ export function listUserEventApps(params: {
     pageSize,
   } = params;
 
-  // 1) 사용자 기준 샘플 매핑
-  let rows: UserEventAppRow[] = MOCK_EVENTS.map((e) => {
-    const eidNum = Number(e.id);
-    const seed = userId + (Number.isFinite(eidNum) ? eidNum : 0);
-    const pay = paymentBy(userId, Number.isFinite(eidNum) ? eidNum : 0);
-    return {
-      eventId: String(e.id),
-      userId,
-      title: e.title,
-      eventDate: e.date,
-      course: pickBy(COURSES, seed),
-      souvenir: pickBy(SOUVENIRS, seed * 3),
-      fee: feeBy(seed * 11),
-      regDate: regDateBy(e.date, seed),
-      appStatus: appStatusBy(userId, Number.isFinite(eidNum) ? eidNum : 0),
-      ...pay,
-    };
-  });
-
-  // 2) “해당 사용자가 신청한 것만” 샘플 필터 (결정적)
-  rows = rows.filter((r) => (userId + Number(r.eventId)) % 2 === 0);
+  // 1) 더미 데이터 제거됨 - 빈 배열로 시작
+  let rows: UserEventAppRow[] = [];
 
   // 3) 검색/필터
   const q = query.trim();
