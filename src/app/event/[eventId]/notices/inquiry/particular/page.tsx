@@ -317,6 +317,19 @@ export default function InquiryDetailPage() {
               onViewAnswerWithPassword={handleViewAnswerWithPassword}
             />
             <AttachmentList attachments={inquiryDetail.attachmentInfoList} />
+            {/* 공개글이고 답변이 있으면 바로 표시 */}
+            {!inquiryDetail.secret && !urlPassword && answerHeader && answerDetail && (
+              <AnswerSection
+                answerHeader={answerHeader}
+                answerDetail={answerDetail}
+                isLoadingAnswer={isLoadingAnswer}
+                inquiryDetail={inquiryDetail}
+                currentUserId={currentUserId}
+                showOnlyAnswer={false}
+                onGoBack={handleGoBack}
+                urlPassword={urlPassword}
+              />
+            )}
           </>
         ) : (
           <div className="text-center py-8">

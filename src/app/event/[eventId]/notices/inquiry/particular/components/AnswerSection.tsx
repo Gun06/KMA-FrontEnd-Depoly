@@ -41,8 +41,8 @@ export const AnswerSection = ({
   onGoBack,
   urlPassword
 }: AnswerSectionProps) => {
-  // 답변만 표시하는 경우
-  if (showOnlyAnswer && answerHeader) {
+  // 답변만 표시하는 경우 (answerHeader가 없어도 answerDetail이 있으면 표시)
+  if (showOnlyAnswer && (answerHeader || answerDetail)) {
 
     // 비밀글인 경우
     if (answerDetail?.id === 'secret') {
@@ -104,18 +104,22 @@ export const AnswerSection = ({
           {/* 답변 헤더 */}
           <div className="border-b border-gray-200 p-4 sm:p-6 bg-gray-100">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-              {answerDetail?.title || answerHeader.title}
+              {answerDetail?.title || answerHeader?.title || '답변'}
             </h1>
             
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변자:</span>
-                <span className="truncate max-w-[100px] sm:max-w-none">{answerHeader.authorName}</span>
+                <span className="truncate max-w-[100px] sm:max-w-none">
+                  {answerHeader?.authorName || answerDetail?.admin_id || '관리자'}
+                </span>
               </div>
               
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변일:</span>
-                <span className="truncate">{formatDate(answerHeader.createdAt)}</span>
+                <span className="truncate">
+                  {formatDate(answerHeader?.createdAt || answerDetail?.created_at || '')}
+                </span>
               </div>
             </div>
           </div>
@@ -178,8 +182,8 @@ export const AnswerSection = ({
     );
   }
 
-  // 답변이 있는 경우
-  if (answerHeader) {
+  // 답변이 있는 경우 (answerHeader가 없어도 answerDetail이 있으면 표시)
+  if (answerHeader || answerDetail) {
     return (
       <div className="mt-6">
         {/* 답변 상세 내용 - 문의글과 동일한 형식 */}
@@ -187,18 +191,22 @@ export const AnswerSection = ({
           {/* 답변 헤더 */}
           <div className="border-b border-gray-200 p-4 sm:p-6 bg-gray-100">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 break-words">
-              {answerDetail?.title || answerHeader.title}
+              {answerDetail?.title || answerHeader?.title || '답변'}
             </h1>
             
             <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변자:</span>
-                <span className="truncate max-w-[100px] sm:max-w-none">{answerHeader.authorName}</span>
+                <span className="truncate max-w-[100px] sm:max-w-none">
+                  {answerHeader?.authorName || answerDetail?.admin_id || '관리자'}
+                </span>
               </div>
               
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <span className="font-medium">답변일:</span>
-                <span className="truncate">{formatDate(answerHeader.createdAt)}</span>
+                <span className="truncate">
+                  {formatDate(answerHeader?.createdAt || answerDetail?.created_at || '')}
+                </span>
               </div>
             </div>
           </div>

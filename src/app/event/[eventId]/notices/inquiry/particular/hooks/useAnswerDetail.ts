@@ -92,7 +92,6 @@ export const useAnswerDetail = ({ eventId, inquiryId, currentUserId, inquiryDeta
       // 목록과 동일한 방식: answerId를 그대로 사용 (비밀 답글의 경우 -1도 허용)
       const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/answer/${answerId}`;
 
-
       // 답변 API 호출 (비밀번호가 있으면 포함)
       const requestBody = urlPassword ? { password: urlPassword } : {};
       
@@ -104,13 +103,12 @@ export const useAnswerDetail = ({ eventId, inquiryId, currentUserId, inquiryDeta
         body: JSON.stringify(requestBody),
       });
 
-
       if (answerResponse.ok) {
         const data = await answerResponse.json();
         
         // 답변 API 응답 처리 (모든 경우 동일)
         if (data && typeof data === 'object' && data.content) {
-          setAnswerDetail({
+          const answerDetailData = {
             id: data.id || answerHeader?.id || '',
             title: data.title || answerHeader?.title || '',
             content: data.content,
@@ -119,11 +117,13 @@ export const useAnswerDetail = ({ eventId, inquiryId, currentUserId, inquiryDeta
             created_at: data.createdAt || answerHeader?.createdAt || '',
             isSecret: data.isSecret || false,
             attachmentDetailList: data.attachmentDetailList || []
-          });
+          };
+          setAnswerDetail(answerDetailData);
         } else {
           setAnswerDetail(null);
         }
       } else {
+        const errorText = await answerResponse.text();
         setAnswerDetail(null);
       }
       

@@ -214,18 +214,14 @@ export default function NoticeTable({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start gap-1.5">
                     <span
-                      className={`text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1 ${
-                        row.originalQuestionId ? 'ml-4' : ''
-                      }`}
+                      className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
                       title={row.title}
                     >
                       {row.title}
                     </span>
                   </div>
 
-                  <div className={`mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280] ${
-                    row.originalQuestionId ? 'ml-4' : ''
-                  }`}>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280]">
                     <span className="shrink-0">{row.author}</span>
                     <span className="opacity-30">·</span>
                     <span className="shrink-0">{row.date}</span>
