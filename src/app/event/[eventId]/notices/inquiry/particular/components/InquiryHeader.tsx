@@ -116,7 +116,7 @@ export const InquiryHeader = ({
         </div>
 
         {/* 본문 내용 */}
-        <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
+        <div className="p-4 sm:p-6 md:p-8">
           <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words">
             {/* 서버 저장된 HTML을 안전하게 렌더링 */}
             <div dangerouslySetInnerHTML={{ __html: inquiryDetail?.content || '' }} />

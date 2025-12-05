@@ -68,7 +68,7 @@ export const AnswerSection = ({
                   비밀글입니다.
                 </h1>
               </div>
-              <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
+              <div className="p-4 sm:p-6 md:p-8">
                 <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
                   <div className="text-center py-8">
                     <div className="text-gray-500 text-4xl mb-4">🔒</div>
@@ -125,7 +125,7 @@ export const AnswerSection = ({
           </div>
 
           {/* 답변 본문 내용 */}
-          <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
+          <div className="p-4 sm:p-6 md:p-8">
             <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
@@ -212,7 +212,7 @@ export const AnswerSection = ({
           </div>
 
           {/* 답변 본문 내용 */}
-          <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
+          <div className="p-4 sm:p-6 md:p-8">
             <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
