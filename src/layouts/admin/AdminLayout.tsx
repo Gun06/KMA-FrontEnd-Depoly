@@ -18,9 +18,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { accessToken, user, hasHydrated } = useAdminAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthed, setIsAuthed] = React.useState(false);
 
   const isLoginRoute = pathname === '/admin/login';
-  const isAuthed = !!tokenService.getAdminAccessToken();
   const roles = user?.roles || [];
   const primaryRole = user?.role || '';
   const allRoles = Array.from(
@@ -33,6 +33,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     'BOARD_ADMIN',
   ];
   const isAdminRole = allRoles.some(r => allowed.includes(r));
+
+  // 클라이언트에서만 인증 상태 확인 (Hydration 에러 방지)
+  React.useEffect(() => {
+    if (hasHydrated) {
+      setIsAuthed(!!tokenService.getAdminAccessToken());
+    }
+  }, [hasHydrated]);
 
   useEffect(() => {
     // hasHydrated가 false여도 accessToken이 이미 있으면 동작 가능하도록 완화
@@ -62,8 +69,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   if (isLoginRoute) return <>{children}</>;
 
-  // 로그아웃 상태 확인 - 토큰이 없으면 로그아웃 상태로 간주
-  const showBlurOverlay = !isAuthed;
+  // Hydration 완료 전에는 오버레이를 표시하지 않음 (서버/클라이언트 일치)
+  const showBlurOverlay = hasHydrated && !isAuthed;
 
   return (
     <div className="min-h-screen flex flex-col bg-white relative">

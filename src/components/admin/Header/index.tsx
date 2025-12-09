@@ -10,6 +10,7 @@ import menuIcon from '@/assets/icons/main/menu.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoints } from '@/hooks/useMediaQuery';
 import { useAdminAuthStore } from '@/store/adminAuthStore';
+import UtilityIcons from './UtilityIcons';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -233,51 +234,7 @@ export default function Header() {
 
           {/* 우측 아이콘 (로그인 상태에 따라 다르게 표시) */}
           <div className="hidden custom:flex items-center justify-center space-x-8 relative z-[110]">
-            {isLoggedIn ? (
-              // 로그인된 상태 - 관리자 정보 표시
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-white">
-                  <Image
-                    src={userIcon}
-                    alt="사용자"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 invert"
-                  />
-                  <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                    {user?.account || 'admin'} 관리자님
-                  </span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="font-pretendard text-sm text-white/80 hover:text-white transition-colors whitespace-nowrap break-keep truncate"
-                >
-                  로그아웃
-                </button>
-              </div>
-            ) : (
-              // 로그인되지 않은 상태
-              <Link
-                href="/admin/login"
-                className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
-                onClick={() => {
-                  if (state.subMenuOpen) {
-                    updateState({ subMenuOpen: null });
-                  }
-                }}
-              >
-                <Image
-                  src={userIcon}
-                  alt="사용자"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5 invert"
-                />
-                <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                  로그인
-                </span>
-              </Link>
-            )}
+            <UtilityIcons />
             <Link
               href="/"
               className="font-pretendard text-sm text-white/80 hover:text-white transition-colors whitespace-nowrap break-keep truncate"
@@ -522,7 +479,7 @@ export default function Header() {
                           className="w-5 h-5 invert"
                         />
                         <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                          {user?.account || '000'} 관리자님
+                          {user?.role || '관리자'}님
                         </span>
                       </div>
                       <button

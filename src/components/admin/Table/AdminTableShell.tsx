@@ -24,7 +24,7 @@ type Props<T> = {
   className?: string;
   stickyHeader?: boolean;
   minWidth?: number | string;
-  contentMinHeight?: number | string;
+  contentMinHeight?: number | string | null;
 };
 
 export default function AdminTableShell<T>({
@@ -43,10 +43,15 @@ export default function AdminTableShell<T>({
   minWidth,
   contentMinHeight = '100vh',
 }: Props<T>) {
-  const minH = typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight;
+  const minH = contentMinHeight 
+    ? (typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight)
+    : undefined;
 
   return (
-    <section className={clsx('w-full flex flex-col', className)} style={{ minHeight: minH }}>
+    <section 
+      className={clsx('w-full flex flex-col', className)} 
+      style={minH ? { minHeight: minH } : undefined}
+    >
       {title ? <h2 className="mb-3 text-xl font-semibold">{title}</h2> : null}
 
       {(renderFilters || renderSearch || renderActions) && (
@@ -58,7 +63,7 @@ export default function AdminTableShell<T>({
       )}
 
       <div
-        className="flex-1"
+        className={contentMinHeight ? 'flex-1' : ''}
         onClick={(e) => {
           const el = e.target as HTMLElement;
           if (el.closest('[data-allow-bubble="true"]')) return;
