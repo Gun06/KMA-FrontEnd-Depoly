@@ -35,13 +35,12 @@ export default function BusComingSoonPage({ params }: { params: { eventId: strin
 
             {/* 메인 메시지 */}
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
-              서비스 준비중입니다
+              본 대회는 셔틀버스 운영 계획이 없습니다.
             </h2>
             
             {/* 상세 설명 */}
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              마라톤 버스 예약 서비스가 준비 중입니다.<br />
-              더 나은 서비스를 위해 열심히 준비하고 있습니다.
+              본 대회는 셔틀버스 운영 계획이 없습니다.
             </p>
 
 
