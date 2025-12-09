@@ -44,9 +44,9 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
   const email = 'marathon@chungju.com'
   const telDisplay = '02) 417 - 1080'
   const telHref = '02-417-1080'
-  const addressLine1 = '서울 송파구 올림픽대로'
-  const addressLine2 = '25 잠실주경기장 B15-2'
-  const mapQuery = encodeURIComponent('서울 송파구 올림픽대로 25 잠실주경기장 B15-2')
+  const addressLine1 = '서울 송파구 방이동 백제고분로 501'
+  const addressLine2 = '청호빌딩 302호'
+  const mapQuery = encodeURIComponent('서울 송파구 방이동 백제고분로 501 청호빌딩 302호')
   const youtubeUrl = 'https://www.youtube.com/@jeonmahyeop'
   const instagramUrl = 'https://www.instagram.com/jeonmahyeop/'
 

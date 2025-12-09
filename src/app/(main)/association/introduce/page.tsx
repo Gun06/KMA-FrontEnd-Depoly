@@ -25,7 +25,7 @@ export default function IntroducePage() {
     },
     seoul: {
       title: "전마협 서울지사",
-      address: "서울특별시 송파구 올림픽로 25 잠실주경기장 B15-2",
+      address: "서울 송파구 방이동 백제고분로 501 청호빌딩 302호",
       tel: "02) 417-1080",
       fax: "02) 417-1082",
       homepage: "WWW.RUN1080.COM"

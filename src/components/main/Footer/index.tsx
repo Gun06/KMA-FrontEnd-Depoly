@@ -21,7 +21,7 @@ const OFFICES: OfficeRowProps[] = [
   },
   {
     label: '서울지사',
-    address: '서울 송파구 올림픽대로 25 잠실주경기장 B15-2',
+    address: '서울 송파구 방이동 백제고분로 501 청호빌딩 302호',
     phone: '02) 417 - 1080',
   },
   {
