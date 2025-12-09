@@ -177,7 +177,10 @@ export default function Header() {
         >
           {/* 로고 */}
           <div className="flex items-center justify-start custom:justify-center">
-            <div className="flex items-center space-x-2">
+            <Link
+              href="/admin"
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 relative">
                 <Image
                   src={logoImage}
@@ -190,7 +193,7 @@ export default function Header() {
               <span className="font-giants text-lg text-white whitespace-nowrap break-keep truncate">
                 전마협 관리자 페이지
               </span>
-            </div>
+            </Link>
           </div>
 
           {/* 데스크탑 네비게이션 */}

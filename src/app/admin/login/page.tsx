@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 import { tokenService } from '@/utils/tokenService';
 import { toast } from 'react-toastify';
 import { authService } from '@/services/auth';
+import logoImage from '@/assets/images/main/logo.jpg';
 
 interface AdminLoginFormData {
   account: string;
@@ -78,19 +81,20 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
       {/* 로고 */}
       <div className="mb-8 text-center">
-        <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold text-center">
-            National
-            <br />
-            Marathon
-            <br />
-            Association
-          </span>
+        <div className="w-24 h-24 mx-auto mb-4 rounded-full ring-2 ring-green-600 overflow-hidden flex items-center justify-center bg-white">
+          <Image
+            src={logoImage}
+            alt="전국마라톤협회 로고"
+            width={96}
+            height={96}
+            className="object-cover w-full h-full"
+            priority
+          />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+        <h1 className="text-2xl md:text-3xl font-giants text-gray-900 mb-2">
           전국마라톤협회
         </h1>
-        <p className="text-lg text-gray-600">Administrator Login</p>
+        <p className="text-lg text-gray-600 font-pretendard">Admin Login</p>
       </div>
 
       {/* 로그인 폼 */}
@@ -124,11 +128,15 @@ export default function AdminLoginPage() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
             aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
             disabled={isLoading}
           >
-            {showPassword ? '👁️' : '👁️‍🗨️'}
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
           </button>
         </div>
 
