@@ -449,9 +449,9 @@ export default function EventDetailView({
           </div>
           <div className="px-6 py-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {eventData.eventBanners.map(banner => (
+              {eventData.eventBanners.map((banner, index) => (
                 <div
-                  key={banner.id}
+                  key={banner.id || banner.imageUrl || `${banner.bannerType}-${banner.providerName}-${index}`}
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <div className="mb-3">

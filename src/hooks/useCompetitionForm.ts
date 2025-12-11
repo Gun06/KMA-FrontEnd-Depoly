@@ -487,11 +487,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
           const urlItem = item as { url: string };
           return {
             id: `api-${index}-${Date.now()}`,
-            file: new File([], urlItem.url), // 빈 File 객체 (API 이미지는 File이 없음)
+            file: null, // 기존 이미지는 File이 없음
             name: urlItem.url.split('/').pop() || 'image',
             size: 0,
             sizeMB: 0,
             tooLarge: false,
+            url: urlItem.url, // 기존 이미지 URL 보존
           };
         });
       };

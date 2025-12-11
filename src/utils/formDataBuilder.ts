@@ -319,7 +319,7 @@ export class FormDataBuilder {
     bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
     static: boolean;
   }> {
-    // 기존 배너를 providerName으로 매칭하기 위한 맵 생성 (서버 순서와 관계없이 매칭)
+    // 기존 배너를 imageUrl로 매칭하기 위한 맵 생성 (서버 순서 변경과 관계없이 매칭)
     const existingBannerMap = new Map<string, {
       imageUrl: string;
       url: string;
@@ -328,15 +328,16 @@ export class FormDataBuilder {
       static: boolean;
     }>();
     (existingEventBanners || []).forEach(b => {
-      // providerName을 키로 사용 (서버에서 순서가 바뀌어도 매칭 가능)
-      const key = `${b.bannerType}::${(b.providerName || '').trim()}`;
-      existingBannerMap.set(key, {
-        imageUrl: b.imageUrl,
-        url: b.url,
-        providerName: b.providerName,
-        bannerType: b.bannerType,
-        static: b.static,
-      });
+      // imageUrl을 키로 사용 (서버에서 순서가 바뀌어도 매칭 가능)
+      if (b.imageUrl) {
+        existingBannerMap.set(b.imageUrl, {
+          imageUrl: b.imageUrl,
+          url: b.url,
+          providerName: b.providerName,
+          bannerType: b.bannerType,
+          static: b.static,
+        });
+      }
     });
 
     // 파일 업로드 확인 헬퍼
@@ -344,6 +345,25 @@ export class FormDataBuilder {
       !!files?.some(
         x => x && x.file instanceof File && (x.file as File).size > 0
       );
+
+    // 기존 이미지 URL 추출 헬퍼
+    const getExistingImageUrl = (files?: Array<{ file?: unknown; url?: string }>) => {
+      if (!files || files.length === 0) return null;
+      
+      // file 배열에서 url이 있고 새 파일이 없는 항목 찾기
+      for (const item of files) {
+        if (item.url) {
+          // 새 파일이 있는지 확인 (file이 File 인스턴스이고 size가 0보다 큰 경우)
+          const hasNewFile = item.file instanceof File && (item.file as File).size > 0;
+          // 새 파일이 없으면 기존 이미지 URL 반환
+          if (!hasNewFile) {
+            return item.url;
+          }
+        }
+      }
+      
+      return null;
+    };
 
     // 사용자가 입력한 데이터를 그대로 보냄 (기념품 사이즈처럼, 백엔드가 처리)
     const result: Array<{
@@ -361,9 +381,9 @@ export class FormDataBuilder {
           const trimmedName = (h.name || '').trim();
           if (!trimmedName) return;
           
-          const key = `HOST::${trimmedName}`;
-          const existingBanner = existingBannerMap.get(key);
           const newFile = hasNewFile(h.file);
+          const existingImageUrl = getExistingImageUrl(h.file);
+          const existingBanner = existingImageUrl ? existingBannerMap.get(existingImageUrl) : null;
           
           result.push({
             imageUrl: newFile ? null : (existingBanner?.imageUrl || null), // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
@@ -381,9 +401,9 @@ export class FormDataBuilder {
           const trimmedName = (o.name || '').trim();
           if (!trimmedName) return;
           
-          const key = `ORGANIZER::${trimmedName}`;
-          const existingBanner = existingBannerMap.get(key);
           const newFile = hasNewFile(o.file);
+          const existingImageUrl = getExistingImageUrl(o.file);
+          const existingBanner = existingImageUrl ? existingBannerMap.get(existingImageUrl) : null;
           
           result.push({
             imageUrl: newFile ? null : (existingBanner?.imageUrl || null), // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
@@ -401,9 +421,20 @@ export class FormDataBuilder {
           const trimmedName = (s.name || '').trim();
           if (!trimmedName) return;
           
-          const key = `SPONSOR::${trimmedName}`;
-          const existingBanner = existingBannerMap.get(key);
           const newFile = hasNewFile(s.file);
+          const existingImageUrl = getExistingImageUrl(s.file);
+          let existingBanner = existingImageUrl ? existingBannerMap.get(existingImageUrl) : null;
+          
+          // imageUrl로 찾지 못한 경우, bannerType과 providerName으로 찾기 (fallback)
+          if (!existingBanner && !newFile) {
+            // existingBannerMap에서 SPONSOR 타입이고 providerName이 일치하는 배너 찾기
+            for (const [imageUrl, banner] of existingBannerMap.entries()) {
+              if (banner.bannerType === 'SPONSOR' && banner.providerName === trimmedName) {
+                existingBanner = banner;
+                break;
+              }
+            }
+          }
           
           result.push({
             imageUrl: newFile ? null : (existingBanner?.imageUrl || null), // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지

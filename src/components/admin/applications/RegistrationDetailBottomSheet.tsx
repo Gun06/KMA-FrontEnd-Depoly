@@ -129,7 +129,6 @@ export default function RegistrationDetailBottomSheet({
         setMemo(data.memo ?? '');
         setDetailMemo(data.detailMemo ?? '');
       } catch (error) {
-        console.error('신청자 상세정보 조회 실패:', error);
         setDetail(null);
         toast.error('신청자 정보를 불러오는데 실패했습니다.');
       } finally {
