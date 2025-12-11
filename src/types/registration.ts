@@ -1,21 +1,23 @@
 // 신청자 관리 관련 타입 정의
 export interface RegistrationItem {
-  no?: number;
-  id: string;
+  registrationId: string;        // 서버에서 내려주는 registrationId
+  no?: number;                    // 서버에서 내려주는 번호 (페이지네이션 기준)
+  id: string;                     // 기존 호환성 유지
   account?: string;               // 계정 (아이디)
   email?: string;
   userName?: string;               // 목록 API용
-  name?: string;                  // 상세 API용
+  name: string;                   // 서버에서 내려주는 name (필수)
   eventName?: string;
   categoryName?: string;          // 목록 API용
+  eventCategoryName?: string;     // 서버에서 내려주는 eventCategoryName
   eventCategory?: string;         // 상세 API용
   birth: string;
   gender: string;                 // 'M' | 'F' 또는 '남' | '여'
-  phNum: string;
-  registrationDate: string;
-  amount: number;
+  phNum: string;                  // 서버에서 내려주는 phNum
+  registrationDate: string;       // 서버에서 내려주는 registrationDate
+  amount: number;                 // 서버에서 내려주는 amount
   depositFlag?: boolean;           // 목록 API용 (optional로 변경)
-  organizationName: string;
+  organizationName: string;       // 서버에서 내려주는 organizationName
   organizationId?: string; // 단체 식별자(organizationId 또는 organizationAccount)
   organizationAccount?: string; // 백엔드 필드 호환
   leaderName?: string;
@@ -158,7 +160,7 @@ function formatDateTimeDisplay(raw?: string): string {
   }
   return raw.replace('T', ' ').split('.')[0] || raw;
 }
-export function convertRegistrationToManageRow(item: RegistrationItem): ApplicantManageRow {
+export function convertRegistrationToManageRow(item: RegistrationItem, index?: number): ApplicantManageRow {
   const normalizeGender = (g?: string): '남' | '여' => {
     const s = String(g || '').trim();
     const u = s.toUpperCase();
@@ -168,17 +170,17 @@ export function convertRegistrationToManageRow(item: RegistrationItem): Applican
     return '여';
   };
   return {
-    id: item.id, // UUID 그대로 사용
-    no: item.no ?? 0,
-    eventId: item.id, // UUID 그대로 사용
-    name: item.userName ?? item.name ?? '',
-    org: item.organizationName || '개인',
-    course: item.categoryName ?? item.eventCategory ?? '',
+    id: item.registrationId || item.id, // 서버에서 내려주는 registrationId 우선 사용
+    no: item.no ?? (index !== undefined ? index + 1 : 0), // 서버에서 내려주는 no 우선 사용
+    eventId: item.eventId || item.id, // eventId 우선 사용
+    name: item.name || item.userName || '', // 서버에서 내려주는 name 우선 사용
+    org: item.organizationName || '개인', // 서버에서 내려주는 organizationName
+    course: item.eventCategoryName || item.categoryName || item.eventCategory || '', // 서버에서 내려주는 eventCategoryName 우선 사용
     gender: normalizeGender(item.gender),
     birth: formatBirthDisplay(item.birth),
-    phone: formatPhoneDisplay(item.phNum),
-    regDate: formatDateTimeDisplay(item.registrationDate),
-    fee: item.amount ?? 0,
+    phone: formatPhoneDisplay(item.phNum), // 서버에서 내려주는 phNum
+    regDate: formatDateTimeDisplay(item.registrationDate), // 서버에서 내려주는 registrationDate
+    fee: item.amount ?? 0, // 서버에서 내려주는 amount
     paid: !!item.depositFlag,
     payStatus: convertPaymentStatusToKorean(item.paymentStatus),
     note: item.note ?? '',
@@ -249,11 +251,8 @@ export function convertFiltersToApiParams(
       apiParams.keyword = keyword;
     }
   } else {
-    // 정렬 기준이 설정된 경우 registrationSearchKey 설정
-    // searchKey가 없거나 'id'인 경우 기본값으로 'NO' 사용 (번호 기준 정렬)
-    if (searchKey && searchKey !== 'id') {
-      apiParams.registrationSearchKey = searchKeyMap[searchKey];
-    }
+    // 서버에서 정렬을 내려주므로 클라이언트에서 정렬 기준을 보내지 않음
+    // 정렬은 서버에서 처리하므로 registrationSearchKey를 설정하지 않음
   }
   
   // 결제 상태 매핑

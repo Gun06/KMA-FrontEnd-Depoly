@@ -54,7 +54,15 @@ export default function PaymentUploadModal({
     setIsChecking(true);
     try {
       const result = await checkPaymentUpload(eventId, file);
-      setCheckResult(result);
+      // 각 신청자에 checked 필드 초기값 설정 (없으면 false)
+      const normalizedResult = result.map(deal => ({
+        ...deal,
+        registrationList: deal.registrationList.map(reg => ({
+          ...reg,
+          checked: reg.checked ?? false,
+        })),
+      }));
+      setCheckResult(normalizedResult);
       toast.success('체크가 완료되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '체크에 실패했습니다.');
@@ -115,13 +123,18 @@ export default function PaymentUploadModal({
     setSelectedRegistrationItem(null);
   };
 
-  // checked 필드 수정
-  const handleToggleChecked = (index: number) => {
+  // 신청자별 checked 필드 수정
+  const handleToggleRegistrationChecked = (dealIndex: number, regIndex: number) => {
     if (!checkResult) return;
     const updated = [...checkResult];
-    updated[index] = {
-      ...updated[index],
-      checked: !updated[index].checked,
+    const registration = updated[dealIndex].registrationList[regIndex];
+    updated[dealIndex] = {
+      ...updated[dealIndex],
+      registrationList: updated[dealIndex].registrationList.map((reg, idx) =>
+        idx === regIndex
+          ? { ...reg, checked: !reg.checked }
+          : reg
+      ),
     };
     setCheckResult(updated);
   };
@@ -217,8 +230,10 @@ export default function PaymentUploadModal({
 
           {/* 주의사항 */}
           {checkResult && (() => {
-            const checkedCount = checkResult.filter(deal => deal.checked).length;
-            const uncheckedCount = checkResult.filter(deal => !deal.checked).length;
+            // 모든 신청자의 checked 상태 기준으로 계산
+            const allRegistrations = checkResult.flatMap(deal => deal.registrationList);
+            const checkedCount = allRegistrations.filter(reg => reg.checked).length;
+            const uncheckedCount = allRegistrations.filter(reg => !reg.checked).length;
             return (
               <div className="px-6 py-2 border-b border-gray-200">
                 <p className="text-sm font-medium text-red-600">
@@ -245,8 +260,7 @@ export default function PaymentUploadModal({
                 {/* 테이블 헤더 */}
                 <div className="grid grid-cols-12 gap-4 bg-gray-100 px-4 py-3 border-b border-gray-300 font-semibold text-sm text-gray-700">
                   <div className="col-span-4">입금 내역</div>
-                  <div className="col-span-1 text-center border-r border-gray-300 pr-4">체크</div>
-                  <div className="col-span-7 pl-4">신청 정보</div>
+                  <div className="col-span-8 pl-4">신청 정보</div>
                 </div>
 
                 {/* 테이블 본문 */}
@@ -303,21 +317,20 @@ export default function PaymentUploadModal({
                         </div>
                       </div>
 
-                      {/* 두 번째 컬럼: 체크박스 */}
-                      <div className="col-span-1 flex items-start justify-center pt-2 border-r border-gray-300 pr-4">
-                        <input
-                          type="checkbox"
-                          checked={deal.checked}
-                          onChange={() => handleToggleChecked(dealIndex)}
-                          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                        />
-                      </div>
-
-                      {/* 세 번째 컬럼: 신청 목록 */}
-                      <div className="col-span-7 pl-4">
-                        <label className="block text-xs font-semibold text-gray-500 mb-2">
-                          매칭된 신청 목록 ({deal.registrationList.length}건)
-                        </label>
+                      {/* 두 번째 컬럼: 신청 목록 */}
+                      <div className="col-span-8 pl-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-xs font-semibold text-gray-500">
+                            매칭된 신청 목록 ({deal.registrationList.length}건)
+                          </label>
+                          {deal.registrationList.length > 0 && (
+                            <span className="text-xs font-semibold text-blue-600">
+                              총 금액: {deal.registrationList
+                                .reduce((sum, reg) => sum + reg.amount, 0)
+                                .toLocaleString()}원
+                            </span>
+                          )}
+                        </div>
                         <div className="space-y-2 max-h-64 overflow-y-auto bg-gray-50 p-3 rounded-md border border-gray-200">
                           {deal.registrationList.length === 0 ? (
                             <p className="text-sm text-gray-400 py-2 text-center">매칭된 신청이 없습니다.</p>
@@ -325,39 +338,54 @@ export default function PaymentUploadModal({
                             deal.registrationList.map((reg, regIndex) => (
                               <div
                                 key={regIndex}
-                                onClick={() => handleRegistrationClick(reg.registrationId)}
-                                className="bg-white border border-gray-200 rounded-md p-3 text-sm cursor-pointer hover:border-blue-500 hover:shadow-md transition-all"
+                                className="bg-white border border-gray-200 rounded-md p-3 text-sm hover:border-blue-500 hover:shadow-md transition-all"
                               >
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <span className="text-gray-500">이름:</span>{' '}
-                                    <span className="font-medium">{reg.name}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">전화번호:</span>{' '}
-                                    <span className="font-medium">{reg.phNum}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">단체명:</span>{' '}
-                                    <span className="font-medium">
-                                      {reg.organizationName || '-'}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">종목:</span>{' '}
-                                    <span className="font-medium">{reg.eventCategoryName}</span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">금액:</span>{' '}
-                                    <span className="font-medium text-blue-600">
-                                      {reg.amount.toLocaleString()}원
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-gray-500">등록일:</span>{' '}
-                                    <span className="font-medium">
-                                      {new Date(reg.registrationDate).toLocaleDateString('ko-KR')}
-                                    </span>
+                                <div className="flex items-start gap-3">
+                                  {/* 체크박스 */}
+                                  <input
+                                    type="checkbox"
+                                    checked={reg.checked ?? false}
+                                    onChange={() => handleToggleRegistrationChecked(dealIndex, regIndex)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer mt-1 flex-shrink-0"
+                                  />
+                                  {/* 신청자 정보 */}
+                                  <div
+                                    onClick={() => handleRegistrationClick(reg.registrationId)}
+                                    className="flex-1 cursor-pointer"
+                                  >
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <span className="text-gray-500">이름:</span>{' '}
+                                        <span className="font-medium">{reg.name}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">입금자명:</span>{' '}
+                                        <span className="font-medium">{reg.paymenterName || '-'}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">단체명:</span>{' '}
+                                        <span className="font-medium">
+                                          {reg.organizationName || '-'}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">종목:</span>{' '}
+                                        <span className="font-medium">{reg.eventCategoryName}</span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">금액:</span>{' '}
+                                        <span className="font-medium text-blue-600">
+                                          {reg.amount.toLocaleString()}원
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-500">등록일:</span>{' '}
+                                        <span className="font-medium">
+                                          {new Date(reg.registrationDate).toLocaleDateString('ko-KR')}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>

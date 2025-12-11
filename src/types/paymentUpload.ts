@@ -7,7 +7,9 @@ export type PaymentUploadRegistration = {
   organizationName: string;
   eventCategoryName: string;
   amount: number;
+  paymenterName?: string; // 입금자명
   registrationDate: string;
+  checked: boolean; // 각 신청자별 체크 상태
 };
 
 export type PaymentUploadDeal = {

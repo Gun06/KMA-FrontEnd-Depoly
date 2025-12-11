@@ -38,8 +38,7 @@ export default function Client({
   const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>('all');
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
-  // API 파라미터 구성
-  const listParams = React.useMemo(() => ({ eventId, page, size: pageSize }), [eventId, page, pageSize]);
+  // 항상 검색 API 사용 (서버에서 정렬과 번호를 내려줌)
   const searchParams = React.useMemo(() => ({
     eventId,
     page,
@@ -47,16 +46,8 @@ export default function Client({
     ...convertFiltersToApiParams(sortKey, paidFilter, query, searchField),
   }), [eventId, page, pageSize, sortKey, paidFilter, query, searchField]);
 
-  // 검색 조건이 있는지 확인 (검색어, 결제상태 필터, 정렬기준 변경 시)
-  // 입금여부가 "전체"가 아니거나, 정렬 기준이 기본값('id')이 아니거나, 검색어가 있으면 검색 API 사용
-  // 또는 검색 필드가 기본값('all')이 아니면 검색 API 사용
-  const hasSearchConditions = !!query || !!paidFilter || sortKey !== 'id' || searchField !== 'all';
-
-  // 검색 조건에 따라 다른 API 사용
-  const listResult = useRegistrationList(listParams);
-  const searchResult = useRegistrationSearch(searchParams, searchField as any);
-
-  const { data: registrationData, isLoading, error } = hasSearchConditions ? searchResult : listResult;
+  // 항상 검색 API만 사용
+  const { data: registrationData, isLoading, error } = useRegistrationSearch(searchParams, searchField as any);
 
   // 대회 정보 조회 (제목용)
   const { data: eventListData } = useEventList(1, 100);
@@ -66,8 +57,10 @@ export default function Client({
   const data = React.useMemo(() => {
     if (!registrationData?.content) return [];
     
-    // 변환 (서버에서 이미 검색이 완료된 결과를 사용)
-    return registrationData.content.map(convertRegistrationToManageRow);
+    // 변환 (서버에서 이미 검색과 정렬이 완료된 결과를 사용, no는 서버에서 내려주는 값 사용)
+    return registrationData.content.map((item, index) => 
+      convertRegistrationToManageRow(item, index)
+    );
   }, [registrationData]);
 
   // 검색 필드에 따라 total 계산

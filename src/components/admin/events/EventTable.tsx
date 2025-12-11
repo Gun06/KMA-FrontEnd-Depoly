@@ -208,6 +208,7 @@ export default function EventTable({
 
   return (
     <AdminTable<EventRow>
+      title="대회 관리"
       columns={columns}
       rows={rows}
       rowKey={r => r.id}

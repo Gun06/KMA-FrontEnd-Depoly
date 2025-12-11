@@ -18,7 +18,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { accessToken, user, hasHydrated } = useAdminAuthStore();
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthed, setIsAuthed] = React.useState(false);
 
   const isLoginRoute = pathname === '/admin/login';
   const roles = user?.roles || [];
@@ -34,12 +33,45 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
   const isAdminRole = allRoles.some(r => allowed.includes(r));
 
-  // 클라이언트에서만 인증 상태 확인 (Hydration 에러 방지)
+  // 클라이언트 마운트 상태 추적 (모든 hooks는 조건부 반환 전에 선언)
+  const [isClient, setIsClient] = React.useState(false);
+  
   React.useEffect(() => {
-    if (hasHydrated) {
-      setIsAuthed(!!tokenService.getAdminAccessToken());
+    setIsClient(true);
+  }, []);
+
+  // 인증 상태 확인: accessToken 변경을 즉시 반영
+  // 로그아웃 시 즉시 반영되도록 accessToken을 우선 확인
+  const isAuthed = React.useMemo(() => {
+    // 서버 사이드에서는 항상 false 반환 (SSR 안전)
+    if (typeof window === 'undefined') return false;
+    // hasHydrated가 false면 아직 확인 불가 (초기 로드 시)
+    if (!hasHydrated) return false;
+    // accessToken이 null이면 즉시 false 반환 (로그아웃 시 즉시 반영)
+    if (!accessToken) return false;
+    // accessToken이 있으면 true, 없으면 localStorage에서도 확인
+    return !!(accessToken || tokenService.getAdminAccessToken());
+  }, [hasHydrated, accessToken]);
+
+  // 로그아웃 시 즉시 반영: accessToken이 null이거나 없으면 즉시 오버레이 표시
+  // 새로고침 시에도 즉시 확인하도록 클라이언트에서 직접 localStorage 확인
+  const showBlurOverlay = React.useMemo(() => {
+    // 서버에서는 항상 false (SSR 안전)
+    if (typeof window === 'undefined') return false;
+    // 클라이언트 마운트 전에는 false
+    if (!isClient) return false;
+    
+    // 1. Zustand store의 accessToken 확인 (로그아웃 시 즉시 반영)
+    if (!accessToken) {
+      // 2. localStorage에서도 직접 확인 (새로고침 시)
+      const tokenFromStorage = tokenService.getAdminAccessToken();
+      if (!tokenFromStorage) {
+        return true; // 둘 다 없으면 오버레이 표시
+      }
     }
-  }, [hasHydrated]);
+    
+    return false;
+  }, [isClient, accessToken]);
 
   useEffect(() => {
     // hasHydrated가 false여도 accessToken이 이미 있으면 동작 가능하도록 완화
@@ -68,9 +100,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [hasHydrated, isAuthed, isLoginRoute, isAdminRole, router]);
 
   if (isLoginRoute) return <>{children}</>;
-
-  // Hydration 완료 전에는 오버레이를 표시하지 않음 (서버/클라이언트 일치)
-  const showBlurOverlay = hasHydrated && !isAuthed;
 
   return (
     <div className="min-h-screen flex flex-col bg-white relative">

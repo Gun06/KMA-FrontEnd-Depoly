@@ -57,7 +57,8 @@ export type PartyItem = {
 };
 
 const ACTION_COL_W = 56;
-const VLINE = "#CCCCCC";
+// 세로 구분선 색상을 border-neutral-300과 일치시킴 (Tailwind neutral-300 ≈ #D4D4D4)
+const VLINE = "#D4D4D4";
 
 type Props = {
   kind: "주최" | "주관" | "후원";
@@ -100,10 +101,11 @@ export default function PartyRows({
   return (
     <div
       className={cn("grid items-stretch", className)}
-      style={{ gridTemplateColumns: `${lw}px 1fr 1fr 1fr ${ACTION_COL_W}px` }}
+      style={{ 
+        gridTemplateColumns: `${lw}px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) ${ACTION_COL_W}px`
+      }}
     >
       {items.map((it, idx) => {
-        const isFirst = idx === 0;
         const rowBorder = idx > 0 ? "border-t border-neutral-300" : "";
         const enabled = it.enabled !== false;
 
@@ -112,46 +114,75 @@ export default function PartyRows({
             {/* 라벨 + 토글 */}
             <div
               className={cn(
-                "relative bg-[#4D4D4D] text-white text-[16px] flex items-center justify-center text-center border-r",
+                "relative bg-[#4D4D4D] text-white text-[16px] flex items-center justify-center text-center",
                 rowBorder,
                 "pr-16"
               )}
-              style={{ minHeight: rowHeight, borderRightColor: VLINE }}
+              style={{ 
+                minHeight: rowHeight, 
+                borderRight: `1px solid ${VLINE}`,
+                width: `${lw}px`,
+                minWidth: `${lw}px`,
+                maxWidth: `${lw}px`
+              }}
             >
               {kind} {idx + 1}
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <MiniToggle value={enabled} onChange={(v) => onToggleEnabled?.(idx, v)} />
+                <MiniToggle value={enabled} onChange={(v) => onToggleEnabled?.(idx, v)} disabled={readOnly} />
               </div>
             </div>
 
             {/* 이름 */}
             <div
-              className={cn("bg-white flex items-center border-r", rowBorder)}
-              style={{ minHeight: rowHeight, borderRightColor: VLINE }}
+              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)}
+              style={{ 
+                minHeight: rowHeight, 
+                borderRight: `1px solid ${VLINE}`,
+                width: '100%',
+                minWidth: 0,
+                overflow: 'hidden'
+              }}
             >
               <TextField
                 value={it.name}
                 onChange={(e) => onChangeName(idx, e.currentTarget.value)}
                 placeholder={`${kind}명을 입력하세요`}
                 className={cn("w-full text-[16px] bg-white border-0 outline-none focus:ring-0 shadow-none", textCls)}
+                disabled={readOnly}
               />
             </div>
 
             {/* 링크 */}
             <div
-              className={cn("bg-white flex items-center border-r", rowBorder)}
-              style={{ minHeight: rowHeight, borderRightColor: VLINE }}
+              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)}
+              style={{ 
+                minHeight: rowHeight, 
+                borderRight: `1px solid ${VLINE}`,
+                width: '100%',
+                minWidth: 0,
+                overflow: 'hidden'
+              }}
             >
               <TextField
                 value={it.link}
                 onChange={(e) => onChangeLink(idx, e.currentTarget.value)}
                 placeholder={`${kind} 링크를 입력하세요`}
                 className={cn("w-full text-[16px] bg-white border-0 outline-none focus:ring-0 shadow-none", textCls)}
+                disabled={readOnly}
               />
             </div>
 
             {/* 첨부 */}
-            <div className={cn("bg-white flex items-center", rowBorder)} style={{ minHeight: rowHeight }}>
+            <div 
+              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)} 
+              style={{ 
+                minHeight: rowHeight, 
+                borderRight: `1px solid ${VLINE}`,
+                width: '100%',
+                minWidth: 0,
+                overflow: 'hidden'
+              }}
+            >
               <EventUploader
                 label="첨부파일"
                 accept=".pdf,.png,.jpg,.jpeg,.webp"
@@ -159,38 +190,37 @@ export default function PartyRows({
                 value={it.file}
                 onChange={(files) => onChangeFile(idx, files)}
                 buttonClassName="w-[70px] h-10"
-                className="pl-3"
+                className="w-full"
                 readOnly={readOnly}
               />
             </div>
 
-            {/* + / − */}
+            {/* 삭제 버튼 - 모든 행에 표시 */}
             <div
-              className={cn("bg-white flex items-center justify-center", rowBorder)}
-              style={{ minHeight: rowHeight, width: ACTION_COL_W }}
+              className={cn("flex items-center justify-center", rowBorder)}
+              style={{ 
+                minHeight: rowHeight, 
+                width: `${ACTION_COL_W}px`,
+                minWidth: `${ACTION_COL_W}px`,
+                maxWidth: `${ACTION_COL_W}px`,
+                border: 'none',
+                borderTop: idx > 0 ? `1px solid #D4D4D4` : 'none',
+                borderRight: 'none',
+                borderBottom: 'none',
+                borderLeft: 'none',
+                background: 'transparent'
+              }}
             >
-              {isFirst ? (
-                onAdd && (
-                  <button
-                    type="button"
-                    onClick={onAdd}
-                    aria-label={`${kind} 행 추가`}
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#4D4D4D] text-white hover:opacity-90"
-                  >
-                    <Plus size={16} strokeWidth={2.25} />
-                  </button>
-                )
-              ) : (
-                onRemove && (
+              {onRemove && (
                   <button
                     type="button"
                     onClick={() => onRemove(idx)}
-                    aria-label={`${kind} 행 삭제`}
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[#4D4D4D] text-white hover:opacity-90"
+                  aria-label={`${kind} ${idx + 1} 삭제`}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-neutral-200 text-neutral-600 hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={readOnly}
                   >
                     <Minus size={16} strokeWidth={2.25} />
                   </button>
-                )
               )}
             </div>
           </React.Fragment>

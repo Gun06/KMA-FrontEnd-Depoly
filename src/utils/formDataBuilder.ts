@@ -209,6 +209,23 @@ export class FormDataBuilder {
       existingEventBanners
     );
 
+    // 2. 이미지 파일들 추가하고, 파일이 없는 imageUrl === null 항목 추적
+    const bannersWithoutFiles = this.appendUpdateImages(
+      formData,
+      payload,
+      eventBannerInfoList
+    );
+
+    // 파일이 없는 imageUrl === null 항목 제외 (이미지 개수와 정보 개수 일치를 위해)
+    const validBannerInfoList = eventBannerInfoList.filter(banner => {
+      if (banner.imageUrl === null) {
+        // imageUrl === null인 항목은 반드시 파일이 있어야 함
+        const key = `${banner.bannerType}::${banner.providerName}`;
+        return !bannersWithoutFiles.has(key);
+      }
+      return true;
+    });
+
     // 1. JSON 데이터 구성 (API 스펙에 맞게 - 서버에서 요청하는 필드만)
     const eventUpdateRequest = {
       eventInfo: {
@@ -270,14 +287,10 @@ export class FormDataBuilder {
             }),
           };
         }) || [],
-      eventBannerUpdateInfo: eventBannerInfoList,
+      eventBannerUpdateInfo: validBannerInfoList,
     };
 
     formData.append('eventCreateRequest', JSON.stringify(eventUpdateRequest));
-
-
-    // 2. 이미지 파일들 추가
-    this.appendUpdateImages(formData, payload, eventBannerInfoList);
 
 
 
@@ -287,6 +300,7 @@ export class FormDataBuilder {
   /**
    * partners 정보에서 배너 정보 목록 구성
    * 수정된 배너는 imageUrl을 null로, 수정하지 않은 배너는 기존 URL 유지
+   * 주관명만 수정한 경우에도 기존 배너 ID를 포함하여 업데이트로 처리
    */
   private static buildEventBannerInfoList(
     payload: EventCreatePayload,
@@ -305,20 +319,31 @@ export class FormDataBuilder {
     bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
     static: boolean;
   }> {
-    // 1) 기존 배너들을 '그대로' 기본 목록으로 채움 (순서 유지, 하나도 빠짐없이)
+    // 1) 기존 배너들을 기본 목록으로 채움 (ID 정보 포함)
     const bannerInfoList: Array<{
+      id: string; // ID 추적용
       imageUrl: string | null;
-      providerName: string;
+      providerName: string; // 원본 이름 (정렬 번호 제거)
       url: string;
       bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
       static: boolean;
-    }> = (existingEventBanners || []).map(b => ({
-      imageUrl: b.imageUrl || null,
-      providerName: b.providerName || '',
-      url: b.url || '',
-      bannerType: (b.bannerType as 'HOST' | 'ORGANIZER' | 'SPONSOR') || 'SPONSOR',
-      static: !!b.static,
-    }));
+      used: boolean; // 매칭 여부 추적
+    }> = (existingEventBanners || []).map(b => {
+      // 기존 providerName에서 정렬 번호 제거 (형식: "번호|이름" 또는 "이름")
+      const originalName = b.providerName.includes('|')
+        ? b.providerName.split('|').slice(1).join('|').trim()
+        : b.providerName.trim();
+      
+      return {
+        id: b.id,
+        imageUrl: b.imageUrl || null,
+        providerName: originalName,
+        url: b.url || '',
+        bannerType: (b.bannerType as 'HOST' | 'ORGANIZER' | 'SPONSOR') || 'SPONSOR',
+        static: !!b.static,
+        used: false,
+      };
+    });
 
     // 매칭을 위한 헬퍼 (타입+이름 기준)
     const keyOf = (type: string, name?: string) => `${type}::${(name || '').trim()}`;
@@ -326,6 +351,12 @@ export class FormDataBuilder {
     for (let i = 0; i < bannerInfoList.length; i++) {
       indexMap.set(keyOf(bannerInfoList[i].bannerType, bannerInfoList[i].providerName), i);
     }
+
+    // 타입별 순서 추적 (같은 타입 내에서 순서 기반 매칭용)
+    const typeIndexMap = new Map<'HOST' | 'ORGANIZER' | 'SPONSOR', number>();
+    typeIndexMap.set('HOST', 0);
+    typeIndexMap.set('ORGANIZER', 0);
+    typeIndexMap.set('SPONSOR', 0);
 
     const upsert = (
       type: 'HOST' | 'ORGANIZER' | 'SPONSOR',
@@ -337,25 +368,62 @@ export class FormDataBuilder {
       const k = keyOf(type, name);
       const url = link || '';
       const staticFlag = enabled === true; // ON이 고정, OFF가 고정 아님
+      const trimmedName = (name || '').trim();
+      
+      if (!trimmedName) return;
+
       if (indexMap.has(k)) {
+        // 이름이 동일한 기존 항목을 찾음 (정확한 매칭)
         const i = indexMap.get(k)!;
-        // 기존 항목을 업데이트: url/static 갱신, 새 파일 있으면 imageUrl=null로 표시
         bannerInfoList[i] = {
           ...bannerInfoList[i],
+          providerName: trimmedName, // 원본 이름만 저장 (정렬 번호는 나중에 추가)
           url,
           static: staticFlag,
-          imageUrl: hasNewFile ? null : bannerInfoList[i].imageUrl,
+          imageUrl: hasNewFile ? null : bannerInfoList[i].imageUrl, // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
+          used: true,
         };
-      } else if ((name || '').trim()) {
-        // 신규 항목 추가: 이미지 신규이므로 imageUrl=null로 세팅
-        indexMap.set(k, bannerInfoList.length);
-        bannerInfoList.push({
-          imageUrl: null,
-          providerName: name!.trim(),
-          url,
-          bannerType: type,
-          static: staticFlag,
-        });
+      } else {
+        // 이름이 변경된 경우: 같은 타입 내에서 순서 기반으로 매칭 시도
+        const typeIndex = typeIndexMap.get(type) || 0;
+        const sameTypeBanners = bannerInfoList.filter(
+          b => b.bannerType === type && !b.used
+        );
+        
+        if (sameTypeBanners.length > 0 && typeIndex < sameTypeBanners.length) {
+          // 순서 기반으로 기존 배너 찾기
+          const matchedBanner = sameTypeBanners[typeIndex];
+          const matchedIndex = bannerInfoList.findIndex(b => b.id === matchedBanner.id);
+          
+          if (matchedIndex >= 0) {
+            // 기존 배너 업데이트 (주관명만 변경된 경우)
+            bannerInfoList[matchedIndex] = {
+              ...bannerInfoList[matchedIndex],
+              providerName: trimmedName, // 원본 이름만 저장
+              url,
+              static: staticFlag,
+              imageUrl: hasNewFile ? null : bannerInfoList[matchedIndex].imageUrl, // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
+              used: true,
+            };
+            typeIndexMap.set(type, typeIndex + 1);
+            return;
+          }
+        }
+        
+        // 신규 항목 추가 - 파일이 있는 경우에만 추가 (imageUrl === null인 항목은 반드시 파일이 있어야 함)
+        // 파일이 없으면 정보에 포함하지 않음 (이미지 개수와 정보 개수 일치를 위해)
+        if (hasNewFile) {
+          bannerInfoList.push({
+            id: '', // 신규는 ID 없음
+            imageUrl: null, // 신규는 항상 null (파일이 있으므로)
+            providerName: trimmedName, // 원본 이름만 저장
+            url,
+            bannerType: type,
+            static: staticFlag,
+            used: true,
+          });
+          typeIndexMap.set(type, typeIndex + 1);
+        }
       }
     };
 
@@ -383,12 +451,57 @@ export class FormDataBuilder {
       }
     }
 
-    return bannerInfoList;
+    // 3) 최종 결과 생성: 타입별, static별로 그룹화하여 정렬 번호 부여
+    const result: Array<{
+      imageUrl: string | null;
+      providerName: string;
+      url: string;
+      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
+      static: boolean;
+    }> = [];
+
+    // 주최 → 주관 → 후원 순서
+    const typeOrder: Array<'HOST' | 'ORGANIZER' | 'SPONSOR'> = ['HOST', 'ORGANIZER', 'SPONSOR'];
+    
+    for (const type of typeOrder) {
+      // 같은 타입 내에서 static 여부별로 그룹화
+      const staticBanners = bannerInfoList.filter(
+        b => b.bannerType === type && b.static && (b.used || b.imageUrl)
+      );
+      const nonStaticBanners = bannerInfoList.filter(
+        b => b.bannerType === type && !b.static && (b.used || b.imageUrl)
+      );
+
+      // 고정 배너들에 정렬 번호 부여 (1부터 시작)
+      staticBanners.forEach((banner, index) => {
+        result.push({
+          imageUrl: banner.imageUrl,
+          providerName: `${index + 1}|${banner.providerName}`, // "정렬 번호 | 제공자명" 형식
+          url: banner.url,
+          bannerType: banner.bannerType,
+          static: banner.static,
+        });
+      });
+
+      // 비고정 배너들에 정렬 번호 부여 (1부터 시작)
+      nonStaticBanners.forEach((banner, index) => {
+        result.push({
+          imageUrl: banner.imageUrl,
+          providerName: `${index + 1}|${banner.providerName}`, // "정렬 번호 | 제공자명" 형식
+          url: banner.url,
+          bannerType: banner.bannerType,
+          static: banner.static,
+        });
+      });
+    }
+
+    return result;
   }
 
   /**
    * 수정용 이미지 파일들을 FormData에 추가
    * 서버에서 null 참조 에러를 방지하기 위해 필수 배너 이미지는 항상 포함
+   * @returns 파일이 없는 imageUrl === null 항목들의 키 Set
    */
   private static appendUpdateImages(
     formData: FormData,
@@ -400,7 +513,8 @@ export class FormDataBuilder {
       bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
       static: boolean;
     }>
-  ): void {
+  ): Set<string> {
+    const bannersWithoutFiles = new Set<string>();
     const uploads = payload.uploads || {};
 
     // 이미지가 있는지 확인하는 헬퍼 함수 (새로운 File 객체인지 확인)
@@ -518,12 +632,17 @@ export class FormDataBuilder {
         type: 'HOST' | 'ORGANIZER' | 'SPONSOR',
         providerName: string
       ): File | null => {
+        // providerName에서 정렬 번호 제거 (형식: "번호|이름" 또는 "이름")
+        const originalName = providerName.includes('|')
+          ? providerName.split('|').slice(1).join('|').trim()
+          : providerName.trim();
+        
         const lists = payload.partners as Required<typeof payload.partners>;
         const pick = (
           items: Array<{ name?: string; file?: Array<{ file?: unknown }> }>
         ): File | null => {
           const partner = (items || []).find(
-            p => (p.name || '').trim() === providerName.trim()
+            p => (p.name || '').trim() === originalName
           );
           if (!partner || !partner.file) return null;
           const upload = partner.file.find(
@@ -548,10 +667,16 @@ export class FormDataBuilder {
           if (file) {
             formData.append('eventBannerImages', file, `banner_${index}.png`);
             index += 1;
+          } else {
+            // 파일이 없는 imageUrl === null 항목 추적
+            const key = `${info.bannerType}::${info.providerName}`;
+            bannersWithoutFiles.add(key);
           }
         }
       }
     }
+
+    return bannersWithoutFiles;
   }
 
 }

@@ -110,12 +110,7 @@ export default function EventsClient({
     if (pub)
       list = list.filter(r => (pub === '공개' ? r.isPublic : !r.isPublic));
 
-    // 정렬: 항상 개최일 기준 내림차순 (최신일자 먼저)
-    list.sort((a, b) => {
-      const ad = a.date || '0000-00-00';
-      const bd = b.date || '0000-00-00';
-      return bd.localeCompare(ad); // 최신일자 먼저
-    });
+    // 서버에서 정렬을 내려주므로 클라이언트 사이드 정렬 제거
 
     // API 데이터의 총 개수 사용
     const totalCount = apiData?.totalElements || 0;

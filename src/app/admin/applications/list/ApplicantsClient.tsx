@@ -54,8 +54,7 @@ export default function ApplicantsClient({
     if (pub) list = list.filter((r) => (pub === '공개' ? r.isPublic : !r.isPublic));
     if (year) list = list.filter((r) => r.date.startsWith(`${year}-`)); 
 
-    // 최신 날짜 우선
-    list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // 서버에서 정렬을 내려주므로 클라이언트 사이드 정렬 제거
 
     const totalCount = list.length;
     const start = (page - 1) * pageSize;

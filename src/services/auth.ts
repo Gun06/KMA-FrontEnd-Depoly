@@ -557,13 +557,23 @@ export const authService = {
       // 서버 로그아웃 엔드포인트가 있다면 여기에 호출
     } catch {
     } finally {
+      // 1. Zustand store에서 로그아웃 (accessToken을 null로 설정)
+      try {
+        useAdminAuthStore.getState().logout();
+      } catch {}
+      
+      // 2. tokenService의 메모리 토큰도 정리
+      try {
+        tokenService.setAdminAccessToken(null);
+      } catch {}
+      
+      // 3. localStorage에서 토큰 제거
       if (isBrowser()) {
         localStorage.removeItem('kmaAdminAccessToken');
         localStorage.removeItem('kmaAdminRefreshToken');
       }
-      try {
-        useAdminAuthStore.getState().logout();
-      } catch {}
+      
+      // 4. 다른 탭에 로그아웃 브로드캐스트
       try {
         tokenService.broadcastLogout();
       } catch {}

@@ -272,12 +272,6 @@ export default function CompetitionCreateForm({
             inputColorCls={inputColorCls}
           />
 
-          {/* 코스/기념품 */}
-          <CourseGiftsSection f={f} readOnly={readOnly} />
-
-          {/* 주최/주관/후원 */}
-          <PartiesSection f={f} readOnly={readOnly} />
-
           {/* 공개여부 / 셔틀 */}
           <FormRow label="공개여부" contentClassName="items-center pl-4">
             <div
@@ -322,24 +316,13 @@ export default function CompetitionCreateForm({
           </FormRow>
         </FormTable>
 
-        <div className="flex mx-auto px-4">
-          <NoticeMessage
-            items={[
-              { text: '※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다.' },
-              {
-                text: '주최/주관/후원은 대회 페이지의 Footer 상단에 위치합니다.',
-              },
-              {
-                text: "고정시키고 싶은 배너는 'OFF'를, 자동 스크롤을 원하는 배너는 'ON'을 선택하세요.",
-              },
-              { text: '※ 실제 사이즈는 220 × 80px을 지원합니다.' },
-              {
-                text: '다만 해상도 문제로 업로드 시 2배(440 × 160px)로 제작하여 부탁드립니다',
-                highlight: true,
-              },
-            ]}
-          />
+        {/* 참가부문 및 기념품 (별도 섹션) */}
+        <div className="mt-6">
+          <CourseGiftsSection f={f} readOnly={readOnly} />
         </div>
+
+        {/* 주최/주관/후원 배너 (별도 섹션) */}
+        <PartiesSection f={f} readOnly={readOnly} />
 
         {/* 업로드 섹션 */}
         <UploadsSection f={f} readOnly={readOnly} />
