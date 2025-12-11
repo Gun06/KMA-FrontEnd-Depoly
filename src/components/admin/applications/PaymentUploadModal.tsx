@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { X, Upload, Send, CheckCircle2 } from 'lucide-react';
+import { X, Upload, Send, CheckCircle2, HelpCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { checkPaymentUpload, finalizePaymentUpload } from '@/services/registration';
 import type { PaymentUploadDeal, PaymentUploadCheckResponse } from '@/types/paymentUpload';
@@ -9,6 +9,7 @@ import UploadButton from '@/components/common/Upload/UploadButton';
 import RegistrationDetailDrawer from './RegistrationDetailDrawer';
 import { getRegistrationDetail } from '@/services/registration';
 import type { RegistrationItem } from '@/types/registration';
+import Coachmark, { type CoachmarkStep } from '@/components/common/Coachmark/Coachmark';
 
 type Props = {
   isOpen: boolean;
@@ -31,6 +32,39 @@ export default function PaymentUploadModal({
   const [selectedRegistrationId, setSelectedRegistrationId] = useState<string | null>(null);
   const [selectedRegistrationItem, setSelectedRegistrationItem] = useState<RegistrationItem | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [showCoachmark, setShowCoachmark] = useState(false);
+
+  // 코치마크 단계 정의
+  const coachmarkSteps: CoachmarkStep[] = [
+    {
+      id: 'upload',
+      target: '[data-coachmark="upload-button"]',
+      title: '1단계: 파일 업로드',
+      description: '엑셀 파일을 선택하여 업로드하세요. 입금 내역이 포함된 Excel 파일(.xlsx, .xls)만 업로드 가능합니다.',
+      position: 'bottom',
+    },
+    {
+      id: 'check',
+      target: '[data-coachmark="check-button"]',
+      title: '2단계: 매칭 확인',
+      description: '업로드한 파일을 클릭하면 입금 내역과 신청 정보를 자동으로 매칭합니다. 매칭 결과를 확인할 수 있습니다.',
+      position: 'bottom',
+    },
+    {
+      id: 'result',
+      target: '[data-coachmark="first-deal-row"]',
+      title: '3단계: 결과 확인 및 수정',
+      description: '매칭된 신청 정보를 확인하고, 체크박스를 통해 입금 완료 여부를 선택할 수 있습니다. 불일치는 빨간색, 매칭안됨은 노란색 배경으로 표시됩니다.',
+      position: 'top',
+    },
+    {
+      id: 'send',
+      target: '[data-coachmark="send-button"]',
+      title: '4단계: 최종 전송',
+      description: '모든 확인이 완료되면 전송 버튼을 클릭하여 입금 내역을 저장합니다. 체크된 건만 "입금완료"로 처리됩니다.',
+      position: 'bottom',
+    },
+  ];
 
   // 파일 선택 핸들러
   const handleFileSelect = (files: FileList | null) => {
@@ -164,19 +198,28 @@ export default function PaymentUploadModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">입금 내역 업로드</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowCoachmark(true)}
+              className="text-gray-400 hover:text-blue-600 transition-colors"
+              title="사용 가이드 보기"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* 본문 */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* 상단: 파일 업로드 및 전송 버튼 */}
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-4">
-            <div className="flex-1">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-4 bg-gray-50">
+            <div className="flex-1 bg-white rounded-lg p-4 border border-gray-200" data-coachmark="upload-button">
               <UploadButton
                 label="파일 업로드"
                 accept=".xlsx,.xls"
@@ -191,6 +234,7 @@ export default function PaymentUploadModal({
               )}
             </div>
             <button
+              data-coachmark="check-button"
               onClick={handleCheck}
               disabled={!file || isChecking || isSubmitting}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
@@ -209,6 +253,7 @@ export default function PaymentUploadModal({
             </button>
             {checkResult && (
               <button
+                data-coachmark="send-button"
                 onClick={handleFinalize}
                 disabled={isSubmitting || isChecking}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
@@ -230,18 +275,51 @@ export default function PaymentUploadModal({
 
           {/* 주의사항 */}
           {checkResult && (() => {
-            // 모든 신청자의 checked 상태 기준으로 계산
+            // 전체 거래 건수
+            const totalDeals = checkResult.length;
+            
+            // 매칭된 신청자의 checked 상태 기준으로 계산
             const allRegistrations = checkResult.flatMap(deal => deal.registrationList);
             const checkedCount = allRegistrations.filter(reg => reg.checked).length;
             const uncheckedCount = allRegistrations.filter(reg => !reg.checked).length;
+            
+            // 매칭되지 않은 거래 건수 (registrationList가 비어있는 거래)
+            const unmatchedDeals = checkResult.filter(deal => deal.registrationList.length === 0).length;
+            
             return (
               <div className="px-6 py-2 border-b border-gray-200">
-                <p className="text-sm font-medium text-red-600">
-                  * 체크된건은 &apos;입금완료&apos;, 체크 해제된것은 &apos;확인필요&apos; 처리되어 저장됩니다
-                  <span className="ml-2 text-gray-700">
-                    (일치: {checkedCount}건, 불일치: {uncheckedCount}건)
-                  </span>
-                </p>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium text-red-600">
+                      * 이제는 체크된 건만 &apos;입금완료&apos;로 되며 나머지 경우는 매칭로그만 저장됩니다.
+                    </p>
+                    <div className="text-xs text-gray-600 space-y-0.5">
+                      <p>
+                        <span className="font-semibold">- 불일치:</span> 입금 내역과 신청 정보가 매칭되었지만 체크 해제된 경우 (입금자명, 금액 등이 일치하지 않거나 수동으로 확인이 필요한 경우)
+                      </p>
+                      {unmatchedDeals > 0 && (
+                        <p>
+                          <span className="font-semibold">- 매칭안됨:</span> 입금 내역에 해당하는 신청 정보를 찾을 수 없는 경우 (입금자명이나 금액이 일치하는 신청이 없는 경우)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <p className="text-sm text-gray-700 whitespace-nowrap">
+                      (전체: {totalDeals}건, 일치: {checkedCount}건, 불일치: {uncheckedCount}건{unmatchedDeals > 0 ? `, 매칭안됨: ${unmatchedDeals}건` : ''})
+                    </p>
+                    <div className="text-xs text-gray-500 mt-1 whitespace-nowrap">
+                      <span className="inline-block w-3 h-3 bg-red-50 border border-red-200 rounded mr-1 align-middle"></span>
+                      불일치
+                      {unmatchedDeals > 0 && (
+                        <>
+                          <span className="inline-block w-3 h-3 bg-yellow-50 border border-yellow-200 rounded mr-1 ml-3 align-middle"></span>
+                          매칭안됨
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             );
           })()}
@@ -256,7 +334,7 @@ export default function PaymentUploadModal({
                 </div>
               </div>
             ) : (
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <div data-coachmark="result-area" className="border border-gray-300 rounded-lg overflow-hidden">
                 {/* 테이블 헤더 */}
                 <div className="grid grid-cols-12 gap-4 bg-gray-100 px-4 py-3 border-b border-gray-300 font-semibold text-sm text-gray-700">
                   <div className="col-span-4">입금 내역</div>
@@ -265,8 +343,25 @@ export default function PaymentUploadModal({
 
                 {/* 테이블 본문 */}
                 <div className="divide-y divide-gray-200">
-                  {checkResult.map((deal, dealIndex) => (
-                    <div key={dealIndex} className="grid grid-cols-12 gap-4 px-4 py-4 hover:bg-gray-50">
+                  {checkResult.map((deal, dealIndex) => {
+                    // 매칭 상태 판단
+                    const isUnmatched = deal.registrationList.length === 0; // 매칭안됨
+                    const isMismatched = deal.registrationList.length > 0 && deal.registrationList.every(reg => !reg.checked); // 불일치 (매칭되었지만 모두 체크 해제)
+                    
+                    // 배경색 결정
+                    let bgColor = '';
+                    if (isUnmatched) {
+                      bgColor = 'bg-yellow-50'; // 매칭안됨: 연한 노란색
+                    } else if (isMismatched) {
+                      bgColor = 'bg-red-50'; // 불일치: 연한 빨간색
+                    }
+                    
+                    return (
+                    <div 
+                      key={dealIndex} 
+                      className={`grid grid-cols-12 gap-4 px-4 py-4 ${bgColor} hover:opacity-90 transition-opacity`}
+                      data-coachmark={dealIndex === 0 ? 'first-deal-row' : undefined}
+                    >
                       {/* 첫 번째 컬럼: 입금 내역 정보 + 매칭 로그 */}
                       <div className="col-span-4 space-y-3">
                         {/* 입금 내역 정보 */}
@@ -394,7 +489,8 @@ export default function PaymentUploadModal({
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
             )}
@@ -421,6 +517,21 @@ export default function PaymentUploadModal({
           }
         }}
       />
+
+      {/* 코치마크 */}
+      {isOpen && (
+        <Coachmark
+          steps={coachmarkSteps}
+          storageKey={`payment-upload-coachmark-${eventId}`}
+          forceShow={showCoachmark}
+          onComplete={() => {
+            setShowCoachmark(false);
+          }}
+          onSkip={() => {
+            setShowCoachmark(false);
+          }}
+        />
+      )}
     </div>
   );
 }
