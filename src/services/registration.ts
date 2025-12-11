@@ -239,6 +239,7 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
   
   // (로그 제거) 단체 ID 미존재 경고 로그 삭제
   return {
+    registrationId: data.id, // 서버에서 내려주는 registrationId
     id: data.id,
     name: data.name, // 새 구조
     userName: data.name, // 호환성
