@@ -13,8 +13,8 @@ export default function AdminHomePage() {
   // 대회 목록 조회 (통계용)
   const { data: eventData, isLoading: eventsLoading } = useAdminEventList({ page: 1, size: 100 });
   
-  // 문의사항 목록 조회 (통계용)
-  const { data: inquiryData, isLoading: inquiriesLoading } = useAllInquiries({ page: 1, size: 100 });
+  // 문의사항 목록 조회 (통계용 - 전체 데이터를 가져오기 위해 size를 크게 설정)
+  const { data: inquiryData, isLoading: inquiriesLoading } = useAllInquiries({ page: 1, size: 10000 });
 
   // 통계 계산
   const totalEvents = (eventData as any)?.totalElements || 0;
@@ -23,7 +23,7 @@ export default function AdminHomePage() {
   ).length;
   const totalInquiries = (inquiryData as any)?.totalElements || 0;
   const unansweredInquiries = ((inquiryData as any)?.content || []).filter(
-    (item: any) => !item.answer || item.answer.trim() === ''
+    (item: any) => !item?.answer || !item?.answered
   ).length;
 
   // 최근 대회 (최근 5개) - EventRow 형식으로 변환
