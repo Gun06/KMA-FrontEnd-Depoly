@@ -290,6 +290,14 @@ export class FormDataBuilder {
       eventBannerUpdateInfo: validBannerInfoList,
     };
 
+    // 디버깅: 저장되는 providerName 확인
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('저장되는 배너 정보:', validBannerInfoList.map(b => ({
+        bannerType: b.bannerType,
+        providerName: b.providerName,
+      })));
+    }
+
     formData.append('eventCreateRequest', JSON.stringify(eventUpdateRequest));
 
 
@@ -323,27 +331,20 @@ export class FormDataBuilder {
     const bannerInfoList: Array<{
       id: string; // ID 추적용
       imageUrl: string | null;
-      providerName: string; // 원본 이름 (정렬 번호 제거)
+      providerName: string; // providerName을 그대로 사용
       url: string;
       bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
       static: boolean;
       used: boolean; // 매칭 여부 추적
-    }> = (existingEventBanners || []).map(b => {
-      // 기존 providerName에서 정렬 번호 제거 (형식: "번호|이름" 또는 "이름")
-      const originalName = b.providerName.includes('|')
-        ? b.providerName.split('|').slice(1).join('|').trim()
-        : b.providerName.trim();
-      
-      return {
-        id: b.id,
-        imageUrl: b.imageUrl || null,
-        providerName: originalName,
-        url: b.url || '',
-        bannerType: (b.bannerType as 'HOST' | 'ORGANIZER' | 'SPONSOR') || 'SPONSOR',
-        static: !!b.static,
-        used: false,
-      };
-    });
+    }> = (existingEventBanners || []).map(b => ({
+      id: b.id,
+      imageUrl: b.imageUrl || null,
+      providerName: b.providerName || '', // providerName을 그대로 사용
+      url: b.url || '',
+      bannerType: (b.bannerType as 'HOST' | 'ORGANIZER' | 'SPONSOR') || 'SPONSOR',
+      static: !!b.static,
+      used: false,
+    }));
 
     // 매칭을 위한 헬퍼 (타입+이름 기준)
     const keyOf = (type: string, name?: string) => `${type}::${(name || '').trim()}`;
@@ -377,7 +378,7 @@ export class FormDataBuilder {
         const i = indexMap.get(k)!;
         bannerInfoList[i] = {
           ...bannerInfoList[i],
-          providerName: trimmedName, // 원본 이름만 저장 (정렬 번호는 나중에 추가)
+          providerName: trimmedName, // providerName을 그대로 사용
           url,
           static: staticFlag,
           imageUrl: hasNewFile ? null : bannerInfoList[i].imageUrl, // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
@@ -399,7 +400,7 @@ export class FormDataBuilder {
             // 기존 배너 업데이트 (주관명만 변경된 경우)
             bannerInfoList[matchedIndex] = {
               ...bannerInfoList[matchedIndex],
-              providerName: trimmedName, // 원본 이름만 저장
+              providerName: trimmedName, // providerName을 그대로 사용
               url,
               static: staticFlag,
               imageUrl: hasNewFile ? null : bannerInfoList[matchedIndex].imageUrl, // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
@@ -416,7 +417,7 @@ export class FormDataBuilder {
           bannerInfoList.push({
             id: '', // 신규는 ID 없음
             imageUrl: null, // 신규는 항상 null (파일이 있으므로)
-            providerName: trimmedName, // 원본 이름만 저장
+            providerName: trimmedName, // providerName을 그대로 사용
             url,
             bannerType: type,
             static: staticFlag,
@@ -451,51 +452,16 @@ export class FormDataBuilder {
       }
     }
 
-    // 3) 최종 결과 생성: 타입별, static별로 그룹화하여 정렬 번호 부여
-    const result: Array<{
-      imageUrl: string | null;
-      providerName: string;
-      url: string;
-      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
-      static: boolean;
-    }> = [];
-
-    // 주최 → 주관 → 후원 순서
-    const typeOrder: Array<'HOST' | 'ORGANIZER' | 'SPONSOR'> = ['HOST', 'ORGANIZER', 'SPONSOR'];
-    
-    for (const type of typeOrder) {
-      // 같은 타입 내에서 static 여부별로 그룹화
-      const staticBanners = bannerInfoList.filter(
-        b => b.bannerType === type && b.static && (b.used || b.imageUrl)
-      );
-      const nonStaticBanners = bannerInfoList.filter(
-        b => b.bannerType === type && !b.static && (b.used || b.imageUrl)
-      );
-
-      // 고정 배너들에 정렬 번호 부여 (1부터 시작)
-      staticBanners.forEach((banner, index) => {
-        result.push({
-          imageUrl: banner.imageUrl,
-          providerName: `${index + 1}|${banner.providerName}`, // "정렬 번호 | 제공자명" 형식
-          url: banner.url,
-          bannerType: banner.bannerType,
-          static: banner.static,
-        });
-      });
-
-      // 비고정 배너들에 정렬 번호 부여 (1부터 시작)
-      nonStaticBanners.forEach((banner, index) => {
-        result.push({
-          imageUrl: banner.imageUrl,
-          providerName: `${index + 1}|${banner.providerName}`, // "정렬 번호 | 제공자명" 형식
-          url: banner.url,
-          bannerType: banner.bannerType,
-          static: banner.static,
-        });
-      });
-    }
-
-    return result;
+    // 3) 최종 결과 생성: 사용된 배너만 반환
+    return bannerInfoList
+      .filter(b => b.used || b.imageUrl) // 사용된 배너 또는 기존 이미지가 있는 배너만 포함
+      .map(b => ({
+        imageUrl: b.imageUrl,
+        providerName: b.providerName, // providerName을 그대로 사용
+        url: b.url,
+        bannerType: b.bannerType,
+        static: b.static,
+      }));
   }
 
   /**
@@ -632,17 +598,12 @@ export class FormDataBuilder {
         type: 'HOST' | 'ORGANIZER' | 'SPONSOR',
         providerName: string
       ): File | null => {
-        // providerName에서 정렬 번호 제거 (형식: "번호|이름" 또는 "이름")
-        const originalName = providerName.includes('|')
-          ? providerName.split('|').slice(1).join('|').trim()
-          : providerName.trim();
-        
         const lists = payload.partners as Required<typeof payload.partners>;
         const pick = (
           items: Array<{ name?: string; file?: Array<{ file?: unknown }> }>
         ): File | null => {
           const partner = (items || []).find(
-            p => (p.name || '').trim() === originalName
+            p => (p.name || '').trim() === providerName.trim()
           );
           if (!partner || !partner.file) return null;
           const upload = partner.file.find(
