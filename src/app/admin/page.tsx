@@ -232,7 +232,7 @@ export default function AdminHomePage() {
                         </span>
                       </div>
                     </div>
-                    {(!inquiry.answer || inquiry.answer.trim() === '') && (
+                    {(!inquiry.answer || !inquiry.answered) && (
                       <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
                         미답변
                       </span>
