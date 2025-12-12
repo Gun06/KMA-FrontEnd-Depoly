@@ -126,12 +126,16 @@ export const AnswerSection = ({
 
           {/* 답변 본문 내용 */}
           <div className="p-4 sm:p-6 md:p-8">
-            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
+            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}>
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (
                 <div>
-                  <div dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} />
+                  <div 
+                    className="font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+                    dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} 
+                  />
                   
                   {/* 답변 첨부파일 */}
                   {answerDetail.attachmentDetailList && answerDetail.attachmentDetailList.length > 0 && (
@@ -165,7 +169,11 @@ export const AnswerSection = ({
                   )}
                 </div>
               ) : answerHeader?.content ? (
-                <div dangerouslySetInnerHTML={{ __html: answerHeader.content }} />
+                <div 
+                  className="font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+                  dangerouslySetInnerHTML={{ __html: answerHeader.content }} 
+                />
               ) : (
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>
@@ -213,12 +221,16 @@ export const AnswerSection = ({
 
           {/* 답변 본문 내용 */}
           <div className="p-4 sm:p-6 md:p-8">
-            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words whitespace-pre-wrap">
+            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}>
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (
                 <div>
-                  <div dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} />
+                  <div 
+                    className="font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+                    dangerouslySetInnerHTML={{ __html: answerDetail.content || '답변 내용이 없습니다.' }} 
+                  />
                   
                   {/* 답변 첨부파일 */}
                   {answerDetail.attachmentDetailList && answerDetail.attachmentDetailList.length > 0 && (
@@ -252,7 +264,11 @@ export const AnswerSection = ({
                   )}
                 </div>
               ) : answerHeader?.content ? (
-                <div dangerouslySetInnerHTML={{ __html: answerHeader.content }} />
+                <div 
+                  className="font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+                  dangerouslySetInnerHTML={{ __html: answerHeader.content }} 
+                />
               ) : (
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>

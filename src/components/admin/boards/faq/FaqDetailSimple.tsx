@@ -44,7 +44,11 @@ export default function FaqDetailSimple({
         <section className="px-6 pt-6 pb-4">
           <div className="text-sm font-semibold mb-2 text-gray-500">질문</div>
           {detail.question ? (
-            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: detail.question }} />
+            <div 
+              className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+              dangerouslySetInnerHTML={{ __html: detail.question }} 
+            />
           ) : (
             <p className="text-gray-600">질문 내용이 없습니다.</p>
           )}
@@ -55,7 +59,8 @@ export default function FaqDetailSimple({
           <div className="text-sm font-semibold mb-2 text-gray-500">답변</div>
           {detail.answer ? (
             <div
-              className="prose max-w-none"
+              className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
               dangerouslySetInnerHTML={{ __html: detail.answer.content }}
             />
           ) : (

@@ -158,10 +158,12 @@ export default function NoticeDetailPage() {
             <div className="text-sm sm:text-base leading-relaxed">
               {noticeDetail.content ? (
                 <div
-                  className="text-gray-700"
+                  className="text-gray-600 prose max-w-none font-thin [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
                   style={{ 
                     whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    fontWeight: 100,
+                    color: '#4b5563'
                   }}
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(noticeDetail.content) }}
                 />

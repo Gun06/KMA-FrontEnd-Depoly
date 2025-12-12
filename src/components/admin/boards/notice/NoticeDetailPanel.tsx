@@ -66,10 +66,12 @@ export default function NoticeDetailPanel({ detail, onBack, onSave }: Props) {
         <div className="px-6 py-6">
           {detail.content ? (
             <div 
-              className="text-gray-700 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_br]:block"
+              className="text-gray-600 prose max-w-none font-thin [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
               style={{ 
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                fontWeight: 100,
+                color: '#4b5563'
               }}
               dangerouslySetInnerHTML={{ __html: detail.content }} 
             />

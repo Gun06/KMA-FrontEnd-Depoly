@@ -168,3 +168,16 @@ header a {
 [style*='z-index: 105'] {
   pointer-events: auto !important;
 }
+
+/* 에디터 내용의 빈 줄 보존 */
+.prose p:has(> br:only-child),
+.prose p:only-child > br:only-child {
+  min-height: 1.5em;
+  display: block;
+}
+
+.prose p:has(> br:only-child) br,
+.prose p:only-child > br:only-child {
+  display: block;
+  height: 1em;
+}

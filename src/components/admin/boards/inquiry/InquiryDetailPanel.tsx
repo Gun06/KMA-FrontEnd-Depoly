@@ -116,7 +116,10 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
           </p>
         </header>
         <div className="h-px bg-gray-100" />
-        <div className="px-6 py-6 prose max-w-none">
+        <div 
+          className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+          style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+        >
           {detail.content ? (
             <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.content) }} />
           ) : (
@@ -137,7 +140,11 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
           <p className="text-sm text-gray-500 mb-4">
             작성자 {detail.answer.author} · {detail.answer.date}
           </p>
-          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.answer.content) }} />
+          <div 
+            className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.answer.content) }} 
+          />
           {detail.answer.files && detail.answer.files.length > 0 && (
             <div className="mt-4">
               <BoardFileBox variant="view" files={detail.answer.files} />

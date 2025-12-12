@@ -1,2 +1,2 @@
-export { default } from './TextEditor'
-export type { TextEditorProps } from './TextEditor'
+export { default } from './TextEditor';
+export type { TextEditorProps } from './types';
