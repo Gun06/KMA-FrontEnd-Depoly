@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import React from "react";
-import PopupListManager from '@/components/admin/banners/popups/PopupListManager';
+import PopupListManager from '@/components/admin/banners/popups/components/PopupListManager';
 import Button from '@/components/common/Button/Button';
 import { useEventList } from '@/hooks/useNotices';
 import type { EventListResponse, EventListItem } from '@/types/eventList';

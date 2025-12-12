@@ -1,4 +1,4 @@
-import PopupEditForm from '@/components/admin/banners/popups/PopupEditForm';
+import PopupEditForm from '@/components/admin/banners/popups/components/PopupEditForm';
 
 type Props = { params: { eventId: string; id: string } };
 

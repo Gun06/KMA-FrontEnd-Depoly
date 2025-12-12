@@ -10,11 +10,13 @@ interface EventPopupDisplayProps {
 
 export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopupDisplayProps) {
   const [currentIndex, setCurrentIndex] = React.useState(0);
-  const [isClosing, setIsClosing] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(true);
   const [dontShowToday, setDontShowToday] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
 
   const currentPopup = popups[currentIndex];
+  // 800x1000 비율 (4:5)
+  const aspectRatio = 4 / 5;
 
   // 화면 크기 변경 감지
   React.useEffect(() => {
@@ -27,36 +29,67 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
-  const handleClose = () => {
+  const handleClose = React.useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (dontShowToday) {
       onDontShowToday();
     }
-    setIsClosing(true);
-    setTimeout(() => {
-      if (currentIndex < popups.length - 1) {
-        setCurrentIndex(prev => prev + 1);
-        setIsClosing(false);
-      } else {
-        // 모든 팝업을 다 봤으면 오늘 하루 보지 않기
-        onDontShowToday();
-      }
-    }, 300);
-  };
+    // 즉시 완전히 제거
+    setIsOpen(false);
+  }, [dontShowToday, onDontShowToday]);
 
   const handleDontShowTodayChange = (checked: boolean) => {
     setDontShowToday(checked);
   };
 
-  if (!currentPopup) return null;
+  const goToNext = React.useCallback(() => {
+    if (!isOpen) return;
+    setCurrentIndex((prev) => (prev + 1) % popups.length);
+  }, [popups.length, isOpen]);
+
+  const goToPrevious = React.useCallback(() => {
+    if (!isOpen) return;
+    setCurrentIndex((prev) => (prev - 1 + popups.length) % popups.length);
+  }, [popups.length, isOpen]);
+
+  // 키보드 네비게이션 (데스크톱만)
+  React.useEffect(() => {
+    if (isMobile || !isOpen) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') goToPrevious();
+      if (e.key === 'ArrowRight') goToNext();
+      if (e.key === 'Escape') handleClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile, isOpen, goToNext, goToPrevious, handleClose]);
+
+  // 닫힌 상태면 완전히 제거
+  if (!isOpen || !currentPopup) return null;
 
   return (
-    <div className={`fixed inset-0 z-[99] flex items-center justify-center bg-black/80 p-4 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    <div 
+      className="fixed inset-0 z-[99] flex items-center justify-center bg-black/80 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose(e);
+        }
+      }}
+    >
       {/* 데스크톱 팝업 */}
       {!isMobile && (
         <div 
-          className={`relative w-full max-w-[400px] h-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${
-            isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'
-          }`}
+          className="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          style={{ 
+            width: 'min(400px, 80vw)',
+            maxHeight: '90vh'
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* 닫기 버튼 */}
           <button
@@ -67,26 +100,70 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
             ×
           </button>
 
-          {/* 팝업 이미지 */}
-          {currentPopup.image && (
-            <a
-              href={currentPopup.url || '#'}
-              target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
-              rel="noopener noreferrer"
-              className="block w-full h-full"
-            >
-              <img
-                src={currentPopup.image}
-                alt="팝업 이미지"
-                className="w-full h-full object-cover"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-              />
-            </a>
+          {/* 네비게이션 버튼 (여러 개일 때만) */}
+          {popups.length > 1 && (
+            <>
+              <button
+                onClick={goToPrevious}
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                aria-label="이전"
+              >
+                ‹
+              </button>
+              <button
+                onClick={goToNext}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/55 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+                aria-label="다음"
+              >
+                ›
+              </button>
+            </>
           )}
 
-          {/* 하단 컨트롤 */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-white/95 border-t flex items-center justify-between px-3">
+          {/* 팝업 이미지 영역 - 스크롤 가능 */}
+          {currentPopup.image && (
+            <div 
+              className="relative w-full overflow-y-auto flex-1"
+              style={{ 
+                minHeight: 0
+              }}
+            >
+              <a
+                href={currentPopup.url && currentPopup.url !== '#' ? currentPopup.url : undefined}
+                target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
+                rel={currentPopup.url && currentPopup.url !== '#' ? 'noopener noreferrer' : undefined}
+                className="block w-full"
+                onClick={(e) => {
+                  if (!isOpen || !currentPopup.url || currentPopup.url === '#') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                }}
+              >
+                <div 
+                  className="relative w-full overflow-hidden"
+                  style={{ 
+                    aspectRatio: aspectRatio.toString()
+                  }}
+                >
+                  <img
+                    src={currentPopup.image}
+                    alt="팝업 이미지"
+                    className="w-full h-full object-cover"
+                    style={{ 
+                      display: 'block'
+                    }}
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                  />
+                </div>
+              </a>
+            </div>
+          )}
+
+          {/* 하단 컨트롤 - 고정 */}
+          <div className="h-12 bg-white/95 border-t flex items-center justify-between px-3 flex-shrink-0">
             <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
@@ -108,13 +185,25 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
 
       {/* 모바일 팝업 */}
       {isMobile && (
-        <div className="fixed inset-x-0 bottom-0 z-[99]">
+        <div 
+          className="fixed inset-x-0 bottom-0 z-[99] flex flex-col"
+          style={{ maxHeight: '90vh' }}
+          onClick={(e) => {
+            if (!isOpen) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           {/* 핸들 */}
-          <div className="flex justify-center mb-1 px-4">
+          <div className="flex justify-center mb-1 px-4 flex-shrink-0">
             <div className="w-10 h-1 rounded-full bg-white/80" />
           </div>
 
-          <div className={`relative w-full rounded-t-3xl shadow-2xl overflow-hidden bg-white transition-all duration-300 ${isClosing ? 'translate-y-full' : 'translate-y-0'}`}>
+          <div 
+            className="relative w-full rounded-t-[24px] shadow-2xl bg-white flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* 상단 인디케이터 */}
             {popups.length > 1 && (
               <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
@@ -131,28 +220,50 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
               ×
             </button>
 
-            {/* 이미지 */}
+            {/* 이미지 - 800x1000 비율 유지 */}
             {currentPopup.image && (
-              <a
-                href={currentPopup.url || '#'}
-                target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
-                rel="noopener noreferrer"
-                className="block"
+              <div 
+                className="w-full overflow-y-auto"
+                style={{ 
+                  maxHeight: 'calc(90vh - 120px)'
+                }}
               >
-                <div className="relative w-full h-[40vh] min-h-[250px] max-h-[350px]">
-                  <img
-                    src={currentPopup.image}
-                    alt="팝업 이미지"
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                </div>
-              </a>
+                <a
+                  href={currentPopup.url && currentPopup.url !== '#' ? currentPopup.url : undefined}
+                  target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
+                  rel={currentPopup.url && currentPopup.url !== '#' ? 'noopener noreferrer' : undefined}
+                  className="block w-full"
+                  onClick={(e) => {
+                    if (!isOpen || !currentPopup.url || currentPopup.url === '#') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }}
+                >
+                  <div 
+                    className="relative w-full overflow-hidden"
+                    style={{ 
+                      aspectRatio: aspectRatio.toString()
+                    }}
+                  >
+                    <img
+                      src={currentPopup.image}
+                      alt="팝업 이미지"
+                      className="w-full h-full object-cover"
+                      style={{ 
+                        display: 'block'
+                      }}
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                    />
+                  </div>
+                </a>
+              </div>
             )}
 
             {/* 하단 컨트롤 */}
-            <div className="flex items-center justify-between px-4 h-12 border-t bg-white">
+            <div className="flex items-center justify-between px-4 h-12 border-t bg-white flex-shrink-0">
               <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"
@@ -166,13 +277,13 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
                 {popups.length > 1 && (
                   <>
                     <button
-                      onClick={() => setCurrentIndex(prev => (prev - 1 + popups.length) % popups.length)}
+                      onClick={goToPrevious}
                       className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       이전
                     </button>
                     <button
-                      onClick={() => setCurrentIndex(prev => (prev + 1) % popups.length)}
+                      onClick={goToNext}
                       className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       다음

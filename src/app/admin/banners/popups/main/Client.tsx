@@ -3,7 +3,7 @@
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import Link from "next/link";
-import PopupListManager from '@/components/admin/banners/popups/PopupListManager';
+import PopupListManager from '@/components/admin/banners/popups/components/PopupListManager';
 
 export default function Client() {
   return (

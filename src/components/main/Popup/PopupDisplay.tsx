@@ -13,7 +13,6 @@ interface PopupDisplayProps {
 export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayProps) {
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [isOpen, setIsOpen] = React.useState(true);
-  const [isClosing, setIsClosing] = React.useState(false);
   const [dontShowToday, setDontShowToday] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
 
@@ -32,21 +31,25 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
   }, []);
 
   const goToNext = React.useCallback(() => {
+    if (!isOpen) return;
     setCurrentIndex((prev) => (prev + 1) % totalPopups);
-  }, [totalPopups]);
+  }, [totalPopups, isOpen]);
 
   const goToPrevious = React.useCallback(() => {
+    if (!isOpen) return;
     setCurrentIndex((prev) => (prev - 1 + totalPopups) % totalPopups);
-  }, [totalPopups]);
+  }, [totalPopups, isOpen]);
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = React.useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (dontShowToday) {
       onDontShowToday();
     }
-    setIsClosing(true);
-    setTimeout(() => {
-      setIsOpen(false);
-    }, 300);
+    // 즉시 완전히 제거 - 바로 DOM에서 제거
+    setIsOpen(false);
   }, [dontShowToday, onDontShowToday]);
 
   // 키보드 네비게이션 (데스크톱만)
@@ -67,11 +70,17 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
   const touchStartRef = React.useRef<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isOpen) return;
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isOpen) {
+      touchStartRef.current = null;
+      return;
+    }
+    
     const start = touchStartRef.current;
     if (!start) return;
 
@@ -95,13 +104,32 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
     setDontShowToday(checked);
   };
 
+  // 닫힌 상태면 완전히 제거 - 즉시 null 반환하여 DOM에서 제거
   if (!isOpen || !currentPopup) return null;
 
+  // 800x1000 비율 (4:5)
+  const aspectRatio = 4 / 5;
+
   return (
-    <div className={`fixed inset-0 z-[99] flex items-center justify-center bg-black/80 p-4 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    <div 
+      className="fixed inset-0 z-[99] flex items-center justify-center bg-black/80 p-4"
+      onClick={(e) => {
+        // 오버레이 클릭 시 닫기
+        if (e.target === e.currentTarget) {
+          handleClose(e);
+        }
+      }}
+    >
       {/* 데스크톱 팝업 */}
       {!isMobile && (
-        <div className={`relative w-full max-w-[400px] h-[560px] bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ${isClosing ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}`}>
+        <div 
+          className="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          style={{ 
+            width: 'min(400px, 80vw)',
+            maxHeight: '90vh'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* 닫기 버튼 */}
           <button
             onClick={handleClose}
@@ -131,32 +159,47 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
             </>
           )}
 
-          {/* 이미지 */}
-          <a
-            href={currentPopup.url || '#'}
-            target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
-            rel="noopener noreferrer"
-            className={`block w-full h-full ${isClosing || !isOpen ? 'pointer-events-none' : ''}`}
-            onClick={(e) => {
-              if (isClosing || !isOpen) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-              }
+          {/* 이미지 영역 - 스크롤 가능 */}
+          <div 
+            className="relative w-full overflow-y-auto flex-1"
+            style={{ 
+              minHeight: 0
             }}
           >
-            <Image
-              src={currentPopup.image!}
-              alt="팝업 이미지"
-              fill
-              className="object-cover"
-              priority
-              sizes="400px"
-            />
-          </a>
+            <a
+              href={currentPopup.url && currentPopup.url !== '#' ? currentPopup.url : undefined}
+              target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
+              rel={currentPopup.url && currentPopup.url !== '#' ? 'noopener noreferrer' : undefined}
+              className="block w-full"
+              onClick={(e) => {
+                if (!isOpen || !currentPopup.url || currentPopup.url === '#') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return false;
+                }
+              }}
+            >
+              <div 
+                className="relative w-full"
+                style={{ 
+                  aspectRatio: aspectRatio.toString()
+                }}
+              >
+                <Image
+                  src={currentPopup.image!}
+                  alt="팝업 이미지"
+                  width={800}
+                  height={1000}
+                  className="w-full h-auto"
+                  priority
+                  sizes="400px"
+                />
+              </div>
+            </a>
+          </div>
 
-          {/* 하단 컨트롤 */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-white/95 border-t flex items-center justify-between px-3">
+          {/* 하단 컨트롤 - 고정 */}
+          <div className="h-12 bg-white/95 border-t flex items-center justify-between px-3 flex-shrink-0">
             <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
               <input
                 type="checkbox"
@@ -179,16 +222,26 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
       {/* 모바일 팝업 */}
       {isMobile && (
         <div 
-          className="fixed inset-x-0 bottom-0 z-[99]"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          className="fixed inset-x-0 bottom-0 z-[99] flex flex-col"
+          style={{ maxHeight: '90vh' }}
+          onTouchStart={isOpen ? handleTouchStart : undefined}
+          onTouchEnd={isOpen ? handleTouchEnd : undefined}
+          onClick={(e) => {
+            if (!isOpen) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
         >
           {/* 핸들 */}
-          <div className="flex justify-center mb-1 px-4">
+          <div className="flex justify-center mb-1 px-4 flex-shrink-0">
             <div className="w-10 h-1 rounded-full bg-white/80" />
           </div>
 
-          <div className={`relative w-full rounded-t-3xl shadow-2xl overflow-hidden bg-white transition-all duration-300 ${isClosing ? 'translate-y-full' : 'translate-y-0'}`}>
+          <div 
+            className="relative w-full rounded-t-[24px] shadow-2xl bg-white flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* 상단 인디케이터 */}
             {totalPopups > 1 && (
               <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
@@ -205,27 +258,47 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
               <X size={16} />
             </button>
 
-            {/* 이미지 */}
-            <a
-              href={currentPopup.url || '#'}
-              target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
-              rel="noopener noreferrer"
-              className="block"
+            {/* 이미지 - 800x1000 비율 유지 */}
+            <div 
+              className="w-full overflow-y-auto"
+              style={{ 
+                maxHeight: 'calc(90vh - 120px)'
+              }}
             >
-              <div className="relative w-full h-[40vh] min-h-[250px] max-h-[350px]">
-                <Image
-                  src={currentPopup.image!}
-                  alt="팝업 이미지"
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width: 520px) 100vw, 520px"
-                />
-              </div>
-            </a>
+              <a
+                href={currentPopup.url && currentPopup.url !== '#' ? currentPopup.url : undefined}
+                target={currentPopup.url && currentPopup.url !== '#' ? '_blank' : undefined}
+                rel={currentPopup.url && currentPopup.url !== '#' ? 'noopener noreferrer' : undefined}
+                className="block w-full"
+                onClick={(e) => {
+                  if (!isOpen || !currentPopup.url || currentPopup.url === '#') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                }}
+              >
+                <div 
+                  className="relative w-full"
+                  style={{ 
+                    aspectRatio: aspectRatio.toString()
+                  }}
+                >
+                  <Image
+                    src={currentPopup.image!}
+                    alt="팝업 이미지"
+                    width={800}
+                    height={1000}
+                    className="w-full h-auto"
+                    priority
+                    sizes="(max-width: 768px) 100vw, 520px"
+                  />
+                </div>
+              </a>
+            </div>
 
             {/* 하단 컨트롤 */}
-            <div className="flex items-center justify-between px-4 h-12 border-t bg-white">
+            <div className="flex items-center justify-between px-4 h-12 border-t bg-white flex-shrink-0">
               <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"

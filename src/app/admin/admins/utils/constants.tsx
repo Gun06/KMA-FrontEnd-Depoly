@@ -5,27 +5,37 @@ export const ADMIN_TABLE_COLUMNS: Column<AdminItem>[] = [
   {
     key: 'no',
     header: '번호',
-    render: (row) => <div className="text-center">{row.no}</div>,
+    headerAlign: 'center',
+    align: 'center',
+    render: (row) => <div className="text-center text-gray-900">{row.no}</div>,
   },
   {
     key: 'account',
     header: '아이디',
-    render: (row) => <div className="text-center">{row.account}</div>,
+    headerAlign: 'center',
+    align: 'center',
+    render: (row) => <div className="text-center text-gray-900">{row.account}</div>,
   },
   {
     key: 'name',
     header: '이름',
-    render: (row) => <div className="text-center">{row.name}</div>,
+    headerAlign: 'center',
+    align: 'center',
+    render: (row) => <div className="text-center text-gray-900">{row.name}</div>,
   },
   {
     key: 'roleName',
     header: '권한',
-    render: (row) => <div className="text-center">{row.roleName}</div>,
+    headerAlign: 'center',
+    align: 'center',
+    render: (row) => <div className="text-center text-gray-900">{row.roleName}</div>,
   },
   {
     key: 'deptName',
     header: '부서',
-    render: (row) => <div className="text-center">{row.deptName || '-'}</div>,
+    headerAlign: 'center',
+    align: 'center',
+    render: (row) => <div className="text-center text-gray-900">{row.deptName || '-'}</div>,
   },
 ];
 

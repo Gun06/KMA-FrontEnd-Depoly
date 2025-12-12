@@ -32,3 +32,8 @@ export interface AdminListParams {
   size?: number;
 }
 
+export interface DepartmentItem {
+  id: string;
+  name: string;
+}
+
