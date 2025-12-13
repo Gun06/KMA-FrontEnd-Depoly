@@ -16,6 +16,7 @@ import { ADMIN_TABLE_COLUMNS, DEFAULT_PAGE_SIZE } from './utils/constants';
 import { useAdminAuthStore } from '@/store/adminAuthStore';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/common/Toast/ToastContainer';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
 import type { AdminFormData, RoleType, DepartmentItem, RoleItem } from './types';
 
 export default function Client() {
@@ -33,6 +34,8 @@ export default function Client() {
   });
   const [selectedRole, setSelectedRole] = useState<RoleType>('');
   const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // 권한 확인: 총관리자(SUPER_ADMIN)만 접근 가능
   const roles = user?.roles || [];
@@ -41,6 +44,45 @@ export default function Client() {
     new Set([primaryRole, ...roles].filter(Boolean))
   ).map(r => r.toUpperCase().replace(/^ROLE_/i, ''));
   const isSuperAdmin = allRoles.includes('SUPER_ADMIN');
+
+  // 관리자 목록 조회 (Hooks는 항상 같은 순서로 호출되어야 하므로 early return 전에 호출)
+  const {
+    data: adminListData,
+    isLoading: isLoadingAdminList,
+    refetch: refetchAdminList,
+  } = useAdminList({ page, size: DEFAULT_PAGE_SIZE });
+
+  // 권한 목록 조회
+  const {
+    data: rolesData,
+    isLoading: isLoadingRoles,
+    error: rolesError,
+  } = useAdminRoles(true);
+
+  // 부서 목록 조회
+  const {
+    data: departmentsData,
+    isLoading: isLoadingDepartments,
+    error: departmentsError,
+  } = useAdminDepartments(true);
+
+  // 대회 목록 조회 (특정 대회 선택용)
+  const { data: eventsData } = useAdminEventList({ page: 1, size: 100 });
+
+  // 관리자 생성 API
+  const createAdminMutation = useCreateAdmin({
+    onSuccess: () => {
+      const adminName = formData.name || formData.account || '관리자';
+      setSuccessMessage(`${adminName} 관리자가 성공적으로 생성되었습니다.`);
+      setIsSuccessModalOpen(true);
+      setActiveTab('list');
+      resetFormData(setFormData, setSelectedRole, setSelectedEventId);
+      refetchAdminList();
+    },
+    onError: (error) => {
+      showErrorToast(`관리자 생성에 실패했습니다: ${error.message}`);
+    },
+  });
 
   // 권한 확인 후 Toast 표시 (한 번만 실행)
   useEffect(() => {
@@ -80,43 +122,6 @@ export default function Client() {
       </div>
     );
   }
-
-  // 관리자 목록 조회
-  const {
-    data: adminListData,
-    isLoading: isLoadingAdminList,
-    refetch: refetchAdminList,
-  } = useAdminList({ page, size: DEFAULT_PAGE_SIZE });
-
-  // 권한 목록 조회
-  const {
-    data: rolesData,
-    isLoading: isLoadingRoles,
-    error: rolesError,
-  } = useAdminRoles(true);
-
-  // 부서 목록 조회
-  const {
-    data: departmentsData,
-    isLoading: isLoadingDepartments,
-    error: departmentsError,
-  } = useAdminDepartments(true);
-
-  // 대회 목록 조회 (특정 대회 선택용)
-  const { data: eventsData } = useAdminEventList({ page: 1, size: 100 });
-
-  // 관리자 생성 API
-  const createAdminMutation = useCreateAdmin({
-    onSuccess: () => {
-      showSuccessToast('관리자가 성공적으로 생성되었습니다.');
-      setActiveTab('list');
-      resetFormData(setFormData, setSelectedRole, setSelectedEventId);
-      refetchAdminList();
-    },
-    onError: (error) => {
-      showErrorToast(`관리자 생성에 실패했습니다: ${error.message}`);
-    },
-  });
 
   // 권한 설정에서 선택할 때 (라디오 버튼)
   const handleRoleChange = (role: RoleType) => {
@@ -594,6 +599,12 @@ export default function Client() {
         )}
       </div>
       <ToastContainer toasts={toasts} onClose={removeToast} />
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="관리자 생성 완료"
+        message={successMessage}
+      />
     </div>
   );
 }
