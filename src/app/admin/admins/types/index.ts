@@ -37,3 +37,8 @@ export interface DepartmentItem {
   name: string;
 }
 
+export interface RoleItem {
+  id: string;
+  name: string;
+}
+

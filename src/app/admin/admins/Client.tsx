@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Users, Shield, UserPlus, HelpCircle, Info } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus, Users, Shield, UserPlus, HelpCircle, Info, AlertCircle } from 'lucide-react';
 import { useAdminEventList } from '@/services/admin';
 import AdminTableShell from '@/components/admin/Table/AdminTableShell';
 import Pagination from '@/components/common/Pagination/Pagination';
@@ -12,9 +13,16 @@ import { useAdminDepartments } from './hooks/useAdminDepartments';
 import { validateAdminForm } from './utils/validation';
 import { resetFormData } from './utils/formHelpers';
 import { ADMIN_TABLE_COLUMNS, DEFAULT_PAGE_SIZE } from './utils/constants';
-import type { AdminFormData, RoleType, DepartmentItem } from './types';
+import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useToast } from '@/hooks/useToast';
+import ToastContainer from '@/components/common/Toast/ToastContainer';
+import type { AdminFormData, RoleType, DepartmentItem, RoleItem } from './types';
 
 export default function Client() {
+  const router = useRouter();
+  const { user, hasHydrated } = useAdminAuthStore();
+  const { toasts, error: showErrorToast, success: showSuccessToast, removeToast } = useToast();
+  const hasShownAlertRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'list' | 'create'>('list');
   const [page, setPage] = useState(1);
   const [formData, setFormData] = useState<AdminFormData>({
@@ -26,6 +34,53 @@ export default function Client() {
   const [selectedRole, setSelectedRole] = useState<RoleType>('');
   const [selectedEventId, setSelectedEventId] = useState<string>('');
 
+  // 권한 확인: 총관리자(SUPER_ADMIN)만 접근 가능
+  const roles = user?.roles || [];
+  const primaryRole = user?.role || '';
+  const allRoles = Array.from(
+    new Set([primaryRole, ...roles].filter(Boolean))
+  ).map(r => r.toUpperCase().replace(/^ROLE_/i, ''));
+  const isSuperAdmin = allRoles.includes('SUPER_ADMIN');
+
+  // 권한 확인 후 Toast 표시 (한 번만 실행)
+  useEffect(() => {
+    if (!hasHydrated) return; // 아직 초기화되지 않았으면 대기
+    if (hasShownAlertRef.current) return; // 이미 알림을 표시했으면 중복 방지
+    
+    if (!isSuperAdmin) {
+      // 총관리자가 아니면 접근 차단 Toast 표시 (자동 리다이렉트 없음)
+      hasShownAlertRef.current = true; // 알림 표시 플래그 설정
+      showErrorToast('관리자 관리 페이지는 총관리자만 접근할 수 있습니다.', 0); // duration 0으로 설정하여 자동 닫힘 방지
+    }
+  }, [hasHydrated, isSuperAdmin, showErrorToast]);
+
+  // 총관리자가 아니면 접근 차단 메시지 표시
+  if (!hasHydrated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">접근 권한이 없습니다</h2>
+          <p className="text-gray-600 mb-4">관리자 관리 페이지는 총관리자만 접근할 수 있습니다.</p>
+          <button
+            onClick={() => router.push('/admin')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            관리자 홈으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 관리자 목록 조회
   const {
     data: adminListData,
@@ -33,11 +88,19 @@ export default function Client() {
     refetch: refetchAdminList,
   } = useAdminList({ page, size: DEFAULT_PAGE_SIZE });
 
-  // 권한 목록 조회 (필요시 활성화)
-  useAdminRoles(false);
+  // 권한 목록 조회
+  const {
+    data: rolesData,
+    isLoading: isLoadingRoles,
+    error: rolesError,
+  } = useAdminRoles(true);
 
   // 부서 목록 조회
-  const { data: departmentsData } = useAdminDepartments(true);
+  const {
+    data: departmentsData,
+    isLoading: isLoadingDepartments,
+    error: departmentsError,
+  } = useAdminDepartments(true);
 
   // 대회 목록 조회 (특정 대회 선택용)
   const { data: eventsData } = useAdminEventList({ page: 1, size: 100 });
@@ -45,20 +108,97 @@ export default function Client() {
   // 관리자 생성 API
   const createAdminMutation = useCreateAdmin({
     onSuccess: () => {
-      alert('관리자가 성공적으로 생성되었습니다.');
+      showSuccessToast('관리자가 성공적으로 생성되었습니다.');
       setActiveTab('list');
       resetFormData(setFormData, setSelectedRole, setSelectedEventId);
       refetchAdminList();
     },
     onError: (error) => {
-      alert(`관리자 생성에 실패했습니다: ${error.message}`);
+      showErrorToast(`관리자 생성에 실패했습니다: ${error.message}`);
     },
   });
 
+  // 권한 설정에서 선택할 때 (라디오 버튼)
   const handleRoleChange = (role: RoleType) => {
     setSelectedRole(role);
-    // TODO: 선택한 권한에 맞는 roleId를 API에서 가져와서 설정
-    // 예: roleId를 API로부터 가져오는 로직 필요
+    
+    // 권한 설정에서 선택한 권한에 따라 권한조회 드롭다운 자동 선택
+    if (rolesData && rolesData.length > 0) {
+      let matchedRole: RoleItem | undefined;
+      
+      // 권한 타입에 따라 매칭되는 권한 찾기
+      switch (role) {
+        case 'super_admin':
+          // 슈퍼: 총관리자
+          matchedRole = rolesData.find((r) => 
+            r.name.includes('총관리자') || 
+            r.name.includes('총 관리자') ||
+            r.name.toLowerCase().includes('super')
+          );
+          break;
+        case 'no_deposit':
+          // Deposit: 입금관리자
+          matchedRole = rolesData.find((r) => 
+            r.name.includes('입금관리자') || 
+            r.name.includes('입금 관리자') ||
+            r.name.toLowerCase().includes('deposit')
+          );
+          break;
+        case 'no_deposit_event':
+          // Board: 게시판관리자
+          matchedRole = rolesData.find((r) => 
+            r.name.includes('게시판관리자') || 
+            r.name.includes('게시판 관리자') ||
+            r.name.toLowerCase().includes('board')
+          );
+          break;
+        case 'event_specific':
+          // Event: 대회관리자
+          matchedRole = rolesData.find((r) => 
+            r.name.includes('대회관리자') || 
+            r.name.includes('대회 관리자') ||
+            r.name.toLowerCase().includes('event')
+          );
+          break;
+      }
+      
+      if (matchedRole) {
+        setFormData({ ...formData, roleId: matchedRole.id });
+      }
+    }
+  };
+
+  // 권한조회 드롭다운에서 직접 선택할 때
+  const handleRoleIdChange = (roleId: string) => {
+    setFormData({ ...formData, roleId });
+    
+    // 권한조회 드롭다운에서 선택한 권한에 따라 권한 설정도 자동 선택
+    if (rolesData && rolesData.length > 0) {
+      const selectedRoleData = rolesData.find((r) => r.id === roleId);
+      if (selectedRoleData) {
+        // 권한 이름으로 권한 타입 매칭
+        const roleName = selectedRoleData.name.toLowerCase();
+        // 슈퍼: 총관리자
+        if (roleName.includes('총관리자') || roleName.includes('총 관리자') || roleName.includes('super')) {
+          setSelectedRole('super_admin');
+        } 
+        // Deposit: 입금관리자
+        else if (roleName.includes('입금관리자') || roleName.includes('입금 관리자') || roleName.includes('deposit')) {
+          setSelectedRole('no_deposit');
+        } 
+        // Board: 게시판관리자
+        else if (roleName.includes('게시판관리자') || roleName.includes('게시판 관리자') || roleName.includes('board')) {
+          setSelectedRole('no_deposit_event');
+        } 
+        // Event: 대회관리자
+        else if (roleName.includes('대회관리자') || roleName.includes('대회 관리자') || roleName.includes('event')) {
+          setSelectedRole('event_specific');
+        } 
+        else {
+          setSelectedRole('');
+        }
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,7 +206,7 @@ export default function Client() {
 
     const validation = validateAdminForm(formData, selectedRole, selectedEventId);
     if (!validation.isValid) {
-      alert(validation.error);
+      showErrorToast(validation.error || '입력 정보를 확인해주세요.');
       return;
     }
 
@@ -222,21 +362,37 @@ export default function Client() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    권한 번호 (roleId) <span className="text-red-500">*</span>
+                    권한조회 <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="roleId"
                     value={formData.roleId}
-                    onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="권한을 선택하면 자동으로 입력됩니다"
-                    disabled={!selectedRole}
+                    onChange={(e) => handleRoleIdChange(e.target.value)}
+                    disabled={isLoadingRoles}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                     required
-                  />
+                  >
+                    <option value="">
+                      {isLoadingRoles
+                        ? '권한 목록 로딩 중...'
+                        : rolesError
+                          ? '권한 목록을 불러올 수 없습니다'
+                          : '권한을 선택하세요'}
+                    </option>
+                    {rolesData?.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                  {rolesError && (
+                    <p className="mt-1 text-xs text-red-500">
+                      권한 목록을 불러오는 중 오류가 발생했습니다.
+                    </p>
+                  )}
                   <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
                     <Info className="w-3 h-3" />
-                    권한을 선택하면 자동으로 설정됩니다.
+                    권한 설정에서 선택하면 자동으로 설정됩니다.
                   </p>
                 </div>
                 <div>
@@ -247,15 +403,27 @@ export default function Client() {
                     name="departmentId"
                     value={formData.departmentId}
                     onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                    disabled={isLoadingDepartments}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value="">부서를 선택하세요 (선택사항)</option>
+                    <option value="">
+                      {isLoadingDepartments
+                        ? '부서 목록 로딩 중...'
+                        : departmentsError
+                          ? '부서 목록을 불러올 수 없습니다'
+                          : '부서를 선택하세요 (선택사항)'}
+                    </option>
                     {departmentsData?.map((dept) => (
                       <option key={dept.id} value={dept.id}>
                         {dept.name}
                       </option>
                     ))}
                   </select>
+                  {departmentsError && (
+                    <p className="mt-1 text-xs text-red-500">
+                      부서 목록을 불러오는 중 오류가 발생했습니다.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -425,6 +593,7 @@ export default function Client() {
           </div>
         )}
       </div>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
