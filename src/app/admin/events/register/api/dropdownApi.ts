@@ -60,7 +60,7 @@ export function useEventCategoryDropdown(eventId: string) {
     {
       enabled: !!eventId,
       staleTime: 0, // 항상 최신 데이터 확인
-      cacheTime: 0, // 캐시를 즉시 제거하여 항상 서버에서 가져오기
+      gcTime: 0, // 캐시를 즉시 제거하여 항상 서버에서 가져오기
       refetchOnMount: 'always', // 컴포넌트 마운트 시 항상 재조회
       retry: 2,
     },
