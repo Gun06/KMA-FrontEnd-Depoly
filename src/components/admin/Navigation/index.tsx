@@ -38,6 +38,7 @@ const NAV_ITEMS: Item[] = [
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
     { name: '대회관리', href: '/admin/events/management' },
     { name: '대회등록', href: '/admin/events/register' },
+    { name: '통계확인', href: '/admin/events/statistics' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
     { name: '공지사항', href: '/admin/boards/notice' },

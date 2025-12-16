@@ -43,6 +43,7 @@ const subMenus: Record<string, SubMenu> = {
     items: [
       { label: '대회관리', href: '/admin/events/management' },
       { label: '대회등록', href: '/admin/events/register' },
+      { label: '통계확인', href: '/admin/events/statistics' },
     ],
   },
   게시판관리: {

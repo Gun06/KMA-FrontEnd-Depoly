@@ -23,8 +23,63 @@ export default function SouvenirSelectionModal({
   const [selectedSouvenirs, setSelectedSouvenirs] = useState<Array<{souvenirId: string, souvenirName: string, size: string}>>(currentSelection);
 
   useEffect(() => {
-    setSelectedSouvenirs(currentSelection);
-  }, [currentSelection]);
+    // 모달이 열릴 때, 실제 기념품이 1개 이상 있으면 모두 자동 선택
+    if (isOpen && eventInfo) {
+      const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === categoryName);
+      const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
+      
+      // "기념품 없음"을 제외한 실제 기념품 목록
+      const actualSouvenirs = availableSouvenirs.filter(souvenir => {
+        const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
+                            souvenir.souvenirId === '0' || 
+                            souvenir.souvenirId === '1' || 
+                            souvenir.souvenirId === '2';
+        return !isNoSouvenir;
+      });
+
+      // 실제 기념품이 1개 이상 있는 경우, 모두 필수 선택
+      if (actualSouvenirs.length >= 1) {
+        // 모든 실제 기념품을 자동으로 선택 (이미 선택된 것은 유지, 없는 것은 추가)
+        const autoSelected = actualSouvenirs.map(souvenir => {
+          const existing = currentSelection.find(s => s.souvenirId === souvenir.souvenirId);
+          if (existing) {
+            // 이미 선택된 경우, 사이즈가 없으면 기본 사이즈 설정
+            if (!existing.size && souvenir.souvenirSize && souvenir.souvenirSize.length > 0) {
+              return {
+                ...existing,
+                size: souvenir.souvenirSize[0]
+              };
+            }
+            return existing;
+          }
+          // 첫 번째 사이즈를 자동으로 선택
+          const defaultSize = souvenir.souvenirSize?.[0] || '';
+          return { 
+            souvenirId: souvenir.souvenirId, 
+            souvenirName: souvenir.souvenirName, 
+            size: defaultSize 
+          };
+        });
+        
+        // 기존 선택에 "기념품 없음"이 있으면 유지
+        const noSouvenirItems = currentSelection.filter(s => {
+          const souvenir = availableSouvenirs.find(a => a.souvenirId === s.souvenirId);
+          if (!souvenir) return false;
+          return souvenir.souvenirName === '기념품 없음' || 
+                 souvenir.souvenirId === '0' || 
+                 souvenir.souvenirId === '1' || 
+                 souvenir.souvenirId === '2';
+        });
+        
+        setSelectedSouvenirs([...autoSelected, ...noSouvenirItems]);
+      } else {
+        // 기념품이 없는 경우 기존 선택 유지
+        setSelectedSouvenirs(currentSelection);
+      }
+    } else {
+      setSelectedSouvenirs(currentSelection);
+    }
+  }, [currentSelection, isOpen, eventInfo, categoryName]);
 
   if (!isOpen) return null;
 
@@ -32,10 +87,28 @@ export default function SouvenirSelectionModal({
   const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
 
   const handleSouvenirToggle = (souvenirId: string, souvenirName: string) => {
+    // "기념품 없음"을 제외한 실제 기념품 목록
+    const actualSouvenirs = availableSouvenirs.filter(souvenir => {
+      const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
+                          souvenir.souvenirId === '0' || 
+                          souvenir.souvenirId === '1' || 
+                          souvenir.souvenirId === '2';
+      return !isNoSouvenir;
+    });
+
+    // 실제 기념품이 1개 이상 있는 경우, 이미 선택된 항목은 해제할 수 없음 (모두 필수 선택)
+    if (actualSouvenirs.length >= 1) {
+      const existing = selectedSouvenirs.find(s => s.souvenirId === souvenirId);
+      if (existing) {
+        // 이미 선택된 경우 - 해제 불가 (모두 선택 필수)
+        return;
+      }
+    }
+
     setSelectedSouvenirs(prev => {
       const existing = prev.find(s => s.souvenirId === souvenirId);
       if (existing) {
-        // 이미 선택된 경우 제거
+        // 이미 선택된 경우 제거 (기념품이 1개 이하인 경우에만 허용)
         return prev.filter(s => s.souvenirId !== souvenirId);
       } else {
         // 새로 선택하는 경우 - 첫 번째 사이즈를 자동으로 선택
@@ -47,6 +120,7 @@ export default function SouvenirSelectionModal({
   };
 
   const handleSizeChange = (souvenirId: string, size: string) => {
+    // 사이즈는 항상 변경 가능
     setSelectedSouvenirs(prev => 
       prev.map(s => 
         s.souvenirId === souvenirId 
@@ -74,6 +148,32 @@ export default function SouvenirSelectionModal({
     // 기념품을 하나도 선택하지 않으면 비활성화
     if (selectedSouvenirs.length === 0) {
       return false;
+    }
+
+    // "기념품 없음"을 제외한 실제 기념품 목록
+    const actualSouvenirs = availableSouvenirs.filter(souvenir => {
+      const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
+                          souvenir.souvenirId === '0' || 
+                          souvenir.souvenirId === '1' || 
+                          souvenir.souvenirId === '2';
+      return !isNoSouvenir;
+    });
+
+    // 실제 기념품이 없으면 (기념품 없음만 있는 경우) 하나 이상 선택하면 통과
+    if (actualSouvenirs.length === 0) {
+      return selectedSouvenirs.length > 0;
+    }
+
+    // 실제 기념품이 1개 이상 있는 경우, 모두 선택되어야 함
+    if (actualSouvenirs.length >= 1) {
+      // 모든 실제 기념품이 선택되었는지 확인
+      const allSelected = actualSouvenirs.every(souvenir => 
+        selectedSouvenirs.some(selected => selected.souvenirId === souvenir.souvenirId)
+      );
+
+      if (!allSelected) {
+        return false;
+      }
     }
 
     // 모든 선택된 기념품이 유효한 사이즈를 가지고 있는지 확인
@@ -111,7 +211,29 @@ export default function SouvenirSelectionModal({
 
         <div className="mb-4">
           <p className="text-sm text-gray-600">
-            <strong>{categoryName}</strong> 종목의 기념품을 선택해주세요. (여러개 선택 가능)
+            {(() => {
+              const actualSouvenirs = availableSouvenirs.filter(souvenir => {
+                const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
+                                    souvenir.souvenirId === '0' || 
+                                    souvenir.souvenirId === '1' || 
+                                    souvenir.souvenirId === '2';
+                return !isNoSouvenir;
+              });
+
+              if (actualSouvenirs.length >= 1) {
+                return (
+                  <>
+                    <strong>{categoryName}</strong> 종목의 기념품 {actualSouvenirs.length === 1 ? '1개를' : `${actualSouvenirs.length}개를 모두`} 선택해야 합니다. (사이즈는 본인이 선택할 수 있습니다)
+                  </>
+                );
+              } else {
+                return (
+                  <>
+                    <strong>{categoryName}</strong> 종목의 기념품을 선택해주세요.
+                  </>
+                );
+              }
+            })()}
           </p>
         </div>
 
@@ -124,6 +246,19 @@ export default function SouvenirSelectionModal({
                                 souvenir.souvenirId === '1' || 
                                 souvenir.souvenirId === '2';
 
+            // "기념품 없음"을 제외한 실제 기념품 목록
+            const actualSouvenirs = availableSouvenirs.filter(s => {
+              const isNoSouvenirItem = s.souvenirName === '기념품 없음' || 
+                                      s.souvenirId === '0' || 
+                                      s.souvenirId === '1' || 
+                                      s.souvenirId === '2';
+              return !isNoSouvenirItem;
+            });
+
+            // 실제 기념품이 1개 이상 있고, 현재 기념품이 실제 기념품인 경우 체크박스만 비활성화 (사이즈는 선택 가능)
+            const isMultipleRequired = actualSouvenirs.length >= 1 && !isNoSouvenir;
+            const isCheckboxDisabled = isMultipleRequired && isSelected;
+
             return (
               <div
                 key={souvenir.souvenirId}
@@ -134,16 +269,44 @@ export default function SouvenirSelectionModal({
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id={`souvenir-${souvenir.souvenirId}`}
-                    checked={isSelected}
-                    onChange={() => handleSouvenirToggle(souvenir.souvenirId, souvenir.souvenirName)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`souvenir-${souvenir.souvenirId}`}
+                      checked={isSelected}
+                      onChange={() => handleSouvenirToggle(souvenir.souvenirId, souvenir.souvenirName)}
+                      disabled={isCheckboxDisabled}
+                      className={`appearance-none w-4 h-4 border-2 rounded ${
+                        isSelected
+                          ? 'bg-blue-600 border-blue-600'
+                          : 'bg-white border-gray-300'
+                      } ${
+                        isCheckboxDisabled 
+                          ? 'cursor-not-allowed' 
+                          : 'cursor-pointer hover:border-blue-400'
+                      } focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors`}
+                    />
+                    {isSelected && (
+                      <svg
+                        className={`absolute left-0.5 top-0.5 w-3 h-3 pointer-events-none ${
+                          isCheckboxDisabled ? 'text-white' : 'text-white'
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
                   <label
                     htmlFor={`souvenir-${souvenir.souvenirId}`}
-                    className="flex-1 cursor-pointer"
+                    className={`flex-1 ${isCheckboxDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <div className="font-medium text-gray-900">
                       {souvenir.souvenirName}

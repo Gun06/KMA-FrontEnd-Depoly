@@ -20,7 +20,6 @@ import CoursesSection from '@/app/admin/events/register/components/sections/Cour
 // 파츠 (register에서 import)
 import EditActionBar from '@/app/admin/events/register/components/parts/EditActionBar';
 import ValidationErrorModal from '@/app/admin/events/register/components/parts/ValidationErrorModal';
-import Coachmark, { type CoachmarkStep } from '@/components/common/Coachmark/Coachmark';
 
 // 훅/타입 (register에서 import)
 import { useCompetitionForm } from '@/app/admin/events/register/hooks/useCompetitionForm';
@@ -143,34 +142,6 @@ export default function EditForm({
   // 기념품/종목 저장용 로딩 상태
   const [loadingSouvenirs, setLoadingSouvenirs] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
-
-  // 코치마크 강제 표시 상태
-  const [forceShowCoachmark, setForceShowCoachmark] = useState(false);
-
-  // 코치마크 단계 정의
-  const coachmarkSteps: CoachmarkStep[] = [
-    {
-      id: 'step1',
-      target: '[data-coachmark="step1-save"]',
-      title: '1단계: 기본 정보 저장',
-      description: '대회명, 날짜, 장소 등 기본 정보를 입력하고 저장하세요. 기본 정보를 먼저 저장해야 다음 단계로 진행할 수 있습니다.',
-      position: 'top',
-    },
-    {
-      id: 'step2',
-      target: '[data-coachmark="step2-save"]',
-      title: '2단계: 기념품 저장',
-      description: '대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다.',
-      position: 'top',
-    },
-    {
-      id: 'step3',
-      target: '[data-coachmark="step3-save"]',
-      title: '3단계: 종목 저장',
-      description: '참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 모든 정보가 저장되면 대회 설정이 완료됩니다.',
-      position: 'top',
-    },
-  ];
 
   // 쿼리 파라미터로 기념품 섹션으로 스크롤
   useEffect(() => {
@@ -345,24 +316,6 @@ export default function EditForm({
                 onDelete={handleDelete}
                 editHref={editHref}
               />
-              {isEditing && !readOnly && (
-                <Button
-                  tone="outlineDark"
-                  variant="outline"
-                  size="sm"
-                  widthType="pager"
-                  onClick={() => {
-                    // 로컬 스토리지에서 코치마크 완료 상태 삭제
-                    localStorage.removeItem('event-edit-3step-coachmark');
-                    // 코치마크 강제 표시
-                    setForceShowCoachmark(true);
-                    // 다음 렌더링에서 다시 false로 설정하여 재시작
-                    setTimeout(() => setForceShowCoachmark(false), 100);
-                  }}
-                >
-                  가이드 보기
-                </Button>
-              )}
             </div>
           }
         >
@@ -438,17 +391,28 @@ export default function EditForm({
         {/* 수정 모드에서 기본 정보 저장 버튼 (STEP 1) */}
         {!readOnly && (
           <div className="flex justify-center mx-auto mt-6">
-            <Button
-              data-coachmark="step1-save"
-              tone="primary"
-              widthType="pager"
-              size="sm"
-              onClick={saveEdit}
-              disabled={loadingBasicInfo}
-              aria-busy={loadingBasicInfo}
-            >
-              {loadingBasicInfo ? '저장 중...' : '기본 정보 저장'}
-            </Button>
+            <div className="relative group">
+              <Button
+                tone="primary"
+                widthType="pager"
+                size="sm"
+                onClick={saveEdit}
+                disabled={loadingBasicInfo}
+                aria-busy={loadingBasicInfo}
+              >
+                {loadingBasicInfo ? '저장 중...' : '기본 정보 저장'}
+              </Button>
+              {/* Tooltip */}
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                  <div className="font-semibold mb-2 text-sm">1단계: 기본 정보 저장</div>
+                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                    대회명, 날짜, 장소 등 기본 정보를 입력하고 저장하세요. 기본 정보를 먼저 저장해야 다음 단계로 진행할 수 있습니다.
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -490,17 +454,28 @@ export default function EditForm({
         {/* 기념품 저장 버튼 (STEP 2) */}
         {!readOnly && (
           <div className="flex justify-center mt-4">
-            <Button
-              data-coachmark="step2-save"
-              tone="primary"
-              size="sm"
-              widthType="pager"
-              onClick={handleSaveSouvenirs}
-              disabled={loadingSouvenirs}
-              aria-busy={loadingSouvenirs}
-            >
-              {loadingSouvenirs ? '저장 중...' : '기념품 저장'}
-            </Button>
+            <div className="relative group">
+              <Button
+                tone="primary"
+                size="sm"
+                widthType="pager"
+                onClick={handleSaveSouvenirs}
+                disabled={loadingSouvenirs}
+                aria-busy={loadingSouvenirs}
+              >
+                {loadingSouvenirs ? '저장 중...' : '기념품 저장'}
+              </Button>
+              {/* Tooltip */}
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                  <div className="font-semibold mb-2 text-sm">2단계: 기념품 저장</div>
+                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                    대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다.
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -520,17 +495,28 @@ export default function EditForm({
         {/* 종목 저장 버튼 (STEP 3) */}
         {!readOnly && (
           <div className="flex justify-center mt-4">
-            <Button
-              data-coachmark="step3-save"
-              tone="primary"
-              size="sm"
-              widthType="pager"
-              onClick={handleSaveCourses}
-              disabled={loadingCourses}
-              aria-busy={loadingCourses}
-            >
-              {loadingCourses ? '저장 중...' : '종목 저장'}
-            </Button>
+            <div className="relative group">
+              <Button
+                tone="primary"
+                size="sm"
+                widthType="pager"
+                onClick={handleSaveCourses}
+                disabled={loadingCourses}
+                aria-busy={loadingCourses}
+              >
+                {loadingCourses ? '저장 중...' : '종목 저장'}
+              </Button>
+              {/* Tooltip */}
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                  <div className="font-semibold mb-2 text-sm">3단계: 종목 저장</div>
+                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                    참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 모든 정보가 저장되면 대회 설정이 완료됩니다.
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -549,13 +535,6 @@ export default function EditForm({
         errors={[errorMessage]}
       />
 
-      {/* 코치마크 */}
-      {!readOnly && (
-        <Coachmark
-          steps={coachmarkSteps}
-          storageKey="event-edit-3step-coachmark"
-        />
-      )}
     </div>
   );
 }

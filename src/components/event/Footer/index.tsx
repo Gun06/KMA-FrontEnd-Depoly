@@ -41,6 +41,8 @@ export default function EventFooter({ footerBgClass, accentColor }: EventFooterP
               전화 <span className="tabular-nums">042) 638 - 1080</span>
               <span className="mx-2">|</span>
               팩스 <span className="tabular-nums">042) 638 - 1087</span>
+              <span className="mx-2">|</span>
+              이메일 : <span>jeonmahyeop@naver.com</span>
             </div>
             <div className="text-white/50">© 2025 RUN1080 Inc. ALL RIGHT RESERVED.</div>
           </div>

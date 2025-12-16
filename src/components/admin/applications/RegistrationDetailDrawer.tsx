@@ -291,20 +291,6 @@ export default function RegistrationDetailDrawer({
     return directName || '-';
   }, [selectedCategory?.name, item?.eventCategory, item?.categoryName]);
 
-  // 이벤트 데이터 로드 후 코스 ID 자동 매핑 (없을 때만)
-  React.useEffect(() => {
-    if (!item) return;
-    if (form.eventCategoryId) return;
-    if (!eventData?.eventCategories?.length) return;
-    const courseByName = eventData.eventCategories.find(c => {
-      const courseLabel = (item.eventCategory || item.categoryName || '').trim();
-      return courseLabel && c.name === courseLabel;
-    });
-    if (courseByName?.id) {
-      setForm((prev) => ({ ...prev, eventCategoryId: courseByName.id }));
-    }
-  }, [item, eventData?.eventCategories, form.eventCategoryId]);
-
   // 폼 데이터 초기화 (item이 변경될 때마다)
   React.useEffect(() => {
     if (!item) return;
@@ -318,7 +304,18 @@ export default function RegistrationDetailDrawer({
     };
 
     // eventCategoryId 추출: souvenirListDetail에서 첫 번째 항목의 eventCategoryId 사용
-    const currentEventCategoryId = item.souvenirListDetail?.[0]?.eventCategoryId || '';
+    let currentEventCategoryId = item.souvenirListDetail?.[0]?.eventCategoryId || '';
+    
+    // eventCategoryId가 없고 eventData가 이미 로드되어 있다면, 코스 이름으로 찾기
+    if (!currentEventCategoryId && eventData?.eventCategories?.length) {
+      const courseLabel = (item.eventCategory || item.categoryName || item.eventCategoryName || '').trim();
+      if (courseLabel) {
+        const courseByName = eventData.eventCategories.find(c => c.name === courseLabel);
+        if (courseByName?.id) {
+          currentEventCategoryId = courseByName.id;
+        }
+      }
+    }
     
     // souvenirJsonList 구성: souvenirListDetail 또는 souvenirList에서 추출
     const currentSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
@@ -352,7 +349,65 @@ export default function RegistrationDetailDrawer({
     if (open) {
       setIsEditing(false);
     }
-  }, [item, open]);
+  }, [item, open, eventData?.eventCategories]);
+
+  // 이벤트 데이터 로드 후 코스 ID 자동 매핑 (없을 때만)
+  React.useEffect(() => {
+    if (!item) return;
+    if (form.eventCategoryId) return;
+    if (!eventData?.eventCategories?.length) return;
+    const courseLabel = (item.eventCategory || item.categoryName || item.eventCategoryName || '').trim();
+    if (!courseLabel) return;
+    const courseByName = eventData.eventCategories.find(c => c.name === courseLabel);
+    if (courseByName?.id) {
+      setForm((prev) => ({ ...prev, eventCategoryId: courseByName.id }));
+    }
+  }, [item, eventData?.eventCategories, form.eventCategoryId]);
+
+  // 코스 선택 시 모든 기념품을 자동으로 추가 (기념품이 1개 이상인 경우)
+  React.useEffect(() => {
+    if (!form.eventCategoryId || !eventData?.eventCategories?.length) return;
+    if (!isEditing) return; // 수정 모드일 때만 적용
+    
+    // canEditFields 계산 (item이 있을 때만)
+    const isUnpaid = item?.paymentStatus === 'UNPAID';
+    const canEditFields = isEditing && isUnpaid;
+    if (!canEditFields) return; // 기본 정보 필드 수정 불가능한 경우 건너뛰기
+    
+    const selectedCategory = eventData.eventCategories.find(c => c.id === form.eventCategoryId);
+    if (!selectedCategory?.souvenirs?.length) return;
+
+    // 현재 선택된 기념품 ID 목록
+    const currentSouvenirIds = form.souvenirJsonList.map(s => s.souvenirId);
+    
+    // 모든 기념품이 이미 선택되어 있는지 확인
+    const allSouvenirIds = selectedCategory.souvenirs.map(s => s.id);
+    const allSelected = allSouvenirIds.every(id => currentSouvenirIds.includes(id));
+    
+    // 모든 기념품이 선택되어 있지 않으면 모두 추가
+    if (!allSelected) {
+      const newSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
+      
+      selectedCategory.souvenirs.forEach(souvenir => {
+        // 이미 선택된 기념품은 기존 사이즈 유지
+        const existing = form.souvenirJsonList.find(s => s.souvenirId === souvenir.id);
+        if (existing) {
+          newSouvenirList.push(existing);
+        } else {
+          // 새로운 기념품은 첫 번째 사이즈를 기본값으로 설정
+          const sizesString = souvenir.sizes || '';
+          const availableSizes = sizesString
+            .split(/[|,]/)
+            .map(s => s.trim().replace(/^✓\s*/, '').trim())
+            .filter(s => s.length > 0);
+          const defaultSize = availableSizes[0] || '';
+          newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: defaultSize });
+        }
+      });
+      
+      setForm(prev => ({ ...prev, souvenirJsonList: newSouvenirList }));
+    }
+  }, [form.eventCategoryId, eventData?.eventCategories, isEditing, item?.paymentStatus]);
 
   // 주소와 우편번호 분리 (hooks는 조건부 return 전에 호출되어야 함)
   const { zipCode, cleanAddress } = React.useMemo(() => {
@@ -610,10 +665,24 @@ export default function RegistrationDetailDrawer({
                   value={form.eventCategoryId}
                   onChange={e => {
                     const nextId = e.target.value;
+                    const selectedCategory = eventData?.eventCategories?.find(c => c.id === nextId);
+                    // 코스 변경 시 모든 기념품을 자동으로 추가 (사이즈는 첫 번째 옵션)
+                    const newSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
+                    if (selectedCategory?.souvenirs?.length) {
+                      selectedCategory.souvenirs.forEach(souvenir => {
+                        const sizesString = souvenir.sizes || '';
+                        const availableSizes = sizesString
+                          .split(/[|,]/)
+                          .map(s => s.trim().replace(/^✓\s*/, '').trim())
+                          .filter(s => s.length > 0);
+                        const defaultSize = availableSizes[0] || '';
+                        newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: defaultSize });
+                      });
+                    }
                     setForm(v => ({
                       ...v,
                       eventCategoryId: nextId,
-                      souvenirJsonList: [], // 코스 변경 시 기념품/사이즈 초기화
+                      souvenirJsonList: newSouvenirList,
                     }));
                   }}
                 >
@@ -630,30 +699,16 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('기념품', souvenirDisplay.names) : editLine('기념품', (
                 <div className="space-y-2">
                   {form.eventCategoryId && eventData?.eventCategories?.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
-                    const isSelected = form.souvenirJsonList.some(s => s.souvenirId === souvenir.id);
+                    // 수정 모드에서는 모든 기념품을 필수 선택으로 표시 (체크박스 비활성화)
                     return (
                       <div key={souvenir.id} className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              // 사이즈 선택이 필요한 경우 기본 사이즈 설정
-                              const defaultSize = souvenir.sizes?.split(',')[0]?.trim() || '';
-                              setForm(v => ({
-                                ...v,
-                                souvenirJsonList: [...v.souvenirJsonList, { souvenirId: souvenir.id, selectedSize: defaultSize }]
-                              }));
-                            } else {
-                              setForm(v => ({
-                                ...v,
-                                souvenirJsonList: v.souvenirJsonList.filter(s => s.souvenirId !== souvenir.id)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300"
+                          checked={true}
+                          disabled={true}
+                          className="rounded border-gray-300 cursor-not-allowed"
                         />
-                        <label className="text-sm">{souvenir.name}</label>
+                        <label className="text-sm text-gray-700">{souvenir.name}</label>
                       </div>
                     );
                   }) || <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>}
@@ -661,14 +716,13 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('사이즈', souvenirDisplay.sizes) : editLine('사이즈', (
                 <div className="space-y-2">
-                  {form.souvenirJsonList.length > 0 ? (
-                    form.souvenirJsonList.map((selectedSouvenir, idx) => {
-                      const souvenirInfo = eventData?.eventCategories
-                        ?.flatMap(c => c.souvenirs)
-                        ?.find(s => s.id === selectedSouvenir.souvenirId);
+                  {form.eventCategoryId && eventData?.eventCategories?.find(c => c.id === form.eventCategoryId)?.souvenirs?.length ? (
+                    eventData.eventCategories.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
+                      // 현재 선택된 기념품에서 사이즈 찾기
+                      const selectedSouvenir = form.souvenirJsonList.find(s => s.souvenirId === souvenir.id);
                       
                       // 사이즈 파싱: 파이프(|) 또는 쉼표(,)로 구분된 문자열 처리
-                      const sizesString = souvenirInfo?.sizes || '';
+                      const sizesString = souvenir.sizes || '';
                       const availableSizes = sizesString
                         .split(/[|,]/) // 파이프 또는 쉼표로 분리
                         .map(s => s.trim().replace(/^✓\s*/, '').trim()) // ✓ 제거
@@ -677,20 +731,32 @@ export default function RegistrationDetailDrawer({
                       if (availableSizes.length === 0) return null;
                       
                       return (
-                        <div key={idx} className="flex items-center gap-2">
+                        <div key={souvenir.id} className="flex items-center gap-2">
                           <span className="text-sm text-gray-700 min-w-[100px]">
-                            {souvenirInfo?.name || '기념품'}:
+                            {souvenir.name}:
                           </span>
                           <select
                             className="flex-1 rounded border px-2 py-1 text-sm"
-                            value={selectedSouvenir.selectedSize}
+                            value={selectedSouvenir?.selectedSize || availableSizes[0]}
                             onChange={(e) => {
-                              setForm(v => ({
-                                ...v,
-                                souvenirJsonList: v.souvenirJsonList.map((s, i) => 
-                                  i === idx ? { ...s, selectedSize: e.target.value } : s
-                                )
-                              }));
+                              setForm(v => {
+                                const existingIndex = v.souvenirJsonList.findIndex(s => s.souvenirId === souvenir.id);
+                                if (existingIndex >= 0) {
+                                  // 기존 항목 업데이트
+                                  return {
+                                    ...v,
+                                    souvenirJsonList: v.souvenirJsonList.map((s, i) => 
+                                      i === existingIndex ? { ...s, selectedSize: e.target.value } : s
+                                    )
+                                  };
+                                } else {
+                                  // 새 항목 추가
+                                  return {
+                                    ...v,
+                                    souvenirJsonList: [...v.souvenirJsonList, { souvenirId: souvenir.id, selectedSize: e.target.value }]
+                                  };
+                                }
+                              });
                             }}
                           >
                             {availableSizes.map(size => (
@@ -701,7 +767,7 @@ export default function RegistrationDetailDrawer({
                       );
                     })
                   ) : (
-                    <div className="text-sm text-gray-500">기념품을 선택해주세요.</div>
+                    <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>
                   )}
                 </div>
               ))}

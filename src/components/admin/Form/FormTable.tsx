@@ -14,7 +14,7 @@ export default function FormTable({
   center = false,
   actions,
 }: {
-  title?: string;
+  title?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   labelWidth?: number;
@@ -34,7 +34,13 @@ export default function FormTable({
       {/* 타이틀 + 액션(우측 정렬) */}
       {title && (
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">{title}</h1>
+          <div className="flex items-center gap-2">
+            {typeof title === 'string' ? (
+              <h1 className="text-lg font-semibold">{title}</h1>
+            ) : (
+              title
+            )}
+          </div>
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       )}

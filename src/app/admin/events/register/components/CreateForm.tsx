@@ -159,10 +159,10 @@ export default function CreateForm({
   return (
     <div className="w-full">
       <div className="max-w-[1200px] mx-auto px-4 space-y-10 pb-12">
-        <FormTable
-          title="대회 기본 정보"
-          labelWidth={200}
-          actions={
+        {/* 제목과 취소 버튼 */}
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold">대회 기본 정보</h1>
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
               <Button
                 tone="dark"
@@ -174,7 +174,20 @@ export default function CreateForm({
                 취소하기
               </Button>
             </div>
-          }
+          </div>
+        </div>
+
+        {/* 기념품/종목 설정 안내 - 대회 기본 정보 제목 아래 */}
+        <div className="w-full bg-gray-100 rounded-lg p-6 mb-4 text-center">
+          <p className="text-gray-700 text-[14px] leading-6">
+            기념품과 종목은 대회 등록 페이지에서 보이지 않으며,<br />
+            대회 등록을 완료한 후 기념품 설정 단계로 안내됩니다.
+            대회생성을 먼저 진행해주세요.
+          </p>
+        </div>
+
+        <FormTable
+          labelWidth={200}
         >
           {/* 1. 대회 기본 정보 */}
           <BasicInfoSection
@@ -233,20 +246,16 @@ export default function CreateForm({
         {/* 색상 섹션 */}
         <ThemeSection f={f} readOnly={readOnly} />
 
-        {/* 기념품/종목 설정 안내 */}
-        <div className="mx-auto px-4 mb-6">
+        {/* 기념품/종목 설정 안내 - 저장하기 버튼 위 */}
+        <div className="mx-auto px-4 mb-4">
           <NoticeMessage
             items={[
               {
-                text: '※ 대회 등록이 완료되면 기념품과 종목을 설정할 수 있습니다.',
-                highlight: false,
+                text: '※ 기념품과 종목은 현재 페이지에서 설정할 수 없으며, 대회 등록이 완료된 후에만 설정할 수 있습니다.',
+                highlight: true,
               },
               {
-                text: '※ 기념품/종목 설정하기를 선택하면 대회 수정 페이지로 이동하여 바로 설정할 수 있습니다.',
-                highlight: false,
-              },
-              {
-                text: '※ 나중에 설정하기를 선택하면 대회 상세 페이지로 이동하며, 이후 대회 수정 페이지에서 기념품과 종목을 설정할 수 있습니다.',
+                text: '※ 저장하기를 누르면 대회가 등록되며, 설정 페이지로 바로 이동하여 기념품과 종목을 설정할 수 있습니다.',
                 highlight: false,
               },
             ]}
@@ -255,16 +264,28 @@ export default function CreateForm({
 
         {/* 1차 저장 버튼 */}
         <div className="flex justify-center mx-auto">
-          <Button
-            tone="primary"
-            widthType="pager"
-            size="sm"
-            onClick={saveBasicInfo}
-            disabled={loading}
-            aria-busy={loading}
-          >
-            {loading ? '저장 중...' : '저장하기'}
-          </Button>
+          <div className="relative group">
+            <Button
+              tone="primary"
+              widthType="pager"
+              size="sm"
+              onClick={saveBasicInfo}
+              disabled={loading}
+              aria-busy={loading}
+            >
+              {loading ? '저장 중...' : '저장하기'}
+            </Button>
+            {/* Tooltip */}
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+              <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                <div className="font-semibold mb-2 text-sm">대회 등록 저장</div>
+                <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                  저장하기를 누르면 대회가 등록되며, 이후 기념품 설정 단계로 안내됩니다. 대회 생성을 먼저 진행해주세요.
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
