@@ -45,24 +45,66 @@ export default function EditClient({
   const { data: dropdownData, isLoading: isLoadingDropdown } = useEventCategoryDropdown(String(eventId));
 
   // 드롭다운 데이터를 기념품과 종목으로 변환
-  // 저장된 기념품만 사용 (dropdownData에서만 가져옴)
+  // 저장된 모든 기념품 사용 (apiData와 dropdownData 모두에서 가져옴)
   const initialGifts = useMemo(() => {
-    // 드롭다운 데이터가 없으면 빈 배열 반환 (저장된 기념품이 없음)
-    if (!dropdownData || dropdownData.length === 0) {
-      return [];
+    const allSouvenirsMap = new Map<string, { name: string; size: string; id?: string }>();
+
+    // 1. apiData에서 기념품 추출 (종목에 연결되지 않은 기념품도 포함)
+    if (apiData?.souvenirs && apiData.souvenirs.length > 0) {
+      apiData.souvenirs.forEach(souvenir => {
+        const key = `${souvenir.name}_${souvenir.sizes}`;
+        if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
+          allSouvenirsMap.set(key, {
+            name: souvenir.name.trim(),
+            size: souvenir.sizes || '',
+            id: souvenir.id,
+          });
+        }
+      });
     }
 
-    // 드롭다운 데이터에서 모든 기념품 추출 (중복 제거)
-    // 드롭다운 API는 저장된 기념품만 반환하므로 안전하게 사용 가능
-    const allSouvenirs = dropdownData.flatMap(cat => cat.souvenirs || []);
-    const uniqueSouvenirs = Array.from(
-      new Map(allSouvenirs.map(s => [s.id, s])).values()
-    );
-    return uniqueSouvenirs.map(s => ({
-      name: s.name || '',
-      size: s.sizes || '',
+    // 2. apiData의 eventCategories에서 기념품 추출
+    if (apiData?.eventCategories && apiData.eventCategories.length > 0) {
+      apiData.eventCategories.forEach(cat => {
+        if (cat.souvenirs) {
+          cat.souvenirs.forEach(souvenir => {
+            const key = `${souvenir.name}_${souvenir.sizes}`;
+            if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
+              allSouvenirsMap.set(key, {
+                name: souvenir.name.trim(),
+                size: souvenir.sizes || '',
+                id: souvenir.id,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // 3. dropdownData에서 기념품 추출 (보강)
+    if (dropdownData && dropdownData.length > 0) {
+      dropdownData.forEach(cat => {
+        if (cat.souvenirs) {
+          cat.souvenirs.forEach(souvenir => {
+            const key = `${souvenir.name}_${souvenir.sizes}`;
+            if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
+              allSouvenirsMap.set(key, {
+                name: souvenir.name.trim(),
+                size: souvenir.sizes || '',
+                id: souvenir.id,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Map에서 배열로 변환 (id 제거)
+    return Array.from(allSouvenirsMap.values()).map(s => ({
+      name: s.name,
+      size: s.size,
     }));
-  }, [dropdownData]);
+  }, [apiData, dropdownData]);
 
   // 저장된 종목만 사용 (dropdownData에서만 가져옴)
   const initialCourses = useMemo(() => {
@@ -191,7 +233,14 @@ export default function EditClient({
 
       saveForm(eventId, payload);
 
-      await queryClient.invalidateQueries({ queryKey: ['eventDetail', String(eventId)] });
+      // 관련 쿼리 무효화 및 재조회 (기념품/종목 데이터도 함께 무효화)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['eventDetail', String(eventId)] }),
+        queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
+        queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }), // 기념품/종목 드롭다운 무효화
+        queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', String(eventId)] }), // 기념품 드롭다운 무효화
+        queryClient.invalidateQueries({ queryKey: ['adminEventList'] }), // 대회 목록도 무효화
+      ]);
 
       if (payload.bank || payload.virtualAccount) {
         setBankName(payload.bank || '');
@@ -233,6 +282,15 @@ export default function EditClient({
       
       if (souvenirRequests.length > 0) {
         await updateSouvenirs(eventId, souvenirRequests);
+        
+        // 기념품 저장 후 관련 쿼리 무효화 및 재조회
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['eventDetail', String(eventId)] }),
+          queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', String(eventId)] }),
+        ]);
+        
         await refetch();
         setInfoModalType('success');
         setInfoModalMessage('기념품이 성공적으로 저장되었습니다.');

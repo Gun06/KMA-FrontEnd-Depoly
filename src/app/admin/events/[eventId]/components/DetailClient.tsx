@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import EventDetailView, {
   EventDetailData,
 } from '@/components/admin/events/EventDetailView';
@@ -18,12 +19,26 @@ export default function DetailClient({
 }) {
   const router = useRouter();
   const { removeOne } = useEventsActions();
+  const queryClient = useQueryClient();
 
-  // API에서 대회 상세 정보 조회
+  // API에서 대회 상세 정보 조회 (refetchOnMount: 'always'로 페이지 진입 시 항상 최신 데이터 가져옴)
   const { data: apiData, isLoading, error, refetch } = useEventDetail(eventId);
 
+  // 페이지 진입 시 캐시 무효화하여 항상 최신 데이터 가져오기
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['eventDetail', eventId] });
+    refetch();
+  }, [eventId, queryClient, refetch]);
+
   // 드롭다운 API에서 기념품과 종목 데이터 조회 (데이터 보강용)
-  const { data: dropdownData } = useEventCategoryDropdown(eventId);
+  const { data: dropdownData, refetch: refetchDropdown } = useEventCategoryDropdown(eventId);
+
+  // 페이지 진입 시 기념품/종목 드롭다운 캐시도 무효화하여 항상 최신 데이터 가져오기
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', eventId] });
+    queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', eventId] });
+    refetchDropdown();
+  }, [eventId, queryClient, refetchDropdown]);
 
   const goList = () => router.replace('/admin/events/management');
 
