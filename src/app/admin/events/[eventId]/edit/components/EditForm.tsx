@@ -20,6 +20,7 @@ import CoursesSection from '@/app/admin/events/register/components/sections/Cour
 // 파츠 (register에서 import)
 import EditActionBar from '@/app/admin/events/register/components/parts/EditActionBar';
 import ValidationErrorModal from '@/app/admin/events/register/components/parts/ValidationErrorModal';
+import Coachmark, { type CoachmarkStep } from '@/components/common/Coachmark/Coachmark';
 
 // 훅/타입 (register에서 import)
 import { useCompetitionForm } from '@/app/admin/events/register/hooks/useCompetitionForm';
@@ -102,6 +103,9 @@ export default function EditForm({
   const giftsHandlers = useGiftsHandlers(initialGifts);
   const { gifts, setGifts } = giftsHandlers;
 
+  // 저장된 기념품만 추적하는 상태 (서버에 저장된 기념품만)
+  const [savedGifts, setSavedGifts] = useState<Array<{ name: string; size: string }>>(initialGifts);
+
   // 종목 핸들러 (초기값 설정)
   const coursesHandlers = useCoursesHandlers(initialCourses);
   const { courses, setCourses } = coursesHandlers;
@@ -110,6 +114,7 @@ export default function EditForm({
   useEffect(() => {
     if (initialGifts.length > 0) {
       setGifts(initialGifts);
+      setSavedGifts(initialGifts); // 저장된 기념품도 업데이트
     }
   }, [initialGifts, setGifts]);
 
@@ -138,6 +143,34 @@ export default function EditForm({
   // 기념품/종목 저장용 로딩 상태
   const [loadingSouvenirs, setLoadingSouvenirs] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
+
+  // 코치마크 강제 표시 상태
+  const [forceShowCoachmark, setForceShowCoachmark] = useState(false);
+
+  // 코치마크 단계 정의
+  const coachmarkSteps: CoachmarkStep[] = [
+    {
+      id: 'step1',
+      target: '[data-coachmark="step1-save"]',
+      title: '1단계: 기본 정보 저장',
+      description: '대회명, 날짜, 장소 등 기본 정보를 입력하고 저장하세요. 기본 정보를 먼저 저장해야 다음 단계로 진행할 수 있습니다.',
+      position: 'top',
+    },
+    {
+      id: 'step2',
+      target: '[data-coachmark="step2-save"]',
+      title: '2단계: 기념품 저장',
+      description: '대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다.',
+      position: 'top',
+    },
+    {
+      id: 'step3',
+      target: '[data-coachmark="step3-save"]',
+      title: '3단계: 종목 저장',
+      description: '참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 모든 정보가 저장되면 대회 설정이 완료됩니다.',
+      position: 'top',
+    },
+  ];
 
   // 쿼리 파라미터로 기념품 섹션으로 스크롤
   useEffect(() => {
@@ -267,6 +300,8 @@ export default function EditForm({
     try {
       // gifts 배열을 직접 전달
       await onSaveSouvenirs(gifts);
+      // 저장 성공 시 저장된 기념품 상태 업데이트
+      setSavedGifts([...gifts]);
     } catch (error) {
       // 에러는 상위에서 처리
     } finally {
@@ -310,6 +345,24 @@ export default function EditForm({
                 onDelete={handleDelete}
                 editHref={editHref}
               />
+              {isEditing && !readOnly && (
+                <Button
+                  tone="outlineDark"
+                  variant="outline"
+                  size="sm"
+                  widthType="pager"
+                  onClick={() => {
+                    // 로컬 스토리지에서 코치마크 완료 상태 삭제
+                    localStorage.removeItem('event-edit-3step-coachmark');
+                    // 코치마크 강제 표시
+                    setForceShowCoachmark(true);
+                    // 다음 렌더링에서 다시 false로 설정하여 재시작
+                    setTimeout(() => setForceShowCoachmark(false), 100);
+                  }}
+                >
+                  가이드 보기
+                </Button>
+              )}
             </div>
           }
         >
@@ -386,6 +439,7 @@ export default function EditForm({
         {!readOnly && (
           <div className="flex justify-center mx-auto mt-6">
             <Button
+              data-coachmark="step1-save"
               tone="primary"
               widthType="pager"
               size="sm"
@@ -437,6 +491,7 @@ export default function EditForm({
         {!readOnly && (
           <div className="flex justify-center mt-4">
             <Button
+              data-coachmark="step2-save"
               tone="primary"
               size="sm"
               widthType="pager"
@@ -452,7 +507,7 @@ export default function EditForm({
         {/* 6. 종목 */}
         <CoursesSection
           courses={courses}
-          availableGifts={gifts}
+          availableGifts={savedGifts}
           onAddCourse={coursesHandlers.handleAddCourse}
           onRemoveCourse={coursesHandlers.handleRemoveCourse}
           onChangeCourseName={coursesHandlers.handleChangeCourseName}
@@ -466,6 +521,7 @@ export default function EditForm({
         {!readOnly && (
           <div className="flex justify-center mt-4">
             <Button
+              data-coachmark="step3-save"
               tone="primary"
               size="sm"
               widthType="pager"
@@ -492,6 +548,14 @@ export default function EditForm({
         title="알림"
         errors={[errorMessage]}
       />
+
+      {/* 코치마크 */}
+      {!readOnly && (
+        <Coachmark
+          steps={coachmarkSteps}
+          storageKey="event-edit-3step-coachmark"
+        />
+      )}
     </div>
   );
 }

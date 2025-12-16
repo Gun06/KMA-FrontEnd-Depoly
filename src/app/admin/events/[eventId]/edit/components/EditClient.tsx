@@ -45,30 +45,15 @@ export default function EditClient({
   const { data: dropdownData, isLoading: isLoadingDropdown } = useEventCategoryDropdown(String(eventId));
 
   // 드롭다운 데이터를 기념품과 종목으로 변환
+  // 저장된 기념품만 사용 (dropdownData에서만 가져옴)
   const initialGifts = useMemo(() => {
+    // 드롭다운 데이터가 없으면 빈 배열 반환 (저장된 기념품이 없음)
     if (!dropdownData || dropdownData.length === 0) {
-      // 드롭다운 데이터가 없으면 API 데이터에서 추출
-      if (apiData?.souvenirs && apiData.souvenirs.length > 0) {
-        return apiData.souvenirs.map(s => ({
-          name: s.name || '',
-          size: s.sizes || '',
-        }));
-      }
-      // eventCategories에서 추출
-      if (apiData?.eventCategories) {
-        const allSouvenirs = apiData.eventCategories.flatMap(cat => cat.souvenirs || []);
-        const uniqueSouvenirs = Array.from(
-          new Map(allSouvenirs.map(s => [s.id, s])).values()
-        );
-        return uniqueSouvenirs.map(s => ({
-          name: s.name || '',
-          size: s.sizes || '',
-        }));
-      }
       return [];
     }
 
     // 드롭다운 데이터에서 모든 기념품 추출 (중복 제거)
+    // 드롭다운 API는 저장된 기념품만 반환하므로 안전하게 사용 가능
     const allSouvenirs = dropdownData.flatMap(cat => cat.souvenirs || []);
     const uniqueSouvenirs = Array.from(
       new Map(allSouvenirs.map(s => [s.id, s])).values()
@@ -77,36 +62,17 @@ export default function EditClient({
       name: s.name || '',
       size: s.sizes || '',
     }));
-  }, [dropdownData, apiData]);
+  }, [dropdownData]);
 
+  // 저장된 종목만 사용 (dropdownData에서만 가져옴)
   const initialCourses = useMemo(() => {
+    // 드롭다운 데이터가 없으면 빈 배열 반환 (저장된 종목이 없음)
     if (!dropdownData || dropdownData.length === 0) {
-      // 드롭다운 데이터가 없으면 API 데이터에서 추출
-      if (apiData?.eventCategories) {
-        const allSouvenirs = apiData.souvenirs && apiData.souvenirs.length > 0
-          ? apiData.souvenirs
-          : apiData.eventCategories.flatMap(cat => cat.souvenirs || []);
-        
-        return apiData.eventCategories.map(category => {
-          // 기념품 인덱스 찾기
-          const selectedGifts = category.souvenirs
-            .map(souvenir => {
-              const index = allSouvenirs.findIndex(s => s.id === souvenir.id);
-              return index >= 0 ? index : -1;
-            })
-            .filter(idx => idx >= 0);
-          
-          return {
-            name: category.name || '',
-            price: String(category.amount || 0),
-            selectedGifts,
-          };
-        });
-      }
       return [];
     }
 
     // 드롭다운 데이터에서 종목 추출
+    // 드롭다운 API는 저장된 종목과 기념품만 반환하므로 안전하게 사용 가능
     const allSouvenirs = dropdownData.flatMap(cat => cat.souvenirs || []);
     const uniqueSouvenirs = Array.from(
       new Map(allSouvenirs.map(s => [s.id, s])).values()
@@ -127,7 +93,7 @@ export default function EditClient({
         selectedGifts,
       };
     });
-  }, [dropdownData, apiData]);
+  }, [dropdownData]);
 
   // 결제정보(은행/가상계좌) 별도 API 연동
   const [bankName, setBankName] = React.useState<string>('');
