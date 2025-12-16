@@ -189,14 +189,13 @@ export function transformApiResponseToFormPrefill(
       // 유효한 그라데이션 색상인지 확인
       const validGradColors: EventTheme[] = [
         'grad-blue',
-        'grad-green',
+        'grad-emerald',
         'grad-red',
         'grad-indigo',
         'grad-purple',
         'grad-orange',
         'grad-rose',
         'grad-cyan',
-        'grad-black',
         'grad-yellow',
       ];
       return validGradColors.includes(color as EventTheme)

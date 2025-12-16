@@ -11,7 +11,7 @@ import Select from '@/components/common/Select/Select';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 
 // useCompetitionForm의 반환 타입을 정의
-type CompetitionFormHandle = {
+export type CompetitionFormHandle = {
   uid: string;
   titleKo: string;
   setTitleKo: (value: string) => void;
@@ -55,6 +55,8 @@ type CompetitionFormHandle = {
   setPaymentDeadlineHh: (value: string) => void;
   paymentDeadlineMm: string;
   setPaymentDeadlineMm: (value: string) => void;
+  validate?: () => { ok: boolean; errors: string[] };
+  buildApiBody?: () => any;
 };
 
 export default function BasicInfoSection({

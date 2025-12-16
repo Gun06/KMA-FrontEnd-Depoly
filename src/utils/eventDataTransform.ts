@@ -140,11 +140,11 @@ export function transformApiDataToEventDetail(
         id: s.id,
         name: s.name,
         sizes: s.sizes,
-        eventCategoryId: s.eventCategoryId,
+        eventCategoryId: s.eventCategoryId || c.id, // eventCategoryId가 없으면 카테고리 ID 사용
       })),
     })),
     eventBanners: eventBanners.map(b => ({
-      id: b.id,
+      id: b.id || '', // id가 없으면 빈 문자열 사용
       imageUrl: b.imageUrl,
       url: b.url,
       providerName: b.providerName,

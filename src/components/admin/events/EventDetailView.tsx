@@ -202,184 +202,264 @@ export default function EventDetailView({
             대회 기본 정보
           </h2>
         </div>
-        <div className="px-6 py-6">
+        <div className="px-6 py-6 space-y-6">
+          {/* 1. 대회명 | 영문명 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 대회명
               </span>
-              <span className="text-lg text-gray-900 font-pretendard">
+              <p className="text-lg font-semibold text-gray-900 font-pretendard">
                 {eventData.nameKr}
-              </span>
+              </p>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                영문명
-              </span>
-              <span className="text-lg text-gray-900 font-pretendard">
-                {eventData.nameEng || '-'}
-              </span>
-            </div>
+            {eventData.nameEng && (
+              <div className="space-y-1">
+                <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                  영문명
+                </span>
+                <p className="text-lg font-semibold text-gray-900 font-pretendard">
+                  {eventData.nameEng}
+                </p>
+              </div>
+            )}
+          </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                개최일
-              </span>
-              <span className="text-lg text-gray-900 font-pretendard">
-                {formatDate(eventData.startDate)}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
+          {/* 2. 개최지 | 참가인원 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 개최지
               </span>
-              <span className="text-lg text-gray-900 font-pretendard">
+              <p className="text-lg text-gray-900 font-pretendard">
                 {eventData.region}
-              </span>
+              </p>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                주최
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                참가인원
               </span>
-              <span className="text-lg text-gray-900 font-pretendard">
-                {eventData.host}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                주관
-              </span>
-              <span className="text-lg text-gray-900 font-pretendard">
-                {eventData.organizer}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                대회 유형
-              </span>
-              <span className="text-lg text-gray-900 font-pretendard">
-                {eventData.eventType}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
-                최대 참가자
-              </span>
-              <span className="text-lg text-gray-900 font-pretendard">
+              <p className="text-lg text-gray-900 font-pretendard">
                 {eventData.registMaximum
                   ? eventData.registMaximum.toLocaleString()
                   : 0}
                 명
+              </p>
+            </div>
+          </div>
+
+          {/* 3. 주최 | 주관 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                주최
               </span>
+              <p className="text-lg text-gray-900 font-pretendard">
+                {eventData.host}
+              </p>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                주관
+              </span>
+              <p className="text-lg text-gray-900 font-pretendard">
+                {eventData.organizer}
+              </p>
+            </div>
+          </div>
+
+          {/* 4. 신청상태 | 공개여부 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 신청상태
               </span>
-              <RegistrationStatusBadge
-                status={toRegStatus(eventData.eventStatus)}
-                size="smd"
-              />
+              <div className="pt-1">
+                <RegistrationStatusBadge
+                  status={toRegStatus(eventData.eventStatus)}
+                  size="smd"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 공개여부
               </span>
-              <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  eventData.visibleStatus
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {eventData.visibleStatus ? '공개' : '비공개'}
-              </span>
-            </div>
-
-            {eventData.registStartDate && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700 font-pretendard">
-                  신청시작일
-                </span>
-                <span className="text-lg text-gray-900 font-pretendard">
-                  {formatDate(eventData.registStartDate)}
+              <div className="pt-1">
+                <span
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${
+                    eventData.visibleStatus
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {eventData.visibleStatus ? '공개' : '비공개'}
                 </span>
               </div>
-            )}
-
-            {eventData.registDeadline && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700 font-pretendard">
-                  접수마감
-                </span>
-                <span className="text-lg text-gray-900 font-pretendard">
-                  {formatDate(eventData.registDeadline)}
-                </span>
-              </div>
-            )}
-
-            {eventData.paymentDeadline && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700 font-pretendard">
-                  입금마감
-                </span>
-                <span className="text-lg text-gray-900 font-pretendard">
-                  {formatDate(eventData.paymentDeadline)}
-                </span>
-              </div>
-            )}
-
-            {/* 은행 / 계좌번호 */}
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">은행</span>
-              <span className="text-lg text-gray-900 font-pretendard">{bankName || '-'}</span>
             </div>
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">계좌번호</span>
-              <span className="text-lg text-gray-900 font-pretendard">{accountNumber || '-'}</span>
-            </div>
+          </div>
 
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700 font-pretendard">
+          {/* 5. 메인색상 | 이벤트페이지 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 메인 색상
               </span>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pt-1">
                 <div
                   className={cn(
-                    'w-8 h-8 rounded border border-gray-300',
+                    'w-10 h-10 rounded-lg border-2 border-gray-300 shadow-sm',
                     PREVIEW_BG[eventData.mainBannerColor as EventTheme] ||
                       'bg-gray-400'
                   )}
                 ></div>
-                <span className="text-lg text-gray-900 font-pretendard">
+                <span className="text-base text-gray-900 font-pretendard font-medium">
                   {eventData.mainBannerColor}
                 </span>
               </div>
             </div>
 
             {eventData.eventsPageUrl && (
-              <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700 font-pretendard">
+              <div className="space-y-1">
+                <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                   이벤트 페이지
                 </span>
-                <a
-                  href={eventData.eventsPageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline font-pretendard"
-                >
-                  링크
-                </a>
+                <div className="pt-1">
+                  <a
+                    href={eventData.eventsPageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium font-pretendard transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    링크 열기
+                  </a>
+                </div>
               </div>
             )}
+          </div>
+
+          {/* 6. 결제 정보 - 맨 아래 */}
+          {(bankName || accountNumber) && (
+            <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+              <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-4 flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+                결제 정보
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {bankName && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                      은행
+                    </span>
+                    <p className="text-lg text-gray-900 font-pretendard">
+                      {bankName}
+                    </p>
+                  </div>
+                )}
+                {accountNumber && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                      계좌번호
+                    </span>
+                    <p className="text-lg font-mono text-gray-900 font-pretendard">
+                      {accountNumber}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 7. 날짜 정보 - 맨 아래 */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-5 border border-blue-100">
+            <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-4 flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              날짜 정보
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                  개최일
+                </span>
+                <p className="text-lg font-semibold text-gray-900 font-pretendard">
+                  {formatDate(eventData.startDate)}
+                </p>
+              </div>
+
+              {eventData.registStartDate && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                    신청시작일
+                  </span>
+                  <p className="text-lg font-semibold text-gray-900 font-pretendard">
+                    {formatDate(eventData.registStartDate)}
+                  </p>
+                </div>
+              )}
+
+              {eventData.registDeadline && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                    접수마감
+                  </span>
+                  <p className="text-lg font-semibold text-gray-900 font-pretendard">
+                    {formatDate(eventData.registDeadline)}
+                  </p>
+                </div>
+              )}
+
+              {eventData.paymentDeadline && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
+                    입금마감
+                  </span>
+                  <p className="text-lg font-semibold text-gray-900 font-pretendard">
+                    {formatDate(eventData.paymentDeadline)}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
