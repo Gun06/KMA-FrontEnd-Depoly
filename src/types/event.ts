@@ -9,8 +9,8 @@ export type Shuttle = "운행" | "비운행";
 
 /** EventLayoutWrapper 의 색상 키와 정확히 일치 */
 export type EventTheme =   
-  | "blue" | "green" | "red" | "indigo" | "purple" | "orange" | "rose" | "cyan" | "black"
-  | "grad-blue" | "grad-emerald" | "grad-red" | "grad-indigo" | "grad-purple" | "grad-orange" | "grad-rose" | "grad-cyan";
+  | "blue" | "green" | "red" | "indigo" | "purple" | "orange" | "rose" | "cyan" | "black" | "yellow"
+  | "grad-blue" | "grad-emerald" | "grad-red" | "grad-indigo" | "grad-purple" | "grad-orange" | "grad-rose" | "grad-cyan" | "grad-yellow";
 
 /** 프런트 내부 폼 상태(업로드/분리된 날짜·시간 포함) */
 export type EventFormState = {

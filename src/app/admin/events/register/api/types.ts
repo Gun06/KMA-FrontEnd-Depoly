@@ -1,6 +1,8 @@
-// src/types/Admin.ts
-
-// 대회 생성 관련 타입 정의
+// src/app/admin/events/register/api/types.ts
+/**
+ * 대회 등록 관련 타입 정의
+ * Admin.ts에서 대회등록 관련 타입만 분리
+ */
 
 // 배너 타입 (주최/주관/후원)
 export type BannerType = 'HOST' | 'ORGANIZER' | 'SPONSOR';
@@ -55,11 +57,34 @@ export interface EventBannerInfo {
   static: boolean; // 정적 배너 여부
 }
 
-// 서버로 전송할 대회 생성 요청 데이터
+// 서버로 전송할 대회 생성 요청 데이터 (기념품/종목 제외)
 export interface EventCreateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
-  eventCategoryInfoList: EventCategoryInfo[]; // 카테고리 및 기념품 정보
   eventBannerInfoList: EventBannerInfo[]; // 주최/주관/후원 배너 정보
+}
+
+// 대회 수정용 카테고리 업데이트 정보
+export interface EventCategoryUpdateInfo {
+  id?: string; // 기존 카테고리 ID (수정 시 필요)
+  name: string; // 카테고리명 == 참가부문명 (코스명)
+  price: number; // 참가부문 가격(참가비)
+  souvenirIds: string[]; // 기념품 ID 배열
+}
+
+// 대회 수정용 배너 업데이트 정보
+export interface EventBannerUpdateInfo {
+  imageUrl?: string; // 기존 이미지 URL (수정하지 않을 경우)
+  providerName: string; // 제공자명 (주최/주관/후원 기관명)
+  url: string; // 배너 링크 URL
+  bannerType: BannerType; // 배너 타입
+  static: boolean; // 정적 배너 여부
+}
+
+// 서버로 전송할 대회 수정 요청 데이터
+export interface EventUpdateRequest {
+  eventInfo: EventInfo; // 대회 기본 정보
+  eventCategoryUpdateInfo: EventCategoryUpdateInfo[]; // 카테고리 및 기념품 정보 (수정용)
+  eventBannerUpdateInfo: EventBannerUpdateInfo[]; // 주최/주관/후원 배너 정보 (수정용)
 }
 
 // API 요청 시 전송할 이미지 파일들
@@ -86,7 +111,7 @@ export interface EventImageFiles {
   eventBannerImages?: File[];
 }
 
-// ===== 관리자 대회 등록 전용 프런트 타입 통합 =====
+// ===== 관리자 대회 등록 전용 프런트 타입 =====
 import type { UploadItem } from '@/components/common/Upload/types';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 
@@ -201,58 +226,30 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
   applyStatus?: RegStatus;
 };
 
-// ===== 관리자 이벤트 목록 조회 API 타입 =====
-
-// 이벤트 상태
+// 이벤트 상태 (대회등록에서 사용)
 export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED';
 
-// 관리자 이벤트 목록 조회 API 응답의 개별 이벤트
-export interface AdminEventItem {
-  id: string;
-  startDate: string; // ISO 8601 형식
-  nameKr: string;
-  region: string;
-  host: string;
-  eventStatus: EventStatus;
-  visibleStatus: boolean;
-  eventsPageUrl: string;
+// ===== 기념품 API 타입 =====
+
+/**
+ * 기념품 생성/수정/삭제 요청 데이터
+ * id가 없으면 생성, id가 있으면 수정, 리스트에 없으면 삭제
+ */
+export interface SouvenirUpdateRequest {
+  id?: string; // 없으면 생성, 있으면 수정
+  name: string; // 기념품명
+  sizes: string; // 사이즈 (예: "S|M|L")
 }
 
-// 페이지네이션 정보
-export interface Pageable {
-  pageNumber: number;
-  pageSize: number;
-  sort: {
-    unsorted: boolean;
-    sorted: boolean;
-    empty: boolean;
-  };
-  offset: number;
-  unpaged: boolean;
-  paged: boolean;
-}
+// ===== 종목 API 타입 =====
 
-// 관리자 이벤트 목록 조회 API 응답
-export interface AdminEventListResponse {
-  content: AdminEventItem[];
-  pageable: Pageable;
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  numberOfElements: number;
-  size: number;
-  number: number;
-  sort: {
-    unsorted: boolean;
-    sorted: boolean;
-    empty: boolean;
-  };
-  first: boolean;
-  empty: boolean;
-}
-
-// 관리자 이벤트 목록 조회 파라미터
-export interface AdminEventListParams {
-  page?: number;
-  size?: number;
+/**
+ * 종목 생성/수정/삭제 요청 데이터
+ * id가 없으면 생성, id가 있으면 수정, 리스트에 없으면 삭제
+ */
+export interface EventCategoryUpdateRequest {
+  id?: string; // 없으면 생성, 있으면 수정
+  name: string; // 종목명
+  price: number; // 참가비
+  souvenirIds: string[]; // 기념품 ID 배열
 }

@@ -1,6 +1,6 @@
 // src/data/eventPrefill.ts
 import type { UploadItem } from "@/components/common/Upload/types";
-import type { EventFormState, EventTheme } from "@/features/registration/admin";
+import type { EventFormState, EventTheme } from "@/types/Admin";
 import type { EventRow } from "@/components/admin/events/EventTable";
 import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadge";
 

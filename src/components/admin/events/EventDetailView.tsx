@@ -7,7 +7,7 @@ import RegistrationStatusBadge, {
   type RegStatus,
 } from '@/components/common/Badge/RegistrationStatusBadge';
 import { cn } from '@/utils/cn';
-import { PREVIEW_BG } from '@/components/admin/Form/competition/parts/theme';
+import { PREVIEW_BG } from '@/app/admin/events/register/components/parts/theme';
 import type { EventTheme } from '@/types/event';
 
 export type EventDetailData = {

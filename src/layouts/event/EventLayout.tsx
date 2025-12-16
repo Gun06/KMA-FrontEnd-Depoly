@@ -294,6 +294,7 @@ function EventLayoutContent({
     'grad-orange': '#ea580c',
     'grad-rose': '#e11d48',
     'grad-cyan': '#0891b2',
+    'grad-yellow': '#fbbf24',
   };
   const flatColorMap: Record<string, string> = {
     indigo: '#4f46e5',
@@ -305,6 +306,7 @@ function EventLayoutContent({
     orange: '#ea580c',
     rose: '#e11d48',
     cyan: '#0891b2',
+    yellow: '#fbbf24',
     dark: '#111827',
     slate: '#1f2937',
     black: '#000000',
@@ -336,6 +338,7 @@ function EventLayoutContent({
     'grad-orange': 'bg-gradient-to-r from-orange-900 via-orange-800 to-orange-600',
     'grad-rose': 'bg-gradient-to-r from-rose-900 via-rose-800 to-rose-600',
     'grad-cyan': 'bg-gradient-to-r from-cyan-900 via-cyan-800 to-cyan-600',
+    'grad-yellow': 'bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200',
   };
   const headerBgClass = mainBannerColor?.startsWith('grad-')
     ? gradClassMap[mainBannerColor]

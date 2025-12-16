@@ -10,6 +10,8 @@ type Props = {
   hint?: React.ReactNode;
   /** 콘텐츠 셀에 추가 클래스 (예: pl-4, items-center 등) */
   contentClassName?: string;
+  /** 라벨 셀에 추가 클래스 (예: bg-[#F5F5F5] 등) */
+  labelClassName?: string;
 };
 
 export default function FormRow({
@@ -17,6 +19,7 @@ export default function FormRow({
   children,
   actions,
   contentClassName,
+  labelClassName,
 }: Props) {
   const { labelWidth } = useFormLayout();
 
@@ -24,8 +27,11 @@ export default function FormRow({
     <div className="grid" style={{ gridTemplateColumns: `${labelWidth}px 1fr` }}>
       {/* 라벨: 오른쪽 구분선 추가 */}
       <div
-        className="bg-[#4D4D4D] text-white flex items-center justify-center text-[16px]
-                   border-r border-neutral-300"
+        className={cn(
+          "flex items-center justify-center text-[16px] border-r border-neutral-300",
+          // labelClassName이 있으면 사용, 없으면 기본 어두운 배경 + 흰색 글씨
+          labelClassName || "bg-[#4D4D4D] text-white"
+        )}
       >
         {label}
       </div>

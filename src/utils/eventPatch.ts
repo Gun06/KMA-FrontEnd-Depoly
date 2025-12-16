@@ -1,6 +1,6 @@
 // src/utils/eventPatch.ts
 import type { EventRow } from '@/components/admin/events/EventTable';
-import type { EventCreatePayload } from '@/features/registration/admin';
+import type { EventCreatePayload } from '@/types/Admin';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 
 /** startAt(ISO) 또는 form.date(YYYY.MM.DD 등) → YYYY-MM-DD */

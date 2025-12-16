@@ -44,15 +44,20 @@ export interface EventDetailApiResponse {
       id: string;
       name: string;
       sizes: string;
-      eventCategoryId: string;
+      eventCategoryId?: string; // 선택적 필드로 변경
     }>;
   }>;
   eventBanners: Array<{
-    id: string;
+    id?: string;
     imageUrl: string;
     url: string;
     providerName: string;
     bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
     static: boolean;
+  }>;
+  souvenirs?: Array<{
+    id: string;
+    name: string;
+    sizes: string;
   }>;
 }
