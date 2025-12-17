@@ -1,5 +1,5 @@
-// src/app/admin/galleries/_mockRepo.ts (예시 경로)
-// 기존 파일 전체 교체
+// src/app/admin/galleries/data/db.ts
+// 관리자 갤러리용 메모리 DB (개발용)
 
 import type { Gallery, GalleryFilter, Paged } from "./types";
 
@@ -16,7 +16,6 @@ const ymd = (d = new Date()) => {
 
 /** 메모리 DB: eventId -> Gallery */
 const DB: Record<string, Gallery> = Object.create(null);
-
 
 /** 이벤트 더미로부터 시드하기 (최초 1회) - 더미 데이터 제거됨 */
 function ensureSeed() {

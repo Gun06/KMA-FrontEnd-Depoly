@@ -2,10 +2,10 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import GalleryForm from "@/components/admin/gallery/GalleryForm";
-import { getGallery, upsertGallery, deleteGallery } from "@/data/gallery/db";
-import Button from "@/components/common/Button/Button";
-import type { Gallery } from "@/data/gallery/types";
+import { getGallery, upsertGallery, deleteGallery } from "../data/db";
+import GalleryModal from "../components/GalleryModal";
+import type { Gallery } from "../data/types";
+import { updateGalleryByAdmin, deleteGalleryByAdmin } from "../api/galleryApi";
 
 export default function Client({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -13,81 +13,101 @@ export default function Client({ eventId }: { eventId: string }) {
   const init = React.useMemo<Gallery | null>(() => getGallery(eventId) ?? null, [eventId]);
   const [mode, setMode] = React.useState<"view" | "edit">("view");
   const [value, setValue] = React.useState<Gallery | null>(init);
+  const [thumbnailFile, setThumbnailFile] = React.useState<File | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
 
   React.useEffect(() => {
     setValue(init);
     setMode("view");
+    setThumbnailFile(null);
   }, [init]);
+
+  const handleClose = () => {
+    router.replace("/admin/galleries");
+  };
+
+  const save = async () => {
+    if (!value) return;
+    if (!value.tagName.trim()) return alert("대회 태그명을 입력하세요.");
+    if (!value.title.trim()) return alert("대회명을 입력하세요.");
+    if (!value.periodFrom) return alert("대회 개최일을 입력하세요.");
+
+    try {
+      setIsUploading(true);
+
+      // 1) 서버측 갤러리 수정
+      await updateGalleryByAdmin(
+        value.eventId,
+        {
+          title: value.title.trim(),
+          tagName: value.tagName.trim(),
+          eventStartDate: value.periodFrom,
+          googlePhotoUrl: (value.googlePhotosUrl ?? "").trim(),
+        },
+        thumbnailFile ?? undefined
+      );
+
+      // 2) 로컬 DB 동기화
+      await upsertGallery(value.eventId, {
+        ...value,
+        tagName: value.tagName.trim(),
+        title: value.title.trim(),
+        googlePhotosUrl: (value.googlePhotosUrl ?? "").trim(),
+        // 썸네일 URL은 서버 응답 형식에 맞춰 후속 보완 가능
+      });
+
+      setMode("view");
+      setThumbnailFile(null);
+      const updated = getGallery(eventId);
+      if (updated) {
+        setValue(updated);
+      }
+    } catch (e) {
+      console.error(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`갤러리 수정 API 호출에 실패했습니다.\n\n${msg}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!confirm("삭제하시겠습니까?")) return;
+    try {
+      setIsUploading(true);
+      await deleteGalleryByAdmin(value.eventId);
+      deleteGallery(value.eventId);
+      router.replace("/admin/galleries");
+    } catch (e) {
+      console.error(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`갤러리 삭제에 실패했습니다.\n\n${msg}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   if (!value) {
     return (
       <div className="max-w-[1300px] mx-auto w-full px-0 py-0">
-        <div className="mb-4 flex items-center gap-2 justify-end">
-          <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={() => router.replace("/admin/galleries")}>
-            목록으로
-          </Button>
-        </div>
         <div className="text-center text-gray-600 py-20">데이터가 없습니다.</div>
       </div>
     );
   }
 
-  const save = async () => {
-    if (!value.tagName.trim()) return alert("대회 태그명을 입력하세요.");
-    if (!value.title.trim()) return alert("대회명을 입력하세요.");
-    if (!value.periodFrom || !value.periodTo) return alert("대회기간을 입력하세요.");
-
-    await upsertGallery(value.eventId, {
-      ...value,
-      tagName: value.tagName.trim(),
-      title: value.title.trim(),
-      googlePhotosUrl: (value.googlePhotosUrl ?? "").trim(),
-    });
-    setMode("view");
-  };
-
-  const onDelete = async () => {
-    if (!confirm("삭제하시겠습니까?")) return;
-    deleteGallery(value.eventId);
-    router.replace("/admin/galleries");
-  };
-
   return (
-    <div className="max-w-[1300px] mx-auto w-full px-0 py-0">
-      {/* 우측 정렬 액션바 */}
-      <div className="mb-4 flex items-center gap-2 justify-end">
-        {mode === "view" ? (
-          <>
-            <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={() => router.back()}>
-              뒤로가기
-            </Button>
-            <Button size="sm" tone="danger" widthType="pager" onClick={onDelete}>
-              삭제하기
-            </Button>
-            <Button size="sm" tone="primary" widthType="pager" onClick={() => setMode("edit")}>
-              수정하기
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={() => { setValue(init); setMode("view"); }}>
-              취소하기
-            </Button>
-            <Button size="sm" tone="primary" widthType="pager" onClick={save}>
-              저장하기
-            </Button>
-          </>
-        )}
-      </div>
-
-      {/* 등록 화면과 동일하게(dense) */}
-      <GalleryForm
-        value={value}
-        onChange={mode === "edit" ? setValue : undefined}
-        readOnly={mode === "view"}
-        inputColorCls="!border-0 !ring-0 !outline-none bg-transparent"
-        dense
-      />
-    </div>
+    <GalleryModal
+      isOpen={true}
+      onClose={handleClose}
+      value={value}
+      onChange={setValue}
+      thumbnailFile={thumbnailFile}
+      onThumbnailChange={setThumbnailFile}
+      onSave={save}
+      onDelete={onDelete}
+      onEdit={mode === "view" ? () => setMode("edit") : undefined}
+      mode={mode === "view" ? "view" : "edit"}
+      isUploading={isUploading}
+    />
   );
 }

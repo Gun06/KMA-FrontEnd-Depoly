@@ -4,18 +4,24 @@ import Image, { StaticImageData } from 'next/image'
 import arrowRight from '@/assets/icons/main/arrow-right.svg'
 
 interface GalleryCardProps {
-	imageSrc: StaticImageData
+	imageSrc: StaticImageData | string
 	imageAlt: string
 	subtitle: string
 	title: string
 	date: string
+	disableAnimation?: boolean
 }
 
-export default function GalleryCard({ imageSrc, imageAlt, subtitle, title, date }: GalleryCardProps) {
-	const [isVisible, setIsVisible] = useState(false)
+export default function GalleryCard({ imageSrc, imageAlt, subtitle, title, date, disableAnimation = false }: GalleryCardProps) {
+	const [isVisible, setIsVisible] = useState(disableAnimation)
 	const cardRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
+		if (disableAnimation) {
+			setIsVisible(true)
+			return
+		}
+
 		const observer = new IntersectionObserver(
 			([entry]) => {
 				if (entry.isIntersecting) {
@@ -35,19 +41,27 @@ export default function GalleryCard({ imageSrc, imageAlt, subtitle, title, date 
 		}
 
 		return () => observer.disconnect()
-	}, []) // Removed delay from dependency array
+	}, [disableAnimation]) // Removed delay from dependency array
 
 	return (
 		<div className="w-[250px] md:w-[350px] h-[320px] md:h-[425px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50">
 			{/* 이미지 영역 */}
 			<div className="relative w-full h-full overflow-hidden border-2 border-gray-50">
-				<Image
-					src={imageSrc}
-					alt={imageAlt}
-					fill
-					className="object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] transition-transform duration-700 hover:scale-105 border-2 border-gray-50"
-					sizes="(max-width: 768px) 250px, 300px"
-				/>
+				{typeof imageSrc === 'string' ? (
+					<img
+						src={imageSrc}
+						alt={imageAlt}
+						className="absolute inset-0 w-full h-full object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] transition-transform duration-700 hover:scale-105 border-2 border-gray-50"
+					/>
+				) : (
+					<Image
+						src={imageSrc}
+						alt={imageAlt}
+						fill
+						className="object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] transition-transform duration-700 hover:scale-105 border-2 border-gray-50"
+						sizes="(max-width: 768px) 250px, 300px"
+					/>
+				)}
 				{/* 어두운 투명 배경 오버레이 */}
 				<div className="absolute inset-0 bg-black bg-opacity-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] border-2 border-gray-50"></div>
 				
@@ -60,13 +74,23 @@ export default function GalleryCard({ imageSrc, imageAlt, subtitle, title, date 
 				</div>
 				
 				{/* 타이틀과 날짜 - 어두운 배경 위에 오버레이 */}
-				<div className="absolute bottom-6 md:bottom-10 left-0 right-0 p-3 md:p-4 text-white">
+				<div className="absolute bottom-6 md:bottom-10 left-0 right-0 pl-3 md:pl-4 pr-8 md:pr-12 text-white">
 					{/* 타이틀 - 말줄임표 처리 */}
-					<h3 className="text-lg md:text-2xl font-semibold mb-1 md:mb-2 truncate font-giants" title={title}>
+					<h3 
+						className="text-lg md:text-2xl font-semibold mb-1 md:mb-2 font-giants text-left" 
+						title={title}
+						style={{
+							display: 'block',
+							overflow: 'hidden',
+							textOverflow: 'ellipsis',
+							whiteSpace: 'nowrap',
+							width: '100%'
+						}}
+					>
 						{title}
 					</h3>
 					{/* 날짜 */}
-					<p className="text-xs md:text-sm text-gray-200">{date}</p>
+					<p className="text-xs md:text-sm text-gray-200 text-left">{date}</p>
 				</div>
 				
 				{/* 오른쪽 하단 흰색 배경 */}

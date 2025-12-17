@@ -22,9 +22,6 @@ type Sort = "no" | "date" | "title";
 type Props = {
   rows: GalleryListRow[];
   total: number;
-  page: number;
-  pageSize: number;
-  onPageChange: (p: number) => void;
 
   onSearch?: (q: string) => void;
   onChangeSort?: (sort: Sort) => void;
@@ -34,22 +31,21 @@ type Props = {
 
   onClickRegister?: () => void;
   linkForRow?: (r: GalleryListRow) => string | undefined | null;
+  onRowClick?: (r: GalleryListRow) => void;
 };
 
 export default function GalleryListTable({
   rows,
   total,
-  page,
-  pageSize,
-  onPageChange,
   onSearch,
   onChangeSort,
   onChangeVisible,
   onClickRegister,
   linkForRow,
+  onRowClick,
 }: Props) {
-  const offset = (page - 1) * Math.max(1, pageSize);
-  const getNo = (i: number) => Math.max(1, total - offset - i);
+  // 페이지네이션 없이 전체 인덱스 사용
+  const getNo = (i: number) => total - i;
   const shorten = (s: string, max = 56) => (s.length > max ? s.slice(0, max - 1) + "…" : s);
   const defaultLinkForRow = (r: GalleryListRow) => `/admin/galleries/${r.eventId}`;
 
@@ -93,23 +89,9 @@ export default function GalleryListTable({
         </div>
       ),
     },
-    {
-      key: "visible",
-      header: "공개여부",
-      width: 100,
-      align: "center",
-      render: (r) => (r.visible ? <span className="text-[#1E5EFF]">공개</span> : <span className="text-[#D12D2D]">비공개</span>),
-    },
   ];
 
   const preset = PRESETS["관리자 / 갤러리 리스트"]?.props;
-
-  // ★ 어떤 값이 와도 on/off 로 표준화
-  const toOnOff = (v: unknown): "on" | "off" | undefined => {
-    if (v === "on" || v === "open" || v === "공개" || v === true) return "on";
-    if (v === "off" || v === "closed" || v === "비공개" || v === false) return "off";
-    return undefined;
-    };
 
   // 빈 상태 처리
   if (rows.length === 0 && total === 0) {
@@ -122,7 +104,6 @@ export default function GalleryListTable({
               onFieldChange={(label, value) => {
                 const L = String(label).replace(/\s/g, "");
                 if (L === "정렬") onChangeSort?.(value as Sort);
-                else if (L === "공개여부") onChangeVisible?.(toOnOff(value));
               }}
               onActionClick={(label) => {
                 if (label === "등록하기") onClickRegister?.();
@@ -158,6 +139,7 @@ export default function GalleryListTable({
         columns={columns}
         rows={rows}
         rowKey={(r) => r.eventId}
+        onRowClick={onRowClick}
         renderFilters={null}
         renderSearch={null}
         renderActions={
@@ -167,7 +149,6 @@ export default function GalleryListTable({
               onFieldChange={(label, value) => {
                 const L = String(label).replace(/\s/g, "");
                 if (L === "정렬") onChangeSort?.(value as Sort);
-                else if (L === "공개여부") onChangeVisible?.(toOnOff(value));
               }}
               onActionClick={(label) => {
                 if (label === "등록하기") onClickRegister?.();
@@ -181,7 +162,7 @@ export default function GalleryListTable({
             />
           </div>
         }
-        pagination={{ page, pageSize, total, onChange: onPageChange, align: "center" }}
+        pagination={null}
         minWidth={1200}
       />
     </div>

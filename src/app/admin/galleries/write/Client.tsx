@@ -2,11 +2,11 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import GalleryForm from "@/components/admin/gallery/GalleryForm";
-import { upsertGallery, getNextEventId } from "@/data/gallery/db";
-import type { Gallery } from "@/data/gallery/types";
-import Button from "@/components/common/Button/Button";
-import { uploadImage } from "@/services/imageUpload";
+import { upsertGallery, getNextEventId } from "../data/db";
+import GalleryModal from "../components/GalleryModal";
+import type { Gallery } from "../data/types";
+import { createGalleryByAdmin } from "../api/galleryApi";
+import { buildGalleryDateString, applySingleEventDate } from "../utils/galleryTransform";
 
 export default function Client() {
   const router = useRouter();
@@ -29,67 +29,70 @@ export default function Client() {
     views: 0,
   });
 
+  const handleClose = () => {
+    router.replace("/admin/galleries");
+  };
+
   const save = async () => {
     if (!value.tagName.trim()) return alert("대회 태그명을 입력하세요.");
     if (!value.title.trim()) return alert("대회명을 입력하세요.");
-    if (!value.periodFrom || !value.periodTo) return alert("대회기간을 입력하세요.");
+    if (!value.periodFrom) return alert("대회 개최일을 입력하세요.");
 
-    let thumbnailUrl = value.thumbnailImageUrl;
-
-    // 썸네일 이미지 업로드
-    if (thumbnailFile) {
-      try {
-        setIsUploading(true);
-        const result = await uploadImage(thumbnailFile, "EVENT");
-        thumbnailUrl = result.imgSrc;
-      } catch (error) {
-        alert("썸네일 이미지 업로드에 실패했습니다.");
-        setIsUploading(false);
-        return;
-      } finally {
-        setIsUploading(false);
-      }
+    if (!thumbnailFile) {
+      alert("썸네일 이미지를 업로드해주세요.");
+      return;
     }
 
-    await upsertGallery(value.eventId, {
-      ...value,
-      tagName: value.tagName.trim(),
-      title: value.title.trim(),
-      googlePhotosUrl: (value.googlePhotosUrl ?? "").trim(),
-      thumbnailImageUrl: thumbnailUrl,
-    });
+    // 1) 실제 관리자 갤러리 생성 API 호출
+    // 스펙: galleryCreateRequest + thumbnail(file)
+    try {
+      setIsUploading(true);
+      await createGalleryByAdmin({
+        title: value.title.trim(),
+        tagName: value.tagName.trim(),
+        eventStartDate: value.periodFrom,
+        googlePhotoUrl: (value.googlePhotosUrl ?? "").trim(),
+        thumbnailFile,
+      });
+    } catch (e) {
+      console.error(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      alert(`갤러리 등록 API 호출에 실패했습니다.\n\n${msg}`);
+      setIsUploading(false);
+      return;
+    }
+
+    // 2) 로컬 메모리 DB 업데이트(기존 동작 유지)
+    const updated = applySingleEventDate(
+      {
+        ...value,
+        tagName: value.tagName.trim(),
+        title: value.title.trim(),
+        googlePhotosUrl: (value.googlePhotosUrl ?? "").trim(),
+        thumbnailImageUrl: value.thumbnailImageUrl,
+        date: buildGalleryDateString(),
+      },
+      value.periodFrom
+    );
+
+    await upsertGallery(value.eventId, updated);
+
+    setIsUploading(false);
 
     router.replace("/admin/galleries");
   };
 
   return (
-    <div className="max-w-[1300px] mx-auto w-full">
-      {/* 상단 액션바: 셀렉트 제거, 버튼만 우측 */}
-      <div className="mb-4 flex items-center gap-2 justify-end">
-        <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={() => router.back()}>
-            뒤로가기
-          </Button>
-          <Button 
-            size="sm" 
-            tone="primary" 
-            widthType="pager" 
-            onClick={save}
-            disabled={isUploading}
-          >
-          {isUploading ? "업로드 중..." : "등록하기"}
-        </Button>
-      </div>
-
-      {/* 폼: 아웃라인 제거 + 패딩 제거 + 시간 제거 */}
-      <GalleryForm
-        value={value}
-        onChange={setValue}
-        thumbnailFile={thumbnailFile}
-        onThumbnailChange={setThumbnailFile}
-        readOnly={false}
-        inputColorCls="!border-0 !ring-0 !outline-none bg-transparent"
-        dense
-      />
-    </div>
+    <GalleryModal
+      isOpen={true}
+      onClose={handleClose}
+      value={value}
+      onChange={setValue}
+      thumbnailFile={thumbnailFile}
+      onThumbnailChange={setThumbnailFile}
+      onSave={save}
+      mode="create"
+      isUploading={isUploading}
+    />
   );
 }
