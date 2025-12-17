@@ -33,19 +33,6 @@ export default function GalleryModal({
   mode,
   isUploading = false,
 }: GalleryModalProps) {
-  if (!isOpen) return null;
-
-  // 날짜 포맷팅 (YYYY-MM-DD -> YYYY.MM.DD)
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    return dateStr.replace(/-/g, ".");
-  };
-
-  const formatDisplayDate = () => {
-    if (!value.periodFrom) return "";
-    return formatDate(value.periodFrom);
-  };
-
   // 썸네일 미리보기 URL 생성
   const [thumbnailUrl, setThumbnailUrl] = React.useState<string>("");
 
@@ -60,6 +47,19 @@ export default function GalleryModal({
       setThumbnailUrl("");
     }
   }, [thumbnailFile, value.thumbnailImageUrl]);
+
+  // 날짜 포맷팅 (YYYY-MM-DD -> YYYY.MM.DD)
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "";
+    return dateStr.replace(/-/g, ".");
+  };
+
+  const formatDisplayDate = () => {
+    if (!value.periodFrom) return "";
+    return formatDate(value.periodFrom);
+  };
+
+  if (!isOpen) return null;
 
   // 썸네일이 없을 때 기본 이미지
   const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225'%3E%3Crect fill='%23f3f4f6' width='400' height='225'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E이미지 없음%3C/text%3E%3C/svg%3E";

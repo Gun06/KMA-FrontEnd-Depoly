@@ -579,13 +579,15 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
           {/* 버튼 그룹 */}
           <div className="flex justify-center gap-4 mt-8">
+            {/* TODO: 결제상태에 따른 수정하기 버튼 비활성화 조건 일시적으로 주석처리 - 모든 경우에 수정 가능 */}
+            {/* disabled={registrationData.paymentStatus !== 'UNPAID' && registrationData.paymentStatus !== 'PAID'} */}
             <button
               onClick={handleEdit}
-              disabled={registrationData.paymentStatus !== 'UNPAID' && registrationData.paymentStatus !== 'PAID'}
               className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
-                registrationData.paymentStatus === 'UNPAID' || registrationData.paymentStatus === 'PAID'
-                  ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
-                  : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
+                // registrationData.paymentStatus === 'UNPAID' || registrationData.paymentStatus === 'PAID'
+                //   ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                //   : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
+                'bg-white text-black border-2 border-black hover:bg-gray-100'
               }`}
             >
               수정하기

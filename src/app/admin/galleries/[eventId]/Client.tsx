@@ -72,6 +72,7 @@ export default function Client({ eventId }: { eventId: string }) {
   };
 
   const onDelete = async () => {
+    if (!value) return;
     if (!confirm("삭제하시겠습니까?")) return;
     try {
       setIsUploading(true);
