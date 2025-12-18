@@ -7,6 +7,8 @@ import Button from '@/components/common/Button/Button';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 import { useSponsors, useUpdateSponsor } from '@/hooks/useSponsors';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 
 /* ---------- Types & Storage ---------- */
 export type EditRow = {
@@ -29,6 +31,16 @@ export default function SponsorEdit({ idParam }: { idParam: string }) {
   const router = useRouter();
   const [row, setRow] = React.useState<EditRow | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  
+  // 알림 모달 state
+  const [successModal, setSuccessModal] = React.useState<{ isOpen: boolean; title?: string; message: string }>({
+    isOpen: false,
+    message: '',
+  });
+  const [errorModal, setErrorModal] = React.useState<{ isOpen: boolean; message: string }>({
+    isOpen: false,
+    message: '',
+  });
   
   // API에서 스폰서 목록을 가져와서 해당 ID의 스폰서를 찾음
   const { data: sponsors, isLoading, error } = useSponsors();
@@ -81,10 +93,21 @@ export default function SponsorEdit({ idParam }: { idParam: string }) {
         image: imageFile
       });
       
-      alert('저장되었습니다.');
-      router.push('/admin/banners/sponsors');
+      setSuccessModal({
+        isOpen: true,
+        title: '저장되었습니다',
+        message: '스폰서 정보가 성공적으로 저장되었습니다.',
+      });
+      
+      // 모달 닫힌 후 목록으로 이동
+      setTimeout(() => {
+        router.push('/admin/banners/sponsors');
+      }, 1500);
     } catch (_error) {
-      alert('저장에 실패했습니다. 다시 시도해주세요.');
+      setErrorModal({
+        isOpen: true,
+        message: '저장에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -148,6 +171,20 @@ export default function SponsorEdit({ idParam }: { idParam: string }) {
           목록으로
         </Button>
       </div>
+
+      {/* 커스텀 알림 모달들 */}
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, message: '' })}
+        title={successModal.title}
+        message={successModal.message}
+      />
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="오류"
+        message={errorModal.message}
+      />
     </div>
   );
 }

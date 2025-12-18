@@ -7,6 +7,8 @@ import { GroupRegistrationConfirmData } from "./types";
 import { fetchGroupRegistrationConfirm, createEditData } from "./api";
 import { getRegistrationDetail } from "@/services/registration";
 import { convertPaymentStatusToKorean } from "@/types/registration";
+import RefundModal from "@/components/event/Registration/RefundModal";
+import { requestGroupRefund } from "@/app/event/[eventId]/registration/apply/shared/api/group";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -22,6 +24,8 @@ export default function GroupApplicationConfirmResultPage() {
   const [loadedParticipantsMap, setLoadedParticipantsMap] = useState<Map<string, any>>(new Map()); // 상세 정보가 로드된 참가자들 (registrationId를 키로)
   const [bankName, setBankName] = useState('');
   const [virtualAccount, setVirtualAccount] = useState('');
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [isRefundLoading, setIsRefundLoading] = useState(false);
   
   // 참가자 상세 정보 로드 함수
   const loadParticipantDetails = async (participants: any[], startIndex: number, count: number): Promise<Map<string, any>> => {
@@ -463,6 +467,28 @@ export default function GroupApplicationConfirmResultPage() {
 
   const handleBackToList = () => {
     router.push(`/event/${eventId}/registration/confirm`);
+  };
+
+  const handleRefundSubmit = async (bankName: string, accountNumber: string) => {
+    if (!groupApplicationData?.organizationAccount) {
+      throw new Error('단체 신청 정보를 찾을 수 없습니다.');
+    }
+
+    setIsRefundLoading(true);
+    try {
+      await requestGroupRefund(
+        eventId,
+        groupApplicationData.organizationAccount,
+        bankName,
+        accountNumber
+      );
+      
+      // 성공 시 페이지 새로고침하여 최신 결제 상태 반영
+      window.location.reload();
+    } catch (error) {
+      setIsRefundLoading(false);
+      throw error;
+    }
   };
 
   const handlePrint = () => {
@@ -1207,6 +1233,12 @@ export default function GroupApplicationConfirmResultPage() {
               수정하기
             </button>
             <button
+              onClick={() => setIsRefundModalOpen(true)}
+              className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-red-600 text-white hover:bg-red-700"
+            >
+              환불하기
+            </button>
+            <button
               onClick={handleBackToList}
               className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 bg-black text-white rounded-lg font-medium text-sm md:text-base hover:bg-gray-800 transition-colors"
             >
@@ -1215,6 +1247,14 @@ export default function GroupApplicationConfirmResultPage() {
           </div>
         </div>
       </div>
+
+      {/* 환불 모달 */}
+      <RefundModal
+        isOpen={isRefundModalOpen}
+        onClose={() => setIsRefundModalOpen(false)}
+        onSubmit={handleRefundSubmit}
+        isLoading={isRefundLoading}
+      />
     </SubmenuLayout>
   );
 }

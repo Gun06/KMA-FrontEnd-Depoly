@@ -83,6 +83,8 @@ export interface IndividualRegistrationResponse {
   paymentType: "CARD" | "ACCOUNT_TRANSFER";
   paymenterName: string;
   paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
+  paymenterBank?: string;         // 환불 은행명
+  accountNumber?: string;         // 환불 계좌번호
 }
 
 // 단체신청 조회 응답 인터페이스 (업데이트된 스키마)

@@ -10,8 +10,14 @@ import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 import { ChevronUp, ChevronDown, Plus, Minus, Pencil } from 'lucide-react';
 import SponsorsPreview from './SponsorsPreview';
-import { useSponsors, useCreateOrUpdateSponsors } from '@/hooks/useSponsors';
+import SponsorGrid from './SponsorGrid';
+import SponsorModal from './SponsorModal';
+import SponsorForm, { type SponsorFormData } from './SponsorForm';
+import { useSponsors, useCreateOrUpdateSponsors, useUpdateSponsor } from '@/hooks/useSponsors';
 import type { SponsorResponse } from '@/types/sponsor';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 
 /* ---------- Types & Storage ---------- */
 export type SponsorRow = {
@@ -112,9 +118,33 @@ export default function SponsorsManager() {
   const [rows, setRows] = React.useState<SponsorRow[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  // 모달 관련 state
+  const [selectedSponsorId, setSelectedSponsorId] = React.useState<string | number | null>(null);
+  const [modalMode, setModalMode] = React.useState<'create' | 'edit' | 'view'>('view');
+  const [modalFormData, setModalFormData] = React.useState<SponsorFormData>({ url: '', visible: true });
+  const [modalImageFile, setModalImageFile] = React.useState<File | null>(null);
+  const [modalImageItem, setModalImageItem] = React.useState<UploadItem | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+
+  // 알림 모달 state
+  const [confirmModal, setConfirmModal] = React.useState<{ isOpen: boolean; message: string; onConfirm: () => void }>({
+    isOpen: false,
+    message: '',
+    onConfirm: () => {},
+  });
+  const [successModal, setSuccessModal] = React.useState<{ isOpen: boolean; title?: string; message: string }>({
+    isOpen: false,
+    message: '',
+  });
+  const [errorModal, setErrorModal] = React.useState<{ isOpen: boolean; message: string }>({
+    isOpen: false,
+    message: '',
+  });
+
   // API 훅들
   const { data: apiSponsors, isLoading: isApiLoading } = useSponsors();
   const createOrUpdateMutation = useCreateOrUpdateSponsors();
+  const updateSponsorMutation = useUpdateSponsor();
 
   // API 데이터를 로컬 상태로 변환
   React.useEffect(() => {
@@ -181,11 +211,88 @@ export default function SponsorsManager() {
     });
 
   const handleAdd = () => {
-    setRows(prev => {
-      const newRow = {
-        id: `temp_${Date.now()}`, url: '', image: null, visible: true, draft: true, orderNo: prev.length + 1
-      };
-      return [...prev, newRow];
+    const newId = `temp_${Date.now()}`;
+    setModalFormData({ url: '', visible: true });
+    setModalImageFile(null);
+    setModalImageItem(null);
+    setSelectedSponsorId(newId);
+    setModalMode('create');
+  };
+
+  const handleOpenView = (id: string | number) => {
+    const sponsor = rows.find(r => r.id === id);
+    if (!sponsor) return;
+    
+    setModalFormData({ url: sponsor.url, visible: sponsor.visible });
+    setModalImageFile(null);
+    setModalImageItem(sponsor.image);
+    setSelectedSponsorId(id);
+    setModalMode('view');
+  };
+
+  const handleOpenEdit = (id: string | number) => {
+    const sponsor = rows.find(r => r.id === id);
+    if (!sponsor) return;
+    
+    setModalFormData({ url: sponsor.url, visible: sponsor.visible });
+    setModalImageFile(null);
+    setModalImageItem(sponsor.image);
+    setSelectedSponsorId(id);
+    setModalMode('edit');
+  };
+
+  const handleCloseModal = () => {
+    // 모달에서 생성한 이미지 URL 정리
+    if (modalImageFile && modalImageItem?.url && modalImageItem.url.startsWith('blob:')) {
+      URL.revokeObjectURL(modalImageItem.url);
+    }
+    if (modalImageFile && modalImageItem?.previewUrl && modalImageItem.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(modalImageItem.previewUrl);
+    }
+    setSelectedSponsorId(null);
+    setModalImageFile(null);
+    setModalImageItem(null);
+  };
+
+  const handleModalDelete = async () => {
+    if (!selectedSponsorId) return;
+    
+    const sponsor = rows.find(r => r.id === selectedSponsorId);
+    if (!sponsor) return;
+
+    setConfirmModal({
+      isOpen: true,
+      message: '정말 삭제하시겠습니까?',
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} });
+        try {
+          // draft 항목이면 바로 삭제
+          if (sponsor.draft) {
+            setRows(prev => prev.filter(r => r.id !== selectedSponsorId));
+            handleCloseModal();
+            setSuccessModal({
+              isOpen: true,
+              title: '삭제되었습니다',
+              message: '스폰서가 삭제되었습니다.',
+            });
+          } else {
+            // 저장된 항목이면 rows에서 제거 (나중에 저장할 때 deletedSponsorIds에 포함됨)
+            setRows(prev => prev.filter(r => r.id !== selectedSponsorId));
+            handleCloseModal();
+            setSuccessModal({
+              isOpen: true,
+              title: '삭제되었습니다',
+              message: '변경사항을 저장하려면 "저장하기" 버튼을 눌러주세요.',
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          setErrorModal({
+            isOpen: true,
+            message: '삭제에 실패했습니다. 다시 시도해주세요.',
+          });
+        }
+      },
     });
   };
 
@@ -202,17 +309,23 @@ export default function SponsorsManager() {
         orderNo: index + 1 // 순서 번호 (저장 시점에 업데이트)
       }));
 
-      // 2. deletedSponsorIds: "-" 버튼을 통해 삭제되는 스폰서들의 id
+      // 2. deletedSponsorIds: 삭제되는 스폰서들의 id
       const deletedSponsorIds = apiSponsors
         ?.filter(apiSponsor => !rows.some(r => r.id === apiSponsor.id))
         .map(sponsor => sponsor.id) || [];
 
-      // 3. images: 새로 생성된 스폰서(임시 ID)의 개수와 일치해야 함
-      const newSponsorRows = rows.filter(r => typeof r.id === 'string' && r.id.startsWith('temp_'));
-      
-      const images = newSponsorRows
-        .filter(r => r.image && r.image.file instanceof File)
-        .map(r => r.image!.file);
+      // 3. images: 새로 생성된 스폰서(임시 ID)의 순서대로 이미지 파일 추출
+      // sponsorInfos에서 id가 null인 항목들의 순서와 정확히 일치해야 함
+      const images: File[] = [];
+      for (const row of rows) {
+        if (typeof row.id === 'string' && row.id.startsWith('temp_')) {
+          // 새로 생성된 스폰서
+          if (row.image && row.image.file instanceof File) {
+            images.push(row.image.file);
+          }
+          // 이미지가 없어도 순서는 유지 (빈 값은 서버에서 처리)
+        }
+      }
       
       // 백엔드에서 images 필드를 필수로 요구하므로 항상 전송 (빈 배열이라도)
 
@@ -233,15 +346,130 @@ export default function SponsorsManager() {
         draft: false
       }));
       setRows(updatedRows);
-      alert('저장되었습니다.');
+      setSuccessModal({
+        isOpen: true,
+        title: '저장되었습니다',
+        message: '스폰서 정보가 성공적으로 저장되었습니다.',
+      });
       setMode('preview');
       
     } catch (_error) {
-      alert('저장에 실패했습니다. 다시 시도해주세요.');
+      setErrorModal({
+        isOpen: true,
+        message: '저장에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleModalSave = async () => {
+    if (!selectedSponsorId) return;
+
+    try {
+      setIsUploading(true);
+
+      if (modalMode === 'create') {
+        // 새 스폰서 추가: rows에 추가
+        const newRow: SponsorRow = {
+          id: selectedSponsorId,
+          url: modalFormData.url,
+          image: modalImageFile ? {
+            id: String(selectedSponsorId),
+            file: modalImageFile,
+            name: modalImageFile.name,
+            size: modalImageFile.size,
+            sizeMB: modalImageFile.size / (1024 * 1024),
+            tooLarge: modalImageFile.size > 20 * 1024 * 1024,
+            url: URL.createObjectURL(modalImageFile),
+            previewUrl: URL.createObjectURL(modalImageFile)
+          } as UploadItem : null,
+          visible: modalFormData.visible,
+          draft: true,
+          orderNo: rows.length + 1
+        };
+        setRows(prev => [...prev, newRow]);
+        handleCloseModal();
+      } else if (modalMode === 'edit') {
+        // 기존 스폰서 수정
+        const sponsor = rows.find(r => r.id === selectedSponsorId);
+        if (!sponsor) return;
+
+        if (sponsor.draft) {
+          // 아직 저장되지 않은 항목: 로컬 상태만 업데이트
+          updateRow(selectedSponsorId, {
+            url: modalFormData.url,
+            visible: modalFormData.visible,
+            image: modalImageFile ? {
+              id: String(selectedSponsorId),
+              file: modalImageFile,
+              name: modalImageFile.name,
+              size: modalImageFile.size,
+              sizeMB: modalImageFile.size / (1024 * 1024),
+              tooLarge: modalImageFile.size > 20 * 1024 * 1024,
+              url: URL.createObjectURL(modalImageFile),
+              previewUrl: URL.createObjectURL(modalImageFile)
+            } as UploadItem : modalImageItem
+          });
+          handleCloseModal();
+        } else {
+          // 이미 저장된 항목: API 호출
+          await updateSponsorMutation.mutateAsync({
+            sponsorId: String(selectedSponsorId),
+            sponsorUpdateInfo: {
+              url: modalFormData.url,
+              visible: modalFormData.visible
+            },
+            image: modalImageFile ?? undefined
+          });
+
+          // 로컬 상태 업데이트
+          updateRow(selectedSponsorId, {
+            url: modalFormData.url,
+            visible: modalFormData.visible,
+            image: modalImageFile ? {
+              id: String(selectedSponsorId),
+              file: modalImageFile,
+              name: modalImageFile.name,
+              size: modalImageFile.size,
+              sizeMB: modalImageFile.size / (1024 * 1024),
+              tooLarge: modalImageFile.size > 20 * 1024 * 1024,
+              url: URL.createObjectURL(modalImageFile),
+              previewUrl: URL.createObjectURL(modalImageFile)
+            } as UploadItem : modalImageItem
+          });
+
+          setSuccessModal({
+            isOpen: true,
+            title: '저장되었습니다',
+            message: '스폰서 정보가 성공적으로 저장되었습니다.',
+          });
+          handleCloseModal();
+          // API 데이터 새로고침
+          window.location.reload();
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorModal({
+        isOpen: true,
+        message: '저장에 실패했습니다. 다시 시도해주세요.',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 그리드 아이템으로 변환
+  const gridItems = React.useMemo(() => {
+    return rows.map((r) => ({
+      id: r.id,
+      url: r.url,
+      imageUrl: r.image?.url || r.image?.previewUrl || null,
+      visible: r.visible,
+      orderNo: r.orderNo
+    }));
+  }, [rows]);
 
   if (!mounted) return null;
 
@@ -253,81 +481,6 @@ export default function SponsorsManager() {
       </div>
     );
   }
-
-  const columns: Column<SponsorRow>[] = [
-    { key: 'order', header: '순서', width: 70, align: 'center', render: (_r, i) => <span className="text-[15px]">{i + 1}</span> },
-
-    {
-      key: 'url',
-      header: '스폰서 URL',
-      width: 480,
-      align: 'left',
-      render: (r) => (
-        <input
-          value={r.url}
-          onChange={(e) => r.draft && updateRow(r.id, { url: e.target.value })}
-          readOnly={!r.draft}
-          placeholder="https://example.com"
-          className={inputCls}
-        />
-      ),
-    },
-
-    {
-      key: 'image',
-      header: '이미지',
-      width: 360,
-      align: 'left',
-      render: (r) => (
-        <div className="flex items-center gap-3">
-          <SponsorUploader
-            label="이미지 선택"
-            accept=".jpg,.jpeg,.png,.webp"
-            maxSizeMB={20}
-            value={r.image ? [r.image] : []}
-            readOnly={!r.draft}
-            onChange={(files) => r.draft && updateRow(r.id, { image: files?.[0] ?? null })}
-            buttonClassName="h-9 px-3"
-          />
-        </div>
-      ),
-    },
-
-    {
-      key: 'visible',
-      header: '공개여부',
-      width: 160,
-      align: 'center',
-      render: (r) => r.draft
-        ? <VisibilityChipsEditable value={r.visible} onChange={(v)=>updateRow(r.id,{visible:v})} />
-        : <VisibilityChip value={r.visible} />,
-    },
-
-    {
-      key: 'action',
-      header: '액션',
-      width: 320, // ⬅️ 충분히 넓혀서 1줄 고정
-      align: 'center',
-      render: (r, idx) => (
-        <div className="flex items-center justify-center gap-1.5 flex-nowrap whitespace-nowrap min-w-[300px]">
-          <CircleBtn kind="up" onClick={() => move(idx, -1)} />
-          <CircleBtn kind="down" onClick={() => move(idx, +1)} />
-          <CircleBtn kind="plus" onClick={() => addAfter(idx)} />
-          <CircleBtn kind="minus" onClick={() => removeAt(idx)} />
-          {!r.draft && (
-            <Link
-              href={`/admin/banners/sponsors/${r.id}/edit`}
-              className="shrink-0 inline-flex items-center gap-1 text-sm px-3 h-9 rounded-md border whitespace-nowrap"
-              title="수정"
-              aria-label="수정"
-            >
-              <Pencil size={14} /> 수정
-            </Link>
-          )}
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="mx-auto max-w-[1300px] px-4">
@@ -354,40 +507,69 @@ export default function SponsorsManager() {
             <Button size="sm" tone="neutral" widthType="pager" onClick={handleAdd}>
               새 스폰서 추가
             </Button>
-            <Button 
-              size="sm" 
-              tone="primary" 
-              widthType="pager" 
-              onClick={handleSave}
-              disabled={isLoading}
-            >
-              {isLoading ? '저장 중...' : '저장하기'}
-            </Button>
+            <div className="relative group">
+              <Button 
+                size="sm" 
+                tone="primary" 
+                widthType="pager" 
+                onClick={handleSave}
+                disabled={isLoading}
+              >
+                {isLoading ? '저장 중...' : '저장하기'}
+              </Button>
+              {/* 툴팁 */}
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                  <div className="font-semibold mb-2 text-sm">저장하기</div>
+                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                    목록에 추가하거나 수정한 스폰서 정보를 서버에 저장합니다. 저장하기 전에 모든 정보를 확인해주세요.
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : <div />}
       </div>
 
       {mode === 'manage' ? (
         <>
-          <AdminBannerTableShell<SponsorRow>
-            title=""
-            className="w-full"
-            columns={columns}
-            rows={rows}
-            rowKey={(r, index) => r.id || `new-${index}`}
-            rowClassName={() => 'hover:bg-transparent'}
-            stickyHeader={false}
-            minWidth={1150}
-            contentMinHeight="auto"
-            pagination={false}
-          />
+          {gridItems.length === 0 ? (
+            <div className="max-w-[1300px] mx-auto w-full">
+              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+                <div className="text-gray-500 text-lg mb-2">등록된 스폰서가 없습니다</div>
+                <div className="text-sm text-gray-400 mb-6">첫 번째 스폰서를 등록해보세요</div>
+                <button
+                  onClick={handleAdd}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  스폰서 등록하기
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-[1300px] mx-auto w-full">
+              <SponsorGrid
+                items={gridItems}
+                onItemClick={(id) => {
+                  const sponsor = rows.find(r => r.id === id);
+                  if (sponsor?.draft) {
+                    handleOpenEdit(id);
+                  } else {
+                    handleOpenView(id);
+                  }
+                }}
+              />
+            </div>
+          )}
 
           <div className="mt-8 pt-4 pb-16">
             <NoticeMessage
               items={[
-                { text: '※ 저장 전 항목만 편집 가능합니다. 저장 후에는 [수정]으로 들어가 편집하세요.' },
+                { text: '※ 새 스폰서를 추가하려면 "새 스폰서 추가" 버튼을 클릭하여 등록한 후, 반드시 "저장하기" 버튼을 눌러주세요.' },
+                { text: '※ 이미지를 클릭하면 수정할 수 있습니다.' },
                 { text: '※ 이미지는 JPG/PNG 권장, 가로 1600px 이상 (비율 2:1), 20MB 이하.' },
-                { text: '⚠️ 개별 수정 후 목록으로 돌아온 경우, 이미 저장되어 있으니 목록에서 또 저장버튼 누르지 마세요. (이미지 오류 발생 가능)' },
+                { text: '※ 저장 전 항목은 목록에서 바로 수정 가능하며, 저장 후에는 이미지를 클릭하여 수정하세요.' },
               ]}
             />
           </div>
@@ -401,6 +583,65 @@ export default function SponsorsManager() {
           }))}
         />
       )}
+
+      {/* 모달 */}
+      {selectedSponsorId !== null && (
+        <SponsorModal
+          isOpen={true}
+          onClose={handleCloseModal}
+          value={modalFormData}
+          onChange={setModalFormData}
+          imageFile={modalImageFile}
+          imageItem={modalImageItem}
+          onImageChange={(file) => {
+            setModalImageFile(file);
+            if (!file) {
+              setModalImageItem(null);
+            } else {
+              // 새 파일이 선택되면 UploadItem 생성
+              const newItem: UploadItem = {
+                id: String(selectedSponsorId),
+                file: file,
+                name: file.name,
+                size: file.size,
+                sizeMB: file.size / (1024 * 1024),
+                tooLarge: file.size > 20 * 1024 * 1024,
+                url: URL.createObjectURL(file),
+                previewUrl: URL.createObjectURL(file)
+              };
+              setModalImageItem(newItem);
+            }
+          }}
+          onSave={handleModalSave}
+          mode={modalMode}
+          isUploading={isUploading}
+          onEdit={modalMode === 'view' ? () => handleOpenEdit(selectedSponsorId) : undefined}
+          onDelete={modalMode !== 'create' ? handleModalDelete : undefined}
+        />
+      )}
+
+      {/* 커스텀 알림 모달들 */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, message: '', onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        title="확인"
+        message={confirmModal.message}
+        confirmText="확인"
+        cancelText="취소"
+      />
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, message: '' })}
+        title={successModal.title}
+        message={successModal.message}
+      />
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="오류"
+        message={errorModal.message}
+      />
     </div>
   );
 }

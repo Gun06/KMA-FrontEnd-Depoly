@@ -261,6 +261,8 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
     memo: data.memo,
     detailMemo: data.detailMemo,
     matchingLog: data.matchingLog,
+    paymenterBank: data.paymenterBank, // 환불 은행명
+    accountNumber: data.accountNumber, // 환불 계좌번호
     // 대회 ID 추출: 여러 가능한 필드 확인
     eventId: data.eventId 
       || data.event?.id 

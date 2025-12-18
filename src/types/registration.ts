@@ -40,6 +40,8 @@ export interface RegistrationItem {
   detailMemo?: string;            // 상세 메모
   matchingLog?: string;           // 매칭 로그
   eventId?: string;               // 대회 ID (코스 정보 조회용)
+  paymenterBank?: string;         // 환불 은행명
+  accountNumber?: string;         // 환불 계좌번호
 }
 
 export interface RegistrationListResponse {

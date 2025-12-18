@@ -8,6 +8,7 @@ export type UploadItem = {
   error?: string;
   isExisting?: boolean;  // 기존 파일 여부
   url?: string;          // 기존 파일의 URL
+  previewUrl?: string;   // 미리보기 URL (로컬에서 생성한 blob URL 등)
 };
 
 export type MultipleUploaderProps = {

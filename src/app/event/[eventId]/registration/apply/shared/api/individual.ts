@@ -117,3 +117,40 @@ export const fetchUserDataByCredentials = async (accountId: string, accountPw: s
     throw error;
   }
 };
+
+// 개인 사용자 환불 요청
+export const requestIndividualRefund = async (
+  eventId: string,
+  registrationId: string,
+  bankName: string,
+  accountNumber: string
+): Promise<void> => {
+  try {
+    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/${registrationId}/refund`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        paymenterBank: bankName,
+        accountNumber: accountNumber
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `환불 요청 실패: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson?.message || errorJson?.error || errorText;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    throw error;
+  }
+};

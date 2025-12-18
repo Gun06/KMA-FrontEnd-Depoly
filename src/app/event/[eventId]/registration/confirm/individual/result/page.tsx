@@ -7,6 +7,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
 import { getRegistrationDetail } from "@/services/registration";
 import { convertPaymentStatusToKorean } from "@/types/registration";
+import RefundModal from "@/components/event/Registration/RefundModal";
+import { requestIndividualRefund } from "@/app/event/[eventId]/registration/apply/shared/api/individual";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -16,6 +19,9 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   const [error, setError] = useState<string | null>(null);
   const [bankName, setBankName] = useState('');
   const [virtualAccount, setVirtualAccount] = useState('');
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [isRefundLoading, setIsRefundLoading] = useState(false);
+  const [isUnpaidAlertOpen, setIsUnpaidAlertOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -122,6 +128,9 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   addressDetail: latestData.addressDetail || baseData.addressDetail || '',
                   // zipCode는 baseData에서만 가져옴 (getRegistrationDetail에는 없음)
                   zipCode: baseData.zipCode || '',
+                  // 환불 정보 추가
+                  paymenterBank: latestData.paymenterBank || baseData.paymenterBank,
+                  accountNumber: latestData.accountNumber || baseData.accountNumber,
                 };
                 setRegistrationData(updatedData);
                 
@@ -244,6 +253,34 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     // fallback: 기존 방식 (URL 파라미터로 전달)
     const encodedData = encodeURIComponent(JSON.stringify(editData));
     router.push(`/event/${params.eventId}/registration/apply/individual?mode=edit&data=${encodedData}`);
+  };
+
+  const handleRefundSubmit = async (bankName: string, accountNumber: string) => {
+    if (!registrationData?.registrationId) {
+      throw new Error('신청 정보를 찾을 수 없습니다.');
+    }
+
+    setIsRefundLoading(true);
+    try {
+      await requestIndividualRefund(
+        params.eventId,
+        registrationData.registrationId,
+        bankName,
+        accountNumber
+      );
+      // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
+    } catch (error) {
+      setIsRefundLoading(false);
+      throw error;
+    } finally {
+      setIsRefundLoading(false);
+    }
+  };
+
+  const handleRefundSuccess = () => {
+    // 환불 신청 성공 후 신청확인 페이지로 이동
+    setIsRefundModalOpen(false);
+    router.push(`/event/${params.eventId}/registration/confirm/individual`);
   };
 
   // 성별 한글 변환
@@ -566,12 +603,30 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   <span className="text-base text-black">{registrationData.paymenterName}</span>
                 </div>
                 
-                <div className="flex items-center justify-between pb-4">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">결제상태</label>
                   <span className={`text-base font-medium ${getPaymentStatusColor(registrationData.paymentStatus)}`}>
                     {getPaymentStatusText(registrationData.paymentStatus)}
                   </span>
                 </div>
+                
+                {(registrationData.paymenterBank || registrationData.accountNumber) && (
+                  <>
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                      <label className="text-base font-medium text-black">환불 은행명</label>
+                      <span className="text-base text-black">
+                        {registrationData.paymenterBank || '-'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pb-4">
+                      <label className="text-base font-medium text-black">환불 계좌번호</label>
+                      <span className="text-base text-black">
+                        {registrationData.accountNumber || '-'}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -592,6 +647,21 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             >
               수정하기
             </button>
+            {/* 환불하기 버튼: 항상 표시 */}
+            <button
+              onClick={() => {
+                // 미결제 상태인 경우 알림 모달 표시
+                if (registrationData.paymentStatus === 'UNPAID') {
+                  setIsUnpaidAlertOpen(true);
+                } else {
+                  // 그 외 상태는 환불 모달 열기
+                  setIsRefundModalOpen(true);
+                }
+              }}
+              className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-red-600 text-white hover:bg-red-700"
+            >
+              환불하기
+            </button>
             <button
               onClick={handleBackToList}
               className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 bg-black text-white rounded-lg font-medium text-sm md:text-base hover:bg-gray-800 transition-colors"
@@ -601,6 +671,24 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
           </div>
         </div>
       </div>
+
+      {/* 환불 모달 */}
+      <RefundModal
+        isOpen={isRefundModalOpen}
+        onClose={() => setIsRefundModalOpen(false)}
+        onSubmit={handleRefundSubmit}
+        isLoading={isRefundLoading}
+        onSuccess={handleRefundSuccess}
+      />
+
+      {/* 미결제 상태 알림 모달 */}
+      <ErrorModal
+        isOpen={isUnpaidAlertOpen}
+        onClose={() => setIsUnpaidAlertOpen(false)}
+        title="환불 요청 불가"
+        message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다."
+        confirmText="확인"
+      />
     </SubmenuLayout>
   );
 }

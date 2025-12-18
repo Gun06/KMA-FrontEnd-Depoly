@@ -831,6 +831,26 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
                 <input className="w-full rounded border px-2 py-1" value={form.addressDetail} onChange={e => setForm(v => ({ ...v, addressDetail: e.target.value }))} />
               ))}
+              {(item.paymenterBank || item.accountNumber) && (
+                <div className="mt-4 mb-2 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    <span className="text-sm text-orange-800">환불 계좌 정보</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex py-2 text-sm">
+                      <div className="w-28 shrink-0 text-orange-700">환불 은행명</div>
+                      <div className="flex-1 text-gray-900">{item.paymenterBank || '-'}</div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                      <div className="w-28 shrink-0 text-orange-700">환불 계좌번호</div>
+                      <div className="flex-1 text-gray-900 font-mono">{item.accountNumber || '-'}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 사용자 비고 */}
               <div className="mt-4">
