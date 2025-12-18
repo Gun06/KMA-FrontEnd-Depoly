@@ -9,6 +9,7 @@ import { getRegistrationDetail } from "@/services/registration";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
 import { requestGroupRefund } from "@/app/event/[eventId]/registration/apply/shared/api/group";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -26,6 +27,7 @@ export default function GroupApplicationConfirmResultPage() {
   const [virtualAccount, setVirtualAccount] = useState('');
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [isRefundLoading, setIsRefundLoading] = useState(false);
+  const [isUnpaidAlertOpen, setIsUnpaidAlertOpen] = useState(false);
   
   // 참가자 상세 정보 로드 함수
   const loadParticipantDetails = async (participants: any[], startIndex: number, count: number): Promise<Map<string, any>> => {
@@ -482,13 +484,19 @@ export default function GroupApplicationConfirmResultPage() {
         bankName,
         accountNumber
       );
-      
-      // 성공 시 페이지 새로고침하여 최신 결제 상태 반영
-      window.location.reload();
+      // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
     } catch (error) {
       setIsRefundLoading(false);
       throw error;
+    } finally {
+      setIsRefundLoading(false);
     }
+  };
+
+  const handleRefundSuccess = () => {
+    // 환불 신청 성공 후 신청확인 페이지로 이동
+    setIsRefundModalOpen(false);
+    router.push(`/event/${eventId}/registration/confirm/group`);
   };
 
   const handlePrint = () => {
@@ -1232,8 +1240,18 @@ export default function GroupApplicationConfirmResultPage() {
             >
               수정하기
             </button>
+            {/* 환불하기 버튼: 항상 표시 */}
             <button
-              onClick={() => setIsRefundModalOpen(true)}
+              onClick={() => {
+                // 미결제 상태인 경우 알림 모달 표시
+                const overallStatus = groupApplicationData?.paymentStatus || 'UNPAID';
+                if (overallStatus === 'UNPAID') {
+                  setIsUnpaidAlertOpen(true);
+                } else {
+                  // 그 외 상태는 환불 모달 열기
+                  setIsRefundModalOpen(true);
+                }
+              }}
               className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-red-600 text-white hover:bg-red-700"
             >
               환불하기
@@ -1254,6 +1272,16 @@ export default function GroupApplicationConfirmResultPage() {
         onClose={() => setIsRefundModalOpen(false)}
         onSubmit={handleRefundSubmit}
         isLoading={isRefundLoading}
+        onSuccess={handleRefundSuccess}
+      />
+
+      {/* 미결제 상태 알림 모달 */}
+      <ErrorModal
+        isOpen={isUnpaidAlertOpen}
+        onClose={() => setIsUnpaidAlertOpen(false)}
+        title="환불 요청 불가"
+        message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다."
+        confirmText="확인"
       />
     </SubmenuLayout>
   );
