@@ -155,3 +155,50 @@ export const requestGroupRefund = async (
     throw error;
   }
 };
+
+// 대회별 단체 목록 검색 (드롭다운용)
+export interface OrganizationSearchItem {
+  id: string;
+  name: string;
+}
+
+export const searchOrganizationsByEvent = async (
+  eventId: string,
+  keyword?: string
+): Promise<OrganizationSearchItem[]> => {
+  try {
+    const searchParams = new URLSearchParams();
+    if (keyword && keyword.trim()) {
+      searchParams.set('keyword', keyword.trim());
+    }
+    
+    const url = `${API_BASE_URL}/api/v1/organization/search/event/${eventId}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `단체 검색 실패: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson?.message || errorJson?.error || errorText;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const result = await response.json();
+    // API 응답이 배열인지 확인
+    const results = Array.isArray(result) ? result : [];
+    return results;
+  } catch (error) {
+    throw error;
+  }
+};

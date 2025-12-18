@@ -8,6 +8,7 @@ import { updateRegistrationDetail, resetRegistrationPassword, resetOrganizationP
 import { formatBirthInput, formatPhoneInput, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import { toast } from 'react-toastify';
 import { useEventDetail } from '@/hooks/useEventDetail';
+import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
 
 type WindowWithDaum = Window & { daum?: any };
 
@@ -157,7 +158,16 @@ export default function RegistrationDetailDrawer({
     paymentStatus: '' as 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED' | '',
     eventCategoryId: '',
     souvenirJsonList: [] as Array<{ souvenirId: string; selectedSize: string }>,
+    organizationId: null as string | null,
+    organizationName: '',
   });
+
+  // 단체 검색 관련 상태
+  const [organizationSearchKeyword, setOrganizationSearchKeyword] = React.useState('');
+  const [organizationSearchResults, setOrganizationSearchResults] = React.useState<OrganizationSearchItem[]>([]);
+  const [isOrganizationDropdownOpen, setIsOrganizationDropdownOpen] = React.useState(false);
+  const [isOrganizationSearching, setIsOrganizationSearching] = React.useState(false);
+  const organizationSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // item.id를 추적하여 다른 항목을 선택했을 때만 메모 초기화
   const prevItemIdRef = React.useRef<string | null>(null);
@@ -344,6 +354,8 @@ export default function RegistrationDetailDrawer({
       paymentStatus: item.paymentStatus || '',
       eventCategoryId: currentEventCategoryId,
       souvenirJsonList: currentSouvenirList,
+      organizationId: item.organizationId || null,
+      organizationName: item.organizationName && item.organizationName !== '개인' ? item.organizationName : '',
     });
     // 편집 모드가 열릴 때 편집 상태 리셋
     if (open) {
@@ -572,6 +584,7 @@ export default function RegistrationDetailDrawer({
                             addressDetail: form.addressDetail.trim() || undefined,
                             paymentStatus: form.paymentStatus || item.paymentStatus,
                             eventCategoryId: form.eventCategoryId || undefined,
+                            organizationId: form.organizationId !== undefined ? form.organizationId : null, // null도 포함하여 전송 가능
                             souvenirJsonList: form.souvenirJsonList.length > 0 ? form.souvenirJsonList : undefined,
                             amount: selectedCategory?.amount,
                             memo: memo ?? '',
@@ -628,6 +641,8 @@ export default function RegistrationDetailDrawer({
                           paymentStatus: item.paymentStatus || '',
                           eventCategoryId: currentEventCategoryId,
                           souvenirJsonList: currentSouvenirList,
+                          organizationId: item.organizationId || null,
+                          organizationName: item.organizationName && item.organizationName !== '개인' ? item.organizationName : '',
                         });
                         setMemo(initialMemoRef.current);
                         setDetailMemo(initialDetailMemoRef.current);
@@ -648,7 +663,156 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('성명', item.name || item.userName) : editLine('성명', (
                 <input className="w-full rounded border px-2 py-1" value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} />
               ))}
-              {line('단체명', organizationNameDisplay)}
+              {!canEditFields ? line('단체명', organizationNameDisplay) : editLine('단체명', (
+                <div className="relative">
+                  {/* 선택된 단체명 표시 버튼 */}
+                  <button
+                    type="button"
+                    className="w-full rounded border px-2 py-1 pr-8 text-left bg-white hover:bg-gray-50 flex items-center justify-between"
+                    onClick={() => {
+                      if (!eventId) {
+                        alert('대회 정보가 없어 단체 목록을 불러올 수 없습니다.');
+                        return;
+                      }
+                      const willOpen = !isOrganizationDropdownOpen;
+                      setIsOrganizationDropdownOpen(willOpen);
+                      // 드롭다운을 열 때 전체 목록 로드 (키워드 없이)
+                      if (willOpen) {
+                        setIsOrganizationSearching(true);
+                        setOrganizationSearchKeyword(''); // 검색 키워드 초기화
+                        searchOrganizationsByEventAdmin(eventId, '')
+                          .then(results => {
+                            setOrganizationSearchResults(results);
+                          })
+                          .catch(error => {
+                            toast.error('단체 목록을 불러오는데 실패했습니다.');
+                            setOrganizationSearchResults([]);
+                          })
+                          .finally(() => {
+                            setIsOrganizationSearching(false);
+                          });
+                      }
+                    }}
+                  >
+                    <span className={form.organizationName ? 'text-gray-900' : 'text-gray-400'}>
+                      {form.organizationName || '단체를 선택하세요'}
+                    </span>
+                    <svg 
+                      className={`w-4 h-4 text-gray-400 transition-transform ${isOrganizationDropdownOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  
+                  {/* 드롭다운 메뉴 */}
+                  {isOrganizationDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-[70]"
+                        onClick={() => {
+                          setIsOrganizationDropdownOpen(false);
+                          setOrganizationSearchKeyword('');
+                        }}
+                      />
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] max-h-60 flex flex-col">
+                        {/* 드롭다운 내부 검색 입력 필드 (리스트 위에 위치) */}
+                        <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+                          <input
+                            type="text"
+                            className="w-full rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="단체명 검색..."
+                            value={organizationSearchKeyword}
+                            onChange={(e) => {
+                              const keyword = e.target.value;
+                              setOrganizationSearchKeyword(keyword);
+                              
+                              // 디바운싱: 300ms 후 검색 실행
+                              if (organizationSearchTimeoutRef.current) {
+                                clearTimeout(organizationSearchTimeoutRef.current);
+                              }
+                              
+                              if (!eventId) {
+                                setOrganizationSearchResults([]);
+                                return;
+                              }
+                              
+                              organizationSearchTimeoutRef.current = setTimeout(async () => {
+                                if (!eventId) return;
+                                setIsOrganizationSearching(true);
+                                try {
+                                  // 키워드가 없으면 빈 문자열로 전체 조회
+                                  const results = await searchOrganizationsByEventAdmin(eventId, keyword);
+                                  setOrganizationSearchResults(results);
+                                } catch (error) {
+                                  setOrganizationSearchResults([]);
+                                } finally {
+                                  setIsOrganizationSearching(false);
+                                }
+                              }, 300);
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // 검색 필드 클릭 시 포커스
+                            }}
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                            }}
+                            autoFocus
+                          />
+                        </div>
+                        
+                        {/* 단체 리스트 (검색 필드 아래) */}
+                        <div className="overflow-y-auto flex-1">
+                          {isOrganizationSearching ? (
+                            <div className="px-3 py-2 text-sm text-gray-500 text-center">검색 중...</div>
+                          ) : organizationSearchResults.length === 0 ? (
+                            <div className="px-3 py-2 text-sm text-gray-500 text-center">검색 결과가 없습니다.</div>
+                          ) : (
+                            <>
+                              {/* 단체 없음 옵션 */}
+                              <button
+                                type="button"
+                                className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 ${
+                                  !form.organizationId ? 'bg-blue-50 font-medium' : ''
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setForm(v => ({ ...v, organizationId: null, organizationName: '' }));
+                                  setOrganizationSearchKeyword('');
+                                  setIsOrganizationDropdownOpen(false);
+                                }}
+                              >
+                                <span className="text-gray-500">단체 없음 (개인)</span>
+                              </button>
+                              {/* 단체 목록 */}
+                              {organizationSearchResults.map((org) => (
+                                <button
+                                  key={org.id}
+                                  type="button"
+                                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                                    form.organizationId === org.id ? 'bg-blue-50 font-medium' : ''
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setForm(v => ({ ...v, organizationId: org.id, organizationName: org.name }));
+                                    setOrganizationSearchKeyword('');
+                                    setIsOrganizationDropdownOpen(false);
+                                  }}
+                                >
+                                  {org.name}
+                                </button>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
               {!canEditFields ? line('코스', courseName) : editLine('코스', (
                 <>
                   {!eventId ? (

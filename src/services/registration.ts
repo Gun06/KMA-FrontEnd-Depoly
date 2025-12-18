@@ -222,16 +222,16 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
   // 단체 ID 찾기: 여러 가능한 필드명 확인
   // 주의: 첫 번째 스키마(GET /api/v1/organization)에서 `account`가 조직 코드(organizationAccount)입니다
   const findOrganizationId = (rawData: any): string | undefined => {
-    // 우선순위: organizationAccount > account (조직 코드) > organizationId > 기타
-    return rawData.organizationAccount 
+    // 우선순위: organizationId (API 응답에서 직접 제공) > organizationAccount > account (조직 코드) > 기타
+    return rawData.organizationId // API 응답에서 직접 제공되는 organizationId 우선 사용
+      || rawData.organizationAccount 
       || rawData.account // 첫 번째 스키마에서 조직 코드로 사용되는 필드
-      || rawData.organizationId 
       || rawData.organizationAccountId
       || rawData.orgId
       || rawData.orgAccount
+      || rawData.organization?.id
       || rawData.organization?.account
-      || rawData.organization?.organizationAccount
-      || rawData.organization?.id;
+      || rawData.organization?.organizationAccount;
   };
   
   // 새 API 응답 구조를 RegistrationItem 타입으로 매핑
@@ -284,6 +284,7 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
 // 신청 개별 수정 (상세 편집 저장)
 export type RegistrationUpdatePayload = {
   eventCategoryId?: string;
+  organizationId?: string | null; // 단체 ID (null 가능)
   userName?: string;
   paymenterName?: string;
   birth?: string;
@@ -312,6 +313,7 @@ export async function updateRegistrationDetail(
 
     const requestBody = {
       ...(payload.eventCategoryId && { eventCategoryId: payload.eventCategoryId }),
+      ...(payload.organizationId !== undefined && { organizationId: payload.organizationId }), // null도 포함하여 전송 가능
       ...(payload.userName && { userName: payload.userName }),
       ...(payload.paymenterName && { paymenterName: payload.paymenterName }),
       ...(payload.birth && { birth: normalizeBirthDate(payload.birth) }),
@@ -376,5 +378,36 @@ export async function deleteRegistration(registrationId: string): Promise<string
     return res as string;
   } catch (e) {
     throw new Error('신청 정보 삭제에 실패했습니다.');
+  }
+}
+
+// 대회별 단체 목록 검색 (관리자용 - 드롭다운용)
+export interface OrganizationSearchItem {
+  id: string;
+  name: string;
+}
+
+export async function searchOrganizationsByEventAdmin(
+  eventId: string,
+  keyword?: string
+): Promise<OrganizationSearchItem[]> {
+  const searchParams = new URLSearchParams();
+  if (keyword && keyword.trim()) {
+    searchParams.set('keyword', keyword.trim());
+  }
+  
+  const url = `/api/v1/organization/search/event/${eventId}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  
+  try {
+    const result = await request<OrganizationSearchItem[]>(
+      'admin',
+      url,
+      'GET',
+      undefined,
+      true // 관리자 API이므로 인증 필요
+    );
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    throw error;
   }
 }
