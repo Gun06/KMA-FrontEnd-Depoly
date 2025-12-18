@@ -27,6 +27,7 @@ export interface GroupRegistrationConfirmData {
   registrationDate: string;
   organizationName: string;
   organizationAccount: string;
+  organizationId?: string; // DB PK 값 (환불 요청 시 사용)
   birth: string;
   address: string;
   zipCode: string;

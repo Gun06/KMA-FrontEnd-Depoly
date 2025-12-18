@@ -472,15 +472,15 @@ export default function GroupApplicationConfirmResultPage() {
   };
 
   const handleRefundSubmit = async (bankName: string, accountNumber: string) => {
-    if (!groupApplicationData?.organizationAccount) {
-      throw new Error('단체 신청 정보를 찾을 수 없습니다.');
+    if (!groupApplicationData?.organizationId) {
+      throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
     }
 
     setIsRefundLoading(true);
     try {
       await requestGroupRefund(
         eventId,
-        groupApplicationData.organizationAccount,
+        groupApplicationData.organizationId, // DB PK 값 사용
         bankName,
         accountNumber
       );
