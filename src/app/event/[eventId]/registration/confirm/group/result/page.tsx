@@ -1245,13 +1245,31 @@ export default function GroupApplicationConfirmResultPage() {
             {/* 환불하기 버튼: 항상 표시 */}
             <button
               onClick={() => {
-                // 미결제 상태인 경우 알림 모달 표시
-                const overallStatus = groupApplicationData?.paymentStatus || 'UNPAID';
-                if (overallStatus === 'UNPAID') {
+                // 모든 참가자가 결제완료(COMPLETED 또는 PAID)인지 확인
+                const participants = groupApplicationData?.innerUserRegistrationList || [];
+                
+                // 참가자가 없는 경우 처리
+                if (participants.length === 0) {
                   setIsUnpaidAlertOpen(true);
-                } else {
-                  // 그 외 상태는 환불 모달 열기
+                  return;
+                }
+                
+                const allCompleted = participants.every(participant => {
+                  const registrationId = participant.registrationId;
+                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? loadedParticipantsMap.get(registrationId)
+                    : participant;
+                  const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
+                  // COMPLETED 또는 PAID 상태만 결제완료로 간주
+                  return paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+                });
+                
+                if (allCompleted) {
+                  // 모든 참가자가 결제완료인 경우에만 환불 모달 열기
                   setIsRefundModalOpen(true);
+                } else {
+                  // 그 외의 경우(부분 진행 중, 미결제 등) 알림 모달 표시
+                  setIsUnpaidAlertOpen(true);
                 }
               }}
               className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-red-600 text-white hover:bg-red-700"
@@ -1277,12 +1295,12 @@ export default function GroupApplicationConfirmResultPage() {
         onSuccess={handleRefundSuccess}
       />
 
-      {/* 미결제 상태 알림 모달 */}
+      {/* 환불 요청 불가 알림 모달 */}
       <ErrorModal
         isOpen={isUnpaidAlertOpen}
         onClose={() => setIsUnpaidAlertOpen(false)}
         title="환불 요청 불가"
-        message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다."
+        message="모든 참가자의 결제가 완료된 경우에만 환불 요청이 가능합니다."
         confirmText="확인"
       />
     </SubmenuLayout>
