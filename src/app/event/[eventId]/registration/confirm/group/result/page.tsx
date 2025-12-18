@@ -1193,50 +1193,52 @@ export default function GroupApplicationConfirmResultPage() {
                 // sessionStorage에 저장 후 mode만 쿼리 파라미터로 전달
                 router.push(`/event/${eventId}/registration/apply/group?mode=edit&orgAccount=${encodeURIComponent(groupApplicationData.organizationAccount)}`);
               }}
-              disabled={(() => {
-                // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
-                const participants = groupApplicationData.innerUserRegistrationList || [];
-                const allCompleted = participants.every(participant => {
-                  const registrationId = participant.registrationId;
-                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                    ? loadedParticipantsMap.get(registrationId)
-                    : participant;
-                  return detailedParticipant.paymentStatus === 'COMPLETED';
-                });
-                const allRefunded = participants.every(participant => {
-                  const registrationId = participant.registrationId;
-                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                    ? loadedParticipantsMap.get(registrationId)
-                    : participant;
-                  return detailedParticipant.paymentStatus === 'REFUNDED';
-                });
-                // 모두가 COMPLETED이거나 모두가 REFUNDED인 경우 비활성화
-                return allCompleted || allRefunded;
-              })()}
-              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
-                (() => {
-                  // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
-                  const participants = groupApplicationData.innerUserRegistrationList || [];
-                  const allCompleted = participants.every(participant => {
-                    const registrationId = participant.registrationId;
-                    const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                      ? loadedParticipantsMap.get(registrationId)
-                      : participant;
-                    return detailedParticipant.paymentStatus === 'COMPLETED';
-                  });
-                  const allRefunded = participants.every(participant => {
-                    const registrationId = participant.registrationId;
-                    const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                      ? loadedParticipantsMap.get(registrationId)
-                      : participant;
-                    return detailedParticipant.paymentStatus === 'REFUNDED';
-                  });
-                  // 모두가 COMPLETED이거나 모두가 REFUNDED가 아닌 경우에만 활성화
-                  return !allCompleted && !allRefunded;
-                })()
-                  ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
-                  : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
-              }`}
+              // disabled={(() => {
+              //   // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
+              //   const participants = groupApplicationData.innerUserRegistrationList || [];
+              //   const allCompleted = participants.every(participant => {
+              //     const registrationId = participant.registrationId;
+              //     const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+              //       ? loadedParticipantsMap.get(registrationId)
+              //       : participant;
+              //     return detailedParticipant.paymentStatus === 'COMPLETED';
+              //   });
+              //   const allRefunded = participants.every(participant => {
+              //     const registrationId = participant.registrationId;
+              //     const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+              //       ? loadedParticipantsMap.get(registrationId)
+              //       : participant;
+              //     return detailedParticipant.paymentStatus === 'REFUNDED';
+              //   });
+              //   // 모두가 COMPLETED이거나 모두가 REFUNDED인 경우 비활성화
+              //   return allCompleted || allRefunded;
+              // })()}
+              disabled={false}
+              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-white text-black border-2 border-black hover:bg-gray-100`}
+              // className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
+              //   (() => {
+              //     // 전체 참가자 목록에서 paymentStatus 확인 (로드된 참가자는 업데이트된 정보 사용)
+              //     const participants = groupApplicationData.innerUserRegistrationList || [];
+              //     const allCompleted = participants.every(participant => {
+              //       const registrationId = participant.registrationId;
+              //       const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+              //         ? loadedParticipantsMap.get(registrationId)
+              //         : participant;
+              //       return detailedParticipant.paymentStatus === 'COMPLETED';
+              //     });
+              //     const allRefunded = participants.every(participant => {
+              //       const registrationId = participant.registrationId;
+              //       const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
+              //         ? loadedParticipantsMap.get(registrationId)
+              //         : participant;
+              //       return detailedParticipant.paymentStatus === 'REFUNDED';
+              //     });
+              //     // 모두가 COMPLETED이거나 모두가 REFUNDED가 아닌 경우에만 활성화
+              //     return !allCompleted && !allRefunded;
+              //   })()
+              //     ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+              //     : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
+              // }`}
             >
               수정하기
             </button>
