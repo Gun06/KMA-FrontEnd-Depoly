@@ -93,7 +93,7 @@ export default function Footer() {
 
             {/* 오른쪽: 정보 표기 */}
             <div className="flex-none">
-              <h3 className="font-pretendard font-bold text-gray-900 text-[14px] md:text-[16px] break-keep">(주) 전국마라톤협회</h3>
+              <h3 className="font-pretendard font-bold text-gray-900 text-[14px] md:text-[16px] break-keep">전국마라톤협회</h3>
 
               <div className="mt-4 text-gray-400 text-[12px] md:text-[14px] leading-relaxed break-keep">
                 <span>사업자 등록번호</span>

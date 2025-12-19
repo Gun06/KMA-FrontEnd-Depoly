@@ -27,7 +27,7 @@ export default function EventFooter({ footerBgClass, accentColor }: EventFooterP
             <Image src={logoImage} alt="전국마라톤협회 로고" width={48} height={48} className="object-cover w-full h-full" />
           </div>
           <div className="text-[11px] min-[1000px]:text-[12px] leading-5 min-[1000px]:leading-6 text-white/70">
-            <div>(주) 전국마라톤협회</div>
+            <div>전국마라톤협회</div>
             <div>
               사업자 등록번호: <span className="tabular-nums">215-82-66070</span>
               <span className="mx-2">|</span>
