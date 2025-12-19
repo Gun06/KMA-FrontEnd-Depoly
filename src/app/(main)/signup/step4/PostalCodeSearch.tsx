@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 
 interface PostalCodeSearchProps {
   onComplete: (data: { postalCode: string; address: string; detailedAddress: string }) => void
@@ -14,22 +14,7 @@ declare global {
 }
 
 export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSearchProps) {
-  useEffect(() => {
-    // 다음 우편번호 스크립트 로드
-    const script = document.createElement('script')
-    script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
-    script.async = true
-    script.onload = () => {
-      openPostalCodeSearch()
-    }
-    document.head.appendChild(script)
-
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
-
-  const openPostalCodeSearch = () => {
+  const openPostalCodeSearch = useCallback(() => {
     if (typeof window.daum === 'undefined') return
 
     new window.daum.Postcode({
@@ -46,7 +31,22 @@ export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSear
         onClose()
       }
     }).open()
-  }
+  }, [onComplete, onClose])
+
+  useEffect(() => {
+    // 다음 우편번호 스크립트 로드
+    const script = document.createElement('script')
+    script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+    script.async = true
+    script.onload = () => {
+      openPostalCodeSearch()
+    }
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [openPostalCodeSearch])
 
   return null
 }

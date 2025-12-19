@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import MarathonCalendar from '@/components/common/MarathonCalendar';
-import { marathonEvents } from '@/data/marathonEvents';
 import Button from '@/components/common/Button/Button';
 import EventCard from '@/components/main/EventSection/EventCard';
 import MainHeader from '@/components/main/Header';

@@ -99,7 +99,7 @@ export function rowToPrefill(row: EventRow): EventPrefill {
 }
 
 /** (서버 폴백) id -> prefill (정적 MOCK 사용) */
-import { getEventById } from "@/data/events";
+import { getEventById } from "@/app/admin/events/[eventId]/edit/data";
 export function buildPrefillFromRow(id: number): EventPrefill | null {
   const row = getEventById(id);
   return row ? rowToPrefill(row) : null;

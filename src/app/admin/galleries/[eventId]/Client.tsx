@@ -6,6 +6,7 @@ import { getGallery, upsertGallery, deleteGallery } from "../data/db";
 import GalleryModal from "../components/GalleryModal";
 import type { Gallery } from "../data/types";
 import { updateGalleryByAdmin, deleteGalleryByAdmin } from "../api/galleryApi";
+import ConfirmModal from "@/components/common/Modal/ConfirmModal";
 
 export default function Client({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function Client({ eventId }: { eventId: string }) {
   const [value, setValue] = React.useState<Gallery | null>(init);
   const [thumbnailFile, setThumbnailFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   React.useEffect(() => {
     setValue(init);
@@ -71,13 +73,18 @@ export default function Client({ eventId }: { eventId: string }) {
     }
   };
 
+  const handleDeleteClick = () => {
+    if (!value) return;
+    setShowDeleteConfirm(true);
+  };
+
   const onDelete = async () => {
     if (!value) return;
-    if (!confirm("삭제하시겠습니까?")) return;
     try {
       setIsUploading(true);
       await deleteGalleryByAdmin(value.eventId);
       deleteGallery(value.eventId);
+      setShowDeleteConfirm(false);
       router.replace("/admin/galleries");
     } catch (e) {
       console.error(e);
@@ -97,18 +104,33 @@ export default function Client({ eventId }: { eventId: string }) {
   }
 
   return (
-    <GalleryModal
-      isOpen={true}
-      onClose={handleClose}
-      value={value}
-      onChange={setValue}
-      thumbnailFile={thumbnailFile}
-      onThumbnailChange={setThumbnailFile}
-      onSave={save}
-      onDelete={onDelete}
-      onEdit={mode === "view" ? () => setMode("edit") : undefined}
-      mode={mode === "view" ? "view" : "edit"}
-      isUploading={isUploading}
-    />
+    <>
+      <GalleryModal
+        isOpen={true}
+        onClose={handleClose}
+        value={value}
+        onChange={setValue}
+        thumbnailFile={thumbnailFile}
+        onThumbnailChange={setThumbnailFile}
+        onSave={save}
+        onDelete={handleDeleteClick}
+        onEdit={mode === "view" ? () => setMode("edit") : undefined}
+        mode={mode === "view" ? "view" : "edit"}
+        isUploading={isUploading}
+      />
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={onDelete}
+        title="갤러리 삭제"
+        message="삭제하시겠습니까? 이용자들에게 다시 제공하고자 하시면 다시 등록해주세요."
+        confirmText="삭제하기"
+        cancelText="취소"
+        isLoading={isUploading}
+        variant="danger"
+      />
+    </>
   );
 }

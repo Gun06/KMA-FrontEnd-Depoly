@@ -1,6 +1,6 @@
 // 메인 문의사항 답변 상세 조회 훅
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authService } from '@/services/auth';
 import { AnswerDetail, AnswerHeader, InquiryDetail } from '../types/types';
 
@@ -17,7 +17,7 @@ export const useAnswerDetail = ({ inquiryId, currentUserId, inquiryDetail, answe
   const [answerHeader, setAnswerHeader] = useState<AnswerHeader | null>(null);
 
   // 답변 정보를 목록 API에서 가져오기
-  const fetchAnswerHeader = async () => {
+  const fetchAnswerHeader = useCallback(async () => {
     if (!inquiryId || !currentUserId) return;
 
     try {
@@ -58,10 +58,10 @@ export const useAnswerDetail = ({ inquiryId, currentUserId, inquiryDetail, answe
     } catch (error) {
       setAnswerHeader(null);
     }
-  };
+  }, [inquiryId, currentUserId]);
 
   // 답변 내용을 가져오는 함수
-  const fetchAnswerDetail = async (questionId: string) => {
+  const fetchAnswerDetail = useCallback(async (questionId: string) => {
     // 서버에서 JWT로 권한 검증하므로 클라이언트에서는 단순히 API 호출
 
     // answerHeader에 content가 있고, 질문 내용과 다른 경우에만 사용
@@ -152,21 +152,21 @@ export const useAnswerDetail = ({ inquiryId, currentUserId, inquiryDetail, answe
     } finally {
       setIsLoadingAnswer(false);
     }
-  };
+  }, [answerHeader, inquiryDetail]);
 
   // 답변 헤더 정보 가져오기
   useEffect(() => {
     if (inquiryId && currentUserId) {
       fetchAnswerHeader();
     }
-  }, [inquiryId, currentUserId]);
+  }, [inquiryId, currentUserId, fetchAnswerHeader]);
 
   // 답변 헤더가 로드된 후 답변 상세 내용 가져오기
   useEffect(() => {
     if (answerHeader && inquiryId && currentUserId) {
       fetchAnswerDetail(inquiryId);
     }
-  }, [answerHeader, inquiryId, currentUserId]);
+  }, [answerHeader, inquiryId, currentUserId, fetchAnswerDetail]);
 
   return {
     answerDetail,

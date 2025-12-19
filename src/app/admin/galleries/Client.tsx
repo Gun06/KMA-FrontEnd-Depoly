@@ -12,6 +12,7 @@ import type { GalleryGridItem } from "./components/GalleryGrid";
 import { getAdminGalleries } from "./api/galleryListApi";
 import FilterBar from "@/components/common/filters/FilterBar";
 import { PRESETS } from "@/components/common/filters/presets";
+import ConfirmModal from "@/components/common/Modal/ConfirmModal";
 
 export default function Client() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function Client() {
   const [gridItems, setGridItems] = React.useState<GalleryGridItem[]>([]);
   const [allItems, setAllItems] = React.useState<GalleryGridItem[]>([]);
   const [isLoadingList, setIsLoadingList] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   // 필터링 함수
   const applyFilters = React.useCallback((items: GalleryGridItem[], searchQuery: string, sortType: "no" | "date" | "title", visibility?: "on" | "off") => {
@@ -113,7 +115,7 @@ export default function Client() {
     return () => {
       cancelled = true;
     };
-  }, []); // 페이지 변경 없이 최초 1회만 로드
+  }, [applyFilters, q, sort, visible]); // 페이지 변경 없이 최초 1회만 로드
 
   // 필터 변경 시 적용
   React.useEffect(() => {
@@ -218,14 +220,19 @@ export default function Client() {
     }
   };
 
+  const handleDeleteClick = () => {
+    if (!selectedEventId) return;
+    setShowDeleteConfirm(true);
+  };
+
   const onDelete = async () => {
     if (!selectedEventId) return;
-    if (!confirm("삭제하시겠습니까?")) return;
     try {
       setIsUploading(true);
       await deleteGalleryByAdmin(selectedEventId);
       // 로컬 DB에서도 제거
       deleteGallery(selectedEventId);
+      setShowDeleteConfirm(false);
       handleClose();
       window.location.reload();
     } catch (e) {
@@ -307,12 +314,25 @@ export default function Client() {
           thumbnailFile={thumbnailFile}
           onThumbnailChange={setThumbnailFile}
           onSave={save}
-          onDelete={mode === "view" && selectedEventId ? onDelete : undefined}
+          onDelete={mode === "view" && selectedEventId ? handleDeleteClick : undefined}
           onEdit={mode === "view" && selectedEventId ? () => handleOpenEdit(selectedEventId) : undefined}
           mode={mode}
           isUploading={isUploading}
         />
       )}
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={onDelete}
+        title="갤러리 삭제"
+        message="삭제하시겠습니까? 다시 제공하고자 하시면 재등록해주세요."
+        confirmText="삭제하기"
+        cancelText="취소"
+        isLoading={isUploading}
+        variant="danger"
+      />
     </>
   );
 }

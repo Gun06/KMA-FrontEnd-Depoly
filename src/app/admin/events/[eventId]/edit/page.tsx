@@ -1,6 +1,6 @@
 // app/admin/events/[eventId]/edit/page.tsx
 import Client from './Client';
-import { getEventById } from '@/data/events';
+import { getEventById } from './data';
 import { rowToPrefill } from '@/data/eventPrefill';
 import type { EventRow } from '@/components/admin/events/EventTable';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';

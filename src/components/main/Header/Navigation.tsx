@@ -17,6 +17,7 @@ const menuColumns = [
     label: '대회일정',
     items: [
       { name: '대회리스트', href: '/schedule' },
+      { name: '대회갤러리', href: '/schedule/gallery' },
     ],
   },
   {

@@ -121,6 +121,7 @@ export default function FaqSection({
       <SectionPanel
         title="자주 묻는 질문 FAQ"
         fullBleed
+        showChevron={false}
         backgroundLayer={undefined}
         titleClassName="">
         {/* 빈 children으로 에러 방지 */}

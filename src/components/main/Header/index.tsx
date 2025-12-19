@@ -49,7 +49,10 @@ const subMenus: Record<string, SubMenu> = {
     ],
   },
   대회일정: {
-    items: [{ label: '대회리스트', href: '/schedule' }],
+    items: [
+      { label: '대회리스트', href: '/schedule' },
+      { label: '대회갤러리', href: '/schedule/gallery' },
+    ],
   },
   접수안내: {
     items: [{ label: '참가신청 가이드', href: '/registration/guide' }],

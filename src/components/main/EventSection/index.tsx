@@ -156,7 +156,7 @@ export default function EventSection() {
 
   return (
     <>
-      <SectionPanel title="주요대회일정">
+      <SectionPanel title="주요대회일정" showChevron={false}>
         {/* 우측 상단 더보기 버튼 */}
         <div className="relative">
           <div className="absolute right-6 md:right-20 -top-12 md:-top-16 z-20 flex items-center gap-6">

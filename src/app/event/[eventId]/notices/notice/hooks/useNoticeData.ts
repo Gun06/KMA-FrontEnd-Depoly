@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { fetchNoticeList, fetchCategories } from '../api/noticeApi';
-import { eventNoticeData } from '@/data/eventNotices';
 import { NoticeResponse, CategoryItem } from '../types';
 import type { NoticeItem as TableNoticeItem } from '@/components/common/Table/types';
 
@@ -39,7 +38,7 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
     }
   }, [eventId, currentPage, pageSize]);
 
-  // 로딩 중이거나 API 데이터가 없으면 빈 배열 반환 (더미데이터 숨김)
+  // 로딩 중이거나 API 데이터가 없으면 빈 배열 반환
   const displayNotices: TableNoticeItem[] = isLoading 
     ? [] 
     : noticeData && noticeData.noticePage && noticeData.noticePage.content && noticeData.noticePage.content.length > 0 
@@ -96,7 +95,7 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
         
         return [...pinnedNoticeItems, ...regularItems];
       })()
-    : eventNoticeData.filter(notice => notice.eventId === eventId);
+    : [];
 
   return {
     noticeData,

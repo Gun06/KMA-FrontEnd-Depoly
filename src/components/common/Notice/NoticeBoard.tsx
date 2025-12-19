@@ -167,7 +167,7 @@ export default function NoticeBoard({
       
       return { rows, total, effectivePageSize: regularPageSize };
     }
-  }, [useApi, apiData, filteredStaticData, currentPage, pageSize, externalTotalElements]);
+  }, [useApi, apiData, filteredStaticData, currentPage, pageSize]);
 
   // 페이지 변경 시 처리
   const handlePageChange = (page: number) => {

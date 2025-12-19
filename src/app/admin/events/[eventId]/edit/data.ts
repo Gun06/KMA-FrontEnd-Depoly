@@ -1,4 +1,3 @@
-// src/data/events.ts
 import type { EventRow } from '@/components/admin/events/EventTable';
 
 /**

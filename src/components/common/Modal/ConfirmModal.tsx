@@ -11,6 +11,7 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isLoading?: boolean;
+  variant?: 'default' | 'danger'; // 삭제 등 위험한 작업용
 }
 
 export default function ConfirmModal({
@@ -21,7 +22,8 @@ export default function ConfirmModal({
   message,
   confirmText = '확인',
   cancelText = '취소',
-  isLoading = false
+  isLoading = false,
+  variant = 'default'
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -38,8 +40,12 @@ export default function ConfirmModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-blue-600" />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              variant === 'danger' ? 'bg-red-100' : 'bg-blue-100'
+            }`}>
+              <AlertCircle className={`w-5 h-5 ${
+                variant === 'danger' ? 'text-red-600' : 'text-blue-600'
+              }`} />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
               {title}
@@ -73,7 +79,11 @@ export default function ConfirmModal({
             <button
               type="button"
               onClick={onConfirm}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex-1 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                variant === 'danger'
+                  ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                  : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+              }`}
               disabled={isLoading}
             >
               {isLoading ? '처리 중...' : confirmText}

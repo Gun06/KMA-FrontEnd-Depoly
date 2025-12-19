@@ -259,7 +259,6 @@ export default function Client({ orgId }: { orgId: string }) {
       ],
     },
   ]), [
-    orgId,
     org?.org,
     org?.owner,
     org?.ownerId,
@@ -267,7 +266,6 @@ export default function Client({ orgId }: { orgId: string }) {
     applicationDate,
     org?.eventTitle,
     memberCountDisplay,
-    totalParticipants,
     totalAmountDisplay,
     depositorName,
     payStatusDisplay,

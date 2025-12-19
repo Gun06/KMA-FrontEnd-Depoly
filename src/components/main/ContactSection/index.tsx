@@ -78,6 +78,7 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
         <SectionPanel
           title="CONTACT US"
           fullBleed
+          showChevron={false}
           titleClassName=""
         >
           {/* 빈 children으로 에러 방지 */}
