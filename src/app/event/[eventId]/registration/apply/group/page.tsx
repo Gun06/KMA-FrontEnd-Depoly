@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useEventRegistration } from "../shared/hooks/useEventRegistration";
 import { useGroupForm } from "../shared/hooks/useGroupForm";
 import LoadingSpinner from "../shared/components/LoadingSpinner";
 import ErrorAlert from "../shared/components/ErrorAlert";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import NoticeSection from "./components/NoticeSection";
 import GroupInfoSection from "./components/GroupInfoSection";
 import GroupContactInfoSection from "./components/GroupContactInfoSection";
@@ -31,6 +33,15 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
     handlers,
     error
   } = useGroupForm(params.eventId, eventInfo);
+  
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  
+  // 오류 메시지가 변경되면 모달 열기
+  useEffect(() => {
+    if (error.submitError) {
+      setIsErrorModalOpen(true);
+    }
+  }, [error.submitError]);
 
   return (
     <SubmenuLayout 
@@ -97,16 +108,6 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
               {/* 하단 안내사항 */}
               <BottomNoticeSection />
 
-              {/* 오류 메시지 */}
-              {error.submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <span className="text-red-600 mr-2">•</span>
-                    <span className="text-red-600 text-sm">{error.submitError}</span>
-                  </div>
-                </div>
-              )}
-
               {/* 제출 버튼 */}
               <SubmitButton
                 isFormValid={isFormValid}
@@ -118,6 +119,18 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
           </div>
         </div>
       </div>
+      
+      {/* 오류 모달 */}
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => {
+          setIsErrorModalOpen(false);
+          error.clearSubmitError();
+        }}
+        title="오류"
+        message={error.submitError || ''}
+        confirmText="확인"
+      />
     </SubmenuLayout>
   );
 }

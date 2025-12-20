@@ -28,7 +28,7 @@ export default function ErrorModal({
       />
 
       {/* 모달 컨테이너 */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-auto my-4 sm:my-6 max-h-[85vh] sm:max-h-[90vh] flex flex-col text-center">
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-auto my-4 sm:my-6 max-h-[50vh] flex flex-col text-center overflow-hidden">
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
@@ -50,10 +50,12 @@ export default function ErrorModal({
         </div>
 
         {/* 본문 메시지 - 스크롤 가능 영역 */}
-        <div className="px-5 pb-3 sm:px-8 sm:pb-4 flex-1 overflow-y-auto min-h-0 max-h-[45vh] sm:max-h-[50vh]">
-          <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-600 break-words whitespace-pre-wrap text-left">
-          {message || '알 수 없는 오류가 발생했습니다.'}
-        </p>
+        <div className="px-5 pb-3 sm:px-8 sm:pb-4 flex-1 min-h-0 flex flex-col">
+          <div className="bg-gray-50 rounded-md p-4 border border-gray-200 overflow-y-auto flex-1 min-h-0">
+            <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-700 break-words whitespace-pre-wrap text-left">
+              {message || '알 수 없는 오류가 발생했습니다.'}
+            </p>
+          </div>
         </div>
 
         {/* 확인 버튼 */}

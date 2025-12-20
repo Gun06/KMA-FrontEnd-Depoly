@@ -6,6 +6,7 @@ import { isFormValid } from '../utils/validation';
 import { handleGroupInputChange, handleParticipantChange, handleGroupAddressSelect, handleGroupNameCheck, handleGroupIdCheck } from '../utils/handlers';
 import { transformGroupFormDataToApi, transformGroupFormDataToUpdateApi } from '../utils/transformers';
 import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
+import { formatError } from '../utils/errorHandler';
 import { useRouter } from 'next/navigation';
 
 export const useGroupForm = (eventId: string, eventInfo: any) => {
@@ -330,78 +331,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
         const successUrl = `/event/${eventId}/registration/apply/group/success?name=${encodeURIComponent(formData.groupName)}&groupName=${encodeURIComponent(formData.groupName)}&participantCount=${formData.participants.length}${modeParam}`;
         router.push(successUrl);
       } catch (error) {
-        let errorMessage = '단체신청 제출에 실패했습니다. 다시 시도해주세요.';
-        
-        if (error instanceof Error) {
-          const errorMsg = error.message;
-          const errorMsgLower = errorMsg.toLowerCase();
-
-          // 에러 메시지에 더 많은 정보 포함
-          if (errorMsgLower.includes('수정할 신청 정보를 찾을 수 없습니다')) {
-            errorMessage = error.message; // 원본 에러 메시지 사용
-          } else if (errorMsgLower.includes('409') || errorMsgLower.includes('400')) {
-            // 400/409 에러의 경우 상세 메시지 추출 시도
-            try {
-              // "API 오류: 400 Bad Request - {...}" 형식에서 JSON 추출
-              const jsonMatch = errorMsg.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                const errorJson = JSON.parse(jsonMatch[0]);
-                const serverMessage = errorJson?.message || errorJson?.error || errorMsg;
-                errorMessage = serverMessage || '동일한 단체 정보로 이미 신청내역이 있습니다.';
-              } else {
-                errorMessage = errorMsg.includes('이미 신청내역') ? errorMsg : '동일한 단체 정보로 이미 신청내역이 있습니다.';
-              }
-            } catch {
-              errorMessage = errorMsg.includes('이미 신청내역') ? errorMsg : '동일한 단체 정보로 이미 신청내역이 있습니다.';
-            }
-          } else if (errorMsgLower.includes('500')) {
-            errorMessage = `서버 오류가 발생했습니다. (${errorMsg})`;
-          } else if (errorMsgLower.includes('수정 실패')) {
-            // API에서 반환한 상세 에러 메시지 사용
-            try {
-              // "수정 실패: 400 - {...}" 형식에서 JSON 추출
-              const jsonMatch = errorMsg.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                const errorJson = JSON.parse(jsonMatch[0]);
-                const serverMessage = errorJson?.message || errorJson?.error || errorMsg;
-                errorMessage = serverMessage || errorMsg;
-              } else {
-                errorMessage = errorMsg;
-              }
-            } catch {
-              errorMessage = errorMsg;
-            }
-          } else if (errorMsgLower.includes('api 오류')) {
-            // API 오류 메시지에서 상세 정보 추출
-            // "API 오류: 400 Bad Request - 메시지" 형식에서 메시지 부분 추출
-            const messageMatch = errorMsg.match(/API 오류:.*? - (.+)/);
-            if (messageMatch && messageMatch[1]) {
-              errorMessage = messageMatch[1];
-            } else {
-              // JSON 형식인 경우 파싱 시도
-              try {
-                const jsonMatch = errorMsg.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                  const errorJson = JSON.parse(jsonMatch[0]);
-                  const serverMessage = errorJson?.message || errorJson?.error;
-                  if (serverMessage) {
-                    errorMessage = serverMessage;
-                  } else {
-                    errorMessage = errorMsg;
-                  }
-                } else {
-                  errorMessage = errorMsg;
-                }
-              } catch {
-                errorMessage = errorMsg;
-              }
-            }
-          } else {
-            // 기타 에러의 경우 원본 메시지 표시 (상세 정보 포함)
-            errorMessage = errorMsg;
-          }
-        }
-        
+        const errorMessage = formatError(error);
         setSubmitError(errorMessage);
       } finally {
         setIsLoading(false);

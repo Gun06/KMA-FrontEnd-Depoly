@@ -686,7 +686,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         isOpen={isUnpaidAlertOpen}
         onClose={() => setIsUnpaidAlertOpen(false)}
         title="환불 요청 불가"
-        message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다."
+        message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다. 입금 확인은 3~5일 소요됩니다!"
         confirmText="확인"
       />
     </SubmenuLayout>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, ChevronDown } from 'lucide-react';
 
 interface RefundModalProps {
   isOpen: boolean;
@@ -11,6 +11,30 @@ interface RefundModalProps {
   onSuccess?: () => void; // 성공 후 확인 버튼 클릭 시 호출
 }
 
+const BANK_LIST = [
+  'NH농협',
+  '카카오뱅크',
+  'KB국민',
+  '토스뱅크',
+  '신한',
+  '우리',
+  'IBK기업',
+  '하나',
+  '새마을',
+  '부산',
+  'iM뱅크(대구)',
+  '케이뱅크',
+  '신협',
+  '우체국',
+  'SC제일',
+  '경남',
+  '광주',
+  '수협',
+  '전북',
+  '저축은행',
+  '제주'
+];
+
 export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = false, onSuccess }: RefundModalProps) {
   const [formData, setFormData] = useState({
     bankName: '',
@@ -18,6 +42,25 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   });
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+  const bankDropdownRef = useRef<HTMLDivElement>(null);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bankDropdownRef.current && !bankDropdownRef.current.contains(event.target as Node)) {
+        setIsBankDropdownOpen(false);
+      }
+    };
+
+    if (isBankDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isBankDropdownOpen]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,11 +72,21 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
     if (error) setError(null);
   };
 
+  const handleBankSelect = (bank: string) => {
+    setFormData(prev => ({
+      ...prev,
+      bankName: bank
+    }));
+    setIsBankDropdownOpen(false);
+    // 에러 메시지 초기화
+    if (error) setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.bankName.trim()) {
-      setError('은행명을 입력해주세요.');
+      setError('은행명을 선택해주세요.');
       return;
     }
     
@@ -57,6 +110,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
     setFormData({ bankName: '', accountNumber: '' });
     setError(null);
     setIsSuccess(false);
+    setIsBankDropdownOpen(false);
     onClose();
   };
 
@@ -117,20 +171,40 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
           /* 폼 */
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* 은행명 입력 */}
-            <div>
+            <div className="relative" ref={bankDropdownRef}>
               <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-2">
                 은행명 <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                id="bankName"
-                name="bankName"
-                value={formData.bankName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="예: 국민은행"
+              <button
+                type="button"
+                onClick={() => !isLoading && setIsBankDropdownOpen(!isBankDropdownOpen)}
                 disabled={isLoading}
-              />
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between ${
+                  formData.bankName ? 'text-gray-900' : 'text-gray-500'
+                } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <span>{formData.bankName || '은행을 선택해주세요'}</span>
+                <ChevronDown 
+                  className={`w-4 h-4 text-gray-400 transition-transform ${isBankDropdownOpen ? 'transform rotate-180' : ''}`}
+                />
+              </button>
+              
+              {isBankDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {BANK_LIST.map((bank) => (
+                    <button
+                      key={bank}
+                      type="button"
+                      onClick={() => handleBankSelect(bank)}
+                      className={`w-full px-3 py-2 text-left hover:bg-gray-100 transition-colors ${
+                        formData.bankName === bank ? 'bg-blue-50 text-blue-600' : 'text-gray-900'
+                      }`}
+                    >
+                      {bank}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 계좌번호 입력 */}
@@ -159,8 +233,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
 
             {/* 안내 문구 */}
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-              <p>입력하신 계좌번호로 환불금이 입금됩니다.</p>
-              <p className="mt-1">정확한 정보를 입력해주세요.</p>
+              <p>신청 하신 후 검토를 거쳐 3주 이내 환불 될 예정입니다.</p>
             </div>
 
             {/* 버튼들 */}
