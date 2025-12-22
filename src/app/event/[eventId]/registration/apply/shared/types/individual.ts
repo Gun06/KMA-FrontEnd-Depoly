@@ -18,6 +18,7 @@ export interface IndividualFormData {
   email1: string;
   email2: string;
   emailDomain: string;
+  selectedDistance?: string; // 선택된 거리 (예: "10km")
   category: string;
   souvenir: string; // 기존 호환성을 위해 유지
   size: string; // 기존 호환성을 위해 유지

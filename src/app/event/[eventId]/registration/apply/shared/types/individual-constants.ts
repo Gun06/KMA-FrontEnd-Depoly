@@ -20,6 +20,7 @@ export const initialIndividualFormData: IndividualFormData = {
   email1: '',
   email2: '',
   emailDomain: '',
+  selectedDistance: '',
   category: '',
   souvenir: '',
   size: '',

@@ -130,6 +130,48 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             baseAddress = baseAddress.substring(0, firstCommaIndex).trim();
           }
           
+          // category가 있으면 해당 category의 distance 찾기
+          // eventCategoryName이 "10km | 너양야아아아" 형식일 수 있으므로 분리 필요
+          const fullCategoryName = editData.eventCategoryName || '';
+          let categoryName = fullCategoryName;
+          let selectedDistance = '';
+          
+          // eventCategoryName에서 | 기준으로 분리 (예: "10km | 너양야아아아")
+          if (fullCategoryName.includes('|')) {
+            const parts = fullCategoryName.split('|').map((p: string) => p.trim());
+            if (parts.length > 0) {
+              // 첫 번째 부분이 거리 형식인지 확인 (예: "10km", "3km" 등)
+              const firstPart = parts[0];
+              if (firstPart.match(/^\d+km$/i)) {
+                selectedDistance = firstPart;
+                // 나머지 부분을 세부종목 이름으로 사용
+                categoryName = parts.slice(1).join(' | ').trim();
+              } else {
+                // 첫 번째 부분이 거리가 아니면 전체를 categoryName으로 사용
+                categoryName = fullCategoryName;
+              }
+            }
+          }
+          
+          // eventInfo가 있으면 categorySouvenirList에서 정확한 distance 찾기
+          if (categoryName && eventInfo) {
+            const categoryInfo = eventInfo.categorySouvenirList.find(
+              c => c.categoryName === categoryName
+            );
+            if (categoryInfo && categoryInfo.distance) {
+              selectedDistance = categoryInfo.distance;
+            }
+          }
+          
+          // selectedDistance가 아직 없고 categoryName에 거리 정보가 포함되어 있으면 추출
+          if (!selectedDistance && categoryName && categoryName.includes('|')) {
+            const parts = categoryName.split('|').map((p: string) => p.trim());
+            if (parts.length > 0 && parts[0].match(/^\d+km$/i)) {
+              selectedDistance = parts[0];
+              categoryName = parts.slice(1).join(' | ').trim();
+            }
+          }
+          
           setFormData(prev => ({
             ...prev,
             name: editData.name || '',
@@ -147,7 +189,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             phone3: phoneParts[2] || '',
             email1: emailParts[0] || '',
             emailDomain: emailParts[1] || '',
-            category: editData.eventCategoryName || '',
+            selectedDistance: selectedDistance,
+            category: categoryName,
             souvenir: finalSouvenirId,
             size: finalSouvenirSize,
             // 수정 모드에서 기존 기념품들을 selectedSouvenirs 배열로 변환
@@ -188,6 +231,50 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       }
     }
   }, [eventInfo]);
+
+  // eventInfo가 로드된 후 category가 있으면 selectedDistance 자동 설정
+  useEffect(() => {
+    if (formData.category && eventInfo) {
+      // category에서 정확히 매칭되는 항목 찾기
+      let categoryInfo = eventInfo.categorySouvenirList.find(
+        c => c.categoryName === formData.category
+      );
+      
+      // 정확히 매칭되지 않으면 부분 매칭 시도 (예: "10km | 너양야아아아"에서 "너양야아아아"만 추출)
+      if (!categoryInfo && formData.category.includes('|')) {
+        const parts = formData.category.split('|').map((p: string) => p.trim());
+        // 첫 번째 부분이 거리가 아니고, 나머지 부분이 세부종목일 수 있음
+        for (const part of parts) {
+          if (!part.match(/^\d+km$/i)) {
+            const foundCategoryInfo = eventInfo.categorySouvenirList.find(
+              c => c.categoryName === part
+            );
+            if (foundCategoryInfo) {
+              // 정확한 category 이름으로 업데이트
+              setFormData(prev => ({
+                ...prev,
+                category: foundCategoryInfo.categoryName,
+                selectedDistance: foundCategoryInfo.distance || prev.selectedDistance || ''
+              }));
+              return;
+            }
+          }
+        }
+      }
+      
+      // categoryInfo를 찾았으면 distance 설정
+      if (categoryInfo) {
+        // selectedDistance가 없거나 다른 경우에만 업데이트
+        const shouldUpdateDistance = !formData.selectedDistance || formData.selectedDistance !== categoryInfo.distance;
+        if (shouldUpdateDistance && categoryInfo.distance) {
+          setFormData(prev => ({
+            ...prev,
+            selectedDistance: categoryInfo.distance
+          }));
+        }
+      }
+    }
+  }, [formData.category, formData.selectedDistance, eventInfo]);
 
   // 드롭다운 외부 클릭 감지
   useEffect(() => {

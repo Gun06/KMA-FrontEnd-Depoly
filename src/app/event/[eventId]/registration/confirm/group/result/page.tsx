@@ -933,10 +933,29 @@ export default function GroupApplicationConfirmResultPage() {
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h5 className="text-sm font-semibold text-gray-700 mb-3">종목&비용 상세</h5>
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">참가종목</span>
-                          <span className="text-black">{detailedParticipant.eventCategoryName}</span>
-                        </div>
+                        {(() => {
+                          // eventCategoryName을 | 기준으로 분리
+                          const categoryName = detailedParticipant.eventCategoryName || '';
+                          const parts = categoryName.split('|').map((p: string) => p.trim());
+                          const distance = parts[0] || '';
+                          const detailCategory = parts.length > 1 ? parts.slice(1).join(' | ') : '';
+                          
+                          return (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">참가종목</span>
+                                <span className="text-black">{distance || '-'}</span>
+                              </div>
+                              
+                              {detailCategory && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">참가종목 상세</span>
+                                  <span className="text-black">{detailCategory}</span>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
 
                         <div className="flex justify-between">
                           <span className="text-gray-600">기념품</span>

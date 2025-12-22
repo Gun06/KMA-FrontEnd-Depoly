@@ -516,10 +516,29 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             <div className="px-8 pb-8">
               <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">신청 정보</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">참가종목</label>
-                  <span className="text-base text-black">{registrationData.eventCategoryName || '-'}</span>
-                </div>
+                {(() => {
+                  // eventCategoryName을 | 기준으로 분리
+                  const categoryName = registrationData.eventCategoryName || '';
+                  const parts = categoryName.split('|').map(p => p.trim());
+                  const distance = parts[0] || '';
+                  const detailCategory = parts.length > 1 ? parts.slice(1).join(' | ') : '';
+                  
+                  return (
+                    <>
+                      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                        <label className="text-base font-medium text-black">참가종목</label>
+                        <span className="text-base text-black">{distance || '-'}</span>
+                      </div>
+                      
+                      {detailCategory && (
+                        <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                          <label className="text-base font-medium text-black">참가종목 상세</label>
+                          <span className="text-base text-black">{detailCategory}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 
                 <div className="flex items-start justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">기념품</label>

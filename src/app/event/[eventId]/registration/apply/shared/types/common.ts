@@ -2,6 +2,7 @@
 
 // 이벤트 등록 기본 정보 인터페이스
 export interface EventRegistrationInfo {
+  distances?: string[]; // 거리 목록 (API 응답에 포함될 수 있음)
   categorySouvenirList: CategorySouvenir[];
   paymentTypeList: string[];
 }
@@ -10,6 +11,7 @@ export interface EventRegistrationInfo {
 export interface CategorySouvenir {
   categoryName: string;
   categoryId: string;
+  distance: string; // 거리 정보 (예: "10km", "21km")
   amount: number;
   categorySouvenirPair: SouvenirPair[];
 }

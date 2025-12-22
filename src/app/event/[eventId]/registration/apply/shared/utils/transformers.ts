@@ -220,13 +220,27 @@ export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: 
         throw new Error(`참가자 ${index + 1}: 사이즈를 선택해주세요.`);
       }
       
+      // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 세부종목만 추출
+      let categoryName = participant.category;
+      if (categoryName.includes('|')) {
+        const parts = categoryName.split('|').map((p: string) => p.trim());
+        if (parts.length > 0) {
+          // 첫 번째 부분이 거리 형식인지 확인
+          const firstPart = parts[0];
+          if (firstPart.match(/^\d+km$/i)) {
+            // 나머지 부분을 세부종목 이름으로 사용
+            categoryName = parts.slice(1).join(' | ').trim();
+          }
+        }
+      }
+      
       // 이벤트 정보에서 올바른 카테고리와 기념품 찾기
       const selectedCategory = eventInfo?.categorySouvenirList?.find(
-        (c: any) => c.categoryName === participant.category
+        (c: any) => c.categoryName === categoryName
       );
 
       if (!selectedCategory) {
-        throw new Error(`참가자 ${index + 1}: 선택된 카테고리를 찾을 수 없습니다.`);
+        throw new Error(`참가자 ${index + 1}: 선택된 카테고리 "${categoryName}"를 찾을 수 없습니다.`);
       }
 
       const selectedSouvenir = selectedCategory.categorySouvenirPair?.find(
@@ -317,12 +331,26 @@ export const transformGroupFormDataToUpdateApi = (
 
   // 참가자별 기념품 정보 생성 (다중 선택 지원)
   const registrationInfoPerUserList = formData.participants.map((participant, index) => {
+    // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 세부종목만 추출
+    let categoryName = participant.category;
+    if (categoryName.includes('|')) {
+      const parts = categoryName.split('|').map((p: string) => p.trim());
+      if (parts.length > 0) {
+        // 첫 번째 부분이 거리 형식인지 확인
+        const firstPart = parts[0];
+        if (firstPart.match(/^\d+km$/i)) {
+          // 나머지 부분을 세부종목 이름으로 사용
+          categoryName = parts.slice(1).join(' | ').trim();
+        }
+      }
+    }
+    
     const selectedCategory = eventInfo.categorySouvenirList.find(
-      c => c.categoryName === participant.category
+      c => c.categoryName === categoryName
     );
 
     if (!selectedCategory) {
-      throw new Error(`선택된 카테고리 "${participant.category}"를 찾을 수 없습니다.`);
+      throw new Error(`선택된 카테고리 "${categoryName}"를 찾을 수 없습니다.`);
     }
 
     // 수정 모드에서 기념품 찾기 (CREATE 함수와 동일한 로직 적용)

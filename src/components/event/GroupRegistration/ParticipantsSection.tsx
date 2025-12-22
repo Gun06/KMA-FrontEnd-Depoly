@@ -6,6 +6,7 @@ import { EventRegistrationInfo } from "@/app/event/[eventId]/registration/apply/
 import { getParticipationFee } from "@/app/event/[eventId]/registration/apply/shared/utils/calculations";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import SouvenirSelectionModal from './SouvenirSelectionModal';
+import CategorySelectionModal from './CategorySelectionModal';
 
 interface ParticipantsSectionProps {
   participants: ParticipantData[];
@@ -14,7 +15,7 @@ interface ParticipantsSectionProps {
 }
 
 const ParticipantsSection = memo(function ParticipantsSection({ participants, eventInfo, onParticipantsChange }: ParticipantsSectionProps) {
-  const [modalState, setModalState] = useState<{
+  const [souvenirModalState, setSouvenirModalState] = useState<{
     isOpen: boolean;
     participantIndex: number;
     categoryName: string;
@@ -22,6 +23,14 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     isOpen: false,
     participantIndex: -1,
     categoryName: ''
+  });
+
+  const [categoryModalState, setCategoryModalState] = useState<{
+    isOpen: boolean;
+    participantIndex: number;
+  }>({
+    isOpen: false,
+    participantIndex: -1
   });
 
   const [pendingParticipantCount, setPendingParticipantCount] = useState(() => participants.length);
@@ -90,6 +99,37 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     }
   }, [participants, onParticipantsChange]);
 
+  // 참가종목 선택 모달 열기
+  const handleOpenCategoryModal = useCallback((index: number) => {
+    const participant = participants[index];
+    // 결제완료된 참가자는 모달을 열 수 없음
+    if (participant.paymentStatus === 'PAID') {
+      return;
+    }
+    
+    setCategoryModalState({
+      isOpen: true,
+      participantIndex: index
+    });
+  }, [participants]);
+
+  // 참가종목 선택 모달 닫기
+  const handleCloseCategoryModal = useCallback(() => {
+    setCategoryModalState({
+      isOpen: false,
+      participantIndex: -1
+    });
+  }, []);
+
+  // 참가종목 선택 확인
+  const handleConfirmCategorySelection = useCallback((distance: string, categoryName: string) => {
+    const index = categoryModalState.participantIndex;
+    if (index === -1) return;
+    
+    handleParticipantChange(index, 'category', categoryName);
+    handleCloseCategoryModal();
+  }, [categoryModalState.participantIndex, handleParticipantChange]);
+
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback((index: number) => {
     const participant = participants[index];
@@ -101,7 +141,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
       return;
     }
     
-    setModalState({
+    setSouvenirModalState({
       isOpen: true,
       participantIndex: index,
       categoryName: participant.category
@@ -110,7 +150,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
 
   // 기념품 선택 모달 닫기
   const handleCloseSouvenirModal = useCallback(() => {
-    setModalState({
+    setSouvenirModalState({
       isOpen: false,
       participantIndex: -1,
       categoryName: ''
@@ -119,7 +159,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
 
   // 기념품 선택 확인
   const handleConfirmSouvenirSelection = useCallback((selectedSouvenirs: Array<{souvenirId: string, souvenirName: string, size: string}>) => {
-    const { participantIndex } = modalState;
+    const { participantIndex } = souvenirModalState;
     
     if (participantIndex === -1) return;
 
@@ -148,7 +188,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     
     onParticipantsChange(newParticipants);
     handleCloseSouvenirModal();
-  }, [modalState, participants, onParticipantsChange, handleCloseSouvenirModal]);
+  }, [souvenirModalState, participants, onParticipantsChange, handleCloseSouvenirModal]);
 
   const handleDeleteParticipant = useCallback((index: number) => {
     // 결제완료된 참가자는 삭제할 수 없음
@@ -629,34 +669,46 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                   </div>
                 </td> */}
                 <td className="px-3 py-3 w-80 border-r border-gray-200">
-                  <select
-                    value={participant.category || ''}
-                    disabled={isDisabled}
-                    onChange={(e) => {
+                  {/* 참가종목 선택 버튼 */}
+                  <button
+                    type="button"
+                    onClick={() => {
                       if (isDisabled) return;
-                      const selectedCategory = e.target.value;
-                      handleParticipantChange(index, 'category', selectedCategory);
+                      handleOpenCategoryModal(index);
                     }}
-                    className={`w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none text-center ${
+                    disabled={isDisabled}
+                    className={`w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 hover:bg-blue-100 transition-colors text-center font-medium ${
                       isDisabled 
-                        ? 'bg-gray-100 cursor-not-allowed opacity-75' 
-                        : 'bg-white hover:bg-gray-50 cursor-pointer'
+                        ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300' 
+                        : 'cursor-pointer hover:border-blue-400'
                     }`}
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2rem'
-                    }}
                   >
-                    <option value="종목">종목</option>
-                    {eventInfo?.categorySouvenirList.map(category => (
-                      <option key={category.categoryId} value={category.categoryName}>
-                        {category.categoryName}
-                      </option>
-                    ))}
-                  </select>
+                    <div className="flex items-center justify-between">
+                      <span>
+                        {(() => {
+                          if (!eventInfo) return "로딩 중...";
+                          if (!participant.category || participant.category === '종목') {
+                            return "참가종목을 선택해주세요";
+                          }
+                          
+                          // category에는 세부종목만 저장되어 있으므로, eventInfo에서 거리를 찾아서 합쳐서 표시
+                          const selectedCategory = eventInfo.categorySouvenirList.find(
+                            c => c.categoryName === participant.category
+                          );
+                          
+                          if (selectedCategory && selectedCategory.distance) {
+                            return `${selectedCategory.distance} | ${participant.category}`;
+                          }
+                          
+                          // 거리를 찾을 수 없으면 세부종목만 표시
+                          return participant.category;
+                        })()}
+                      </span>
+                      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
                 </td>
                 <td className="px-3 py-3 w-80 border-r border-gray-200">
                   {/* 기념품 선택 버튼 */}
@@ -806,30 +858,106 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
         </table>
       </div>
 
+      {/* 참가종목 선택 모달 */}
+      <CategorySelectionModal
+        isOpen={categoryModalState.isOpen}
+        onClose={handleCloseCategoryModal}
+        onConfirm={handleConfirmCategorySelection}
+        eventInfo={eventInfo}
+        currentDistance={(() => {
+          if (categoryModalState.participantIndex >= 0 && eventInfo) {
+            const participant = participants[categoryModalState.participantIndex];
+            if (participant.category) {
+              // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 분리 필요
+              let categoryName = participant.category;
+              let distance = '';
+              
+              // | 기준으로 분리
+              if (categoryName.includes('|')) {
+                const parts = categoryName.split('|').map((p: string) => p.trim());
+                if (parts.length > 0) {
+                  // 첫 번째 부분이 거리 형식인지 확인 (예: "10km", "3km" 등)
+                  const firstPart = parts[0];
+                  if (firstPart.match(/^\d+km$/i)) {
+                    distance = firstPart;
+                    // 나머지 부분을 세부종목 이름으로 사용
+                    categoryName = parts.slice(1).join(' | ').trim();
+                  } else {
+                    // 첫 번째 부분이 거리가 아니면 전체를 categoryName으로 사용
+                    categoryName = participant.category;
+                  }
+                }
+              }
+              
+              // eventInfo에서 정확한 distance 찾기
+              if (!distance && categoryName) {
+                const categoryInfo = eventInfo.categorySouvenirList.find(
+                  c => c.categoryName === categoryName
+                );
+                if (categoryInfo && categoryInfo.distance) {
+                  distance = categoryInfo.distance;
+                }
+              }
+              
+              return distance;
+            }
+          }
+          return '';
+        })()}
+        currentCategory={(() => {
+          if (categoryModalState.participantIndex >= 0) {
+            const participant = participants[categoryModalState.participantIndex];
+            if (participant.category) {
+              // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 세부종목만 추출
+              let categoryName = participant.category;
+              
+              // | 기준으로 분리
+              if (categoryName.includes('|')) {
+                const parts = categoryName.split('|').map((p: string) => p.trim());
+                if (parts.length > 0) {
+                  // 첫 번째 부분이 거리 형식인지 확인
+                  const firstPart = parts[0];
+                  if (firstPart.match(/^\d+km$/i)) {
+                    // 나머지 부분을 세부종목 이름으로 사용
+                    categoryName = parts.slice(1).join(' | ').trim();
+                  } else {
+                    // 첫 번째 부분이 거리가 아니면 전체를 categoryName으로 사용
+                    categoryName = participant.category;
+                  }
+                }
+              }
+              
+              return categoryName;
+            }
+          }
+          return '';
+        })()}
+      />
+
       {/* 기념품 선택 모달 */}
       <SouvenirSelectionModal
-        isOpen={modalState.isOpen}
+        isOpen={souvenirModalState.isOpen}
         onClose={handleCloseSouvenirModal}
         onConfirm={handleConfirmSouvenirSelection}
-        categoryName={modalState.categoryName}
+        categoryName={souvenirModalState.categoryName}
         eventInfo={eventInfo}
-        currentSelection={modalState.participantIndex >= 0 ? (
-          participants[modalState.participantIndex]?.selectedSouvenirs && participants[modalState.participantIndex].selectedSouvenirs.length > 0 
-            ? participants[modalState.participantIndex].selectedSouvenirs
-            : (participants[modalState.participantIndex]?.souvenir && 
-               participants[modalState.participantIndex].souvenir !== '선택' && 
-               participants[modalState.participantIndex].souvenir !== '' ? [{
-                souvenirId: participants[modalState.participantIndex].souvenir,
+        currentSelection={souvenirModalState.participantIndex >= 0 ? (
+          participants[souvenirModalState.participantIndex]?.selectedSouvenirs && participants[souvenirModalState.participantIndex].selectedSouvenirs.length > 0 
+            ? participants[souvenirModalState.participantIndex].selectedSouvenirs
+            : (participants[souvenirModalState.participantIndex]?.souvenir && 
+               participants[souvenirModalState.participantIndex].souvenir !== '선택' && 
+               participants[souvenirModalState.participantIndex].souvenir !== '' ? [{
+                souvenirId: participants[souvenirModalState.participantIndex].souvenir,
                 souvenirName: (() => {
-                  if (!eventInfo || !participants[modalState.participantIndex]?.category) return '';
-                  const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === participants[modalState.participantIndex].category);
+                  if (!eventInfo || !participants[souvenirModalState.participantIndex]?.category) return '';
+                  const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === participants[souvenirModalState.participantIndex].category);
                   if (selectedCategory) {
-                    const selectedSouvenirObj = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === participants[modalState.participantIndex].souvenir);
+                    const selectedSouvenirObj = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === participants[souvenirModalState.participantIndex].souvenir);
                     return selectedSouvenirObj?.souvenirName || '';
                   }
                   return '';
                 })(),
-                size: participants[modalState.participantIndex].size || ''
+                size: participants[souvenirModalState.participantIndex].size || ''
               }] : [])
         ) : []}
       />

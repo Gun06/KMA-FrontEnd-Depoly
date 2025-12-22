@@ -7,21 +7,21 @@ import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadg
 export type EventPrefill = Partial<EventFormState> & {
   startAt?: string;
   uploads?: {
-    // 🔹 배너(파트너)
+    // 배너(파트너)
     bannerHost?: UploadItem[];
     bannerOrganizer?: UploadItem[];
     bannerSponsor?: UploadItem[];
 
-    // 🔹 홍보용
+    // 홍보용
     bannerInstagram?: UploadItem[];
 
-    // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
+    // 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
     bannerGuideDesktop?: UploadItem[];
     bannerGuideMobile?: UploadItem[];
     bannerMainDesktop?: UploadItem[];
     bannerMainMobile?: UploadItem[];
 
-    // 🔹 페이지별 이미지
+    // 페이지별 이미지
     imgNotice?: UploadItem[];
     imgPost?: UploadItem[];
     imgCourse?: UploadItem[];
@@ -98,9 +98,3 @@ export function rowToPrefill(row: EventRow): EventPrefill {
   };
 }
 
-/** (서버 폴백) id -> prefill (정적 MOCK 사용) */
-import { getEventById } from "@/app/admin/events/[eventId]/edit/data";
-export function buildPrefillFromRow(id: number): EventPrefill | null {
-  const row = getEventById(id);
-  return row ? rowToPrefill(row) : null;
-}

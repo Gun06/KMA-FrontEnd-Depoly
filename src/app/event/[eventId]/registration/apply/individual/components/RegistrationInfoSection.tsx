@@ -1,7 +1,6 @@
 // 신청 정보 섹션 컴포넌트
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import FormField from '../../shared/components/FormField';
-import Dropdown from '../../shared/components/Dropdown';
 import { IndividualFormData, OpenDropdown } from '../../shared/types/individual';
 import { EventRegistrationInfo } from '../../shared/types/common';
 import SouvenirSelectionModal from '@/components/event/GroupRegistration/SouvenirSelectionModal';
@@ -14,8 +13,6 @@ interface RegistrationInfoSectionProps {
   onDropdownToggle: (dropdown: OpenDropdown) => void;
   refs: {
     categoryRef: React.RefObject<HTMLDivElement>;
-    // souvenirRef: React.RefObject<HTMLDivElement>; // 기념품 선택 모달로 변경
-    // sizeRef: React.RefObject<HTMLDivElement>; // 기념품 선택 모달로 변경
   };
 }
 
@@ -28,6 +25,62 @@ export default function RegistrationInfoSection({
   refs
 }: RegistrationInfoSectionProps) {
   const [isSouvenirModalOpen, setIsSouvenirModalOpen] = useState(false);
+
+  // 거리 목록 추출 (distances 배열 또는 categorySouvenirList에서 distance 추출)
+  const distances = useMemo(() => {
+    if (!eventInfo) return [];
+    
+    // distances 배열이 있으면 사용
+    if (eventInfo.distances && eventInfo.distances.length > 0) {
+      return eventInfo.distances;
+    }
+    
+    // categorySouvenirList에서 distance 추출하여 중복 제거
+    const distanceSet = new Set<string>();
+    eventInfo.categorySouvenirList.forEach(category => {
+      if (category.distance) {
+        distanceSet.add(category.distance);
+      }
+    });
+    return Array.from(distanceSet).sort();
+  }, [eventInfo]);
+
+  // 선택된 거리의 세부종목 목록
+  const categoriesByDistance = useMemo(() => {
+    if (!formData.selectedDistance || !eventInfo) return [];
+    
+    return eventInfo.categorySouvenirList.filter(
+      category => category.distance === formData.selectedDistance
+    );
+  }, [formData.selectedDistance, eventInfo]);
+
+  // 선택된 세부종목 정보
+  const selectedCategory = useMemo(() => {
+    if (!formData.category || !eventInfo) return null;
+    
+    return eventInfo.categorySouvenirList.find(
+      c => c.categoryName === formData.category
+    ) || null;
+  }, [formData.category, eventInfo]);
+
+  // 거리 선택 핸들러
+  const handleDistanceSelect = useCallback((distance: string) => {
+    onInputChange('selectedDistance', distance);
+    // 거리 변경 시 세부종목과 기념품 초기화
+    onInputChange('category', '');
+    onInputChange('selectedSouvenirs', []);
+    onInputChange('souvenir', '');
+    onInputChange('size', '');
+  }, [onInputChange]);
+
+  // 세부종목 선택 핸들러
+  const handleCategorySelect = useCallback((categoryName: string) => {
+    onInputChange('category', categoryName);
+    // 세부종목 변경 시 기념품 초기화
+    onInputChange('selectedSouvenirs', []);
+    onInputChange('souvenir', '');
+    onInputChange('size', '');
+  }, [onInputChange]);
 
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback(() => {
@@ -60,39 +113,11 @@ export default function RegistrationInfoSection({
     handleCloseSouvenirModal();
   }, [onInputChange, handleCloseSouvenirModal]);
 
-  // 카테고리 옵션 생성
-  const categoryOptions = eventInfo?.categorySouvenirList.map(category => ({
-    value: category.categoryName,
-    label: category.categoryName
-  })) || [];
-
-  // 기념품 옵션 생성
-  const souvenirOptions = formData.category && eventInfo
-    ? eventInfo.categorySouvenirList
-        .find(c => c.categoryName === formData.category)
-        ?.categorySouvenirPair.map(souvenir => ({
-          value: souvenir.souvenirId,
-          label: souvenir.souvenirName
-        })) || []
-    : [];
-
-  // 선택된 기념품 정보
-  const selectedSouvenir = formData.souvenir && eventInfo
-    ? eventInfo.categorySouvenirList
-        .find(c => c.categoryName === formData.category)
-        ?.categorySouvenirPair.find(s => s.souvenirId === formData.souvenir)
-    : null;
-
-  // 선택된 카테고리 정보
-  const selectedCategory = formData.category && eventInfo
-    ? eventInfo.categorySouvenirList.find(c => c.categoryName === formData.category)
-    : null;
-
-  // 사이즈 옵션 생성 (선택된 기념품의 사이즈 배열 사용)
-  const sizeOptions = selectedSouvenir?.souvenirSize?.map(size => ({
-    value: size,
-    label: size
-  })) || [];
+  // 현재 표시할 우측 리스트 상태 결정
+  const rightListMode = useMemo(() => {
+    if (!formData.selectedDistance) return 'empty';
+    return 'categories';
+  }, [formData.selectedDistance]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -102,22 +127,85 @@ export default function RegistrationInfoSection({
       </div>
       
       <div className="space-y-4 sm:space-y-6">
-        {/* 참가종목 */}
+        {/* 거리 및 세부종목 선택 */}
         <FormField label="참가종목" required>
-          <div className="flex-1 max-w-md">
-            <div className="relative" ref={refs.categoryRef}>
-              <Dropdown
-                value={formData.category}
-                placeholder={!eventInfo ? "로딩 중..." : "참가종목을 선택해주세요"}
-                options={categoryOptions}
-                isOpen={openDropdown === 'category'}
-                onToggle={() => onDropdownToggle(openDropdown === 'category' ? null : 'category')}
-                onSelect={(value) => {
-                  onInputChange('category', value);
-                }}
-                className="w-full"
-                disabled={!eventInfo}
-              />
+          <div className="flex-1 min-w-0">
+            <div className="flex border border-gray-200 rounded-lg bg-white overflow-hidden max-w-xl">
+              {/* 좌측: 거리 리스트 */}
+              <div className="flex-shrink-0 w-36 border-r border-gray-200 flex flex-col">
+                <div className="px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-900">거리</div>
+                </div>
+                <div 
+                  className="p-2 h-[150px] overflow-y-auto bg-white"
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#e5e7eb #f9fafb'
+                  }}
+                >
+                  {!eventInfo ? (
+                    <div className="text-sm text-gray-400 py-4 text-center">로딩 중...</div>
+                  ) : distances.length === 0 ? (
+                    <div className="text-sm text-gray-400 py-4 text-center">거리 정보가 없습니다</div>
+                  ) : (
+                    <div className="space-y-0">
+                      {distances.map((distance) => (
+                        <button
+                          key={distance}
+                          type="button"
+                          onClick={() => handleDistanceSelect(distance)}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            formData.selectedDistance === distance
+                              ? 'bg-blue-500 text-white font-medium'
+                              : 'bg-white text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          {distance}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 우측: 세부종목 리스트 */}
+              <div className="flex-1 min-w-0 flex flex-col">
+                <div className="px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+                  <div className="text-sm font-medium text-gray-900">세부종목</div>
+                </div>
+                <div 
+                  className="p-2 h-[150px] overflow-y-auto bg-white"
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#e5e7eb #f9fafb'
+                  }}
+                >
+                  {rightListMode === 'empty' ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-sm text-gray-400">거리를 선택해주세요</div>
+                    </div>
+                  ) : categoriesByDistance.length === 0 ? (
+                    <div className="text-sm text-gray-400 py-4 text-center">세부종목이 없습니다</div>
+                  ) : (
+                    <div className="space-y-0">
+                      {categoriesByDistance.map((category) => (
+                        <button
+                          key={category.categoryId}
+                          type="button"
+                          onClick={() => handleCategorySelect(category.categoryName)}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            formData.category === category.categoryName
+                              ? 'bg-blue-500 text-white font-medium'
+                              : 'bg-white text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          {category.categoryName}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </FormField>
@@ -125,7 +213,7 @@ export default function RegistrationInfoSection({
         
         {/* 기념품 선택 */}
         <FormField label="기념품" required>
-          <div className="flex-1 max-w-md">
+          <div className="flex-1 min-w-0 max-w-xl">
             <button
               type="button"
               onClick={handleOpenSouvenirModal}
@@ -215,7 +303,6 @@ export default function RegistrationInfoSection({
               })(),
               size: formData.size || ''
             }];
-            
             
             // 비동기적으로 selectedSouvenirs 업데이트
             setTimeout(() => {
