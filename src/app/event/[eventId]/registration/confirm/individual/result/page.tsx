@@ -5,11 +5,11 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
-import { getRegistrationDetail } from "@/services/registration";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
 import { requestIndividualRefund } from "@/app/event/[eventId]/registration/apply/shared/api/individual";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
+import { fetchIndividualRegistrationConfirm } from "./api";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -33,6 +33,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         const dataParam = searchParams.get('data');
         
         let baseData: IndividualRegistrationResponse | null = null;
+        let storedPassword = '';
         
         if (registrationIdParam) {
           // 새로운 방식: registrationId만 받아서 sessionStorage에서 데이터 가져오기
@@ -44,6 +45,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             const storedDataString = sessionStorage.getItem(storageKey);
             if (storedDataString) {
               const parsed = JSON.parse(storedDataString);
+              storedPassword = parsed._password || '';
               // 비밀번호 필드 제거하고 나머지 데이터 사용
               delete parsed._password;
               baseData = parsed as IndividualRegistrationResponse;
@@ -52,6 +54,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 setRegistrationData(baseData);
                 setIsLoading(false);
               }
+              // 사용 후 즉시 삭제하지 않고 API 호출 성공 후 삭제 (보안)
             }
           } catch (e) {
             // 세션 스토리지 접근 실패 시 무시
@@ -64,6 +67,11 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             if (!registrationIdParam && baseData?.registrationId) {
               registrationIdParam = baseData.registrationId;
             }
+            // data 파라미터로 받은 경우도 먼저 표시
+            if (baseData) {
+              setRegistrationData(baseData);
+              setIsLoading(false);
+            }
           } catch {
             setError('데이터를 파싱할 수 없습니다.');
             setIsLoading(false);
@@ -73,81 +81,30 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         
         // 저장된 데이터가 없으면 에러 표시
         if (!baseData) {
-          setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
+          setError('신청 정보를 불러올 수 없습니다. 신청 확인 페이지에서 다시 인증해주세요.');
           setIsLoading(false);
           return;
         }
         
-        // registrationId가 있으면 최신 결제 상태 가져오기 시도
-        if (registrationIdParam && baseData) {
-          try {
-            // 세션 스토리지에서 비밀번호 가져오기
-            const storageKey = `individual_registration_data_${params.eventId}_${registrationIdParam}`;
-            let storedPassword = '';
-            try {
-              const storedDataString = sessionStorage.getItem(storageKey);
-              if (storedDataString) {
-                const parsed = JSON.parse(storedDataString);
-                storedPassword = parsed._password || '';
-              }
-            } catch (e) {
-              // 세션 스토리지 접근 실패 시 무시
-            }
+        // API 호출하여 최신 데이터 가져오기 (비밀번호가 있으면 사용)
+        try {
+          // baseData에서 API 호출에 필요한 정보 추출
+          const name = baseData.name;
+          const phNum = baseData.phNum;
+          const birth = baseData.birth;
+          
+          if (name && phNum && birth && storedPassword) {
+            // 최신 데이터 가져오기
+            const latestData = await fetchIndividualRegistrationConfirm(
+              params.eventId,
+              name,
+              phNum,
+              birth,
+              storedPassword
+            );
             
-            // tokenService를 사용하여 관리자 토큰 확인
-            const { tokenService } = await import('@/utils/tokenService');
-            const adminToken = tokenService.getAdminAccessToken();
-            
-            // 관리자 토큰이 있으면 최신 데이터 가져오기
-            if (adminToken) {
-              try {
-                const latestData = await getRegistrationDetail(registrationIdParam);
-                
-                // 결제 상태: 백엔드 enum을 그대로 사용 (PAID/UNPAID로 변환하지 않음)
-                const paymentStatus = latestData.paymentStatus || 'UNPAID';
-                
-                // 기념품 정보 변환: souvenirListDetail을 souvenir 형식으로 변환
-                const souvenirs = latestData.souvenirListDetail?.map((s) => ({
-                  souvenirId: s.id,
-                  souvenirName: s.name,
-                  souvenirSize: s.size,
-                })) || baseData.souvenir || [];
-                
-                // 참가종목 정보 업데이트
-                const eventCategoryName = latestData.eventCategory || latestData.categoryName || baseData.eventCategoryName;
-                const eventCategoryId = latestData.souvenirListDetail?.[0]?.eventCategoryId || baseData.eventCategoryId;
-                
-                // 최신 데이터로 업데이트 (결제 상태, 참가종목, 기념품, 주소 포함)
-                const updatedData: IndividualRegistrationResponse = {
-                  ...baseData,
-                  paymentStatus,
-                  eventCategoryName,
-                  eventCategoryId,
-                  souvenir: souvenirs,
-                  address: latestData.address || baseData.address || '',
-                  addressDetail: latestData.addressDetail || baseData.addressDetail || '',
-                  // zipCode는 baseData에서만 가져옴 (getRegistrationDetail에는 없음)
-                  zipCode: baseData.zipCode || '',
-                  // 환불 정보 추가
-                  paymenterBank: latestData.paymenterBank || baseData.paymenterBank,
-                  accountNumber: latestData.accountNumber || baseData.accountNumber,
-                };
-                setRegistrationData(updatedData);
-                
-                // API 호출 성공 후 sessionStorage 삭제
-                try {
-                  sessionStorage.removeItem(storageKey);
-                } catch (e) {
-                  // 무시
-                }
-                
-                return; // 성공하면 여기서 종료
-              } catch (apiError) {
-                // API 호출 실패 시 기존 데이터 사용 (fallback)
-              }
-            } else {
-              // 관리자 토큰이 없으면 기존 데이터 사용 (일반 사용자)
-              // sessionStorage 삭제
+            // API 호출 성공 후 sessionStorage 삭제
+            if (registrationIdParam) {
               try {
                 const storageKey = `individual_registration_data_${params.eventId}_${registrationIdParam}`;
                 sessionStorage.removeItem(storageKey);
@@ -155,16 +112,26 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 // 무시
               }
             }
-          } catch (tokenError) {
-            // 토큰 확인 실패 시 기존 데이터 사용
+            
+            // 최신 데이터로 업데이트
+            setRegistrationData(latestData);
+            setIsLoading(false);
+            return; // 성공하면 여기서 종료
           }
-        }
-        
-        // registrationId가 없거나 API 호출 실패 시 기존 데이터 사용
-        if (baseData) {
-          setRegistrationData(baseData);
-        } else {
-          setError('신청 정보가 없습니다.');
+        } catch (apiError) {
+          // API 호출 실패 시 저장된 데이터를 사용 (이미 표시되어 있음)
+          // 추가 업데이트만 시도
+          try {
+            if (registrationIdParam) {
+              const storageKey = `individual_registration_data_${params.eventId}_${registrationIdParam}`;
+              sessionStorage.removeItem(storageKey);
+            }
+          } catch (e) {
+            // 무시
+          }
+          
+          // baseData가 이미 표시되어 있으므로 추가 처리만 수행
+          // API 호출 실패는 무시하고 저장된 데이터 사용
         }
       } catch (err) {
         setError('데이터를 불러올 수 없습니다.');
@@ -174,7 +141,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     };
 
     loadData();
-  }, [searchParams]);
+  }, [searchParams, params.eventId]);
 
   // 결제 계좌 정보 로드 (신청하기와 동일한 방식)
   useEffect(() => {
@@ -255,7 +222,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     router.push(`/event/${params.eventId}/registration/apply/individual?mode=edit&data=${encodedData}`);
   };
 
-  const handleRefundSubmit = async (bankName: string, accountNumber: string) => {
+  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
     if (!registrationData?.registrationId) {
       throw new Error('신청 정보를 찾을 수 없습니다.');
     }
@@ -266,7 +233,8 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         params.eventId,
         registrationData.registrationId,
         bankName,
-        accountNumber
+        accountNumber,
+        accountHolderName
       );
       // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
     } catch (error) {

@@ -42,6 +42,8 @@ export interface RegistrationItem {
   eventId?: string;               // 대회 ID (코스 정보 조회용)
   paymenterBank?: string;         // 환불 은행명
   accountNumber?: string;         // 환불 계좌번호
+  accountHolderName?: string;     // 예금주명
+  refundRequestedAt?: string;     // 환불요청시각 (ISO 8601 형식)
 }
 
 export interface RegistrationListResponse {

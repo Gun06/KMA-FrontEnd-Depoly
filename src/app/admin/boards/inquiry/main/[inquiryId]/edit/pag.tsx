@@ -6,7 +6,7 @@ import React from "react";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor";
 // ✅ 메인 문의사항 API로 교체
-import { getMainInquiryDetail, replyMainInquiry } from "@/data/inquiry/main";
+import { getMainInquiryDetail, replyMainInquiry } from "@/components/common/Inquiry/main";
 
 export default function Page() {
   const { inquiryId } = useParams<{ inquiryId: string }>();

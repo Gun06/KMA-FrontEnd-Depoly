@@ -2,7 +2,7 @@ import React from 'react'
 import EventHeader from '@/components/event/Header'
 import EventFooter from '@/components/event/Footer'
 import SponsorsMarquee from '@/components/event/Sponsors/index'
-import { EventsProvider, useEvents } from '@/contexts/EventsContext';
+import { MainBannerProvider, useMainBanner } from '@/components/providers/MainBannerContext';
 import { useSearchParams } from 'next/navigation';
 
 interface EventLayoutProps {
@@ -35,7 +35,7 @@ function EventLayoutWithProvider({ children, eventId, mainBannerColor }: EventLa
   const initialColor = urlColor || mainBannerColor || null;
 
   return (
-    <EventsProvider initialMainBannerColor={initialColor}>
+    <MainBannerProvider initialMainBannerColor={initialColor}>
       <EventLayoutContent
         eventId={eventId}
         mainBannerColor={mainBannerColor}
@@ -43,7 +43,7 @@ function EventLayoutWithProvider({ children, eventId, mainBannerColor }: EventLa
       >
         {children}
       </EventLayoutContent>
-    </EventsProvider>
+    </MainBannerProvider>
   );
 }
 
@@ -53,7 +53,7 @@ function EventLayoutContent({
   mainBannerColor: propMainBannerColor,
   urlColor,
 }: EventLayoutContentProps) {
-  const { mainBannerColor: contextMainBannerColor, setMainBannerColor } = useEvents();
+  const { mainBannerColor: contextMainBannerColor, setMainBannerColor } = useMainBanner();
   const [cachedColor, setCachedColor] = React.useState<string | null>(null);
   const [heroEventData, setHeroEventData] = React.useState<HeroEventData | null>(null);
 

@@ -1,9 +1,8 @@
-// src/contexts/EventsContext.tsx
+// src/components/providers/AdminEventsContext.tsx
 'use client';
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import type { EventRow } from '@/components/admin/events/EventTable';
 
-// 기존 admin 페이지용 타입들
 type EventsState = {
   rows: EventRow[];
   /** ✅ 폼 전체 스냅샷 저장소: id -> buildApiBody() 결과 그대로 */
@@ -23,45 +22,18 @@ type EventsActions = {
   clearForm: (id: string) => void; // number에서 string으로 변경
 };
 
-// mainBannerColor용 타입
-interface MainBannerContextType {
-  mainBannerColor: string | null;
-  setMainBannerColor: (color: string | null) => void;
-}
-
-// 기존 admin 페이지용 Context들
 const CtxState = React.createContext<EventsState | null>(null);
 const CtxActions = React.createContext<EventsActions | null>(null);
 
-// mainBannerColor용 Context
-const MainBannerContext = createContext<MainBannerContextType | undefined>(
-  undefined
-);
-
 const LS_KEY = 'events_ctx_v1';
-const MAIN_BANNER_COLOR_KEY = 'main_banner_color';
 
-interface EventsProviderProps {
+interface AdminEventsProviderProps {
   children: ReactNode;
-  initialMainBannerColor?: string | null;
 }
 
-export function EventsProvider({ children, initialMainBannerColor = null }: EventsProviderProps) {
-  const normalizedInitialColor =
-    typeof initialMainBannerColor === 'string' && initialMainBannerColor.length > 0
-      ? initialMainBannerColor
-      : null;
+export function AdminEventsProvider({ children }: AdminEventsProviderProps) {
   const [rows, setRows] = React.useState<EventRow[]>([]);
-  const [forms, setForms] = React.useState<Record<string, unknown>>({}); // number에서 string으로 변경
-  const [mainBannerColor, setMainBannerColor] = useState<string | null>(() => {
-    if (normalizedInitialColor) return normalizedInitialColor;
-    if (typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem(MAIN_BANNER_COLOR_KEY);
-    } catch {
-      return null;
-    }
-  });
+  const [forms, setForms] = React.useState<Record<string, unknown>>({});
 
   // load
   React.useEffect(() => {
@@ -72,23 +44,10 @@ export function EventsProvider({ children, initialMainBannerColor = null }: Even
         if (parsed?.rows) setRows(parsed.rows);
         if (parsed?.forms) setForms(parsed.forms);
       }
-
-      // mainBannerColor도 localStorage에서 로드
-      const savedColor = localStorage.getItem(MAIN_BANNER_COLOR_KEY);
-      if (savedColor) {
-        setMainBannerColor(prev => prev ?? savedColor);
-      }
     } catch {
       /* noop */
     }
   }, []);
-
-  // 초기값이 갱신되면 컨텍스트도 함께 갱신
-  React.useEffect(() => {
-    if (normalizedInitialColor && normalizedInitialColor !== mainBannerColor) {
-      setMainBannerColor(normalizedInitialColor);
-    }
-  }, [normalizedInitialColor, mainBannerColor]);
 
   // save
   React.useEffect(() => {
@@ -98,19 +57,6 @@ export function EventsProvider({ children, initialMainBannerColor = null }: Even
       /* noop */
     }
   }, [rows, forms]);
-
-  // mainBannerColor 저장
-  React.useEffect(() => {
-    try {
-      if (mainBannerColor) {
-        localStorage.setItem(MAIN_BANNER_COLOR_KEY, mainBannerColor);
-      } else {
-        localStorage.removeItem(MAIN_BANNER_COLOR_KEY);
-      }
-    } catch {
-      /* noop */
-    }
-  }, [mainBannerColor]);
 
   const actions: EventsActions = {
     setInitial: init => setRows(prev => (prev.length ? prev : init)),
@@ -163,36 +109,24 @@ export function EventsProvider({ children, initialMainBannerColor = null }: Even
   return (
     <CtxState.Provider value={{ rows, forms }}>
       <CtxActions.Provider value={actions}>
-        <MainBannerContext.Provider
-          value={{ mainBannerColor, setMainBannerColor }}
-        >
-          {children}
-        </MainBannerContext.Provider>
+        {children}
       </CtxActions.Provider>
     </CtxState.Provider>
   );
 }
 
-// 기존 admin 페이지용 hooks
-export function useEventsState() {
-  const ctx = React.useContext(CtxState);
+// Admin 페이지용 hooks
+export function useAdminEventsState() {
+  const ctx = useContext(CtxState);
   if (!ctx)
-    throw new Error('useEventsState must be used within EventsProvider');
+    throw new Error('useAdminEventsState must be used within AdminEventsProvider');
   return ctx;
 }
 
-export function useEventsActions() {
-  const ctx = React.useContext(CtxActions);
+export function useAdminEventsActions() {
+  const ctx = useContext(CtxActions);
   if (!ctx)
-    throw new Error('useEventsActions must be used within EventsProvider');
+    throw new Error('useAdminEventsActions must be used within AdminEventsProvider');
   return ctx;
 }
 
-// mainBannerColor용 hook
-export function useEvents() {
-  const context = useContext(MainBannerContext);
-  if (context === undefined) {
-    throw new Error('useEvents must be used within an EventsProvider');
-  }
-  return context;
-}

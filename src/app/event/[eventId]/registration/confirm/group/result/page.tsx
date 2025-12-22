@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { GroupRegistrationConfirmData } from "./types";
 import { fetchGroupRegistrationConfirm, createEditData } from "./api";
-import { getRegistrationDetail } from "@/services/registration";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
 import { requestGroupRefund } from "@/app/event/[eventId]/registration/apply/shared/api/group";
@@ -48,59 +47,21 @@ export default function GroupApplicationConfirmResultPage() {
             return { registrationId, participant: newMap.get(registrationId) || participant };
           }
           
-          try {
-            const participantDetail = await getRegistrationDetail(registrationId);
-            
-            // 기념품 정보 변환 (souvenirId 포함)
-            const souvenirs = participantDetail.souvenirListDetail?.map((s) => ({
-              souvenirId: String(s.id || '0'), // id 필드를 souvenirId로 매핑, 문자열로 변환
-              souvenirName: s.name || '기념품 없음',
-              souvenirSize: s.size || '사이즈 없음',
-            })) || participant.souvenir || [];
-            
-            // 기념품이 없는 경우 기본값 설정
-            if (souvenirs.length === 0) {
-              souvenirs.push({
-                souvenirId: '0',
-                souvenirName: '기념품 없음',
-                souvenirSize: '사이즈 없음'
-              });
-            }
-            
-            // 참가종목 정보 업데이트
-            const eventCategoryName = participantDetail.eventCategory || participantDetail.categoryName || participant.eventCategoryName;
-            
-            // amount도 최신 데이터로 업데이트
-            const updatedAmount = participantDetail.amount || participant.amount;
-            
-            // 결제 상태 업데이트
-            const paymentStatus = participantDetail.paymentStatus || participant.paymentStatus || 'UNPAID';
-            
-            const updatedParticipant = {
-              ...participant,
-              registrationId: registrationId,
-              eventCategoryName,
-              souvenir: souvenirs, // souvenirId가 포함된 배열
-              amount: updatedAmount,
-              paymentStatus: paymentStatus,
-            };
-            
-            newMap.set(registrationId, updatedParticipant);
-            return { registrationId, participant: updatedParticipant };
-          } catch (error) {
-            // 실패 시 기존 정보 유지 (기념품 정보도 유지)
-            const fallbackParticipant = {
-              ...participant,
-              paymentStatus: participant.paymentStatus || 'UNPAID',
-              souvenir: participant.souvenir || [{
-                souvenirId: '0',
-                souvenirName: '기념품 없음',
-                souvenirSize: '사이즈 없음'
-              }]
-            };
-            newMap.set(registrationId, fallbackParticipant);
-            return { registrationId, participant: fallbackParticipant };
-          }
+          // 사용자 페이지에서는 관리자 API를 사용하지 않고 기존 데이터만 사용
+          // participant에 이미 모든 정보가 포함되어 있음
+          const updatedParticipant = {
+            ...participant,
+            registrationId: registrationId,
+            paymentStatus: participant.paymentStatus || 'UNPAID',
+            souvenir: participant.souvenir || [{
+              souvenirId: '0',
+              souvenirName: '기념품 없음',
+              souvenirSize: '사이즈 없음'
+            }]
+          };
+          
+          newMap.set(registrationId, updatedParticipant);
+          return { registrationId, participant: updatedParticipant };
         })
       );
       
@@ -471,7 +432,7 @@ export default function GroupApplicationConfirmResultPage() {
     router.push(`/event/${eventId}/registration/confirm`);
   };
 
-  const handleRefundSubmit = async (bankName: string, accountNumber: string) => {
+  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
     if (!groupApplicationData?.organizationId) {
       throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
     }
@@ -482,7 +443,8 @@ export default function GroupApplicationConfirmResultPage() {
         eventId,
         groupApplicationData.organizationId, // DB PK 값 사용
         bankName,
-        accountNumber
+        accountNumber,
+        accountHolderName
       );
       // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
     } catch (error) {

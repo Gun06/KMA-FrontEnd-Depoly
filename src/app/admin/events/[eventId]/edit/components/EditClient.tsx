@@ -8,7 +8,7 @@ import EditForm from './EditForm';
 import type { EventCreatePayload } from '@/types/Admin';
 import type { EventRow } from '@/components/admin/events/EventTable';
 import type { UseCompetitionPrefill } from '@/app/admin/events/register/hooks/useCompetitionForm';
-import { useEventsActions, useEventsState } from '@/contexts/EventsContext';
+import { useAdminEventsActions, useAdminEventsState } from '@/components/providers/AdminEventsContext';
 import { payloadToEventPatch } from '@/utils/eventPatch';
 import { rowToPrefill } from '@/data/eventPrefill';
 import { useEventDetail } from '@/hooks/useEventDetail';
@@ -30,8 +30,8 @@ export default function EditClient({
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { rows, forms } = useEventsState();
-  const { upsertOne, saveForm } = useEventsActions();
+  const { rows, forms } = useAdminEventsState();
+  const { upsertOne, saveForm } = useAdminEventsActions();
 
   // 커스텀 모달 상태
   const [infoModalOpen, setInfoModalOpen] = useState(false);

@@ -7,7 +7,7 @@ import EventTable, {
   type EventRow,
 } from '@/components/admin/events/EventTable';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
-import { useEventsState } from '@/contexts/EventsContext';
+import { useAdminEventsState } from '@/components/providers/AdminEventsContext';
 import {
   useAdminEventList,
   transformAdminEventToEventRow,
@@ -25,7 +25,7 @@ export default function EventsClient({
 }) {
   const router = useRouter();
   const search = useSearchParams();
-  const { rows: storeRows } = useEventsState();
+  const { rows: storeRows } = useAdminEventsState();
 
   // 더미 데이터 제거됨 - API 데이터만 사용
 

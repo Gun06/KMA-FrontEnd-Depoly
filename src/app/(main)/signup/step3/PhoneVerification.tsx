@@ -33,7 +33,7 @@ export default function PhoneVerification({ phoneNumber, onVerificationComplete,
     try {
       setError('')
       // TODO: 실제 API 호출
-      // const response = await fetch('/api/auth/send-verification', {
+      // const response = await fetch('/signup/step3/api/send-verification', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ phoneNumber })
@@ -57,7 +57,7 @@ export default function PhoneVerification({ phoneNumber, onVerificationComplete,
     try {
       setError('')
       // TODO: 실제 API 호출
-      // const response = await fetch('/api/auth/verify-code', {
+      // const response = await fetch('/signup/step3/api/verify-code', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ phoneNumber, code: verificationCode })

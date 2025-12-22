@@ -1,7 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import logoImage from '@/assets/images/main/logo.jpg'
-import { useEvents } from '@/contexts/EventsContext';
+import { useMainBanner } from '@/components/providers/MainBannerContext';
 
 interface EventFooterProps {
   footerBgClass?: string
@@ -9,7 +9,7 @@ interface EventFooterProps {
 }
 
 export default function EventFooter({ footerBgClass, accentColor }: EventFooterProps) {
-  const { mainBannerColor } = useEvents();
+  const { mainBannerColor } = useMainBanner();
   
   // 우선순위: prop > context > 기본값
   const backgroundColor = accentColor || mainBannerColor || '#000000';

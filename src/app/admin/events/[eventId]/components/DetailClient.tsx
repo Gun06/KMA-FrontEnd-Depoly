@@ -7,7 +7,7 @@ import EventDetailView, {
   EventDetailData,
 } from '@/components/admin/events/EventDetailView';
 import Button from '@/components/common/Button/Button';
-import { useEventsActions } from '@/contexts/EventsContext';
+import { useAdminEventsActions } from '@/components/providers/AdminEventsContext';
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { transformApiDataToEventDetail } from '@/utils/eventDataTransform';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api';
@@ -18,7 +18,7 @@ export default function DetailClient({
   eventId: string;
 }) {
   const router = useRouter();
-  const { removeOne } = useEventsActions();
+  const { removeOne } = useAdminEventsActions();
   const queryClient = useQueryClient();
 
   // API에서 대회 상세 정보 조회 (refetchOnMount: 'always'로 페이지 진입 시 항상 최신 데이터 가져옴)

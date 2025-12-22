@@ -6,7 +6,7 @@ import { X, ChevronDown } from 'lucide-react';
 interface RefundModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (bankName: string, accountNumber: string) => Promise<void>;
+  onSubmit: (bankName: string, accountNumber: string, accountHolderName: string) => Promise<void>;
   isLoading?: boolean;
   onSuccess?: () => void; // 성공 후 확인 버튼 클릭 시 호출
 }
@@ -38,7 +38,8 @@ const BANK_LIST = [
 export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = false, onSuccess }: RefundModalProps) {
   const [formData, setFormData] = useState({
     bankName: '',
-    accountNumber: ''
+    accountNumber: '',
+    accountHolderName: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -95,10 +96,15 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
       return;
     }
 
+    if (!formData.accountHolderName.trim()) {
+      setError('예금주명을 입력해주세요.');
+      return;
+    }
+
     setError(null);
 
     try {
-      await onSubmit(formData.bankName.trim(), formData.accountNumber.trim());
+      await onSubmit(formData.bankName.trim(), formData.accountNumber.trim(), formData.accountHolderName.trim());
       // 성공 시 성공 상태로 전환
       setIsSuccess(true);
     } catch (error) {
@@ -107,7 +113,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   };
 
   const handleClose = () => {
-    setFormData({ bankName: '', accountNumber: '' });
+    setFormData({ bankName: '', accountNumber: '', accountHolderName: '' });
     setError(null);
     setIsSuccess(false);
     setIsBankDropdownOpen(false);
@@ -116,7 +122,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
 
   const handleSuccessConfirm = () => {
     setIsSuccess(false);
-    setFormData({ bankName: '', accountNumber: '' });
+    setFormData({ bankName: '', accountNumber: '', accountHolderName: '' });
     if (onSuccess) {
       onSuccess();
     } else {
@@ -220,6 +226,23 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="예: 100000-00-0000"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* 예금주명 입력 */}
+            <div>
+              <label htmlFor="accountHolderName" className="block text-sm font-medium text-gray-700 mb-2">
+                예금주명 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="accountHolderName"
+                name="accountHolderName"
+                value={formData.accountHolderName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="예금주명을 입력해주세요"
                 disabled={isLoading}
               />
             </div>

@@ -1,6 +1,6 @@
 // src/components/admin/boards/notice/NoticeMainTable.tsx
 "use client";
-import type { NoticeMainRow, NoticeEventRow } from "@/data/notice/types";
+import type { NoticeMainRow, NoticeEventRow } from "@/components/common/Notice/types";
 import NoticeEventTable from "./NoticeEventTable";
 
 const toEventRows = (rows: NoticeMainRow[] = []): NoticeEventRow[] =>

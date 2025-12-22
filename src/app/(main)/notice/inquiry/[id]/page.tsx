@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import SubmenuLayout from '@/layouts/main/SubmenuLayout/SubmenuLayout';
-import { getMainInquiryDetail, deleteMainInquiry } from '@/data/inquiry/main';
-import type { Inquiry } from '@/data/inquiry/tpyes';
 import { ChevronLeft, Edit, Trash2, Download, Eye, MessageSquare } from 'lucide-react';
 
 export default function InquiryDetailPage() {

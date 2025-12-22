@@ -35,7 +35,7 @@ interface HeaderState {
 const subMenus: Record<string, SubMenu> = {
   참가신청: {
     items: [
-      { label: '신청자 관리', href: '/admin/applications/list' },
+      { label: '신청자 관리', href: '/admin/applications/management' },
       { label: '기록관리', href: '/admin/applications/records' },
     ],
   },
@@ -73,7 +73,7 @@ const subMenus: Record<string, SubMenu> = {
 };
 
 const navItems = [
-  { label: '참가신청', href: '/admin/applications/list', key: '참가신청' },
+  { label: '참가신청', href: '/admin/applications/management', key: '참가신청' },
   { label: '대회관리', href: '/admin/events/management', key: '대회관리' },
   { label: '게시판관리', href: '/admin/boards/notice', key: '게시판관리' },
   { label: '회원관리', href: '/admin/users/individual', key: '회원관리' },

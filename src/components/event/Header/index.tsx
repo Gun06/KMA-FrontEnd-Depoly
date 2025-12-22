@@ -3,7 +3,7 @@ import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { useEvents } from '@/contexts/EventsContext';
+import { useMainBanner } from '@/components/providers/MainBannerContext';
 
 interface EventHeaderProps {
   eventName?: string;
@@ -29,7 +29,7 @@ export default function EventHeader({
   accentColor,
   headerBgClass,
 }: EventHeaderProps) {
-  const { mainBannerColor: contextBannerColor } = useEvents();
+  const { mainBannerColor: contextBannerColor } = useMainBanner();
   const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = React.useState(false);

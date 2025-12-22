@@ -5,13 +5,13 @@ import { useApiMutation } from '@/hooks/useFetch';
 import { useQueryClient } from '@tanstack/react-query';
 import { extractApiErrorMessage } from '@/utils/errorHandler';
 import type { EventCreatePayload } from './types';
-import { useEventsActions } from '@/contexts/EventsContext';
+import { useAdminEventsActions } from '@/components/providers/AdminEventsContext';
 
 /**
  * 대회 생성 API 호출 훅
  */
 export function useCreateEvent() {
-  const { saveForm } = useEventsActions();
+  const { saveForm } = useAdminEventsActions();
   const queryClient = useQueryClient();
 
   return useApiMutation<{ id: number } | string, FormData>(

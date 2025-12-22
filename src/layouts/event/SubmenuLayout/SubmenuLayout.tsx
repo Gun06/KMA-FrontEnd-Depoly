@@ -6,7 +6,7 @@ import EventHeader from '@/components/event/Header';
 import HeroSection from '@/components/event/HeroSection';
 import _NoticeSection from '@/components/event/NoticeSection';
 import Breadcrumb from '@/components/event/Breadcrumb';
-import { useEvents } from '@/contexts/EventsContext';
+import { useMainBanner } from '@/components/providers/MainBannerContext';
 
 const MAP_BG: Record<string, string> = {
   dark: 'bg-neutral-900',
@@ -58,7 +58,7 @@ export default function SubmenuLayout({
   breadcrumb
 }: SubmenuLayoutProps) {
   const params = useSearchParams();
-  const { mainBannerColor: contextMainBannerColor } = useEvents();
+  const { mainBannerColor: contextMainBannerColor } = useMainBanner();
   
   // URL 파라미터로 테마 설정 읽기
   const theme = params.get('theme') || '';

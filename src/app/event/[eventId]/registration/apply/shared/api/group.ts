@@ -124,7 +124,8 @@ export const requestGroupRefund = async (
   eventId: string,
   organizationId: string,
   bankName: string,
-  accountNumber: string
+  accountNumber: string,
+  accountHolderName: string
 ): Promise<void> => {
   try {
     const url = `${API_BASE_URL}/api/v0/public/event/${eventId}/registration/organization/${organizationId}/refund`;
@@ -136,7 +137,8 @@ export const requestGroupRefund = async (
       },
       body: JSON.stringify({
         paymenterBank: bankName,
-        accountNumber: accountNumber
+        accountNumber: accountNumber,
+        accountHolderName: accountHolderName
       }),
     });
     

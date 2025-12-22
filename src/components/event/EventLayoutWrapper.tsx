@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventLayout, { EventLayoutThemed } from '@/layouts/event/EventLayout';
-import { EventsProvider } from '@/contexts/EventsContext';
+import { MainBannerProvider } from '@/components/providers/MainBannerContext';
 
 const MAP_BG: Record<string, string> = {
   dark: 'bg-neutral-900',
@@ -101,7 +101,7 @@ export default function EventLayoutWrapper({
   const themedAccentColor = colorParam || initialMainBannerColor || accentColor;
 
   return (
-    <EventsProvider initialMainBannerColor={providerInitialColor}>
+    <MainBannerProvider initialMainBannerColor={providerInitialColor}>
       <EventLayoutThemed
         eventId={eventId}
         headerBgClass={headerBgClass}
@@ -110,7 +110,7 @@ export default function EventLayoutWrapper({
       >
         {children}
       </EventLayoutThemed>
-    </EventsProvider>
+    </MainBannerProvider>
   );
 }
 

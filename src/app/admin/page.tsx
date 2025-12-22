@@ -108,7 +108,7 @@ export default function AdminHomePage() {
           <QuickAccessCard
             title="신청자 관리"
             description="참가 신청자를 관리합니다"
-            href="/admin/applications/list"
+            href="/admin/applications/management"
             icon={Users}
             color="green"
           />

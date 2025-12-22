@@ -2,7 +2,7 @@ import '@/styles/globals.css';
 import 'react-toastify/dist/ReactToastify.css';
 import type { Metadata, Viewport } from 'next';
 import QueryProvider from '@/components/providers/QueryProvider';
-import AuthInitializer from '@/components/AuthInitializer';
+import AuthInitializer from '@/components/providers/AuthInitializer';
 
 export const metadata: Metadata = {
   title: {

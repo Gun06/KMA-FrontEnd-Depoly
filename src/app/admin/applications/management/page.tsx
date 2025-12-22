@@ -1,8 +1,13 @@
 // src/app/admin/applications/management/page.tsx
-import { redirect } from 'next/navigation';
+import { BoardEventList } from '@/components/admin/boards/BoardEventList';
 
-// 더미 데이터 제거됨 - 대회 목록 페이지로 리다이렉트
 export default function Page() {
-  // 더미 데이터가 없으므로 대회 목록 페이지로 리다이렉트
-  redirect('/admin/applications/list');
+  return (
+    <main className="mx-auto max-w-[1300px] px-4 py-6">
+      <BoardEventList
+        title="대회별 신청자 관리"
+        basePath="applications"
+      />
+    </main>
+  );
 }

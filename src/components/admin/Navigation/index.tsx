@@ -16,23 +16,22 @@ import { useEventList } from '@/hooks/useNotices';
 import type { EventListResponse } from '@/types/eventList';
 
 // 공지(기존) 소스 - 유지
-import { fetchEventNotices } from '@/data/notice/event';
-import { getMainNotices } from '@/data/notice/main';
+import { fetchEventNotices } from '@/components/common/Notice/event';
+import { getMainNotices } from '@/components/common/Notice/main';
 
 // 문의 소스 - 유지
-import { getEventInquiries } from '@/data/inquiry/event';
-import { getMainInquiries } from '@/data/inquiry/main';
+import { getEventInquiries } from '@/components/common/Inquiry/event';
+import { getMainInquiries } from '@/components/common/Inquiry/main';
 
-// ✅ FAQ 소스 (이벤트/메인)
-import { getEventFaqs } from '@/data/faq/event';
-import { getMainFaqs } from '@/data/faq/main';
+// FAQ 소스 (이벤트/메인)
+import { getEventFaqs, getHomepageFaqs } from '@/services/admin/faqs';
 
 type Child = { name: string; href: string };
 type Item = { name: string; base: string; icon: LucideIcon; children: Child[] };
 
 const NAV_ITEMS: Item[] = [
   { name: '참가신청', base: '/admin/applications', icon: Users, children: [
-    { name: '신청자 관리', href: '/admin/applications/list' },
+    { name: '신청자 관리', href: '/admin/applications/management' },
     { name: '기록관리', href: '/admin/applications/records' },
   ]},
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
@@ -150,12 +149,7 @@ export default function AdminNavigation() {
     [eventListData]
   );
 
-  useEffect(() => {
-    if (pathname === '/admin/applications/management') {
-      const latest = eventList[0];
-      if (latest) router.replace(`/admin/applications/management/${latest.id}`);
-    }
-  }, [pathname, router, eventList]);
+  // /admin/applications/management는 이제 대회 목록 페이지이므로 자동 리다이렉트 제거
   const currentEventA = useMemo(
     () => (eventIdFromPathA ? eventList.find((e) => String(e.id) === String(eventIdFromPathA)) : null),
     [eventIdFromPathA, eventList]
@@ -346,26 +340,22 @@ export default function AdminNavigation() {
     [boardsEventId_faq, boardsEventList_faq]
   );
 
-  // 이벤트 FAQ 목록(4단계용)
-  const boardsEventFaqs = useMemo(() => {
+  // 이벤트 FAQ 목록(4단계용) - 비동기 API이므로 현재는 빈 배열 반환
+  // TODO: 필요시 useQuery로 변경하여 실제 데이터 로드
+  const boardsEventFaqs = useMemo<Array<{ id: string | number; title: string; [key: string]: unknown }>>(() => {
     if (!boardsEventId_faq) return [];
-    try {
-      const { rows } = getEventFaqs(String(boardsEventId_faq), 1, 1000, { sort: 'new', searchMode: 'post', q: '' });
-      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
-    } catch {
-      return [];
-    }
+    // 비동기 API이므로 useMemo에서 직접 호출 불가
+    // 실제 사용 시 useQuery 등으로 변경 필요
+    return [];
   }, [boardsEventId_faq]);
 
-  // 메인 FAQ 목록(4단계용)
-  const boardsMainFaqs = useMemo(() => {
+  // 메인 FAQ 목록(4단계용) - 비동기 API이므로 현재는 빈 배열 반환
+  // TODO: 필요시 useQuery로 변경하여 실제 데이터 로드
+  const boardsMainFaqs = useMemo<Array<{ id: string | number; title: string; [key: string]: unknown }>>(() => {
     if (!isBoardsFaq) return [];
-    try {
-      const { rows } = getMainFaqs(1, 1000, { sort: 'new', searchMode: 'post', q: '' });
-      return (rows || []).filter((r: Record<string, unknown>) => !('__replyOf' in r));
-    } catch {
-      return [];
-    }
+    // 비동기 API이므로 useMemo에서 직접 호출 불가
+    // 실제 사용 시 useQuery 등으로 변경 필요
+    return [];
   }, [isBoardsFaq]);
 
   // ===== 3단계 리스트 =====
