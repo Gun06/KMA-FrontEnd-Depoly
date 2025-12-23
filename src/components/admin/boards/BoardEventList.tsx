@@ -10,6 +10,7 @@ import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 import { useEventList, useEventSearch } from '@/hooks/useNotices';
 import type { EventListItem, EventListResponse } from '@/types/eventList';
+import { mapEventStatusToRegStatus } from '@/services/admin';
 
 type BoardEventRow = {
   no: number;
@@ -84,15 +85,6 @@ export const BoardEventList = ({
     []
   );
 
-  // API의 eventStatus를 RegStatus로 매핑하는 함수
-  const mapEventStatusToRegStatus = (eventStatus: string): RegStatus => {
-    switch (eventStatus) {
-      case 'OPEN': return '접수중';
-      case 'CLOSED': return '접수마감';
-      case 'NOT_OPEN': return '비접수';
-      default: return '비접수';
-    }
-  };
 
   // 상태값을 API 파라미터로 변환
   const eventStatus = React.useMemo((): 'OPEN' | 'CLOSED' | 'PENDING' | undefined => {

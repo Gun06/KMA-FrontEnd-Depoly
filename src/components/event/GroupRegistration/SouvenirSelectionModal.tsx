@@ -8,6 +8,7 @@ interface SouvenirSelectionModalProps {
   onClose: () => void;
   onConfirm: (selectedSouvenirs: Array<{souvenirId: string, souvenirName: string, size: string}>) => void;
   categoryName: string;
+  distance?: string; // 거리 정보 추가
   eventInfo: EventRegistrationInfo | null;
   currentSelection: Array<{souvenirId: string, souvenirName: string, size: string}>;
 }
@@ -17,6 +18,7 @@ export default function SouvenirSelectionModal({
   onClose,
   onConfirm,
   categoryName,
+  distance,
   eventInfo,
   currentSelection
 }: SouvenirSelectionModalProps) {
@@ -25,7 +27,13 @@ export default function SouvenirSelectionModal({
   useEffect(() => {
     // 모달이 열릴 때, 실제 기념품이 1개 이상 있으면 모두 자동 선택
     if (isOpen && eventInfo) {
-      const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === categoryName);
+      // 거리와 세부종목 이름을 함께 고려해서 찾기
+      const selectedCategory = eventInfo.categorySouvenirList.find(c => {
+        if (distance) {
+          return c.categoryName === categoryName && c.distance === distance;
+        }
+        return c.categoryName === categoryName;
+      });
       const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
       
       // "기념품 없음"을 제외한 실제 기념품 목록
@@ -79,11 +87,17 @@ export default function SouvenirSelectionModal({
     } else {
       setSelectedSouvenirs(currentSelection);
     }
-  }, [currentSelection, isOpen, eventInfo, categoryName]);
+  }, [currentSelection, isOpen, eventInfo, categoryName, distance]);
 
   if (!isOpen) return null;
 
-  const selectedCategory = eventInfo?.categorySouvenirList.find(c => c.categoryName === categoryName);
+  // 거리와 세부종목 이름을 함께 고려해서 찾기
+  const selectedCategory = eventInfo?.categorySouvenirList.find(c => {
+    if (distance) {
+      return c.categoryName === categoryName && c.distance === distance;
+    }
+    return c.categoryName === categoryName;
+  });
   const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
 
   const handleSouvenirToggle = (souvenirId: string, souvenirName: string) => {

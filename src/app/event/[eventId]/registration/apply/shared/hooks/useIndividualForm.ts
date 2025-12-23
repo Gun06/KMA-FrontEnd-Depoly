@@ -6,7 +6,7 @@ import { isFormValid } from '../utils/validation';
 import { handleInputChange, handleIdCheck, handleAddressSelect } from '../utils/handlers';
 import { transformFormDataToApi, transformFormDataToUpdateApi } from '../utils/transformers';
 import { submitIndividualRegistration, updateIndividualRegistration, UserData } from '../api/individual';
-import { EventRegistrationInfo } from '../types/common';
+import { EventRegistrationInfo, CategorySouvenir } from '../types/common';
 import { useRouter } from 'next/navigation';
 
 export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationInfo | null) => {
@@ -153,22 +153,16 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             }
           }
           
-          // eventInfo가 있으면 categorySouvenirList에서 정확한 distance 찾기
-          if (categoryName && eventInfo) {
+          // selectedDistance가 아직 없고 eventCategoryName에서 추출하지 못한 경우에만 찾기
+          // 하지만 같은 이름의 세부종목이 여러 거리에 있을 수 있으므로, 이 방법은 최후의 수단
+          // 가능하면 eventCategoryName에서 거리 정보를 포함하도록 API 응답을 수정하는 것이 좋음
+          // 단, 이미 추출한 selectedDistance가 있으면 그대로 사용 (덮어쓰지 않음)
+          if (!selectedDistance && categoryName && eventInfo) {
             const categoryInfo = eventInfo.categorySouvenirList.find(
               c => c.categoryName === categoryName
             );
             if (categoryInfo && categoryInfo.distance) {
               selectedDistance = categoryInfo.distance;
-            }
-          }
-          
-          // selectedDistance가 아직 없고 categoryName에 거리 정보가 포함되어 있으면 추출
-          if (!selectedDistance && categoryName && categoryName.includes('|')) {
-            const parts = categoryName.split('|').map((p: string) => p.trim());
-            if (parts.length > 0 && parts[0].match(/^\d+km$/i)) {
-              selectedDistance = parts[0];
-              categoryName = parts.slice(1).join(' | ').trim();
             }
           }
           
@@ -196,10 +190,15 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             // 수정 모드에서 기존 기념품들을 selectedSouvenirs 배열로 변환
             selectedSouvenirs: (() => {
               const result = editData.souvenir && editData.souvenir.length > 0 ? editData.souvenir.map((item: any) => {
-                // 이벤트 정보에서 실제 기념품 이름 찾기
+                // 이벤트 정보에서 실제 기념품 이름 찾기 (거리와 세부종목 이름을 함께 고려)
                 let souvenirName = item.souvenirName || '기념품';
-                if (eventInfo && editData.eventCategoryName) {
-                  const category = eventInfo.categorySouvenirList.find(c => c.categoryName === editData.eventCategoryName);
+                if (eventInfo && categoryName) {
+                  const category = eventInfo.categorySouvenirList.find(c => {
+                    if (selectedDistance) {
+                      return c.categoryName === categoryName && c.distance === selectedDistance;
+                    }
+                    return c.categoryName === categoryName;
+                  });
                   if (category) {
                     const souvenir = category.categorySouvenirPair.find(s => s.souvenirId === item.souvenirId);
                     if (souvenir) {
@@ -235,13 +234,36 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
   // eventInfo가 로드된 후 category가 있으면 selectedDistance 자동 설정
   useEffect(() => {
     if (formData.category && eventInfo) {
-      // category에서 정확히 매칭되는 항목 찾기
-      let categoryInfo = eventInfo.categorySouvenirList.find(
-        c => c.categoryName === formData.category
-      );
+      // category에서 정확히 매칭되는 항목 찾기 (거리와 세부종목 이름을 함께 고려)
+      let categoryInfo: CategorySouvenir | undefined;
+      
+      // selectedDistance가 있으면 거리와 세부종목 이름을 반드시 함께 매칭
+      if (formData.selectedDistance) {
+        categoryInfo = eventInfo.categorySouvenirList.find(
+          c => c.categoryName === formData.category && c.distance === formData.selectedDistance
+        );
+        
+        // 거리와 함께 매칭되지 않으면 사용자가 선택한 거리와 세부종목이 일치하지 않으므로 세부종목 초기화
+        if (!categoryInfo) {
+          setFormData(prev => ({
+            ...prev,
+            category: '',
+            selectedSouvenirs: [],
+            souvenir: '',
+            size: ''
+          }));
+          return;
+        }
+      } else {
+        // selectedDistance가 없을 때만 이름만으로 찾기 (하위 호환성)
+        categoryInfo = eventInfo.categorySouvenirList.find(
+          c => c.categoryName === formData.category
+        );
+      }
       
       // 정확히 매칭되지 않으면 부분 매칭 시도 (예: "10km | 너양야아아아"에서 "너양야아아아"만 추출)
-      if (!categoryInfo && formData.category.includes('|')) {
+      // 단, selectedDistance가 있을 때는 거리와 함께 매칭되어야 함
+      if (!categoryInfo && formData.category.includes('|') && !formData.selectedDistance) {
         const parts = formData.category.split('|').map((p: string) => p.trim());
         // 첫 번째 부분이 거리가 아니고, 나머지 부분이 세부종목일 수 있음
         for (const part of parts) {
@@ -263,15 +285,17 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       }
       
       // categoryInfo를 찾았으면 distance 설정
+      // 단, 이미 selectedDistance가 있으면 그대로 유지 (수정 모드에서 이미 올바르게 설정된 경우를 보호)
       if (categoryInfo) {
-        // selectedDistance가 없거나 다른 경우에만 업데이트
-        const shouldUpdateDistance = !formData.selectedDistance || formData.selectedDistance !== categoryInfo.distance;
-        if (shouldUpdateDistance && categoryInfo.distance) {
+        // selectedDistance가 없을 때만 업데이트 (이미 있으면 덮어쓰지 않음)
+        if (!formData.selectedDistance && categoryInfo.distance) {
           setFormData(prev => ({
             ...prev,
             selectedDistance: categoryInfo.distance
           }));
         }
+        // selectedDistance가 있는데 categoryInfo의 distance와 다른 경우는 무시
+        // (사용자가 선택한 거리와 세부종목이 일치하지 않으면 이미 위에서 초기화됨)
       }
     }
   }, [formData.category, formData.selectedDistance, eventInfo]);

@@ -38,14 +38,16 @@ export const adminAuthService = {
   },
 };
 
-// API 이벤트 상태를 프론트엔드 상태로 변환
-function mapEventStatusToRegStatus(eventStatus: EventStatus): RegStatus {
+// API 이벤트 상태를 프론트엔드 상태로 변환 (공통 함수)
+export function mapEventStatusToRegStatus(eventStatus: EventStatus | string): RegStatus {
   switch (eventStatus) {
     case 'OPEN':
       return '접수중';
     case 'CLOSED':
       return '접수마감';
     case 'PENDING':
+    case 'NOT_OPEN': // 호환성을 위해 NOT_OPEN도 처리 (일부 API에서 사용 가능)
+      return '비접수';
     default:
       return '비접수';
   }

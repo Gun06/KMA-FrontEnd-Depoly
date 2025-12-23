@@ -19,10 +19,12 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     isOpen: boolean;
     participantIndex: number;
     categoryName: string;
+    distance?: string; // 거리 정보 추가
   }>({
     isOpen: false,
     participantIndex: -1,
-    categoryName: ''
+    categoryName: '',
+    distance: undefined
   });
 
   const [categoryModalState, setCategoryModalState] = useState<{
@@ -126,7 +128,9 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     const index = categoryModalState.participantIndex;
     if (index === -1) return;
     
-    handleParticipantChange(index, 'category', categoryName);
+    // 거리 정보와 세부종목 이름을 함께 저장 ("3km | 매니아" 형식)
+    const categoryWithDistance = `${distance} | ${categoryName}`;
+    handleParticipantChange(index, 'category', categoryWithDistance);
     handleCloseCategoryModal();
   }, [categoryModalState.participantIndex, handleParticipantChange]);
 
@@ -141,10 +145,23 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
       return;
     }
     
+    // category에서 거리와 세부종목 이름 추출 ("3km | 매니아" 형식)
+    let categoryName = participant.category;
+    let distance = '';
+    if (categoryName.includes('|')) {
+      const parts = categoryName.split('|').map((p: string) => p.trim());
+      if (parts.length > 1) {
+        // 첫 번째 부분이 거리이고, 나머지 부분이 세부종목
+        distance = parts[0];
+        categoryName = parts.slice(1).join(' | ').trim();
+      }
+    }
+    
     setSouvenirModalState({
       isOpen: true,
       participantIndex: index,
-      categoryName: participant.category
+      categoryName: categoryName,
+      distance: distance || undefined
     });
   }, [participants]);
 
@@ -153,7 +170,8 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     setSouvenirModalState({
       isOpen: false,
       participantIndex: -1,
-      categoryName: ''
+      categoryName: '',
+      distance: undefined
     });
   }, []);
 
@@ -889,15 +907,8 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                 }
               }
               
-              // eventInfo에서 정확한 distance 찾기
-              if (!distance && categoryName) {
-                const categoryInfo = eventInfo.categorySouvenirList.find(
-                  c => c.categoryName === categoryName
-                );
-                if (categoryInfo && categoryInfo.distance) {
-                  distance = categoryInfo.distance;
-                }
-              }
+              // 거리 정보가 없으면 찾지 않음 (이름만으로 찾으면 다른 거리의 같은 이름 세부종목을 선택할 수 있음)
+              // 거리 정보가 이미 저장되어 있으면 그대로 사용
               
               return distance;
             }
@@ -940,6 +951,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
         onClose={handleCloseSouvenirModal}
         onConfirm={handleConfirmSouvenirSelection}
         categoryName={souvenirModalState.categoryName}
+        distance={souvenirModalState.distance}
         eventInfo={eventInfo}
         currentSelection={souvenirModalState.participantIndex >= 0 ? (
           participants[souvenirModalState.participantIndex]?.selectedSouvenirs && participants[souvenirModalState.participantIndex].selectedSouvenirs.length > 0 
@@ -950,7 +962,23 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                 souvenirId: participants[souvenirModalState.participantIndex].souvenir,
                 souvenirName: (() => {
                   if (!eventInfo || !participants[souvenirModalState.participantIndex]?.category) return '';
-                  const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === participants[souvenirModalState.participantIndex].category);
+                  // category에서 거리와 세부종목 이름 추출 ("3km | 매니아" 형식)
+                  let categoryName = participants[souvenirModalState.participantIndex].category;
+                  let distance = '';
+                  if (categoryName.includes('|')) {
+                    const parts = categoryName.split('|').map((p: string) => p.trim());
+                    if (parts.length > 1) {
+                      distance = parts[0];
+                      categoryName = parts.slice(1).join(' | ').trim();
+                    }
+                  }
+                  // 거리와 세부종목 이름을 함께 고려해서 찾기
+                  const selectedCategory = eventInfo.categorySouvenirList.find(c => {
+                    if (distance) {
+                      return c.categoryName === categoryName && c.distance === distance;
+                    }
+                    return c.categoryName === categoryName;
+                  });
                   if (selectedCategory) {
                     const selectedSouvenirObj = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === participants[souvenirModalState.participantIndex].souvenir);
                     return selectedSouvenirObj?.souvenirName || '';

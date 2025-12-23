@@ -63,11 +63,21 @@ export default function EventsClient({
     return Array.from(m.values());
   }, [base, storeRows]);
 
+  // URL status 파라미터를 RegStatus로 변환
+  const urlStatusToRegStatus = (urlStatus: string | null): RegStatus | '' => {
+    if (!urlStatus) return '';
+    const normalized = urlStatus.toLowerCase();
+    if (['ing', 'open', 'opening'].includes(normalized)) return '접수중';
+    if (['done', 'closed'].includes(normalized)) return '접수마감';
+    if (['none', 'pending'].includes(normalized)) return '비접수';
+    return '';
+  };
+
   // ---------- 초기 상태 (URL → 상태) ----------
   const [q, setQ] = React.useState(search.get('q') ?? '');
   const [year, setYear] = React.useState(search.get('year') ?? '');
   const [status, setStatus] = React.useState<RegStatus | ''>(
-    (search.get('status') as RegStatus | '') || ''
+    urlStatusToRegStatus(search.get('status'))
   );
   const [pub, setPub] = React.useState<'' | '공개' | '비공개'>(
     search.get('pub') === 'open'

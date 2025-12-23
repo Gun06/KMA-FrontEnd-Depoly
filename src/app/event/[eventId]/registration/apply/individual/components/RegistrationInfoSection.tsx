@@ -54,14 +54,23 @@ export default function RegistrationInfoSection({
     );
   }, [formData.selectedDistance, eventInfo]);
 
-  // 선택된 세부종목 정보
+  // 선택된 세부종목 정보 (거리와 세부종목 이름을 함께 고려)
   const selectedCategory = useMemo(() => {
     if (!formData.category || !eventInfo) return null;
     
+    // 거리와 세부종목 이름을 함께 매칭 (같은 이름의 세부종목이 여러 거리에 있을 수 있음)
+    if (formData.selectedDistance) {
+      const matched = eventInfo.categorySouvenirList.find(
+        c => c.categoryName === formData.category && c.distance === formData.selectedDistance
+      );
+      if (matched) return matched;
+    }
+    
+    // 거리가 없거나 매칭되지 않은 경우, 이름만으로 찾기 (하위 호환성)
     return eventInfo.categorySouvenirList.find(
       c => c.categoryName === formData.category
     ) || null;
-  }, [formData.category, eventInfo]);
+  }, [formData.category, formData.selectedDistance, eventInfo]);
 
   // 거리 선택 핸들러
   const handleDistanceSelect = useCallback((distance: string) => {
@@ -281,6 +290,7 @@ export default function RegistrationInfoSection({
         onClose={handleCloseSouvenirModal}
         onConfirm={handleConfirmSouvenirSelection}
         categoryName={formData.category || ''}
+        distance={formData.selectedDistance}
         eventInfo={eventInfo}
         currentSelection={(() => {
           // selectedSouvenirs가 있으면 그것을 사용
@@ -294,7 +304,13 @@ export default function RegistrationInfoSection({
               souvenirId: formData.souvenir,
               souvenirName: (() => {
                 if (!eventInfo || !formData.category) return '';
-                const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === formData.category);
+                // 거리와 세부종목 이름을 함께 고려해서 찾기
+                const selectedCategory = eventInfo.categorySouvenirList.find(c => {
+                  if (formData.selectedDistance) {
+                    return c.categoryName === formData.category && c.distance === formData.selectedDistance;
+                  }
+                  return c.categoryName === formData.category;
+                });
                 if (selectedCategory) {
                   const selectedSouvenirObj = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === formData.souvenir);
                   return selectedSouvenirObj?.souvenirName || '';

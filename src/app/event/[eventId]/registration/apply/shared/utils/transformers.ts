@@ -14,8 +14,14 @@ export const transformFormDataToApi = (
     throw new Error('이벤트 정보가 없습니다.');
   }
 
+  // 거리와 세부종목 이름을 함께 고려해서 찾기
   const selectedCategory = eventInfo.categorySouvenirList.find(
-    c => c.categoryName === formData.category
+    c => {
+      if (formData.selectedDistance) {
+        return c.categoryName === formData.category && c.distance === formData.selectedDistance;
+      }
+      return c.categoryName === formData.category;
+    }
   );
 
   if (!selectedCategory) {
@@ -103,8 +109,14 @@ export const transformFormDataToUpdateApi = (
     throw new Error('이벤트 정보가 없습니다.');
   }
 
+  // 거리와 세부종목 이름을 함께 고려해서 찾기
   const selectedCategory = eventInfo.categorySouvenirList.find(
-    c => c.categoryName === formData.category
+    c => {
+      if (formData.selectedDistance) {
+        return c.categoryName === formData.category && c.distance === formData.selectedDistance;
+      }
+      return c.categoryName === formData.category;
+    }
   );
 
   if (!selectedCategory) {
@@ -220,23 +232,30 @@ export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: 
         throw new Error(`참가자 ${index + 1}: 사이즈를 선택해주세요.`);
       }
       
-      // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 세부종목만 추출
+      // category가 "3km | 매니아" 형식일 수 있으므로 거리와 세부종목 추출
       let categoryName = participant.category;
+      let distance = '';
       if (categoryName.includes('|')) {
         const parts = categoryName.split('|').map((p: string) => p.trim());
         if (parts.length > 0) {
           // 첫 번째 부분이 거리 형식인지 확인
           const firstPart = parts[0];
           if (firstPart.match(/^\d+km$/i)) {
+            distance = firstPart;
             // 나머지 부분을 세부종목 이름으로 사용
             categoryName = parts.slice(1).join(' | ').trim();
           }
         }
       }
       
-      // 이벤트 정보에서 올바른 카테고리와 기념품 찾기
+      // 이벤트 정보에서 올바른 카테고리와 기념품 찾기 (거리와 세부종목 이름을 함께 고려)
       const selectedCategory = eventInfo?.categorySouvenirList?.find(
-        (c: any) => c.categoryName === categoryName
+        (c: any) => {
+          if (distance) {
+            return c.categoryName === categoryName && c.distance === distance;
+          }
+          return c.categoryName === categoryName;
+        }
       );
 
       if (!selectedCategory) {
@@ -331,22 +350,30 @@ export const transformGroupFormDataToUpdateApi = (
 
   // 참가자별 기념품 정보 생성 (다중 선택 지원)
   const registrationInfoPerUserList = formData.participants.map((participant, index) => {
-    // category가 "10km | 짝궁마라톤" 형식일 수 있으므로 세부종목만 추출
+    // category가 "3km | 매니아" 형식일 수 있으므로 거리와 세부종목 추출
     let categoryName = participant.category;
+    let distance = '';
     if (categoryName.includes('|')) {
       const parts = categoryName.split('|').map((p: string) => p.trim());
       if (parts.length > 0) {
         // 첫 번째 부분이 거리 형식인지 확인
         const firstPart = parts[0];
         if (firstPart.match(/^\d+km$/i)) {
+          distance = firstPart;
           // 나머지 부분을 세부종목 이름으로 사용
           categoryName = parts.slice(1).join(' | ').trim();
         }
       }
     }
     
+    // 거리와 세부종목 이름을 함께 고려해서 찾기
     const selectedCategory = eventInfo.categorySouvenirList.find(
-      c => c.categoryName === categoryName
+      c => {
+        if (distance) {
+          return c.categoryName === categoryName && c.distance === distance;
+        }
+        return c.categoryName === categoryName;
+      }
     );
 
     if (!selectedCategory) {

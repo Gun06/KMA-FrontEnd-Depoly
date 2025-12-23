@@ -74,7 +74,7 @@ export default function AdminHomePage() {
           value={eventsLoading ? '...' : openEvents.toLocaleString()}
           icon={Calendar}
           color="green"
-          href="/admin/events/management?status=OPEN"
+          href="/admin/events/management?status=ing"
         />
         <StatCard
           title="전체 문의사항"
