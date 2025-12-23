@@ -53,10 +53,11 @@ export const updateGroupRegistration = async (eventId: string, registrationId: s
       // JSON 형식의 에러 메시지 추출 시도
       try {
         const errorJson = JSON.parse(errorText);
-        const serverMessage = errorJson?.message || errorJson?.error || errorText;
-        throw new Error(`수정 실패: ${response.status} - ${serverMessage}`);
-      } catch {
-      throw new Error(`수정 실패: ${response.status} - ${errorText}`);
+        // 전체 JSON 객체를 문자열로 전달하여 formatError에서 파싱할 수 있도록 함
+        throw new Error(`수정 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+      } catch (parseError) {
+        // JSON 파싱 실패 시 원본 텍스트 전달
+        throw new Error(`수정 실패: ${response.status} - ${errorText}`);
       }
     }
     

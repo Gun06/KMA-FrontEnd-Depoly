@@ -268,9 +268,9 @@ export default function GroupApplicationConfirmResultPage() {
               ...latestGroupData,
               paymentStatus: overallPaymentStatus,
               innerUserRegistrationList: updatedParticipants,
-            address: latestGroupData.address || baseData?.address || '',
-            addressDetail: latestGroupData.addressDetail || baseData?.addressDetail || '',
-            zipCode: latestGroupData.zipCode || baseData?.zipCode || '',
+              address: latestGroupData.address || baseData?.address || '',
+              addressDetail: latestGroupData.addressDetail || baseData?.addressDetail || '',
+              zipCode: latestGroupData.zipCode || baseData?.zipCode || '',
               _isMixedStatus: isMixedStatus,
             };
             

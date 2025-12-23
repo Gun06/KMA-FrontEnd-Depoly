@@ -463,7 +463,7 @@ export const transformGroupFormDataToUpdateApi = (
         address: {
           address: formData.address || '', // 단일 문자열 주소 (개인신청과 동일)
           zipCode: formData.postalCode || '',
-          addressDetail: formData.detailedAddress || ''
+          addressDetail: formData.detailedAddress || '' // 세부주소 (상세주소)
         },
         birth: formData.representativeBirthDate,
         phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
@@ -475,8 +475,7 @@ export const transformGroupFormDataToUpdateApi = (
         paymenterName: formData.depositorName
       }
     },
-    registrationInfoPerUserList: registrationInfoPerUserList,
-    registrationId: originalData?.innerUserRegistrationList?.[0]?.registrationId // registrationId를 Request Body에 추가
+    registrationInfoPerUserList: registrationInfoPerUserList
   };
 
   return apiData;

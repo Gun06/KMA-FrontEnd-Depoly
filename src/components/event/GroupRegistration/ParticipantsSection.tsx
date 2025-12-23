@@ -12,9 +12,10 @@ interface ParticipantsSectionProps {
   participants: ParticipantData[];
   eventInfo: EventRegistrationInfo | null;
   onParticipantsChange: (participants: ParticipantData[]) => void;
+  isEditMode?: boolean;
 }
 
-const ParticipantsSection = memo(function ParticipantsSection({ participants, eventInfo, onParticipantsChange }: ParticipantsSectionProps) {
+const ParticipantsSection = memo(function ParticipantsSection({ participants, eventInfo, onParticipantsChange, isEditMode = false }: ParticipantsSectionProps) {
   const [souvenirModalState, setSouvenirModalState] = useState<{
     isOpen: boolean;
     participantIndex: number;
@@ -68,6 +69,11 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
   }, [participants, onParticipantsChange]);
 
   const handleParticipantCountChange = useCallback((newCount: number) => {
+    // 수정 모드에서는 참가자 추가/삭제 불가
+    if (isEditMode) {
+      return;
+    }
+    
     const currentCount = participants.length;
     
     if (newCount > currentCount) {
@@ -99,13 +105,13 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
       const newParticipants = participants.slice(0, newCount);
       onParticipantsChange(newParticipants);
     }
-  }, [participants, onParticipantsChange]);
+  }, [participants, onParticipantsChange, isEditMode]);
 
   // 참가종목 선택 모달 열기
   const handleOpenCategoryModal = useCallback((index: number) => {
     const participant = participants[index];
-    // 결제완료된 참가자는 모달을 열 수 없음
-    if (participant.paymentStatus === 'PAID') {
+    // 수정 모드가 아닐 때만 결제완료된 참가자는 모달을 열 수 없음
+    if (!isEditMode && participant.paymentStatus === 'PAID') {
       return;
     }
     
@@ -113,7 +119,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
       isOpen: true,
       participantIndex: index
     });
-  }, [participants]);
+  }, [participants, isEditMode]);
 
   // 참가종목 선택 모달 닫기
   const handleCloseCategoryModal = useCallback(() => {
@@ -137,8 +143,8 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback((index: number) => {
     const participant = participants[index];
-    // 결제완료된 참가자는 모달을 열 수 없음
-    if (participant.paymentStatus === 'PAID') {
+    // 수정 모드가 아닐 때만 결제완료된 참가자는 모달을 열 수 없음
+    if (!isEditMode && participant.paymentStatus === 'PAID') {
       return;
     }
     if (!participant.category || participant.category === '종목') {
@@ -163,7 +169,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
       categoryName: categoryName,
       distance: distance || undefined
     });
-  }, [participants]);
+  }, [participants, isEditMode]);
 
   // 기념품 선택 모달 닫기
   const handleCloseSouvenirModal = useCallback(() => {
@@ -209,6 +215,11 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
   }, [souvenirModalState, participants, onParticipantsChange, handleCloseSouvenirModal]);
 
   const handleDeleteParticipant = useCallback((index: number) => {
+    // 수정 모드에서는 참가자 삭제 불가
+    if (isEditMode) {
+      return;
+    }
+    
     // 결제완료된 참가자는 삭제할 수 없음
     const participant = participants[index];
     if (participant.paymentStatus === 'PAID') {
@@ -216,7 +227,7 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
     }
     const newParticipants = participants.filter((_, i) => i !== index);
     onParticipantsChange(newParticipants);
-  }, [participants, onParticipantsChange]);
+  }, [participants, onParticipantsChange, isEditMode]);
 
   // 참가자별 기념품 옵션을 메모이제이션
   const participantSouvenirOptions = useMemo(() => {
@@ -306,17 +317,22 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
               placeholder="명" 
               value={pendingParticipantCount}
               onChange={(e) => {
+                if (isEditMode) return;
                 const newCount = Math.max(0, Math.min(100, Number(e.target.value) || 0));
                 setPendingParticipantCount(newCount);
               }}
               min="0"
               max="100"
-              className="w-20 px-3 py-2 rounded-lg text-center border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isEditMode}
+              className={`w-20 px-3 py-2 rounded-lg text-center border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                isEditMode ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
+              }`}
             />
             <span className="text-lg font-bold text-black">명</span>
             <button
               type="button"
               onClick={() => {
+                if (isEditMode) return;
                 let message = '';
                 if (pendingParticipantCount === participants.length) {
                   message = `참가인원이 이미 ${participants.length}명으로 설정되어 있습니다.`;
@@ -326,7 +342,12 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                 }
                 setConfirmModalState({ open: true, message });
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              disabled={isEditMode}
+              className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                isEditMode 
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
               확인
             </button>
@@ -385,8 +406,9 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
           </thead>
           <tbody>
             {participants.map((participant, index) => {
-              // UNPAID가 아닌 모든 결제상태는 편집 불가능
-              const isDisabled = participant.paymentStatus && participant.paymentStatus !== 'UNPAID';
+              // 수정 모드에서는 모든 참가자 정보 수정 가능 (삭제/추가는 별도로 막음)
+              // 신규 신청 모드에서는 UNPAID가 아닌 모든 결제상태는 편집 불가능
+              const isDisabled = !isEditMode && participant.paymentStatus && participant.paymentStatus !== 'UNPAID';
               
               return (
               <tr 
@@ -785,13 +807,39 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                   {(() => {
                     if (!participant.category || !eventInfo) return '0원';
                     
-                    const selectedCategory = eventInfo.categorySouvenirList.find(c => c.categoryName === participant.category);
+                    // category가 "거리 | 세부종목" 형식일 수 있으므로 분리
+                    let categoryName = participant.category;
+                    let distance = '';
+                    
+                    if (categoryName.includes('|')) {
+                      const parts = categoryName.split('|').map((p: string) => p.trim());
+                      if (parts.length > 1) {
+                        // 첫 번째 부분이 거리 형식인지 확인 (예: "10km", "3km" 등)
+                        const firstPart = parts[0];
+                        if (firstPart.match(/^\d+km$/i)) {
+                          distance = firstPart;
+                          // 나머지 부분을 세부종목 이름으로 사용
+                          categoryName = parts.slice(1).join(' | ').trim();
+                        } else {
+                          // 첫 번째 부분이 거리가 아니면 전체를 categoryName으로 사용
+                          categoryName = participant.category;
+                        }
+                      }
+                    }
+                    
+                    // 거리와 세부종목 이름을 함께 고려해서 찾기
+                    const selectedCategory = eventInfo.categorySouvenirList.find(c => {
+                      if (distance) {
+                        return c.categoryName === categoryName && c.distance === distance;
+                      }
+                      return c.categoryName === categoryName;
+                    });
+                    
                     if (!selectedCategory) return '0원';
                     
-                    // 기본 참가비
+                    // 기본 참가비 (기념품 비용은 이미 포함되어 있거나 별도로 계산되지 않음)
                     const totalFee = selectedCategory.amount || 0;
                     
-                    // 기념품이 선택된 경우 추가 비용 (현재는 기념품 비용이 포함되어 있다고 가정)
                     return totalFee.toLocaleString() + '원';
                   })()}
                 </td>
@@ -855,16 +903,16 @@ const ParticipantsSection = memo(function ParticipantsSection({ participants, ev
                   <button
                     type="button"
                     onClick={() => {
-                      if (isDisabled) return;
+                      if (isDisabled || isEditMode) return;
                       handleDeleteParticipant(index);
                     }}
-                    disabled={isDisabled}
+                    disabled={isDisabled || isEditMode}
                     className={`w-6 h-6 rounded-full transition-colors flex items-center justify-center text-sm font-bold mx-auto ${
-                      isDisabled 
+                      (isDisabled || isEditMode)
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                         : 'bg-gray-500 text-white hover:bg-gray-600'
                     }`}
-                    title={isDisabled ? '결제완료된 참가자는 삭제할 수 없습니다' : '참가자 삭제'}
+                    title={isEditMode ? '수정 모드에서는 참가자 삭제가 불가능합니다' : (isDisabled ? '결제완료된 참가자는 삭제할 수 없습니다' : '참가자 삭제')}
                   >
                     -
                   </button>

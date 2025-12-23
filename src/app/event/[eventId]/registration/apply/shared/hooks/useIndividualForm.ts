@@ -8,6 +8,7 @@ import { transformFormDataToApi, transformFormDataToUpdateApi } from '../utils/t
 import { submitIndividualRegistration, updateIndividualRegistration, UserData } from '../api/individual';
 import { EventRegistrationInfo, CategorySouvenir } from '../types/common';
 import { useRouter } from 'next/navigation';
+import { formatError } from '../utils/errorHandler';
 
 export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationInfo | null) => {
   const router = useRouter();
@@ -352,14 +353,19 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             const registrationIdParam = urlParams.get('registrationId');
             const dataParam = urlParams.get('data');
             
-            // sessionStorage에서 먼저 확인 (새로운 방식)
+            // URL 파라미터에서 직접 registrationId 가져오기 (가장 우선)
             if (registrationIdParam) {
+              registrationId = registrationIdParam;
+            }
+            
+            // sessionStorage에서 확인 (새로운 방식)
+            if (!registrationId && registrationIdParam) {
               try {
                 const storageKey = `individual_edit_data_${eventId}_${decodeURIComponent(registrationIdParam)}`;
                 const storedDataString = sessionStorage.getItem(storageKey);
                 if (storedDataString) {
                   const editData = JSON.parse(storedDataString);
-                  registrationId = editData.registrationId;
+                  registrationId = editData.registrationId || registrationIdParam;
                   // API 호출 성공 후 sessionStorage 삭제
                   try {
                     sessionStorage.removeItem(storageKey);
@@ -464,25 +470,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             alert('선택한 기념품을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
           }
         } else {
-          // 다른 오류들에 대한 처리
-          let errorMessage = '신청 처리 중 오류가 발생했습니다.';
-          
-          if (error instanceof Error) {
-            // 에러 메시지에서 상태 코드와 상세 내용 파싱
-            const errorMsg = error.message.toLowerCase();
-            
-            if (errorMsg.includes('404')) {
-              errorMessage = '요청한 정보를 찾을 수 없습니다. 이벤트 정보를 다시 확인해주세요.';
-            } else if (errorMsg.includes('500')) {
-              errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-            } else if (errorMsg.includes('409') || errorMsg.includes('400')) {
-              // DB상 이름/생일/전화번호 동시 중복인 경우 무조건 핸드폰 번호 오류 메시지 표시
-              errorMessage = '동일 핸드폰 번호로 신청내역이 이미 있습니다.';
-            } else {
-              // 기타 오류의 경우 기본 메시지 표시
-              errorMessage = '신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-            }
-          }
+          // 다른 오류들에 대한 처리 - formatError를 사용하여 서버 메시지 추출
+          const errorMessage = formatError(error);
           
           // alert 대신 상태로 오류 메시지 저장
           setSubmitError(errorMessage);
