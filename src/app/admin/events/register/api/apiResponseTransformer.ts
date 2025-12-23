@@ -4,7 +4,7 @@
  * /utils/apiToFormPrefill.ts를 건드리지 않고 여기에 새로 구현
  */
 
-import type { EventDetailApiResponse } from '@/types/api/event';
+import type { EventDetailApiResponse } from '@/app/admin/events/[eventId]/api/event';
 import type { UseCompetitionPrefill } from '@/app/admin/events/register/hooks/useCompetitionForm';
 import type { EventTheme } from '@/types/Admin';
 

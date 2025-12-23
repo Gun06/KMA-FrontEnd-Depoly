@@ -12,7 +12,7 @@ import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import type { NoticeFile } from "@/types/notice";
 import { useCreateHomepageNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeCategory } from "@/services/admin/notices";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {

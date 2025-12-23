@@ -1,4 +1,4 @@
-import type { EventDetailApiResponse } from '@/types/api/event';
+import type { EventDetailApiResponse } from '@/app/admin/events/[eventId]/api/event';
 import type { UseCompetitionPrefill } from '@/app/admin/events/register/hooks/useCompetitionForm';
 import type { EventTheme } from '@/types/Admin';
 

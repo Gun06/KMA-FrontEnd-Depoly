@@ -61,3 +61,4 @@ export interface EventDetailApiResponse {
     sizes: string;
   }>;
 }
+

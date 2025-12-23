@@ -2,7 +2,7 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores';
 import { useMainBanner } from '@/components/providers/MainBannerContext';
 
 interface EventHeaderProps {

@@ -9,7 +9,7 @@ import xIcon from '@/assets/icons/main/x.svg';
 import menuIcon from '@/assets/icons/main/menu.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoints } from '@/hooks/useMediaQuery';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAdminAuthStore } from '@/stores';
 import UtilityIcons from './UtilityIcons';
 
 interface SubMenuItem {

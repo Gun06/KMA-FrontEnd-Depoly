@@ -113,19 +113,70 @@ export default function EditClient({
       return [];
     }
 
-    // 드롭다운 데이터에서 종목 추출
-    // 드롭다운 API는 저장된 종목과 기념품만 반환하므로 안전하게 사용 가능
-    const allSouvenirs = dropdownData.flatMap(cat => cat.souvenirs || []);
-    const uniqueSouvenirs = Array.from(
-      new Map(allSouvenirs.map(s => [s.id, s])).values()
-    );
+    // initialGifts를 기준으로 기념품 인덱스 매핑 생성
+    // initialGifts는 apiData와 dropdownData에서 모두 추출한 기념품이므로
+    // 이를 기준으로 인덱스를 찾아야 모든 기념품이 표시됨
+    const giftIndexMap = new Map<string, number>();
+    initialGifts.forEach((gift, index) => {
+      // name과 size를 조합하여 고유 키 생성
+      const key = `${gift.name}_${gift.size}`;
+      if (!giftIndexMap.has(key)) {
+        giftIndexMap.set(key, index);
+      }
+    });
+
+    // apiData에서 모든 기념품 ID 매핑 생성 (ID로도 찾을 수 있도록)
+    const giftIdMap = new Map<string, number>();
+    if (apiData) {
+      // apiData.souvenirs에서 ID 매핑
+      if (apiData.souvenirs && apiData.souvenirs.length > 0) {
+        apiData.souvenirs.forEach((souvenir, index) => {
+          const giftIndex = initialGifts.findIndex(
+            g => g.name === souvenir.name && g.size === souvenir.sizes
+          );
+          if (giftIndex >= 0 && !giftIdMap.has(souvenir.id)) {
+            giftIdMap.set(souvenir.id, giftIndex);
+          }
+        });
+      }
+      
+      // apiData.eventCategories에서 ID 매핑
+      if (apiData.eventCategories && apiData.eventCategories.length > 0) {
+        apiData.eventCategories.forEach(cat => {
+          if (cat.souvenirs) {
+            cat.souvenirs.forEach(souvenir => {
+              const giftIndex = initialGifts.findIndex(
+                g => g.name === souvenir.name && g.size === souvenir.sizes
+              );
+              if (giftIndex >= 0 && !giftIdMap.has(souvenir.id)) {
+                giftIdMap.set(souvenir.id, giftIndex);
+              }
+            });
+          }
+        });
+      }
+    }
 
     return dropdownData.map(category => {
-      // 기념품 인덱스 찾기
+      // 기념품 인덱스 찾기 (ID 우선, 없으면 name+size로 찾기)
       const selectedGifts = category.souvenirs
         .map(souvenir => {
-          const index = uniqueSouvenirs.findIndex(s => s.id === souvenir.id);
-          return index >= 0 ? index : -1;
+          // 1. ID로 찾기 (가장 정확함)
+          if (giftIdMap.has(souvenir.id)) {
+            return giftIdMap.get(souvenir.id)!;
+          }
+          
+          // 2. name과 size로 찾기
+          const key = `${souvenir.name}_${souvenir.sizes}`;
+          if (giftIndexMap.has(key)) {
+            return giftIndexMap.get(key)!;
+          }
+          
+          // 3. name만으로 찾기 (fallback)
+          const nameIndex = initialGifts.findIndex(
+            g => g.name === souvenir.name
+          );
+          return nameIndex >= 0 ? nameIndex : -1;
         })
         .filter(idx => idx >= 0);
       
@@ -135,7 +186,7 @@ export default function EditClient({
         selectedGifts,
       };
     });
-  }, [dropdownData]);
+  }, [dropdownData, initialGifts, apiData]);
 
   // 결제정보(은행/가상계좌) 별도 API 연동
   const [bankName, setBankName] = React.useState<string>('');

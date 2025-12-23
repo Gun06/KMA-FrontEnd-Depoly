@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 
 /**

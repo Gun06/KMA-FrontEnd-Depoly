@@ -6,7 +6,7 @@ import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import { useNoticeDetail, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "@/stores";
 
 // 날짜시간 포맷팅 함수 (백엔드에서 한국시간으로 제공)
 function formatDateTime(dateString: string): string {

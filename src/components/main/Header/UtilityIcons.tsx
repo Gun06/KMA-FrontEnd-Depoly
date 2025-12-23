@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import searchIcon from '@/assets/icons/main/search.svg';
 import cartIcon from '@/assets/icons/main/cart.svg';
 import userIcon from '@/assets/icons/main/user.svg';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { navigationGuard } from '@/utils/navigationGuard';
 import { authService } from '@/services/auth';

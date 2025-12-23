@@ -12,7 +12,7 @@ import xIcon from '@/assets/icons/main/x.svg';
 import menuIcon from '@/assets/icons/main/menu.svg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBreakpoints } from '@/hooks/useMediaQuery';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';

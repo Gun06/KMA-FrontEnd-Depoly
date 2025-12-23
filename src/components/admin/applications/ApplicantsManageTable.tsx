@@ -5,7 +5,6 @@ import React from 'react';
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { ChevronDown as Caret, Check } from 'lucide-react';
-
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import { Column } from '@/components/common/Table/BaseTable';
 import FilterBar from '@/components/common/filters/FilterBar';
@@ -18,7 +17,7 @@ import { toast } from 'react-toastify';
 
 type SortKey = 'id' | 'name' | 'org' | 'birth';
 type SearchField = 'name' | 'tel' | 'org' | 'birth' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all';
-type ToolbarAction = 'downloadApplicants' | 'uploadPayments';
+type ToolbarAction = 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm';
 
 type Props = {
   rows: ApplicantManageRow[];
@@ -84,12 +83,13 @@ function DropdownPortal({
   const recalc = React.useCallback(() => {
     const el = btnRef.current; if (!el) return;
     const r = el.getBoundingClientRect();
-    const width = r.width;
+    // 드롭다운 메뉴 넓이를 버튼 넓이보다 넓게 설정 (최소 180px 보장)
+    const menuWidth = Math.max(r.width, 180);
     setMenuStyle({
       position: 'fixed',
       top: r.bottom + 4,
-      left: Math.min(r.left, window.innerWidth - width - 8),
-      width, maxHeight: 280, overflowY: 'auto', zIndex: 9999,
+      left: Math.min(r.left, window.innerWidth - menuWidth - 8),
+      width: menuWidth, maxHeight: 280, overflowY: 'auto', zIndex: 9999,
     });
   }, []);
   React.useLayoutEffect(() => { if (open) recalc(); }, [open, recalc]);

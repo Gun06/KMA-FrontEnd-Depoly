@@ -11,7 +11,7 @@ import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import type { NoticeFile } from "@/types/notice";
 import { useNoticeDetail, useUpdateNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
-import { useAuthStore } from "@/store/authStore";
+import { useAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query"; 
 // ↑ saveMainNotice(noticeId: string|number, payload: {type,title,visibility,pinned?,content?,files?}) 를
 // data/notice/main.ts에 구현해 두세요. (이벤트용 saveEventNotice와 동일 패턴)

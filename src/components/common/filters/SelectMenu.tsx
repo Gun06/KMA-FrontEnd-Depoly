@@ -51,7 +51,8 @@ export default function SelectMenu({
       return;
     }
 
-    const width = Math.max(120, r.width);
+    // 버튼 넓이에 맞추되, 최소 넓이를 충분히 보장 (차액환불요청 등 긴 텍스트 대응)
+    const width = Math.max(160, r.width);
     const left = Math.min(Math.max(8, r.left), vw - width - 8);
 
     // 상/하 가용 공간 계산(상단은 safeTop 고려)
@@ -114,7 +115,7 @@ export default function SelectMenu({
         ref={btnRef}
         onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
         className={cn(
-          "h-10 w-[120px] rounded-[5px] border px-3 bg-white",
+          "h-10 min-w-[120px] rounded-[5px] border px-3 bg-white",
           open ? "border-[#256EF4]" : "border-[#58616A]",
           "inline-flex items-center justify-between gap-2"
         )}
@@ -122,8 +123,8 @@ export default function SelectMenu({
         aria-expanded={open}
         aria-label={label}
       >
-        <span className="text-[15px] leading-[26px] text-[#1E2124]">{buttonText}</span>
-        <ChevronDown className={cn("w-5 h-5 text-[#33363D] transition-transform", open && "rotate-180")} />
+        <span className="text-[15px] leading-[26px] text-[#1E2124] whitespace-nowrap">{buttonText}</span>
+        <ChevronDown className={cn("w-5 h-5 text-[#33363D] transition-transform shrink-0", open && "rotate-180")} />
       </button>
 
       {open && (

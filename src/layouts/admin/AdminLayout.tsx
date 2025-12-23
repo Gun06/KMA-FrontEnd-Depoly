@@ -6,7 +6,7 @@ import { ArrowRight, X, AlertCircle } from 'lucide-react';
 import AdminHeader from '@/components/admin/Header';
 import AdminNavigation from '@/components/admin/Navigation';
 import AdminFooter from '@/components/admin/Footer';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAdminAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { navigationGuard } from '@/utils/navigationGuard';
 

@@ -177,12 +177,32 @@ export default function Client({
     }
   };
 
+  // 단체 신청 양식 다운로드 처리
+  const handleDownloadGroupForm = async () => {
+    try {
+      // TODO: 단체 신청 양식 다운로드 API 호출
+      toast.info('단체 신청 양식 다운로드 기능은 준비 중입니다.');
+    } catch (_error) {
+      toast.error('다운로드에 실패했습니다.');
+    }
+  };
+
+  // 단체 신청 양식 업로드 처리
+  const handleUploadGroupForm = () => {
+    // TODO: 단체 신청 양식 업로드 모달 열기
+    toast.info('단체 신청 양식 업로드 기능은 준비 중입니다.');
+  };
+
   // 툴바 액션 처리
-  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments') => {
+  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm') => {
     if (action === 'downloadApplicants') {
       handleDownloadApplicants();
     } else if (action === 'uploadPayments') {
       handleUploadPayments();
+    } else if (action === 'downloadGroupForm') {
+      handleDownloadGroupForm();
+    } else if (action === 'uploadGroupForm') {
+      handleUploadGroupForm();
     }
   };
 

@@ -13,7 +13,7 @@ import { useAdminDepartments } from './hooks/useAdminDepartments';
 import { validateAdminForm } from './utils/validation';
 import { resetFormData } from './utils/formHelpers';
 import { ADMIN_TABLE_COLUMNS, DEFAULT_PAGE_SIZE } from './utils/constants';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAdminAuthStore } from '@/stores';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/common/Toast/ToastContainer';
 import SuccessModal from '@/components/common/Modal/SuccessModal';

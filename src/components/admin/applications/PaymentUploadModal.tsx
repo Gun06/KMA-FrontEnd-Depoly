@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, Send, CheckCircle2, HelpCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { checkPaymentUpload, finalizePaymentUpload } from '@/services/registration';
-import type { PaymentUploadDeal, PaymentUploadCheckResponse } from '@/types/paymentUpload';
+import type { PaymentUploadDeal, PaymentUploadCheckResponse, PaymentUploadRegistration } from './api/paymentUpload';
 import UploadButton from '@/components/common/Upload/UploadButton';
 import RegistrationDetailDrawer from './RegistrationDetailDrawer';
 import { getRegistrationDetail } from '@/services/registration';
@@ -87,11 +87,11 @@ export default function PaymentUploadModal({
 
     setIsChecking(true);
     try {
-      const result = await checkPaymentUpload(eventId, file);
+      const result: PaymentUploadCheckResponse = await checkPaymentUpload(eventId, file);
       // 각 신청자에 checked 필드 초기값 설정 (없으면 false)
-      const normalizedResult = result.map(deal => ({
+      const normalizedResult: PaymentUploadCheckResponse = result.map((deal: PaymentUploadDeal) => ({
         ...deal,
-        registrationList: deal.registrationList.map(reg => ({
+        registrationList: deal.registrationList.map((reg: PaymentUploadRegistration) => ({
           ...reg,
           checked: reg.checked ?? false,
         })),

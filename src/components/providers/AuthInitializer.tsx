@@ -8,8 +8,7 @@ import {
   tokenService,
 } from '@/utils/tokenService';
 import { decodeToken } from '@/utils/jwt';
-import { useAuthStore } from '@/store/authStore';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAuthStore, useAdminAuthStore } from '@/stores';
 import { navigationGuard } from '@/utils/navigationGuard';
 
 /**

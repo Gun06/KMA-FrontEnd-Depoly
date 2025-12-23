@@ -160,7 +160,7 @@ export async function checkPaymentUpload(
     const response = await request('admin', url, 'POST', formData, true, {
       signal: options?.signal,
     });
-    return response as import('@/types/paymentUpload').PaymentUploadCheckResponse;
+    return response as import('@/components/admin/applications/api/paymentUpload').PaymentUploadCheckResponse;
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw error;
@@ -172,7 +172,7 @@ export async function checkPaymentUpload(
 // 입금 내역 Excel 최종 업로드 (수정 후 최종 반영)
 export async function finalizePaymentUpload(
   eventId: string,
-  data: import('@/types/paymentUpload').PaymentUploadFinalRequest
+  data: import('@/components/admin/applications/api/paymentUpload').PaymentUploadFinalRequest
 ): Promise<string> {
   const url = `/api/v1/registration/event/${eventId}/excel/final`;
   

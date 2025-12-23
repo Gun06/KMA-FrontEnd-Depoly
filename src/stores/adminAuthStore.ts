@@ -1,18 +1,17 @@
-// src/stores/authStore.ts
+// src/stores/adminAuthStore.ts - 관리자 전용 인증 스토어
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getRememberLogin } from '@/utils/jwt';
 
-interface User {
+interface AdminUser {
   id: string;
   account: string;
   role: string;
   roles?: string[];
 }
 
-interface AuthState {
+interface AdminAuthState {
   isLoggedIn: boolean;
-  user: User | null;
+  user: AdminUser | null;
   accessToken: string | null;
   refreshToken: string | null;
   hasHydrated: boolean;
@@ -20,13 +19,13 @@ interface AuthState {
   // Actions
   login: (
     tokens: { accessToken: string; refreshToken?: string },
-    user: User
+    user: AdminUser
   ) => void;
   logout: () => void;
-  updateUser: (user: User) => void;
+  updateUser: (user: AdminUser) => void;
 }
 
-export const useAuthStore = create<AuthState>()(
+export const useAdminAuthStore = create<AdminAuthState>()(
   persist(
     (set, get) => ({
       isLoggedIn: false,
@@ -54,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       updateUser: user => set({ user }),
     }),
     {
-      name: 'auth-storage', // localStorage 키
+      name: 'admin-auth-storage', // localStorage 키
       storage: createJSONStorage(() => {
         // SSR 안전 가드: 서버에서는 no-op 메모리 스토리지 사용
         if (typeof window === 'undefined') {
@@ -64,9 +63,8 @@ export const useAuthStore = create<AuthState>()(
             removeItem: () => {},
           } as unknown as Storage;
         }
-        const remember = getRememberLogin();
-        // true → localStorage, false → sessionStorage, null(초기) → localStorage 기본
-        return remember === false ? sessionStorage : localStorage;
+        // 관리자는 항상 localStorage 사용
+        return localStorage;
       }),
       // 영속화 대상에서 isLoggedIn 제외(파생 값)
       partialize: state => ({
@@ -82,15 +80,19 @@ export const useAuthStore = create<AuthState>()(
           if (accessToken && !state.isLoggedIn) {
             // 상태 업데이트는 별도로 처리해야 함
             setTimeout(() => {
-              useAuthStore.setState({ isLoggedIn: true, hasHydrated: true });
+              useAdminAuthStore.setState({
+                isLoggedIn: true,
+                hasHydrated: true,
+              });
             }, 0);
           } else {
-            useAuthStore.setState({ hasHydrated: true });
+            useAdminAuthStore.setState({ hasHydrated: true });
           }
         } else {
-          useAuthStore.setState({ hasHydrated: true });
+          useAdminAuthStore.setState({ hasHydrated: true });
         }
       },
     }
   )
 );
+

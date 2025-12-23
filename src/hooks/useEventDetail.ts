@@ -1,5 +1,5 @@
 import { useGetQuery } from '@/hooks/useFetch';
-import type { EventDetailApiResponse } from '@/types/api/event';
+import type { EventDetailApiResponse } from '@/app/admin/events/[eventId]/api/event';
 
 /**
  * 대회 상세 정보 조회 훅

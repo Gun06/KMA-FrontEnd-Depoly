@@ -81,11 +81,19 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttons: [
         { label: "검색", tone: "dark" },
         {
-          label: "Excel",
+          label: "입금 Excel",
           tone: "primary",
           menu: [
             { label: "신청자 목록 다운로드", value: "downloadApplicants" },
             { label: "입금 내역 업로드",     value: "uploadPayments" },
+          ],
+        },
+        {
+          label: "단체 Excel",
+          tone: "primary",
+          menu: [
+            { label: "단체 신청 양식 다운로드", value: "downloadGroupForm" },
+            { label: "단체 신청 양식 업로드",     value: "uploadGroupForm" },
           ],
         },
       ],

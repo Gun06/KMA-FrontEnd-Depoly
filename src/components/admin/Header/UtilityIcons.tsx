@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import userIcon from '@/assets/icons/main/user.svg';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAdminAuthStore } from '@/stores';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
 

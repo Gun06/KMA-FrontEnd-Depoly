@@ -2,8 +2,7 @@
 
 import { LoginFormData, LoginResponse } from '@/types/auth';
 import { api, useApiMutation } from '@/hooks/useFetch';
-import { useAuthStore } from '@/store/authStore';
-import { useAdminAuthStore } from '@/store/adminAuthStore';
+import { useAuthStore, useAdminAuthStore } from '@/stores';
 import { decodeToken, setRememberLogin } from '@/utils/jwt';
 import { tokenService } from '@/utils/tokenService';
 import { useState, useCallback, useEffect } from 'react';
