@@ -96,7 +96,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
                 participants={formData.participants}
                 eventInfo={eventInfo}
                 onParticipantsChange={handlers.handleParticipantsChange}
-                isEditMode={isEditMode}
+                // isEditMode={isEditMode}
               />
 
               {/* 결제 정보 섹션 */}
