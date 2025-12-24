@@ -113,7 +113,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
               <SubmitButton
                 isFormValid={isFormValid}
                 isSubmitted={isLoading}
-                // isEditMode={isEditMode}
+                isEditMode={isEditMode}
               />
             </form>
             )}
