@@ -1,5 +1,5 @@
-import MainBannerList from '@/components/admin/banners/main/MainBannerList';
+import MainBannersManager from '@/components/admin/banners/main/MainBannersManager';
 
 export default function Page() {
-  return <MainBannerList />;
+  return <MainBannersManager />;
 }

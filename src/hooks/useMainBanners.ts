@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   getMainBanners, 
-  getMainBannersForAdmin,
-  getMainBannerById, 
-  getMainBannerByIdForAdmin,
-  createOrUpdateMainBanners, 
-  updateMainBanner 
+  getMainBannerById
 } from '@/services/mainBanner';
+import {
+  getMainBannersForAdmin,
+  getMainBannerByIdForAdmin,
+  createOrUpdateMainBanners,
+  updateMainBanner
+} from '@/components/admin/banners/main/api';
 import type { 
   MainBannerBatchRequest, 
   MainBannerUpdateInfo

@@ -4,7 +4,6 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { useState, useEffect } from 'react';
 import { MainBannerItem } from '@/types/event';
-import AssociationBanner from './AssociationBanner';
 import ApiBannerSlide from './ApiBannerSlide';
 // Swiper 스타일
 import 'swiper/css';
@@ -48,9 +47,8 @@ export default function MarathonHeroCarousel() {
     fetchBannerData();
   }, []);
 
-  // 협회 기본 배너 + API 배너들을 함께 사용
-  // 협회 배너는 항상 첫 번째 슬라이드 (인덱스 0)
-  const total = 1 + bannerData.length; // 협회 배너 1개 + API 배너들
+  // API 배너들만 사용
+  const total = bannerData.length;
   // 스켈레톤은 로딩 중이거나 데이터가 없을 때 표시 (기본값: true)
   const showSkeleton = isLoading || bannerData.length === 0;
 
@@ -158,18 +156,12 @@ export default function MarathonHeroCarousel() {
         className="h-full"
         onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
       >
-        {/* 협회 기본 배너 - 항상 첫 번째 슬라이드 */}
-        <SwiperSlide key="association-banner">
-          <AssociationBanner total={total} currentIndex={activeIndex} />
-        </SwiperSlide>
-
         {/* API 배너들 */}
         {bannerData.map((banner, index) => {
-          const slideIndex = index + 1; // 협회 배너가 0번이므로 API 배너는 1번부터
           return (
             <SwiperSlide key={`api-banner-${banner.eventId}-${index}`}>
               <ApiBannerSlide
-                id={slideIndex}
+                id={index}
                 imageUrl={banner.imageUrl}
                 title={banner.title}
                 subtitle={banner.subTitle}

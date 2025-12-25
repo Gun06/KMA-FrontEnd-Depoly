@@ -7,7 +7,9 @@ import { useEventList } from '@/hooks/useNotices';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
+import GroupUploadModal from '@/components/admin/applications/GroupUploadModal';
 import { downloadRegistrationList } from '@/services/registration';
+import { downloadGroupForm, uploadGroupForm } from '@/components/admin/applications/api/groupUpload';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast, type Id } from 'react-toastify';
 import type {
@@ -79,6 +81,9 @@ export default function Client({
   
   // 입금내역 업로드 모달 상태
   const [isPaymentUploadModalOpen, setIsPaymentUploadModalOpen] = React.useState(false);
+  
+  // 단체 신청 양식 업로드 모달 상태
+  const [isGroupUploadModalOpen, setIsGroupUploadModalOpen] = React.useState(false);
   
   // 기존 업로드 관련 상태 (호환성 유지)
   const [isUploadingPayments, setIsUploadingPayments] = React.useState(false);
@@ -180,17 +185,23 @@ export default function Client({
   // 단체 신청 양식 다운로드 처리
   const handleDownloadGroupForm = async () => {
     try {
-      // TODO: 단체 신청 양식 다운로드 API 호출
-      toast.info('단체 신청 양식 다운로드 기능은 준비 중입니다.');
-    } catch (_error) {
-      toast.error('다운로드에 실패했습니다.');
+      await downloadGroupForm(eventId);
+      toast.success('단체 신청 양식 다운로드가 완료되었습니다!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
     }
   };
 
   // 단체 신청 양식 업로드 처리
   const handleUploadGroupForm = () => {
-    // TODO: 단체 신청 양식 업로드 모달 열기
-    toast.info('단체 신청 양식 업로드 기능은 준비 중입니다.');
+    setIsGroupUploadModalOpen(true);
+  };
+  
+  // 단체 업로드 성공 후 처리
+  const handleGroupUploadSuccess = async () => {
+    // 데이터 새로고침
+    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
   };
 
   // 툴바 액션 처리
@@ -301,6 +312,14 @@ export default function Client({
         onClose={() => setIsPaymentUploadModalOpen(false)}
         eventId={eventId}
         onSuccess={handlePaymentUploadSuccess}
+      />
+
+      {/* 단체 신청 양식 업로드 모달 */}
+      <GroupUploadModal
+        isOpen={isGroupUploadModalOpen}
+        onClose={() => setIsGroupUploadModalOpen(false)}
+        eventId={eventId}
+        onSuccess={handleGroupUploadSuccess}
       />
     </div>
   );

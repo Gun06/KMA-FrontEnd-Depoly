@@ -4,8 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 import { createPortal } from 'react-dom';
 import { ChevronDown as Caret } from 'lucide-react';
-
-export type Opt = { key: string; label: string };
+import type { Opt } from '../types';
 
 function useOutside(handler: () => void) {
   const ref = React.useRef<HTMLDivElement | null>(null);
@@ -130,3 +129,4 @@ export default function EventDropdownPortal({
     </>
   );
 }
+

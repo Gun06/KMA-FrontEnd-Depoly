@@ -1,7 +1,6 @@
 "use client"
 import SectionPanel from '../SectionPanel';
 import EventCard from './EventCard';
-import { EVENT_ITEMS } from './Event';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlockEventResponse, BlockEventItem } from '@/types/event';
 
@@ -59,15 +58,8 @@ export default function EventSection() {
             }
           });
           
-          // 미래 이벤트만 필터링 (현재 날짜 이후)
-          const currentDate = new Date();
-          const futureEvents = allEvents.filter(event => {
-            const eventDate = new Date(event.eventDate);
-            return eventDate >= currentDate;
-          });
-          
           // 날짜순으로 정렬 (가까운 날짜부터)
-          const sortedEvents = futureEvents.sort((a, b) => {
+          const sortedEvents = allEvents.sort((a, b) => {
             const dateA = new Date(a.eventDate);
             const dateB = new Date(b.eventDate);
             return dateA.getTime() - dateB.getTime();
@@ -81,9 +73,9 @@ export default function EventSection() {
           throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
         }
       } catch (error) {
-        // 서버 에러 시 기본 데이터 사용
+        // 서버 에러 시 에러 상태 설정
         setEventData([]);
-        setError(null); // 에러 상태를 null로 설정하여 기본 데이터 표시
+        setError(error instanceof Error ? error.message : '이벤트 데이터를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
       }
@@ -193,8 +185,8 @@ export default function EventSection() {
               >
                 {/* 첫 번째 트랙 - API 데이터 또는 기본 데이터 표시 */}
                 <ul className="flex items-center gap-2 md:gap-4 lg:gap-6 px-0 h-full pl-2 md:pl-6 lg:pl-20">
-                  {isLoading ? (
-                    // 로딩 스켈레톤
+                  {isLoading || error ? (
+                    // 로딩 또는 에러 상태 - 스켈레톤 UI 표시
                     Array.from({ length: 4 }).map((_, index) => (
                       <li key={`skeleton-${index}`} className="shrink-0">
                         <div className="w-[160px] md:w-[280px] lg:w-[300px] h-[200px] md:h-[350px] lg:h-[370px] bg-white rounded-lg shadow-lg overflow-hidden">
@@ -213,21 +205,6 @@ export default function EventSection() {
                       </div>
                     </div>
                       </li>
-                    ))
-                  ) : error ? (
-                    // 에러 상태 - 기본 데이터 사용
-                    EVENT_ITEMS.map((event, index) => (
-                      <EventCard
-                        key={index}
-                        imageSrc={event.imageSrc}
-                        imageAlt={event.imageAlt}
-                        title={event.title}
-                        subtitle={event.subtitle}
-                        date={event.date}
-                        price={event.price}
-                        status={event.status}
-                        eventDate={event.eventDate}
-                      />
                     ))
                   ) : eventData.length > 0 ? (
                     // API 데이터 사용
@@ -258,20 +235,12 @@ export default function EventSection() {
                       />
                     ))
                   ) : (
-                    // 데이터가 없는 경우 기본 데이터 사용
-                    EVENT_ITEMS.map((event, index) => (
-                      <EventCard
-                        key={index}
-                        imageSrc={event.imageSrc}
-                        imageAlt={event.imageAlt}
-                        title={event.title}
-                        subtitle={event.subtitle}
-                        date={event.date}
-                        price={event.price}
-                        status={event.status}
-                        eventDate={event.eventDate}
-                      />
-                    ))
+                    // 데이터가 없는 경우 빈 상태 메시지 표시
+                    <li className="flex items-center justify-center w-full h-full">
+                      <div className="text-center text-gray-500">
+                        <p className="text-sm md:text-base">등록된 대회 일정이 없습니다.</p>
+                      </div>
+                    </li>
                   )}
                 </ul>
                 
