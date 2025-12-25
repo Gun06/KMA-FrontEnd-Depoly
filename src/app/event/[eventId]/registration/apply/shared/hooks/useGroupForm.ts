@@ -158,7 +158,9 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
               // 결제 상태 및 등록 ID (수정 모드에서 사용)
               // 모든 결제 상태를 그대로 유지 (COMPLETED, MUST_CHECK, NEED_REFUND 등 모두 포함)
               paymentStatus: participant.paymentStatus || 'UNPAID',
-              registrationId: participant.registrationId
+              registrationId: participant.registrationId,
+              // 단체장 여부 (checkLeader 필드에서 매핑)
+              isLeader: participant.checkLeader === true || participant.isLeader === true
             };
           });
           

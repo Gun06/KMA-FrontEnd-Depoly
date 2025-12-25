@@ -16,6 +16,11 @@ export const useParticipantHandlers = ({
   const handleParticipantChange = useCallback((index: number, field: keyof ParticipantData, value: string | boolean | undefined) => {
     // 단체장 체크박스 처리 (단체장은 한 명만 가능)
     if (field === 'isLeader') {
+      // 수정 모드에서 이미 단체장인 참가자는 변경 불가
+      if (isEditMode && participants[index].isLeader === true) {
+        return;
+      }
+      
       if (value === true) {
         // 단체장 체크: 현재 참가자를 단체장으로, 다른 참가자는 모두 해제
         const updatedParticipants = participants.map((p, idx) => ({

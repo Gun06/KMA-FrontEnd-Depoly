@@ -891,15 +891,22 @@ export default function GroupApplicationConfirmResultPage() {
                     ? loadedParticipantsMap.get(registrationId)
                     : participant;
                   
+                  const isLeader = detailedParticipant.checkLeader === true;
+                  
                   return (
-                  <div key={detailedParticipant.registrationId || index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={detailedParticipant.registrationId || index} className={`${isLeader ? 'bg-blue-50 border-2 border-blue-300' : 'bg-white border-2 border-gray-200'} rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow`}>
                     {/* 참가자 헤더 */}
                     <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-blue-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                        <div className={`w-8 h-8 ${isLeader ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded-full flex items-center justify-center text-sm font-bold`}>
                           {index + 1}
                         </div>
                         <h4 className="text-lg font-bold text-black">{detailedParticipant.name}</h4>
+                        {isLeader && (
+                          <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
+                            단체장
+                          </span>
+                        )}
                         <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                           {getGenderLabel(detailedParticipant.gender)}
                         </span>
