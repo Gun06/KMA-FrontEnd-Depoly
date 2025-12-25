@@ -100,7 +100,9 @@ const ParticipantsSection = memo(function ParticipantsSection({
   const {
     handleParticipantChange,
     handleParticipantCountChange,
-    handleDeleteParticipant
+    handleDeleteParticipant,
+    handleAddNewParticipant,
+    handleDeleteNewParticipant
   } = useParticipantHandlers({
     participants,
     onParticipantsChange,
@@ -256,7 +258,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
           </div>
 
           {/* 참가인원 확인 모달 */}
-          {confirmModalState.open && (
+          {confirmModalState.open && !isEditMode && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
               <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-[90%] p-6 text-center">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
@@ -274,22 +276,75 @@ const ParticipantsSection = memo(function ParticipantsSection({
             </div>
           )}
         </div>
+      </div>
 
-        {/* 대표자 입력 안내 문구 */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 space-y-2.5">
+      {/* 대표자 입력 안내 문구 */}
+      <div className="mb-8">
+        <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2.5">
           <div className="flex items-start gap-2.5">
             <span className="text-lg flex-shrink-0 mt-0.5">💡</span>
             <div className="flex-1 space-y-2">
-              <p className="text-sm text-blue-800 leading-relaxed">
+              <p className="text-sm text-gray-800 leading-relaxed">
                 대표자도 대회에 참여하는 경우 아래 참가자 정보를 작성하시기 바랍니다.
               </p>
-              <p className="text-sm text-blue-800 leading-relaxed">
+              <p className="text-sm text-gray-800 leading-relaxed">
                 단체장은 반드시 한 명만 지정해야 합니다. 단체장으로 지정된 참가자의 행은 파란색으로 표시됩니다.
               </p>
-              <p className="text-xs text-blue-600 italic leading-relaxed">
+              <p className="text-xs text-gray-600 italic leading-relaxed">
                 *(한번에 최대 100명까지만 신청 가능하며, 초과 인원은 별도의 단체로 신청 해주시기 바랍니다.)
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 추가 인원 등록 섹션 */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className={`p-1.5 rounded-md ${
+                  (!isEditMode || participants.length >= 100)
+                    ? 'bg-gray-200'
+                    : 'bg-blue-100'
+                }`}>
+                  <svg 
+                    className={`w-4 h-4 ${
+                      (!isEditMode || participants.length >= 100) 
+                        ? 'text-gray-500' 
+                        : 'text-blue-600'
+                    }`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-gray-800">추가 인원 등록</h3>
+              </div>
+              <p className="text-xs text-gray-600 ml-8">
+                {isEditMode 
+                  ? '새로운 참가자를 추가할 수 있습니다. 기존 참가자는 삭제할 수 없습니다.' 
+                  : '수정 모드에서만 새로운 참가자를 추가할 수 있습니다.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleAddNewParticipant}
+              disabled={!isEditMode || participants.length >= 100}
+              className={`px-4 py-2 rounded-lg transition-all text-sm font-medium flex items-center gap-1.5 whitespace-nowrap ${
+                (!isEditMode || participants.length >= 100)
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-sm active:scale-[0.98]'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              참가자 추가
+            </button>
           </div>
         </div>
       </div>
@@ -567,19 +622,39 @@ const ParticipantsSection = memo(function ParticipantsSection({
                   </span>
                 </td>
                 <td className="px-3 py-3 text-center text-sm w-16">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteParticipant(index)}
-                    disabled={isDisabled || isEditMode}
-                    className={`w-6 h-6 rounded-full transition-colors flex items-center justify-center text-sm font-bold mx-auto ${
-                      (isDisabled || isEditMode)
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                        : 'bg-gray-500 text-white hover:bg-gray-600'
-                    }`}
-                    title={isEditMode ? '수정 모드에서는 참가자 삭제가 불가능합니다' : (isDisabled ? '결제완료된 참가자는 삭제할 수 없습니다' : '참가자 삭제')}
-                  >
-                    -
-                  </button>
+                  {(() => {
+                    // 수정 모드에서는 기존 참가자(registrationId가 있는 참가자)는 삭제 불가
+                    const isExistingParticipant = isEditMode && participant.registrationId;
+                    const canDelete = !isDisabled && (!isEditMode || !isExistingParticipant);
+                    
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isEditMode) {
+                            handleDeleteNewParticipant(index);
+                          } else {
+                            handleDeleteParticipant(index);
+                          }
+                        }}
+                        disabled={!canDelete}
+                        className={`w-6 h-6 rounded-full transition-colors flex items-center justify-center text-sm font-bold mx-auto ${
+                          !canDelete
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : 'bg-gray-500 text-white hover:bg-gray-600'
+                        }`}
+                        title={
+                          isExistingParticipant 
+                            ? '기존 참가자는 삭제할 수 없습니다' 
+                            : isDisabled 
+                            ? '결제완료된 참가자는 삭제할 수 없습니다' 
+                            : '참가자 삭제'
+                        }
+                      >
+                        -
+                      </button>
+                    );
+                  })()}
                 </td>
               </tr>
               );

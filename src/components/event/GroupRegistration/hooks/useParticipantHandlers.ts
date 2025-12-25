@@ -84,16 +84,44 @@ export const useParticipantHandlers = ({
   }, [participants, onParticipantsChange, isEditMode]);
 
   const handleDeleteParticipant = useCallback((index: number) => {
-    // 수정 모드에서는 참가자 삭제 불가
-    if (isEditMode) {
+    // 수정 모드에서는 기존 참가자(registrationId가 있는 참가자)는 삭제 불가
+    const participant = participants[index];
+    if (isEditMode && participant.registrationId) {
       return;
     }
     
-    // 결제완료된 참가자는 삭제할 수 없음
-    const participant = participants[index];
-    if (participant.paymentStatus === 'PAID') {
+    // 신청 모드에서는 결제완료된 참가자는 삭제할 수 없음
+    if (!isEditMode && participant.paymentStatus === 'PAID') {
       return;
     }
+    
+    const newParticipants = participants.filter((_, i) => i !== index);
+    onParticipantsChange(newParticipants);
+  }, [participants, onParticipantsChange, isEditMode]);
+
+  // 수정 모드에서 새 참가자 추가 (기존 참가자는 건드리지 않음)
+  const handleAddNewParticipant = useCallback(() => {
+    if (!isEditMode) {
+      return;
+    }
+    
+    const newParticipant = createInitialParticipant();
+    const newParticipants = [...participants, newParticipant];
+    onParticipantsChange(newParticipants);
+  }, [participants, onParticipantsChange, isEditMode]);
+
+  // 수정 모드에서 새 참가자만 삭제 (registrationId가 없는 참가자만)
+  const handleDeleteNewParticipant = useCallback((index: number) => {
+    if (!isEditMode) {
+      return;
+    }
+    
+    const participant = participants[index];
+    // 기존 참가자(registrationId가 있는 참가자)는 삭제 불가
+    if (participant.registrationId) {
+      return;
+    }
+    
     const newParticipants = participants.filter((_, i) => i !== index);
     onParticipantsChange(newParticipants);
   }, [participants, onParticipantsChange, isEditMode]);
@@ -101,7 +129,9 @@ export const useParticipantHandlers = ({
   return {
     handleParticipantChange,
     handleParticipantCountChange,
-    handleDeleteParticipant
+    handleDeleteParticipant,
+    handleAddNewParticipant,
+    handleDeleteNewParticipant
   };
 };
 
