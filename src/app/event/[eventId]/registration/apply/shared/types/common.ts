@@ -129,6 +129,7 @@ export interface GroupParticipant {
   }[];
   amount: number;
   note?: string;
+  checkLeader?: boolean;
 }
 
 // 공통 옵션 타입

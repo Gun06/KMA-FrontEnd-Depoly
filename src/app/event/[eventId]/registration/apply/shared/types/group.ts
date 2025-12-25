@@ -24,6 +24,8 @@ export interface ParticipantData {
   // 결제 상태 (수정 모드에서 사용)
   paymentStatus?: 'UNPAID' | 'PAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   registrationId?: string; // 수정 모드에서 사용
+  // 단체장 여부
+  isLeader?: boolean;
 }
 
 // 단체신청 폼 데이터 타입
@@ -95,6 +97,8 @@ export interface GroupApiRequestData {
         note?: string;
       };
     };
+    checkLeader?: boolean;
+    note?: string;
   }>;
 }
 

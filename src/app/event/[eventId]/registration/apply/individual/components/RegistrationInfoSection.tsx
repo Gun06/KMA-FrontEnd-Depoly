@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import FormField from '../../shared/components/FormField';
 import { IndividualFormData, OpenDropdown } from '../../shared/types/individual';
 import { EventRegistrationInfo } from '../../shared/types/common';
-import SouvenirSelectionModal from '@/components/event/GroupRegistration/SouvenirSelectionModal';
+import SouvenirSelectionModal from '@/components/event/GroupRegistration/Modal/SouvenirSelectionModal';
 
 interface RegistrationInfoSectionProps {
   formData: IndividualFormData;
