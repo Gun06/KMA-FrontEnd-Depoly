@@ -129,31 +129,49 @@ const ParticipantsSection = memo(function ParticipantsSection({
     setPendingParticipantCount(participants.length);
   }, [participants.length]);
 
+  // 종목/기념품 변경 불가 상태 확인 (확인필요, 환불요청, 확인완료 상태)
+  const isCategorySouvenirDisabled = useCallback((paymentStatus: string | undefined): boolean => {
+    if (!paymentStatus) return false;
+    // 확인필요, 환불요청(전액/차액), 확인완료 상태에서는 종목/기념품 변경 불가
+    return paymentStatus === 'MUST_CHECK' || 
+           paymentStatus === 'NEED_REFUND' || 
+           paymentStatus === 'NEED_PARTITIAL_REFUND' || 
+           paymentStatus === 'COMPLETED' ||
+           paymentStatus === 'PAID'; // 기존 PAID도 포함
+  }, []);
+
   // 참가종목 선택 모달 열기 (결제 상태 체크 포함)
   const handleOpenCategoryModal = useCallback((index: number) => {
     const participant = participants[index];
-    // 수정 모드가 아닐 때만 결제완료된 참가자는 모달을 열 수 없음
-    if (!isEditMode && participant.paymentStatus === 'PAID') {
+    // 확인필요, 환불요청, 확인완료 상태인 경우 모달을 열 수 없음 (수정 모드 포함)
+    if (isCategorySouvenirDisabled(participant.paymentStatus)) {
       return;
     }
     openCategoryModal(index);
-  }, [participants, isEditMode, openCategoryModal]);
+  }, [participants, openCategoryModal, isCategorySouvenirDisabled]);
 
   // 참가종목 선택 확인
   const handleConfirmCategorySelection = useCallback((distance: string, categoryName: string) => {
     const index = categoryModalState.participantIndex;
     if (index === -1) return;
     
+    // 확인필요, 환불요청, 확인완료 상태인 경우 변경 불가
+    const participant = participants[index];
+    if (isCategorySouvenirDisabled(participant.paymentStatus)) {
+      closeCategoryModal();
+      return;
+    }
+    
     const categoryWithDistance = formatCategoryWithDistance(distance, categoryName);
     handleParticipantChange(index, 'category', categoryWithDistance);
     closeCategoryModal();
-  }, [categoryModalState.participantIndex, handleParticipantChange, closeCategoryModal]);
+  }, [categoryModalState.participantIndex, handleParticipantChange, closeCategoryModal, participants, isCategorySouvenirDisabled]);
 
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback((index: number) => {
     const participant = participants[index];
-    // 수정 모드가 아닐 때만 결제완료된 참가자는 모달을 열 수 없음
-    if (!isEditMode && participant.paymentStatus === 'PAID') {
+    // 확인필요, 환불요청, 확인완료 상태인 경우 모달을 열 수 없음 (수정 모드 포함)
+    if (isCategorySouvenirDisabled(participant.paymentStatus)) {
       return;
     }
     if (!participant.category || participant.category === '종목') {
@@ -162,13 +180,20 @@ const ParticipantsSection = memo(function ParticipantsSection({
     
     const { distance, categoryName } = parseCategoryWithDistance(participant.category);
     openSouvenirModal(index, categoryName, distance);
-  }, [participants, isEditMode, openSouvenirModal]);
+  }, [participants, openSouvenirModal, isCategorySouvenirDisabled]);
 
   // 기념품 선택 확인
   const handleConfirmSouvenirSelection = useCallback((selectedSouvenirs: Array<{souvenirId: string, souvenirName: string, size: string}>) => {
     const { participantIndex } = souvenirModalState;
     
     if (participantIndex === -1) return;
+
+    // 확인필요, 환불요청, 확인완료 상태인 경우 변경 불가
+    const participant = participants[participantIndex];
+    if (isCategorySouvenirDisabled(participant.paymentStatus)) {
+      closeSouvenirModal();
+      return;
+    }
 
     const newParticipants = participants.map((p, i) => {
       if (i === participantIndex) {
@@ -194,7 +219,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
     
     onParticipantsChange(newParticipants);
     closeSouvenirModal();
-  }, [souvenirModalState, participants, onParticipantsChange, closeSouvenirModal]);
+  }, [souvenirModalState, participants, onParticipantsChange, closeSouvenirModal, isCategorySouvenirDisabled]);
 
   // 현재 선택된 카테고리의 거리와 이름 추출 (모달용)
   const getCurrentCategoryInfo = useCallback((participant: ParticipantData) => {
@@ -375,6 +400,14 @@ const ParticipantsSection = memo(function ParticipantsSection({
           <tbody>
             {participants.map((participant, index) => {
               const isDisabled = !isEditMode && participant.paymentStatus && participant.paymentStatus !== 'UNPAID';
+              // 종목/기념품 변경 불가 상태 (확인필요, 환불요청, 확인완료) - 수정 모드 포함
+              const isCategorySouvenirChangeDisabled = (
+                participant.paymentStatus === 'MUST_CHECK' ||
+                participant.paymentStatus === 'NEED_REFUND' ||
+                participant.paymentStatus === 'NEED_PARTITIAL_REFUND' ||
+                participant.paymentStatus === 'COMPLETED' ||
+                participant.paymentStatus === 'PAID'
+              );
               const isLeader = participant.isLeader === true;
               
               return (
@@ -598,10 +631,18 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 <td className="px-3 py-3 w-80 border-r border-gray-200">
                   <button
                     type="button"
-                    onClick={() => handleOpenCategoryModal(index)}
-                    disabled={isDisabled}
+                    onClick={(e) => {
+                      if (isCategorySouvenirChangeDisabled) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                      }
+                      handleOpenCategoryModal(index);
+                    }}
+                    disabled={isCategorySouvenirChangeDisabled}
+                    style={isCategorySouvenirChangeDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}
                     className={`w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 hover:bg-blue-100 transition-colors text-center font-medium ${
-                      isDisabled 
+                      isCategorySouvenirChangeDisabled 
                         ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300' 
                         : 'cursor-pointer hover:border-blue-400'
                     }`}
@@ -618,13 +659,22 @@ const ParticipantsSection = memo(function ParticipantsSection({
                   {(() => {
                     const souvenirText = getSouvenirDisplayText(participant, eventInfo);
                     const isSouvenirSelected = souvenirText !== '기념품 선택' && souvenirText !== '참가종목을 먼저 선택해주세요';
-                    const isDisabledField = isDisabled || participantDisabledStates[index]?.isSouvenirDisabled || false;
+                    // 종목/기념품 변경 불가 상태 또는 기념품 선택 불가 상태
+                    const isDisabledField = isCategorySouvenirChangeDisabled || participantDisabledStates[index]?.isSouvenirDisabled || false;
                     
                     return (
                   <button
                     type="button"
-                        onClick={() => handleOpenSouvenirModal(index)}
+                        onClick={(e) => {
+                          if (isDisabledField) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                          }
+                          handleOpenSouvenirModal(index);
+                        }}
                         disabled={isDisabledField}
+                        style={isDisabledField ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}
                         className={`w-full px-3 py-2 border-2 border-dashed rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-center font-medium ${
                           isDisabledField
                             ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300'
