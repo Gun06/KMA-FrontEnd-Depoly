@@ -181,6 +181,7 @@ export interface BlockEventItem {
   eventNameKr: string;
   eventNameEn: string;
   eventDate: string; // ISO 8601 형식
+  eventStartDate?: string; // 대회 시작일 (ISO 8601 형식) - 접수 마감 판단 기준
   status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   eventDeadLine: string; // ISO 8601 형식
   lowerPrice: number;
@@ -307,7 +308,9 @@ export interface ScheduleApiResponse {
 // 캘린더 API 응답 타입
 export interface CalendarEvent {
   date: string;
+  region: string;
   eventName: string;
+  eventStatus: string;
 }
 
 export interface CalendarApiResponse {

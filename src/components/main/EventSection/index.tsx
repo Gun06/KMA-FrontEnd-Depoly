@@ -232,6 +232,8 @@ export default function EventSection() {
                                event.status === 'CANCELED' ? '취소' :
                                '접수중'} // 기본값을 '접수중'으로 변경
                         eventDate={event.eventDate.split('T')[0]}
+                        eventStartDate={event.eventStartDate ? event.eventStartDate.split('T')[0] : undefined}
+                        eventDeadLine={event.eventDeadLine ? event.eventDeadLine.split('T')[0] : undefined}
                       />
                     ))
                   ) : (

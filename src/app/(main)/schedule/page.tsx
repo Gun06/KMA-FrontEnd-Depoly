@@ -39,7 +39,7 @@ export default function SchedulePage() {
       id: `${formattedDate}-${event.eventName}`,
       title: event.eventName,
       date: formattedDate,
-      location: '장소 미정', // API에 장소 정보가 없으므로 기본값
+      location: event.region || '장소 미정', // API에서 제공하는 region 필드 사용
       time: '07:00', // 기본 시간
       category: 'other' as const,
       status: 'upcoming' as const,

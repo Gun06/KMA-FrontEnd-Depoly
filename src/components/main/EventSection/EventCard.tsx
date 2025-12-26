@@ -12,6 +12,8 @@ interface EventCardProps {
   price: string;
   status: string;
   eventDate: string; // YYYY-MM-DD 형식
+  eventStartDate?: string; // 대회 시작일 (YYYY-MM-DD 형식) - 접수 마감 판단 기준
+  eventDeadLine?: string; // 접수 마감일 (YYYY-MM-DD 형식) - 하위 호환성 유지
   eventId?: string; // API에서 받은 이벤트 ID
   className?: string;
   size?: 'small' | 'medium' | 'large' | 'test'; // 추가: 사이즈 설정용
@@ -25,20 +27,23 @@ export default function EventCard({
   price,
   status,
   eventDate,
+  eventStartDate,
+  eventDeadLine,
   eventId,
   className,
   size = 'large'
 }: EventCardProps) {
-  // D-day 계산
-  const calculateDday = (eventDateStr: string) => {
+  // D-day 계산 (eventStartDate 기준으로 접수 마감 판단)
+  const calculateDday = (startDateStr: string | undefined, fallbackDateStr: string) => {
     const today = new Date();
-    const eventDate = new Date(eventDateStr);
+    // eventStartDate가 있으면 eventStartDate 기준, 없으면 fallback (eventDate) 기준
+    const targetDate = startDateStr ? new Date(startDateStr) : new Date(fallbackDateStr);
     
     // 시간을 제거하고 날짜만 비교
     today.setHours(0, 0, 0, 0);
-    eventDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
     
-    const diffTime = eventDate.getTime() - today.getTime();
+    const diffTime = targetDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays > 0) {
@@ -50,8 +55,10 @@ export default function EventCard({
     }
   };
 
-  const { dDay, status: dynamicStatus } = calculateDday(eventDate);
-  const displayStatus = status || dynamicStatus;
+  // eventStartDate를 기준으로 접수 마감 판단 (서버에서 내려줄 예정)
+  const { dDay, status: dynamicStatus } = calculateDday(eventStartDate, eventDate);
+  // 접수마감일 기준으로 계산한 상태를 우선 사용 (접수마감 대회도 표시하기 위해)
+  const displayStatus = dynamicStatus || status;
 
   // size에 따른 크기 클래스 설정
   const sizeClasses = {

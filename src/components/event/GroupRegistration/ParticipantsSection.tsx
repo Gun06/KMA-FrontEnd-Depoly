@@ -257,42 +257,42 @@ const ParticipantsSection = memo(function ParticipantsSection({
             </button>
           </div>
 
-          {/* 참가인원 확인 모달 */}
+    {/* 참가인원 확인 모달 */}
           {confirmModalState.open && !isEditMode && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-[90%] p-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-2xl">✅</span>
-                </div>
-                <p className="text-base font-medium text-gray-900 mb-6 whitespace-pre-line">{confirmModalState.message}</p>
-                <button
-                  type="button"
-                  onClick={() => setConfirmModalState({ open: false, message: '' })}
-                  className="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  확인
-                </button>
-              </div>
-            </div>
-          )}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-[90%] p-6 text-center">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-2xl">✅</span>
+          </div>
+          <p className="text-base font-medium text-gray-900 mb-6 whitespace-pre-line">{confirmModalState.message}</p>
+          <button
+            type="button"
+            onClick={() => setConfirmModalState({ open: false, message: '' })}
+            className="w-full py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+          >
+            확인
+          </button>
         </div>
       </div>
+    )}
+        </div>
+        </div>
 
-      {/* 대표자 입력 안내 문구 */}
+        {/* 대표자 입력 안내 문구 */}
       <div className="mb-8">
         <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-2.5">
           <div className="flex items-start gap-2.5">
             <span className="text-lg flex-shrink-0 mt-0.5">💡</span>
             <div className="flex-1 space-y-2">
               <p className="text-sm text-gray-800 leading-relaxed">
-                대표자도 대회에 참여하는 경우 아래 참가자 정보를 작성하시기 바랍니다.
-              </p>
+            대표자도 대회에 참여하는 경우 아래 참가자 정보를 작성하시기 바랍니다.
+          </p>
               <p className="text-sm text-gray-800 leading-relaxed">
                 단체장은 반드시 한 명만 지정해야 합니다. 단체장으로 지정된 참가자의 행은 파란색으로 표시됩니다.
               </p>
               <p className="text-xs text-gray-600 italic leading-relaxed">
-                *(한번에 최대 100명까지만 신청 가능하며, 초과 인원은 별도의 단체로 신청 해주시기 바랍니다.)
-              </p>
+            *(한번에 최대 100명까지만 신청 가능하며, 초과 인원은 별도의 단체로 신청 해주시기 바랍니다.)
+          </p>
             </div>
           </div>
         </div>
@@ -586,8 +586,8 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     const isDisabledField = isDisabled || participantDisabledStates[index]?.isSouvenirDisabled || false;
                     
                     return (
-                      <button
-                        type="button"
+                  <button
+                    type="button"
                         onClick={() => handleOpenSouvenirModal(index)}
                         disabled={isDisabledField}
                         className={`w-full px-3 py-2 border-2 border-dashed rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-center font-medium ${
@@ -596,9 +596,9 @@ const ParticipantsSection = memo(function ParticipantsSection({
                             : isSouvenirSelected
                             ? 'bg-blue-50 border-blue-300 hover:bg-blue-100 hover:border-blue-400 cursor-pointer'
                             : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
                           <span className={isSouvenirSelected ? 'text-blue-700' : 'text-gray-600'}>{souvenirText}</span>
                           <svg 
                             className={`w-3 h-3 ${isSouvenirSelected ? 'text-blue-500' : 'text-gray-400'}`} 
@@ -606,10 +606,10 @@ const ParticipantsSection = memo(function ParticipantsSection({
                             stroke="currentColor" 
                             viewBox="0 0 24 24"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </button>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
                     );
                   })()}
                 </td>
@@ -619,7 +619,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 <td className="px-3 py-3 text-center text-sm w-32 border-r border-gray-200">
                   <span className={`text-sm font-semibold ${getPaymentStatusColorClass(participant.paymentStatus)}`}>
                     {formatPaymentStatusText(participant.paymentStatus)}
-                  </span>
+                      </span>
                 </td>
                 <td className="px-3 py-3 text-center text-sm w-16">
                   {(() => {
@@ -628,21 +628,21 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     const canDelete = !isDisabled && (!isEditMode || !isExistingParticipant);
                     
                     return (
-                      <button
-                        type="button"
-                        onClick={() => {
+                  <button
+                    type="button"
+                    onClick={() => {
                           if (isEditMode) {
                             handleDeleteNewParticipant(index);
                           } else {
-                            handleDeleteParticipant(index);
+                      handleDeleteParticipant(index);
                           }
-                        }}
+                    }}
                         disabled={!canDelete}
-                        className={`w-6 h-6 rounded-full transition-colors flex items-center justify-center text-sm font-bold mx-auto ${
+                    className={`w-6 h-6 rounded-full transition-colors flex items-center justify-center text-sm font-bold mx-auto ${
                           !canDelete
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-gray-500 text-white hover:bg-gray-600'
-                        }`}
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                        : 'bg-gray-500 text-white hover:bg-gray-600'
+                    }`}
                         title={
                           isExistingParticipant 
                             ? '기존 참가자는 삭제할 수 없습니다' 
@@ -650,9 +650,9 @@ const ParticipantsSection = memo(function ParticipantsSection({
                             ? '결제완료된 참가자는 삭제할 수 없습니다' 
                             : '참가자 삭제'
                         }
-                      >
-                        -
-                      </button>
+                  >
+                    -
+                  </button>
                     );
                   })()}
                 </td>
