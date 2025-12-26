@@ -187,10 +187,10 @@ export const transformFormDataToUpdateApi = (
 
 // 단체신청 데이터 변환
 export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: any): GroupApiRequestData => {
-  // 단체장 검증: 정확히 한 명이어야 함
+  // 참가 대표자 검증: 정확히 한 명이어야 함
   const leaderCount = formData.participants.filter(p => p.isLeader === true).length;
   if (leaderCount !== 1) {
-    throw new Error(`단체 신청 내에는 단체장이 반드시 한 명 존재해야 합니다.`);
+    throw new Error(`단체 신청 내에는 참가 대표자가 반드시 한 명 존재해야 합니다.`);
   }
   
   // 단체 정보에서 기념품 정보를 JSON으로 변환

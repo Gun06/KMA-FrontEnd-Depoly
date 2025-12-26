@@ -226,6 +226,7 @@ export default function EventSection() {
                                event.status === 'ONGOING' ? '진행중' : 
                                event.status === 'COMPLETED' ? '완료' : 
                                event.status === 'CANCELLED' ? '취소' :
+                               event.status === 'CLOSED' ? '접수마감' :
                                event.status === 'REGISTRATION' ? '접수중' :
                                event.status === 'ACTIVE' ? '진행중' :
                                event.status === 'FINISHED' ? '완료' :

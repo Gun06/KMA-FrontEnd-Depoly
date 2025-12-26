@@ -116,7 +116,7 @@ export const createEditData = (data: GroupRegistrationConfirmData) => {
       phone3: participant.phNum.split('-')[2],
       paymentStatus: participant.paymentStatus || 'UNPAID', // 각 참가자별 결제 상태
       registrationId: participant.registrationId, // 수정 모드에서 사용
-      isLeader: participant.checkLeader || false, // 단체장 여부
+      isLeader: participant.checkLeader || false, // 참가 대표자 여부
       };
     }),
     totalParticipants: data.organizationHeadCount,

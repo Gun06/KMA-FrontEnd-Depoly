@@ -24,7 +24,7 @@ export interface ParticipantData {
   // 결제 상태 (수정 모드에서 사용)
   paymentStatus?: 'UNPAID' | 'PAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   registrationId?: string; // 수정 모드에서 사용
-  // 단체장 여부
+  // 참가 대표자 여부
   isLeader?: boolean;
 }
 

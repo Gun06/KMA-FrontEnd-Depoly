@@ -904,7 +904,7 @@ export default function GroupApplicationConfirmResultPage() {
                         <h4 className="text-lg font-bold text-black">{detailedParticipant.name}</h4>
                         {isLeader && (
                           <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
-                            단체장
+                            참가 대표자
                           </span>
                         )}
                         <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">

@@ -8,7 +8,7 @@ export const submitGroupRegistration = async (eventId: string, data: GroupApiReq
   try {
     // 디버깅: checkLeader 필드 확인
     const leaderCount = data.registrationInfoPerUserList.filter(p => p.checkLeader === true).length;
-    console.log('[단체신청 API] 단체장 수:', leaderCount);
+    console.log('[단체신청 API] 참가 대표자 수:', leaderCount);
     console.log('[단체신청 API] 참가자별 checkLeader 필드:', data.registrationInfoPerUserList.map(p => ({ name: p.mustRegistrationInfo.personalInfo.name, checkLeader: p.checkLeader })));
     
     const url = `${API_BASE_URL}/api/v0/public/event/${eventId}/registration/organization`;

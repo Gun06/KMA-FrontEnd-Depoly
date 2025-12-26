@@ -55,10 +55,15 @@ export default function EventCard({
     }
   };
 
-  // eventStartDate를 기준으로 접수 마감 판단 (서버에서 내려줄 예정)
+  // eventStartDate를 기준으로 D-day 계산 (표시용)
   const { dDay, status: dynamicStatus } = calculateDday(eventStartDate, eventDate);
-  // 접수마감일 기준으로 계산한 상태를 우선 사용 (접수마감 대회도 표시하기 위해)
-  const displayStatus = dynamicStatus || status;
+  
+  // 서버에서 받은 status를 우선 사용 (관리자가 설정한 마감 상태 유지)
+  // 서버 상태가 '접수마감', '완료', '취소' 중 하나면 서버 상태 우선
+  // 그 외의 경우(접수중, 없음 등)에만 날짜 기반 계산 사용
+  const displayStatus = (status === '접수마감' || status === '완료' || status === '취소')
+    ? status  // 서버에서 마감/완료/취소로 설정된 경우 서버 상태 우선
+    : (status || dynamicStatus); // 서버 상태가 없거나 '접수중'인 경우 날짜 기반 계산 사용
 
   // size에 따른 크기 클래스 설정
   const sizeClasses = {
