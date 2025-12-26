@@ -3,12 +3,14 @@ import SectionPanel from '../SectionPanel';
 import EventCard from './EventCard';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlockEventResponse, BlockEventItem } from '@/types/event';
+import Link from 'next/link';
 
 export default function EventSection() {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [currentTransform, setCurrentTransform] = useState(0);
   const [dragStartTransform, setDragStartTransform] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
   const marqueeRef = useRef<HTMLDivElement>(null);
   
   // API 데이터 상태
@@ -84,6 +86,7 @@ export default function EventSection() {
     setIsDragging(true);
     setDragStartTransform(currentTransform);
     setStartX(e.pageX);
+    setDragDistance(0);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -91,32 +94,48 @@ export default function EventSection() {
     e.preventDefault();
     
     const deltaX = e.pageX - startX;
+    setDragDistance(Math.abs(deltaX));
     const newTransform = dragStartTransform + deltaX * 1.2;
     
-    // 드래그 범위 제한
+    // 드래그 범위 제한 - 마지막 카드가 완전히 보이지 않도록 제한
     const maxLeft = 0;
     const isMobile = window.innerWidth < 768;
     const cardWidth = isMobile ? 250 : 300;
     const cardGap = isMobile ? 12 : 24;
+    const moreButtonWidth = isMobile ? 48 : 60; // 화살표 버튼 너비
     const moreButtonMargin = isMobile ? 24 : 48;
-    const extraSpace = isMobile ? 80 : 150;
-    const maxRight = -((10 * cardWidth + 9 * cardGap + moreButtonMargin + extraSpace) - window.innerWidth);
+    const containerPadding = isMobile ? 32 : 48; // 좌우 패딩
+    
+    // 실제 카드 개수 사용
+    const cardCount = eventData.length || 0;
+    const totalCardsWidth = cardCount * cardWidth + (cardCount - 1) * cardGap;
+    const viewportWidth = window.innerWidth;
+    
+    // 마지막 카드가 완전히 보이지 않도록 카드 너비만큼 더 제한
+    // 화살표 버튼이 항상 보이도록 보장
+    const maxRight = -(totalCardsWidth - viewportWidth + containerPadding + moreButtonWidth + moreButtonMargin + cardWidth);
     
     setCurrentTransform(Math.max(maxRight, Math.min(maxLeft, newTransform)));
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    // 드래그가 끝난 후 잠시 후 거리 초기화 (클릭 이벤트 처리 후)
+    setTimeout(() => {
+      setDragDistance(0);
+    }, 100);
   };
 
   const handleMouseLeave = () => {
     setIsDragging(false);
+    setDragDistance(0);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setIsDragging(true);
     setDragStartTransform(currentTransform);
     setStartX(e.touches[0].pageX);
+    setDragDistance(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -124,22 +143,36 @@ export default function EventSection() {
     e.preventDefault();
     
     const deltaX = e.touches[0].pageX - startX;
+    setDragDistance(Math.abs(deltaX));
     const newTransform = dragStartTransform + deltaX * 1.2;
     
-    // 드래그 범위 제한
+    // 드래그 범위 제한 - 마지막 카드가 완전히 보이지 않도록 제한
     const maxLeft = 0;
     const isMobile = window.innerWidth < 768;
     const cardWidth = isMobile ? 250 : 300;
     const cardGap = isMobile ? 12 : 24;
+    const moreButtonWidth = isMobile ? 48 : 60; // 화살표 버튼 너비
     const moreButtonMargin = isMobile ? 24 : 48;
-    const extraSpace = isMobile ? 80 : 150;
-    const maxRight = -((10 * cardWidth + 9 * cardGap + moreButtonMargin + extraSpace) - window.innerWidth);
+    const containerPadding = isMobile ? 32 : 48; // 좌우 패딩
+    
+    // 실제 카드 개수 사용
+    const cardCount = eventData.length || 0;
+    const totalCardsWidth = cardCount * cardWidth + (cardCount - 1) * cardGap;
+    const viewportWidth = window.innerWidth;
+    
+    // 마지막 카드가 완전히 보이지 않도록 카드 너비만큼 더 제한
+    // 화살표 버튼이 항상 보이도록 보장
+    const maxRight = -(totalCardsWidth - viewportWidth + containerPadding + moreButtonWidth + moreButtonMargin + cardWidth);
     
     setCurrentTransform(Math.max(maxRight, Math.min(maxLeft, newTransform)));
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
+    // 드래그가 끝난 후 잠시 후 거리 초기화 (클릭 이벤트 처리 후)
+    setTimeout(() => {
+      setDragDistance(0);
+    }, 100);
   };
 
   return (
@@ -149,9 +182,12 @@ export default function EventSection() {
         <div className="relative">
           <div className="absolute right-6 md:right-20 -top-12 md:-top-16 z-20 flex items-center gap-6">
             {/* 더보기 버튼 */}
-            <button className="text-sm md:text-base text-gray-700 hover:text-gray-900 transition-colors duration-200">
+            <Link 
+              href="/schedule"
+              className="text-sm md:text-base text-gray-700 hover:text-gray-900 transition-colors duration-200"
+            >
               더보기 &gt;
-            </button>
+            </Link>
           </div>
         </div>
       </SectionPanel>
@@ -231,6 +267,8 @@ export default function EventSection() {
                         eventDate={event.eventDate.split('T')[0]}
                         eventStartDate={event.eventStartDate ? event.eventStartDate.split('T')[0] : undefined}
                         eventDeadLine={event.eventDeadLine ? event.eventDeadLine.split('T')[0] : undefined}
+                        isDragging={isDragging}
+                        dragDistance={dragDistance}
                       />
                     ))
                   ) : (

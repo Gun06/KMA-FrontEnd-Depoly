@@ -17,6 +17,8 @@ interface EventCardProps {
   eventId?: string; // API에서 받은 이벤트 ID
   className?: string;
   size?: 'small' | 'medium' | 'large' | 'test'; // 추가: 사이즈 설정용
+  isDragging?: boolean; // 드래그 중인지 여부
+  dragDistance?: number; // 드래그 거리 (픽셀)
 }
 
 export default function EventCard({
@@ -31,7 +33,9 @@ export default function EventCard({
   eventDeadLine,
   eventId,
   className,
-  size = 'large'
+  size = 'large',
+  isDragging = false,
+  dragDistance = 0
 }: EventCardProps) {
   // D-day 계산 (eventStartDate 기준으로 접수 마감 판단)
   const calculateDday = (startDateStr: string | undefined, fallbackDateStr: string) => {
@@ -147,10 +151,24 @@ export default function EventCard({
     </div>
   );
 
+  // 드래그 중이거나 일정 거리 이상 움직였으면 링크 클릭 방지
+  const handleLinkClick = (e: React.MouseEvent) => {
+    // 드래그 중이거나 5픽셀 이상 움직였으면 클릭 무시
+    if (isDragging || dragDistance > 5) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
+
   // eventId가 있으면 Link로 감싸고, 없으면 그대로 반환
   if (eventId) {
     return (
-      <Link href={`/event/${eventId}`}>
+      <Link 
+        href={`/event/${eventId}`}
+        onClick={handleLinkClick}
+        style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
+      >
         {cardContent}
       </Link>
     );
