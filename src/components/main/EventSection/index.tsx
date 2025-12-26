@@ -29,12 +29,8 @@ export default function EventSection() {
           throw new Error('API 기본 URL이 설정되지 않았습니다. 환경 변수를 확인해주세요.');
         }
         
-        // 전체 연도의 이벤트 가져오기 (현재 연도 기준)
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        
-        // 전체 연도의 이벤트 가져오기 (month=0으로 전체 연도 + 다음 연도)
-        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/main-page/block-list?year=${year}&month=0`;
+        // year=0으로 요청 시 요청 시각 기준 +365일까지의 내역을 전달 (month 값 무시)
+        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/main-page/block-list?year=0&month=0`;
         
         const response = await fetch(API_ENDPOINT, {
           method: 'GET',
