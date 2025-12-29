@@ -884,7 +884,7 @@ export default function GroupApplicationConfirmResultPage() {
             <div className="px-8 pb-8">
               <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">참가자 정보</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {groupApplicationData.innerUserRegistrationList.slice().reverse().slice(0, displayedCount).map((participant, index) => {
+                {groupApplicationData.innerUserRegistrationList.slice(0, displayedCount).map((participant, index) => {
                   // 상세 정보가 로드된 참가자는 업데이트된 정보 사용
                   const registrationId = participant.registrationId;
                   const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)

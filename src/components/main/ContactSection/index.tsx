@@ -41,9 +41,9 @@ interface ContactSectionProps {
 }
 
 export default function ContactSection({ slateStart = '45%' }: ContactSectionProps) {
-  const email = 'marathon@chungju.com'
-  const telDisplay = '02) 417 - 1080'
-  const telHref = '02-417-1080'
+  const email = 'jeonmahyeop@naver.com'
+  const telDisplay = '042) 638 - 1080'
+  const telHref = '042-638-1080'
   const addressLine1 = '서울 송파구 방이동 백제고분로 501'
   const addressLine2 = '청호빌딩 302호'
   const mapQuery = encodeURIComponent('서울 송파구 방이동 백제고분로 501 청호빌딩 302호')

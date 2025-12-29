@@ -7,7 +7,7 @@ export interface IndividualFormData {
   birthDay: string;
   password: string;
   confirmPassword: string;
-  gender: 'male' | 'female';
+  gender: 'male' | 'female' | '';
   postalCode: string;
   address: string;
   detailedAddress: string;

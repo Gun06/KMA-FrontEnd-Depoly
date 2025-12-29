@@ -331,63 +331,65 @@ const ParticipantsSection = memo(function ParticipantsSection({
         </div>
       </div>
 
-      {/* 추가 인원 등록 섹션 */}
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className={`p-1.5 rounded-md ${
-                  (!isEditMode || participants.length >= 100)
-                    ? 'bg-gray-200'
-                    : 'bg-blue-100'
-                }`}>
-                  <svg 
-                    className={`w-4 h-4 ${
-                      (!isEditMode || participants.length >= 100) 
-                        ? 'text-gray-500' 
-                        : 'text-blue-600'
-                    }`} 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                  </svg>
+      {/* 추가 인원 등록 섹션 - 수정 모드에서만 표시 */}
+      {isEditMode && (
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className={`p-1.5 rounded-md ${
+                    participants.length >= 100
+                      ? 'bg-gray-200'
+                      : 'bg-blue-100'
+                  }`}>
+                    <svg 
+                      className={`w-4 h-4 ${
+                        participants.length >= 100 
+                          ? 'text-gray-500' 
+                          : 'text-blue-600'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base font-semibold text-gray-800">추가 인원 등록</h3>
                 </div>
-                <h3 className="text-base font-semibold text-gray-800">추가 인원 등록</h3>
+                <p className="text-xs text-gray-600 ml-8">
+                  새로운 참가자를 추가할 수 있습니다. 기존 참가자는 삭제할 수 없습니다.
+                </p>
               </div>
-              <p className="text-xs text-gray-600 ml-8">
-                {isEditMode 
-                  ? '새로운 참가자를 추가할 수 있습니다. 기존 참가자는 삭제할 수 없습니다.' 
-                  : '수정 모드에서만 새로운 참가자를 추가할 수 있습니다.'}
-              </p>
+              <button
+                type="button"
+                onClick={handleAddNewParticipant}
+                disabled={participants.length >= 100}
+                className={`px-4 py-2 rounded-lg transition-all text-sm font-medium flex items-center gap-1.5 whitespace-nowrap ${
+                  participants.length >= 100
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-sm active:scale-[0.98]'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                참가자 추가
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleAddNewParticipant}
-              disabled={!isEditMode || participants.length >= 100}
-              className={`px-4 py-2 rounded-lg transition-all text-sm font-medium flex items-center gap-1.5 whitespace-nowrap ${
-                (!isEditMode || participants.length >= 100)
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-sm active:scale-[0.98]'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              참가자 추가
-            </button>
           </div>
         </div>
-      </div>
+      )}
       
       {/* 참가자 테이블 */}
       <div className="overflow-x-scroll overflow-y-visible border-l border-r border-gray-400 bg-white p-2 always-scrollbar" style={{ overflowY: 'visible' }}>
         <table className="w-full border-collapse min-w-[2132px]">
           <thead>
             <tr className="bg-gray-50">
-              <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">참가 대표자</th>
+              <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">
+                참가<br />대표자
+              </th>
               <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">번호</th>
               <th className="px-3 py-3 text-sm font-bold text-center w-32 border-r border-gray-300">이름</th>
               <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">생년월일</th>

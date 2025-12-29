@@ -355,15 +355,9 @@ export default function Header() {
             ) : (
               <a
                 href="/login"
-                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-1 text-gray-400 cursor-not-allowed opacity-50 pointer-events-none"
                 onClick={(e) => {
                   e.preventDefault();
-                  if (state.subMenuOpen || state.searchOpen) {
-                    updateState({ subMenuOpen: null, searchOpen: false });
-                  }
-                  // 클라이언트에서만 returnUrl 설정
-                  const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
-                  window.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
                 }}
               >
                 <Image
@@ -709,11 +703,9 @@ export default function Header() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center space-x-1 p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onClick={() => {
-                        if (state.expandedMobileMenu) {
-                          updateState({ expandedMobileMenu: null });
-                        }
+                      className="flex items-center space-x-1 p-2 rounded-full transition-colors focus:outline-none opacity-50 cursor-not-allowed pointer-events-none"
+                      onClick={(e) => {
+                        e.preventDefault();
                       }}
                     >
                       <Image

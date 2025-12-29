@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useEventRegistration } from "../shared/hooks/useEventRegistration";
 import { useIndividualForm } from "../shared/hooks/useIndividualForm";
 import LoadingSpinner from "../shared/components/LoadingSpinner";
 import ErrorAlert from "../shared/components/ErrorAlert";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import NoticeSection from "./components/NoticeSection";
 import PersonalInfoSection from "./components/PersonalInfoSection";
 import ContactInfoSection from "./components/ContactInfoSection";
@@ -33,6 +35,15 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
   // 편집 모드 확인
   const isEditMode = typeof window !== 'undefined' && 
     new URLSearchParams(window.location.search).get('mode') === 'edit';
+  
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  
+  // 오류 메시지가 변경되면 모달 열기
+  useEffect(() => {
+    if (error.submitError) {
+      setIsErrorModalOpen(true);
+    }
+  }, [error.submitError]);
 
   return (
     <SubmenuLayout 
@@ -61,7 +72,7 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
             
             {/* 폼 - 이벤트 정보가 로드된 후에만 표시 */}
             {eventInfo && !isLoadingEvent && (
-            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit} autoComplete="off">
+            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit} autoComplete="off" noValidate>
               {/* 개인정보 섹션 */}
               <PersonalInfoSection
                 formData={formData}
@@ -105,16 +116,6 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
               {/* 하단 안내사항 */}
               <BottomNoticeSection />
 
-              {/* 오류 메시지 */}
-              {error.submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <span className="text-red-600 mr-2">•</span>
-                    <span className="text-red-600 text-sm">{error.submitError}</span>
-                  </div>
-                </div>
-              )}
-
               {/* 제출 버튼 */}
               <SubmitButton
                 isFormValid={isFormValid}
@@ -132,6 +133,18 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
         isOpen={modal.isIdPasswordModalOpen}
         onClose={() => modal.setIsIdPasswordModalOpen(false)}
         onSuccess={modal.handleUserDataLoad}
+      />
+      
+      {/* 오류 모달 */}
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => {
+          setIsErrorModalOpen(false);
+          error.clearSubmitError();
+        }}
+        title="입력 정보 확인"
+        message={error.submitError || ''}
+        confirmText="확인"
       />
     </SubmenuLayout>
   );

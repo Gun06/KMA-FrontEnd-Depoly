@@ -18,9 +18,9 @@ export default function SubmitButton({
     <div className="mt-6 sm:mt-8 flex justify-center">
       <button
         type="submit"
-        disabled={!isFormValid || isSubmitted}
+        disabled={isSubmitted}
         className={`${className} ${
-          isFormValid && !isSubmitted
+          !isSubmitted
             ? 'bg-black text-white hover:bg-gray-800 cursor-pointer'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}

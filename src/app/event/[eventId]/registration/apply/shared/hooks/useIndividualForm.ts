@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { IndividualFormData, IdCheckResult, OpenDropdown } from '../types/individual';
 import { initialIndividualFormData } from '../types/individual-constants';
-import { isFormValid } from '../utils/validation';
+import { isFormValid, getIndividualFormValidationErrors } from '../utils/validation';
 import { handleInputChange, handleIdCheck, handleAddressSelect } from '../utils/handlers';
 import { transformFormDataToApi, transformFormDataToUpdateApi } from '../utils/transformers';
 import { submitIndividualRegistration, updateIndividualRegistration, UserData } from '../api/individual';
@@ -479,6 +479,10 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       } finally {
         setIsSubmitted(false);
       }
+    } else {
+      // 누락된 필드 목록 가져오기 (친절한 메시지 형식)
+      const errorMessage = getIndividualFormValidationErrors(formData);
+      setSubmitError(errorMessage);
     }
   };
 

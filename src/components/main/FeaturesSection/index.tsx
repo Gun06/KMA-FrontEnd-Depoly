@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image, { StaticImageData } from 'next/image';
 import cartIcon from '@/assets/images/main/cart.png';
 import photoIcon from '@/assets/images/main/photo.png';
@@ -31,7 +34,7 @@ const features: FeatureCard[] = [
     icon: photoIcon,
     title: '대회사진 갤러리',
     description: '대회 현장의 생생한 감동을 느껴보세요.',
-    link: '/galleries',
+    link: '/schedule/gallery',
     linkColor: '#256EF4',
     hasPlusButton: true
   },
@@ -56,6 +59,14 @@ const features: FeatureCard[] = [
 ];
 
 export default function FeaturesSection() {
+  const router = useRouter();
+
+  const handlePlusButtonClick = (e: React.MouseEvent, link: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(link);
+  };
+
   return (
     <section className="py-12 bg-white">
       <div className="container mx-auto px-4">
@@ -114,9 +125,13 @@ export default function FeaturesSection() {
 
               {/* 플러스 버튼 */}
               {feature.hasPlusButton && (
-                <div className="absolute bottom-4 right-4 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors duration-200">
+                <button
+                  onClick={(e) => handlePlusButtonClick(e, feature.link)}
+                  className="absolute bottom-4 right-4 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors duration-200 cursor-pointer z-10"
+                  aria-label={`${feature.title} 바로가기`}
+                >
                   <span className="text-lg">+</span>
-                </div>
+                </button>
               )}
             </Link>
           ))}

@@ -9,7 +9,7 @@ export const initialIndividualFormData: IndividualFormData = {
   birthDay: '',
   password: '',
   confirmPassword: '',
-  gender: 'male',
+  gender: '',
   postalCode: '',
   address: '',
   detailedAddress: '',

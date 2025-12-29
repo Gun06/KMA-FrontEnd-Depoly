@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GroupFormData, ParticipantData } from '../types/group';
 import { initialGroupFormData, createInitialParticipant } from '../types/group-constants';
-import { isFormValid } from '../utils/validation';
+import { isFormValid, getGroupFormValidationErrors } from '../utils/validation';
 import { handleGroupInputChange, handleParticipantChange, handleGroupAddressSelect, handleGroupNameCheck, handleGroupIdCheck } from '../utils/handlers';
 import { transformGroupFormDataToApi, transformGroupFormDataToUpdateApi } from '../utils/transformers';
 import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
@@ -339,7 +339,9 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
         setIsLoading(false);
       }
     } else {
-      setSubmitError('필수 필드를 모두 입력해주세요.');
+      // 누락된 필드 목록 가져오기 (친절한 메시지 형식)
+      const errorMessage = getGroupFormValidationErrors(formData);
+      setSubmitError(errorMessage);
     }
   };
 

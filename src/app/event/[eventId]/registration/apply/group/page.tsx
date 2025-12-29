@@ -70,7 +70,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
             
             {/* 폼 - 이벤트 정보가 로드된 후에만 표시 */}
             {eventInfo && !isLoadingEvent && (
-            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit}>
+            <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit} noValidate>
               {/* 단체 정보 섹션 */}
               <GroupInfoSection
                 formData={formData}
@@ -128,7 +128,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
           setIsErrorModalOpen(false);
           error.clearSubmitError();
         }}
-        title="오류"
+        title="입력 정보 확인"
         message={error.submitError || ''}
         confirmText="확인"
       />
