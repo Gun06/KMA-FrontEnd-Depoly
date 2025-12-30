@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchHomepageNotices, HomepageNoticeResponse } from '../api/noticeApi';
-import { NoticeItem } from '@/components/common/Table/types';
+import { NoticeItem, Category } from '@/components/common/Table/types';
 
 export const useNoticeData = (page: number = 1, size: number = 10): {
   noticeData: NoticeItem[];
@@ -34,7 +34,9 @@ export const useNoticeData = (page: number = 1, size: number = 10): {
             attachments: 0,
             views: notice.viewCount || 0,
             pinned: true,
-            category: (notice.category as "공지" | "이벤트" | "대회" | "문의" | "답변") || '공지'
+            category: (['필독', '공지', '이벤트', '문의', '답변', '일반'].includes(notice.category) 
+              ? notice.category as Category 
+              : '공지')
           })),
           // 일반 공지사항 (noticePage.content)
           ...response.noticePage.content.map((notice): NoticeItem => ({
@@ -45,7 +47,9 @@ export const useNoticeData = (page: number = 1, size: number = 10): {
             attachments: 0,
             views: notice.viewCount || 0,
             pinned: false,
-            category: (notice.category as "공지" | "이벤트" | "대회" | "문의" | "답변") || '공지'
+            category: (['필독', '공지', '이벤트', '문의', '답변', '일반'].includes(notice.category) 
+              ? notice.category as Category 
+              : '공지')
           }))
         ];
 
