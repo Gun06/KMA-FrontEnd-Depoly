@@ -58,6 +58,10 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
   const sponsors: Logo[] = allBanners
     .filter(banner => banner.bannerType === 'SPONSOR')
     .map(convertBannerToLogo);
+    
+  const assists: Logo[] = allBanners
+    .filter(banner => banner.bannerType === 'ASSIST')
+    .map(convertBannerToLogo);
 
 
 
@@ -66,7 +70,7 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
     return <SponsorSkeleton />;
   }
 
-  if (error || (!hosts.length && !organizers.length && !sponsors.length)) {
+  if (error || (!hosts.length && !organizers.length && !sponsors.length && !assists.length)) {
     return (
       <section aria-label="organizer" className="bg-white">
         <div className="mx-auto max-w-[1920px] px-0 md:px-4 py-6 md:py-8">
@@ -79,31 +83,32 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
   }
 
   // 모든 스폰서를 타입별로 분류
-  const all: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = [
+  const all: Array<{ type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }> = [
     ...hosts.map((l: Logo) => ({ type: 'host' as const, logo: l })),
     ...organizers.map((l: Logo) => ({ type: 'organizer' as const, logo: l })),
     ...sponsors.map((l: Logo) => ({ type: 'sponsor' as const, logo: l })),
+    ...assists.map((l: Logo) => ({ type: 'assist' as const, logo: l })),
   ]
 
   // 고정 스폰서와 순환 스폰서 분리 (반응형)
   // 모바일과 데스크톱에 따라 다른 로직 적용
-  let fixedSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = []
-  let mobileFixedSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = []
-  let mobileRotatingSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = []
-  let rotatingSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor'; logo: Logo }> = []
+  let fixedSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }> = []
+  let mobileFixedSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }> = []
+  let mobileRotatingSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }> = []
+  let rotatingSponsors: Array<{ type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }> = []
 
   if (isMobile) {
     // 모바일: API에서 mobile=true로 응답이 옴
     // staticBanner는 고정, nonStaticBanner는 순환
-    const staticBanners = hosts.filter(h => h.isFixed).concat(organizers.filter(o => o.isFixed)).concat(sponsors.filter(s => s.isFixed))
-    const nonStaticBanners = hosts.filter(h => !h.isFixed).concat(organizers.filter(o => !o.isFixed)).concat(sponsors.filter(s => !s.isFixed))
+    const staticBanners = hosts.filter(h => h.isFixed).concat(organizers.filter(o => o.isFixed)).concat(sponsors.filter(s => s.isFixed)).concat(assists.filter(a => a.isFixed))
+    const nonStaticBanners = hosts.filter(h => !h.isFixed).concat(organizers.filter(o => !o.isFixed)).concat(sponsors.filter(s => !s.isFixed)).concat(assists.filter(a => !a.isFixed))
     
     mobileFixedSponsors = staticBanners.map(banner => {
-      const type = hosts.includes(banner) ? 'host' : organizers.includes(banner) ? 'organizer' : 'sponsor'
+      const type = hosts.includes(banner) ? 'host' : organizers.includes(banner) ? 'organizer' : sponsors.includes(banner) ? 'sponsor' : 'assist'
       return { type, logo: banner }
     })
     mobileRotatingSponsors = nonStaticBanners.map(banner => {
-      const type = hosts.includes(banner) ? 'host' : organizers.includes(banner) ? 'organizer' : 'sponsor'
+      const type = hosts.includes(banner) ? 'host' : organizers.includes(banner) ? 'organizer' : sponsors.includes(banner) ? 'sponsor' : 'assist'
       return { type, logo: banner }
     })
   } else {
@@ -114,17 +119,19 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
   }
 
   // 타이틀 라벨
-  const labelMap: Record<'host' | 'organizer' | 'sponsor', string> = {
+  const labelMap: Record<'host' | 'organizer' | 'sponsor' | 'assist', string> = {
     host: '주최',
     organizer: '주관',
     sponsor: '후원',
+    assist: '협력',
   }
 
-  const item = (entry: { type: 'host' | 'organizer' | 'sponsor'; logo: Logo }, _idx: number) => {
-    const badgeColorMap: Record<'host' | 'organizer' | 'sponsor', string> = {
+  const item = (entry: { type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }, _idx: number) => {
+    const badgeColorMap: Record<'host' | 'organizer' | 'sponsor' | 'assist', string> = {
       host: 'bg-red-100 text-red-800',
       organizer: 'bg-blue-100 text-blue-800',
       sponsor: 'bg-amber-100 text-amber-800',
+      assist: 'bg-green-100 text-green-800',
     }
     const badge = (
       <span className={`absolute left-2 top-2 px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-xs whitespace-nowrap shadow-sm ${badgeColorMap[entry.type]}`}>

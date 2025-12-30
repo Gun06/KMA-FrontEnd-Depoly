@@ -126,13 +126,45 @@ export default function PartiesSection({
       />
       </FormTable>
 
-      {/* 주최/주관/후원 안내 메시지 */}
+      {/* 협력 섹션 */}
+      <FormTable 
+        title="협력 배너" 
+        labelWidth={200} 
+        center
+        actions={
+          !readOnly && (
+            <button
+              type="button"
+              onClick={add(f.setAssistItems)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              aria-label="협력 항목 추가"
+            >
+              <Plus size={16} strokeWidth={2.25} />
+              추가
+            </button>
+          )
+        }
+      >
+      <PartyRows
+        kind="협력"
+        items={f.assistItems}
+          onAdd={undefined} // 헤더의 추가 버튼 사용
+        onRemove={readOnly ? undefined : remove(f.setAssistItems)}
+        onChangeName={readOnly ? noop : changeName(f.setAssistItems)}
+        onChangeLink={readOnly ? noop : changeLink(f.setAssistItems)}
+        onChangeFile={readOnly ? noop : changeFile(f.setAssistItems)}
+        onToggleEnabled={readOnly ? undefined : toggle(f.setAssistItems)}
+        readOnly={readOnly}
+      />
+      </FormTable>
+
+      {/* 주최/주관/후원/협력 안내 메시지 */}
       <div className="flex mx-auto px-4">
         <NoticeMessage
           items={[
             { text: '※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다.' },
             {
-              text: '주최/주관/후원은 대회 페이지의 Footer 상단에 위치합니다.',
+              text: '주최/주관/후원/협력은 대회 페이지의 Footer 상단에 위치합니다.',
             },
             {
               text: "고정시키고 싶은 배너는 'OFF'를, 자동 스크롤을 원하는 배너는 'ON'을 선택하세요.",

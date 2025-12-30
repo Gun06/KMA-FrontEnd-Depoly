@@ -38,60 +38,75 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
     }
   }, [eventId, currentPage, pageSize]);
 
+  // 카테고리 변환 함수: 그대로 유지 (변환 없음)
+  const convertCategory = (category: string): "필독" | "이벤트" | "공지" | "문의" | "일반" => {
+    if (category === '필독') return '필독';
+    if (category === '공지') return '공지';
+    if (category === '이벤트') return '이벤트';
+    if (category === '문의') return '문의';
+    return '일반';
+  };
+
   // 로딩 중이거나 API 데이터가 없으면 빈 배열 반환
   const displayNotices: TableNoticeItem[] = isLoading 
     ? [] 
-    : noticeData && noticeData.noticePage && noticeData.noticePage.content && noticeData.noticePage.content.length > 0 
+    : noticeData && noticeData.noticePage && noticeData.noticePage.content 
     ? (() => {
-        // noticePage.content가 전체 목록이므로 이를 기준으로 사용
-        const allNoticesFromApi = noticeData.noticePage.content;
+        const pinnedList = noticeData.pinnedNoticeList || [];
+        const contentList = noticeData.noticePage.content || [];
         
-        // 관리자 페이지 순서와 일치하도록 정렬
-        // no 값으로 내림차순 정렬하되, 같은 no 값 내에서는 관리자 페이지 순서 유지
-        const allNotices = allNoticesFromApi
-          .sort((a, b) => (b.no || 0) - (a.no || 0)); // no 값으로 내림차순 정렬
+        // 모든 공지사항을 합치고 중복 제거 (id 기준)
+        const allNoticesMap = new Map();
         
+        // 먼저 contentList를 추가 (no 값이 있음)
+        contentList.forEach(notice => {
+          allNoticesMap.set(notice.id, notice);
+        });
         
-        // "공지" 카테고리를 최신순으로 정렬하여 상단 고정 10개 선택
-        const noticeCategoryItems = allNotices
-          .filter(notice => notice.category === '공지')
+        // pinnedNoticeList를 추가 (중복이면 덮어쓰지 않음)
+        pinnedList.forEach(notice => {
+          if (!allNoticesMap.has(notice.id)) {
+            allNoticesMap.set(notice.id, notice);
+          }
+        });
+        
+        const allNoticesFromApi = Array.from(allNoticesMap.values());
+        
+        // 상단 고정: 변환하지 않은 "필독" 카테고리만 (pinnedNoticeList + contentList 모두)
+        const 필독카테고리Items = allNoticesFromApi
+          .filter(notice => notice.category === '필독') // 변환하지 않은 "필독"만
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        // 상단 고정할 공지의 ID 세트
-        const pinnedIds = new Set(noticeCategoryItems.slice(0, 10).map(n => n.id));
+        // 상단 고정할 필독의 ID 세트
+        const pinnedIds = new Set(필독카테고리Items.map(n => n.id));
         
-        // 상단 고정: 최신 10개의 공지 (고유 ID 보장)
-        const pinnedNoticeItems = noticeCategoryItems
-          .slice(0, 10) // 최신 10개만
+        // 상단 고정: 모든 필독 카테고리 (최신순 정렬)
+        const pinnedNoticeItems = 필독카테고리Items
           .map((notice, index): TableNoticeItem => ({
-            id: `pinned_${index}_${notice.id}`, // 인덱스 추가로 고유성 보장
+            id: `pinned_${index}_${notice.id}`,
             title: notice.title,
             author: notice.author,
             date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',
             attachments: 0,
             views: notice.viewCount || 0,
-            pinned: true, // 고정 공지로 표시
-            category: '공지' as const
+            pinned: true,
+            category: '필독' as const // 변환하지 않고 그대로 "필독"
           }));
         
-        // 하단 일반: 고정되지 않은 모든 글들 (API의 no 값 순서 유지)
-        const regularItems = allNotices
-          .filter(notice => !pinnedIds.has(notice.id)) // 고정 공지 제외
+        // 하단 일반: 필독이 아닌 모든 글들 (no 값 순서 유지)
+        const regularItems = allNoticesFromApi
+          .filter(notice => !pinnedIds.has(notice.id)) // 필독 제외
+          .sort((a, b) => (b.no || 0) - (a.no || 0)) // no 값으로 내림차순 정렬
           .map((notice): TableNoticeItem => ({
-            id: `regular_${notice.id}`, // 접두사 추가로 고유성 보장
+            id: `regular_${notice.id}`,
             title: notice.title,
             author: notice.author,
             date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',
             attachments: 0,
             views: notice.viewCount || 0,
             pinned: false,
-            category: (notice.category === '공지' ? '공지' : 
-                      notice.category === '이벤트' ? '이벤트' : 
-                      notice.category === '대회' ? '대회' : 
-                      notice.category === '문의' ? '문의' : 
-                      '일반') as "공지" | "이벤트" | "대회" | "문의" | "일반"
+            category: convertCategory(notice.category || '일반') // 공지는 그대로 "공지"로 유지
           }));
-        
         
         return [...pinnedNoticeItems, ...regularItems];
       })()

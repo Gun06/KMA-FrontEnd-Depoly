@@ -1,6 +1,6 @@
 // 이벤트 스폰서 배너 타입 정의
 
-export type BannerType = 'HOST' | 'ORGANIZER' | 'SPONSOR';
+export type BannerType = 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
 
 export interface EventSponsorBanner {
   imgUrl: string;

@@ -4,6 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import CategoryBadge from "@/components/common/Badge/CategoryBadge";
+import type { Category } from "@/components/common/Table/types";
 import { useNoticeDetail, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
 import { useAuthStore } from "@/stores";
@@ -97,15 +99,17 @@ export default function Page() {
       ) : (
         <article className="rounded-xl border bg-white">
           <header className="px-6 pt-6 pb-2">
-            {/* 카테고리 뱃지 */}
-            {(detail.noticeCategoryId || detail.categoryId) && categories && (
-              <div className="mb-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {categories.find(cat => cat.id === (detail.noticeCategoryId || detail.categoryId))?.name || '카테고리'}
-                </span>
-              </div>
-            )}
-            <h1 className="text-xl font-semibold">{detail.title}</h1>
+            {/* 카테고리 뱃지와 제목 */}
+            <div className="flex items-center gap-2 mb-2">
+              {(detail.noticeCategoryId || detail.categoryId) && categories && (() => {
+                const categoryName = categories.find(cat => cat.id === (detail.noticeCategoryId || detail.categoryId))?.name;
+                if (categoryName && ['필독', '공지', '이벤트', '대회', '문의', '답변', '일반'].includes(categoryName)) {
+                  return <CategoryBadge category={categoryName as Category} size="smd" />;
+                }
+                return null;
+              })()}
+              <h1 className="text-xl font-semibold">{detail.title}</h1>
+            </div>
             <p className="mt-1 text-sm text-gray-500">
               작성자 {detail.author || user?.account || '관리자'} · {formatDateTime(detail.createdAt)}
               {/* TODO: 백엔드에서 viewCount 필드 제공 시 활성화 */}

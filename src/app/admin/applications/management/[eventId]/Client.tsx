@@ -8,8 +8,10 @@ import ApplicantsManageTable from '@/components/admin/applications/ApplicantsMan
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
 import GroupUploadModal from '@/components/admin/applications/GroupUploadModal';
+import PersonalUploadModal from '@/components/admin/applications/PersonalUploadModal';
 import { downloadRegistrationList } from '@/services/registration';
 import { downloadGroupForm, uploadGroupForm } from '@/components/admin/applications/api/groupUpload';
+import { downloadPersonalForm } from '@/components/admin/applications/api/personalUpload';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast, type Id } from 'react-toastify';
 import type {
@@ -84,6 +86,9 @@ export default function Client({
   
   // 단체 신청 양식 업로드 모달 상태
   const [isGroupUploadModalOpen, setIsGroupUploadModalOpen] = React.useState(false);
+  
+  // 개인 신청 양식 업로드 모달 상태
+  const [isPersonalUploadModalOpen, setIsPersonalUploadModalOpen] = React.useState(false);
   
   // 기존 업로드 관련 상태 (호환성 유지)
   const [isUploadingPayments, setIsUploadingPayments] = React.useState(false);
@@ -204,8 +209,30 @@ export default function Client({
     await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
   };
 
+  // 개인 신청 양식 다운로드 처리
+  const handleDownloadPersonalForm = async () => {
+    try {
+      await downloadPersonalForm(eventId);
+      toast.success('개인 신청 양식 다운로드가 완료되었습니다!');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
+    }
+  };
+
+  // 개인 신청 양식 업로드 처리
+  const handleUploadPersonalForm = () => {
+    setIsPersonalUploadModalOpen(true);
+  };
+  
+  // 개인 업로드 성공 후 처리
+  const handlePersonalUploadSuccess = async () => {
+    // 데이터 새로고침
+    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+  };
+
   // 툴바 액션 처리
-  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm') => {
+  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm') => {
     if (action === 'downloadApplicants') {
       handleDownloadApplicants();
     } else if (action === 'uploadPayments') {
@@ -214,6 +241,10 @@ export default function Client({
       handleDownloadGroupForm();
     } else if (action === 'uploadGroupForm') {
       handleUploadGroupForm();
+    } else if (action === 'downloadPersonalForm') {
+      handleDownloadPersonalForm();
+    } else if (action === 'uploadPersonalForm') {
+      handleUploadPersonalForm();
     }
   };
 
@@ -320,6 +351,14 @@ export default function Client({
         onClose={() => setIsGroupUploadModalOpen(false)}
         eventId={eventId}
         onSuccess={handleGroupUploadSuccess}
+      />
+
+      {/* 개인 신청 양식 업로드 모달 */}
+      <PersonalUploadModal
+        isOpen={isPersonalUploadModalOpen}
+        onClose={() => setIsPersonalUploadModalOpen(false)}
+        eventId={eventId}
+        onSuccess={handlePersonalUploadSuccess}
       />
     </div>
   );

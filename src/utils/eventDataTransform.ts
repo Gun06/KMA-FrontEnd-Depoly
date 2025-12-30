@@ -44,6 +44,7 @@ export function transformApiDataToEventDetail(
       hosts: [],
       organizers: [],
       sponsors: [],
+      assists: [],
     };
 
     eventBanners.forEach(banner => {
@@ -62,6 +63,9 @@ export function transformApiDataToEventDetail(
           break;
         case 'SPONSOR':
           partners.sponsors.push(partnerInfo);
+          break;
+        case 'ASSIST':
+          partners.assists.push(partnerInfo);
           break;
       }
     });

@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 
 type SortKey = 'id' | 'name' | 'org' | 'birth';
 type SearchField = 'name' | 'tel' | 'org' | 'birth' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all';
-type ToolbarAction = 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm';
+type ToolbarAction = 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm';
 
 type Props = {
   rows: ApplicantManageRow[];

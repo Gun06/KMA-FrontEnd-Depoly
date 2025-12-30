@@ -61,7 +61,7 @@ const ACTION_COL_W = 56;
 const VLINE = "#D4D4D4";
 
 type Props = {
-  kind: "주최" | "주관" | "후원";
+  kind: "주최" | "주관" | "후원" | "협력";
   items: PartyItem[];
   onAdd?: () => void;
   onRemove?: (index: number) => void;

@@ -1,14 +1,14 @@
-// 단체 Excel 업로드/다운로드 관련 API 함수
+// 개인 Excel 업로드/다운로드 관련 API 함수
 
 import { request } from '@/hooks/useFetch';
 import { tokenService } from '@/utils/tokenService';
 
 /**
- * 단체 신청 양식 다운로드
+ * 개인 신청 양식 다운로드
  * @param eventId 이벤트 ID
  */
-export async function downloadGroupForm(eventId: string): Promise<void> {
-  const url = `/api/v1/${eventId}/organization/download`;
+export async function downloadPersonalForm(eventId: string): Promise<void> {
+  const url = `/api/v1/${eventId}/personal/download`;
   
   try {
     // tokenService를 사용하여 토큰 가져오기
@@ -61,7 +61,7 @@ export async function downloadGroupForm(eventId: string): Promise<void> {
     
     // 파일명이 없으면 기본 파일명 사용
     if (!filename) {
-      filename = `단체신청양식_${eventId}.xlsx`;
+      filename = `개인신청양식_${eventId}.xlsx`;
     }
     
     const blobUrl = window.URL.createObjectURL(blob);
@@ -79,12 +79,12 @@ export async function downloadGroupForm(eventId: string): Promise<void> {
 }
 
 /**
- * 단체 Excel 파일 업로드
+ * 개인 Excel 파일 업로드
  * @param eventId 이벤트 ID
  * @param file Excel 파일
  * @param options 업로드 옵션 (signal 등)
  */
-export async function uploadGroupForm(
+export async function uploadPersonalForm(
   eventId: string,
   file: File,
   options?: { signal?: AbortSignal }
@@ -92,7 +92,7 @@ export async function uploadGroupForm(
   const formData = new FormData();
   formData.append('excelFile', file);
   
-  const url = `/api/v1/registration/event/${eventId}/organization/excel-upload`;
+  const url = `/api/v1/registration/event/${eventId}/personal/excel-upload`;
   
   try {
     const response = await request('admin', url, 'POST', formData, true, {
@@ -106,4 +106,3 @@ export async function uploadGroupForm(
     throw error instanceof Error ? error : new Error('업로드에 실패했습니다.');
   }
 }
-

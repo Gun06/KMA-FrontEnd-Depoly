@@ -177,6 +177,7 @@ export default function Client() {
         author: notice.author || '작성자 없음',
         date: notice.createdAt ? formatDateOnly(notice.createdAt) : '날짜 없음', // 2025-08-25T10:00:00 -> 2025.08.25
         views: viewCount,
+        categoryName: categoryName, // API에서 받은 categoryName 그대로 전달
       };
     });
 

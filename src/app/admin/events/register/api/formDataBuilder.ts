@@ -280,7 +280,7 @@ export class FormDataBuilder {
     imageUrl: string | null;
     providerName: string;
     url: string;
-    bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
+    bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
     static: boolean;
   }> {
     // 기존 배너를 imageUrl로 매칭하기 위한 맵 생성 (서버 순서 변경과 관계없이 매칭)
@@ -334,7 +334,7 @@ export class FormDataBuilder {
       imageUrl: string | null;
       providerName: string;
       url: string;
-      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
+      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
       static: boolean;
     }> = [];
 
@@ -409,6 +409,37 @@ export class FormDataBuilder {
           });
         });
       }
+
+      // 협력 ASSIST 배너
+      if (payload.partners.assists) {
+        payload.partners.assists.forEach(a => {
+          const trimmedName = (a.name || '').trim();
+          if (!trimmedName) return;
+          
+          const newFile = hasNewFile(a.file);
+          const existingImageUrl = getExistingImageUrl(a.file);
+          let existingBanner = existingImageUrl ? existingBannerMap.get(existingImageUrl) : null;
+          
+          // imageUrl로 찾지 못한 경우, bannerType과 providerName으로 찾기 (fallback)
+          if (!existingBanner && !newFile) {
+            // existingBannerMap에서 ASSIST 타입이고 providerName이 일치하는 배너 찾기
+            for (const [imageUrl, banner] of existingBannerMap.entries()) {
+              if (banner.bannerType === 'ASSIST' && banner.providerName === trimmedName) {
+                existingBanner = banner;
+                break;
+              }
+            }
+          }
+          
+          result.push({
+            imageUrl: newFile ? null : (existingBanner?.imageUrl || null), // 새 파일이 있으면 null, 없으면 기존 imageUrl 유지
+            providerName: trimmedName, // 사용자가 입력한 그대로
+            url: a.link || '',
+            bannerType: 'ASSIST',
+            static: a.enabled === true,
+          });
+        });
+      }
     }
 
     return result;
@@ -426,7 +457,7 @@ export class FormDataBuilder {
       imageUrl: string | null;
       providerName: string;
       url: string;
-      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
+      bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
       static: boolean;
     }>
   ): Set<string> {
@@ -541,11 +572,11 @@ export class FormDataBuilder {
       }
     }
 
-    // 주최/주관/후원 배너 이미지들 - eventBannerInfoList 순서에 맞춰 전송
+    // 주최/주관/후원/협력 배너 이미지들 - eventBannerInfoList 순서에 맞춰 전송
     // imageUrl === null 인 항목들만 파일을 포함해야 함
     if (payload.partners && Array.isArray(eventBannerInfoList)) {
       const findPartnerFile = (
-        type: 'HOST' | 'ORGANIZER' | 'SPONSOR',
+        type: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST',
         providerName: string
       ): File | null => {
         const lists = payload.partners as Required<typeof payload.partners>;
@@ -568,7 +599,13 @@ export class FormDataBuilder {
         if (type === 'ORGANIZER') {
           return pick(lists.organizers || []) ?? null;
         }
-        return pick(lists.sponsors || []) ?? null;
+        if (type === 'SPONSOR') {
+          return pick(lists.sponsors || []) ?? null;
+        }
+        if (type === 'ASSIST') {
+          return pick(lists.assists || []) ?? null;
+        }
+        return null;
       };
 
       let index = 0;

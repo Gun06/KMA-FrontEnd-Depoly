@@ -29,6 +29,7 @@ export type NoticeEventRow = {
   views: number;
   files?: NoticeFile[];
   content?: string;
+  categoryName?: string;   // API에서 받은 카테고리 이름 (필독, 공지, 이벤트 등)
 };
 
 /** 🔹 메인 전용 타입: 기본 NoticeEventRow와 동일 */

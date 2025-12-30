@@ -118,7 +118,7 @@ export class EventDataTransformer {
   }
 
   /**
-   * 주최/주관/후원 배너 정보 생성
+   * 주최/주관/후원/협력 배너 정보 생성
    */
   private static createEventBannerInfo(
     data: EventCreatePayload
@@ -147,6 +147,7 @@ export class EventDataTransformer {
     buildList('HOST', data.hosts, data.partners?.hosts);
     buildList('ORGANIZER', data.organizers, data.partners?.organizers);
     buildList('SPONSOR', data.sponsors, data.partners?.sponsors);
+    buildList('ASSIST', data.assists, data.partners?.assists);
 
     return bannerInfoList;
   }
@@ -192,8 +193,8 @@ export class EventDataTransformer {
       ),
     };
 
-    // 주최/주관/후원 배너 이미지들 (순서 중요!)
-    // eventBannerInfoList와 동일한 순서(Host들 → Organizer들 → Sponsor들)로 추가
+    // 주최/주관/후원/협력 배너 이미지들 (순서 중요!)
+    // eventBannerInfoList와 동일한 순서(Host들 → Organizer들 → Sponsor들 → Assist들)로 추가
     const bannerImages: File[] = [];
 
     if (uploads.bannerHost && uploads.bannerHost.length > 0) {
@@ -210,6 +211,12 @@ export class EventDataTransformer {
 
     if (uploads.bannerSponsor && uploads.bannerSponsor.length > 0) {
       for (const item of uploads.bannerSponsor) {
+        bannerImages.push(this.getFileFromUpload(item));
+      }
+    }
+
+    if (uploads.bannerAssist && uploads.bannerAssist.length > 0) {
+      for (const item of uploads.bannerAssist) {
         bannerImages.push(this.getFileFromUpload(item));
       }
     }

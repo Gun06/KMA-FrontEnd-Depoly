@@ -52,7 +52,7 @@ export interface EventDetailApiResponse {
     imageUrl: string;
     url: string;
     providerName: string;
-    bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR';
+    bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
     static: boolean;
   }>;
   souvenirs?: Array<{

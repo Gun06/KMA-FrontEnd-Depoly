@@ -17,7 +17,7 @@ type Props = {
   totalElements?: number;
 };
 
-type DisplayRow = NoticeItem & { __displayNo: number | '공지' | undefined };
+type DisplayRow = NoticeItem & { __displayNo: number | '필독' | undefined };
 
 export default function NoticeTable({
   data,
@@ -61,7 +61,7 @@ export default function NoticeTable({
     });
 
     const autoPinned = expandedRows.map((row) =>
-      row.category === '공지' ? { ...row, pinned: true } : row
+      row.category === '필독' ? { ...row, pinned: true } : row
     );
     const pinned = autoPinned.filter((r) => r.pinned);
     const effectivePinned = pinLimit ? pinned.slice(0, pinLimit) : pinned;
@@ -72,7 +72,7 @@ export default function NoticeTable({
     const sorted = [...effectivePinned, ...nonPinned];
 
     return sorted.map((row) => {
-      if (pinnedIdSet.has(row.id)) return { ...row, __displayNo: '공지' as const };
+      if (pinnedIdSet.has(row.id)) return { ...row, __displayNo: '필독' as const };
       
       // __displayNo는 이미 전달받은 값 사용
       return { ...row, __displayNo: row.__displayNo };
@@ -97,11 +97,11 @@ export default function NoticeTable({
       align: "center",
       className: "align-middle whitespace-nowrap",
       render: (row) => {
-        const isPinned = row.__displayNo === '공지';
+        const isPinned = row.__displayNo === '필독';
         if (isPinned) {
           return showPinnedBadgeInNo ? (
             <div className="flex items-center justify-center">
-              <CategoryBadge category={row.category ?? '공지'} size="md" />
+              <CategoryBadge category={row.category ?? '필독'} size="md" />
             </div>
           ) : (
             <span className="inline-block w-4 h-4" />
@@ -116,11 +116,11 @@ export default function NoticeTable({
       align: "left",
       className: "text-left",
       render: (row) => {
-        const isPinned = row.__displayNo === '공지';
+        const isPinned = row.__displayNo === '필독';
         const clickable = !(isPinned && !pinnedClickable);
         return (
           <div className="flex min-w-0 items-center gap-2">
-            {!isPinned && row.category && row.category !== '일반' && (
+            {!isPinned && row.category && (
               <CategoryBadge category={row.category} size="xs" />
             )}
             <span
@@ -169,12 +169,12 @@ export default function NoticeTable({
         zebra={false}
         // 모든 행에 동일한 hover 스타일 적용
         rowClassName={(row) => {
-          const isPinned = row.__displayNo === '공지';
+          const isPinned = row.__displayNo === '필독';
           const clickable = !(isPinned && !pinnedClickable);
           return `hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
         }}
         onRowClick={(row) => {
-          const isPinned = row.__displayNo === '공지';
+          const isPinned = row.__displayNo === '필독';
           const clickable = !(isPinned && !pinnedClickable);
           if (clickable) {
             onRowClick?.(row.id);
@@ -185,7 +185,7 @@ export default function NoticeTable({
       {/* Mobile */}
       <ul className="md:hidden divide-y divide-[#F1F3F5]">
         {rows.map((row) => {
-          const isPinned = row.__displayNo === '공지';
+          const isPinned = row.__displayNo === '필독';
           const clickable = pinnedClickable || !isPinned;
 
           return (
@@ -208,7 +208,7 @@ export default function NoticeTable({
             >
               <div className="grid grid-cols-[40px_1fr] gap-3 items-start">
                 <div className="h-6 flex items-center justify-center">
-                  <CategoryBadge category={row.category ?? '공지'} size="xs" />
+                  <CategoryBadge category={row.category ?? '필독'} size="xs" />
                 </div>
 
                 <div className="min-w-0 flex-1">

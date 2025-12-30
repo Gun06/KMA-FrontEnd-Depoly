@@ -79,6 +79,7 @@ type PrefillUploads = {
   bannerHost?: UploadItem[] | Array<{ url: string }>;
   bannerOrganizer?: UploadItem[] | Array<{ url: string }>;
   bannerSponsor?: UploadItem[] | Array<{ url: string }>;
+  bannerAssist?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 홍보용(Instagram)
   bannerInstagram?: UploadItem[] | Array<{ url: string }>;
@@ -147,6 +148,12 @@ export type UseCompetitionPrefill = Partial<
         file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
       }>;
+      assists?: Array<{
+        name?: string;
+        link?: string;
+        file?: UploadItem[] | Array<{ url: string }>;
+        enabled?: boolean;
+      }>;
     };
     /** 신청여부 프리필 */
     applyStatus?: RegStatus;
@@ -198,6 +205,7 @@ export type HydrateSnapshotInput = {
   hostItems?: PartyItem[];
   organizerItems?: PartyItem[];
   sponsorItems?: PartyItem[];
+  assistItems?: PartyItem[];
   themeStyle?: 'base' | 'grad';
   baseColor?: EventTheme;
   gradColor?: EventTheme;
@@ -291,6 +299,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     emptyParty,
   ]);
   const [sponsorItems, setSponsorItems] = React.useState<PartyItem[]>([
+    emptyParty,
+  ]);
+  const [assistItems, setAssistItems] = React.useState<PartyItem[]>([
     emptyParty,
   ]);
 
@@ -526,6 +537,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setHostItems((prefill.partners.hosts ?? []).map(toItem));
       setOrganizerItems((prefill.partners.organizers ?? []).map(toItem));
       setSponsorItems((prefill.partners.sponsors ?? []).map(toItem));
+      setAssistItems((prefill.partners.assists ?? []).map(toItem));
     } else {
       if (prefill.hosts?.length)
         setHostItems(
@@ -548,6 +560,15 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       if (prefill.sponsors?.length)
         setSponsorItems(
           prefill.sponsors.map((n: string) => ({
+            name: n,
+            link: '',
+            file: [],
+            enabled: true,
+          }))
+        );
+      if (prefill.assists?.length)
+        setAssistItems(
+          prefill.assists.map((n: string) => ({
             name: n,
             link: '',
             file: [],
@@ -701,6 +722,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     hosts: hostItems.map(it => it.name).filter(Boolean),
     organizers: organizerItems.map(it => it.name).filter(Boolean),
     sponsors: sponsorItems.map(it => it.name).filter(Boolean),
+    assists: assistItems.map(it => it.name).filter(Boolean),
     visibility,
     shuttle,
     eventTheme: finalEventTheme,
@@ -771,12 +793,16 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     const hasSponsorImage = sponsorItems.some(
       item => item.name.trim() && item.file.length > 0
     );
+    const hasAssistImage = assistItems.some(
+      item => item.name.trim() && item.file.length > 0
+    );
 
 
     if (!hasHostImage) errors.push('주최 이미지 (주최 항목에 이미지 필요)');
     if (!hasOrganizerImage)
       errors.push('주관 이미지 (주관 항목에 이미지 필요)');
     if (!hasSponsorImage) errors.push('후원 이미지 (후원 항목에 이미지 필요)');
+    if (!hasAssistImage) errors.push('협력 ASSIST 이미지 (협력 ASSIST 항목에 이미지 필요)');
 
     return { ok: errors.length === 0, errors };
   };
@@ -802,6 +828,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       .filter(item => item.name.trim() && item.file.length > 0)
       .flatMap(item => item.file);
 
+    const assistImages = assistItems
+      .filter(item => item.name.trim() && item.file.length > 0)
+      .flatMap(item => item.file);
+
     // debug log removed
 
     const fees = groups
@@ -822,6 +852,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       hosts: hostItems,
       organizers: organizerItems,
       sponsors: sponsorItems,
+      assists: assistItems,
     };
 
     const payload = {
@@ -838,6 +869,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         bannerHost: hostImages, // 🔧 hostItems에서 변환된 이미지들
         bannerOrganizer: organizerImages, // 🔧 organizerItems에서 변환된 이미지들
         bannerSponsor: sponsorImages, // 🔧 sponsorItems에서 변환된 이미지들
+        bannerAssist: assistImages, // 🔧 assistItems에서 변환된 이미지들
         bannerInstagram,
         bannerSideMenu, // 사이드메뉴배너(herosection 이미지)
 
@@ -890,6 +922,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setHostItems(s.hostItems ?? []);
     setOrganizerItems(s.organizerItems ?? []);
     setSponsorItems(s.sponsorItems ?? []);
+    setAssistItems(s.assistItems ?? []);
 
     // eventTheme이 있으면 themeStyle, baseColor, gradColor 설정
     if (s.eventTheme) {
@@ -1034,6 +1067,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setOrganizerItems,
     sponsorItems,
     setSponsorItems,
+    assistItems,
+    setAssistItems,
 
     // uploads — 파트너 배너 + 홍보용
     // uploads — 파트너 배너 + 홍보용

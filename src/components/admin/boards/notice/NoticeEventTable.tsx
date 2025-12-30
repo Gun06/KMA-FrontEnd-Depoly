@@ -8,8 +8,9 @@ import CategoryBadge from "@/components/common/Badge/CategoryBadge";
 import type { Category } from "@/components/common/Table/types";
 import type { NoticeEventRow, NoticeType } from "@/types/notice";
 
+// 하위 호환성을 위한 매핑 (categoryName이 없을 때만 사용)
 const mapToCategory: Record<NoticeType, Category | null> = {
-  match: "대회",
+  match: null, // 대회는 이제 없음
   event: "이벤트",
   notice: "공지",
   general: null,
@@ -64,10 +65,17 @@ export default function NoticeEventTable({
       header: "유형",
       width: 110, // ✅ 90 → 110 (신청상태와 맞춤)
       align: "center",
-      render: (r) =>
-        mapToCategory[r.type] ? (
+      render: (r) => {
+        // API의 categoryName을 직접 사용 (필독, 공지, 이벤트 등)
+        const categoryName = r.categoryName;
+        if (categoryName && (categoryName === '필독' || categoryName === '공지' || categoryName === '이벤트' || categoryName === '일반')) {
+          return <CategoryBadge category={categoryName as Category} size="smd" />;
+        }
+        // categoryName이 없으면 기존 방식 사용 (하위 호환성)
+        return mapToCategory[r.type] ? (
           <CategoryBadge category={mapToCategory[r.type] as Category} size="smd" />
-        ) : null,
+        ) : null;
+      },
     },
     {
       key: "title",

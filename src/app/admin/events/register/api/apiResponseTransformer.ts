@@ -120,10 +120,11 @@ export function transformApiResponseToFormPrefill(
     return visible ? '공개' : '비공개';
   };
 
-  // 주최/주관/후원 분리 (문자열 배열)
+  // 주최/주관/후원/협력 ASSIST 분리 (문자열 배열)
   const hosts: string[] = [];
   const organizers: string[] = [];
   const sponsors: string[] = [];
+  const assists: string[] = [];
 
   // eventBanners에서 배너 타입별로 분리
   eventBanners?.forEach((banner) => {
@@ -133,6 +134,8 @@ export function transformApiResponseToFormPrefill(
       organizers.push(banner.providerName);
     } else if (banner.bannerType === 'SPONSOR') {
       sponsors.push(banner.providerName);
+    } else if (banner.bannerType === 'ASSIST') {
+      assists.push(banner.providerName);
     }
   });
 
@@ -164,6 +167,14 @@ export function transformApiResponseToFormPrefill(
       })) || [],
     sponsors: eventBanners
       ?.filter((banner) => banner.bannerType === 'SPONSOR')
+      .map((banner) => ({
+        name: banner.providerName,
+        link: banner.url || '',
+        file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
+        enabled: banner.static ?? false,
+      })) || [],
+    assists: eventBanners
+      ?.filter((banner) => banner.bannerType === 'ASSIST')
       .map((banner) => ({
         name: banner.providerName,
         link: banner.url || '',
@@ -259,6 +270,10 @@ export function transformApiResponseToFormPrefill(
       eventBanners
         ?.filter((banner) => banner.bannerType === 'SPONSOR' && banner.imageUrl)
         .map((banner) => ({ url: banner.imageUrl })) || [],
+    bannerAssist:
+      eventBanners
+        ?.filter((banner) => banner.bannerType === 'ASSIST' && banner.imageUrl)
+        .map((banner) => ({ url: banner.imageUrl })) || [],
 
     // 메인/요강/페이지별 이미지들
     bannerMainDesktop: eventInfo.mainBannerPcImageUrl
@@ -315,6 +330,7 @@ export function transformApiResponseToFormPrefill(
     hosts: hosts.length > 0 ? hosts : [],
     organizers: organizers.length > 0 ? organizers : [],
     sponsors: sponsors.length > 0 ? sponsors : [],
+    assists: assists.length > 0 ? assists : [],
     courses: courses,
     gifts: gifts,
     visibility: visibleStatusToVisibility(eventInfo.visibleStatus),

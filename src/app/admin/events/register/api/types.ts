@@ -4,8 +4,8 @@
  * Admin.ts에서 대회등록 관련 타입만 분리
  */
 
-// 배너 타입 (주최/주관/후원)
-export type BannerType = 'HOST' | 'ORGANIZER' | 'SPONSOR';
+// 배너 타입 (주최/주관/후원/협력 ASSIST)
+export type BannerType = 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
 
 // 대회 기본 정보
 export interface EventInfo {
@@ -49,7 +49,7 @@ export interface EventCategoryInfo {
   combinations: EventCategoryCombination[]; // 기념품-사이즈 조합 목록
 }
 
-// 주최/주관/후원 배너 정보
+// 주최/주관/후원/협력 배너 정보
 export interface EventBannerInfo {
   providerName: string; // 제공자명 (주최/주관/후원 기관명)
   url: string; // 배너 링크 URL
@@ -60,7 +60,7 @@ export interface EventBannerInfo {
 // 서버로 전송할 대회 생성 요청 데이터 (기념품/종목 제외)
 export interface EventCreateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
-  eventBannerInfoList: EventBannerInfo[]; // 주최/주관/후원 배너 정보
+  eventBannerInfoList: EventBannerInfo[]; // 주최/주관/후원/협력 배너 정보
 }
 
 // 대회 수정용 카테고리 업데이트 정보
@@ -84,7 +84,7 @@ export interface EventBannerUpdateInfo {
 export interface EventUpdateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
   eventCategoryUpdateInfo: EventCategoryUpdateInfo[]; // 카테고리 및 기념품 정보 (수정용)
-  eventBannerUpdateInfo: EventBannerUpdateInfo[]; // 주최/주관/후원 배너 정보 (수정용)
+  eventBannerUpdateInfo: EventBannerUpdateInfo[]; // 주최/주관/후원/협력 배너 정보 (수정용)
 }
 
 // API 요청 시 전송할 이미지 파일들
@@ -107,7 +107,7 @@ export interface EventImageFiles {
   courseImage: File; // 코스 페이지 이미지 (필수)
   // 사이드메뉴 배너(herosection 이미지) - 선택
   sideMenuBannerImage?: File;
-  // 주최/주관/후원 배너 이미지 배열 (eventBannerInfoList와 순서 일치)
+  // 주최/주관/후원/협력 배너 이미지 배열 (eventBannerInfoList와 순서 일치)
   eventBannerImages?: File[];
 }
 
@@ -162,6 +162,7 @@ export type EventFormState = {
   hosts: string[];
   organizers: string[];
   sponsors: string[];
+  assists: string[];
   courses: string[];
   gifts: string[];
   visibility: Visibility;
@@ -183,6 +184,7 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     bannerHost?: UploadItem[];
     bannerOrganizer?: UploadItem[];
     bannerSponsor?: UploadItem[];
+    bannerAssist?: UploadItem[];
     bannerInstagram?: UploadItem[];
     // 사이드메뉴배너(herosection 이미지)
     bannerSideMenu?: UploadItem[];
@@ -217,6 +219,12 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
       enabled?: boolean;
     }>;
     sponsors?: Array<{
+      name?: string;
+      link?: string;
+      file?: UploadItem[];
+      enabled?: boolean;
+    }>;
+    assists?: Array<{
       name?: string;
       link?: string;
       file?: UploadItem[];

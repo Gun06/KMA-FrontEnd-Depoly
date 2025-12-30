@@ -96,6 +96,14 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "단체 신청 양식 업로드",     value: "uploadGroupForm" },
           ],
         },
+        {
+          label: "개인 Excel",
+          tone: "primary",
+          menu: [
+            { label: "개인 신청 양식 다운로드", value: "downloadPersonalForm" },
+            { label: "개인 신청 양식 업로드",     value: "uploadPersonalForm" },
+          ],
+        },
       ],
       showReset: true,
     },

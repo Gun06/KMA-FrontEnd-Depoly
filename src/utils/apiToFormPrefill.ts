@@ -90,6 +90,14 @@ export function transformApiToFormPrefill(
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
         enabled: banner.static,
       })),
+    assists: eventBanners
+      .filter(banner => banner.bannerType === 'ASSIST')
+      .map(banner => ({
+        name: banner.providerName, // providerName을 그대로 사용
+        link: banner.url || '',
+        file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
+        enabled: banner.static,
+      })),
   };
 
   // 코스 정보 (카테고리에서 추출)
@@ -127,6 +135,9 @@ export function transformApiToFormPrefill(
       .map(banner => ({ url: banner.imageUrl })),
     bannerSponsor: eventBanners
       .filter(banner => banner.bannerType === 'SPONSOR')
+      .map(banner => ({ url: banner.imageUrl })),
+    bannerAssist: eventBanners
+      .filter(banner => banner.bannerType === 'ASSIST')
       .map(banner => ({ url: banner.imageUrl })),
     bannerInstagram: eventInfo.promotionBanner
       ? [{ url: eventInfo.promotionBanner }]
