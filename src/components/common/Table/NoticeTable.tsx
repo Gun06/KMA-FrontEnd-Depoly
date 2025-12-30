@@ -32,14 +32,14 @@ export default function NoticeTable({
 }: Props) {
 
   const rows = useMemo<DisplayRow[]>(() => {
-    // 질문과 답변을 별도 행으로 변환
+    // 질문과 답변을 별도 행으로 변환 (답변은 번호 없음)
     const expandedRows: NoticeItem[] = [];
     
     data.forEach((row) => {
       // 질문 행 추가
       expandedRows.push(row);
       
-      // 답변이 있는 경우 답변 행 추가 (권한과 관계없이 모든 답변 표시)
+      // 답변이 있는 경우 답변 행 추가 (번호는 표시하지 않음)
       if (row.answer) {
         const answerRow: NoticeItem = {
           ...row,
@@ -48,7 +48,8 @@ export default function NoticeTable({
           category: '답변' as const,
           author: row.answer.author,
           date: row.answer.date,
-          // 답변 행은 번호 없음
+          // 답변 행은 번호 없음 (명시적으로 undefined 설정)
+          __displayNo: undefined,
           originalQuestionId: row.id, // 원본 질문 ID 저장
           answerHeaderId: row.answerHeaderId,
           // 원본 질문의 권한 정보 상속 (답변도 같은 권한을 가짐)
@@ -106,6 +107,10 @@ export default function NoticeTable({
           ) : (
             <span className="inline-block w-4 h-4" />
           );
+        }
+        // __displayNo가 없으면 빈 값 표시 (답변 행 등)
+        if (row.__displayNo === undefined) {
+          return <span className="text-[14px] text-[#111827]"></span>;
         }
         return <span className="text-[14px] text-[#111827]">{row.__displayNo}</span>;
       },

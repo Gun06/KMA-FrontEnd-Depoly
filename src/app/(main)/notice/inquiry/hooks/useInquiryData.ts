@@ -56,6 +56,8 @@ export const useInquiryData = (
             answered: item.questionHeader.answered,
             canViewContent: canViewContent, // 권한 정보 추가
             isAuthor: isAuthor, // 작성자 여부 추가
+            // 백엔드에서 받은 no를 기반으로 헤더 넘버링 처리
+            __displayNo: item.questionHeader.no,
             // 답변 정보 추가 (관리자 방식 참고)
             answer: item.answerHeader ? {
               title: item.answerHeader.title,

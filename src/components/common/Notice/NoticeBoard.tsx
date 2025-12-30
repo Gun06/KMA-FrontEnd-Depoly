@@ -39,6 +39,7 @@ type Props = {
   // 외부 페이지네이션 제어
   currentPage?: number;
   totalElements?: number;
+  totalPages?: number;
   onPageChange?: (page: number) => void;
   
   // 외부 검색 제어
@@ -63,6 +64,7 @@ export default function NoticeBoard({
   className,
   currentPage: externalCurrentPage,
   totalElements: externalTotalElements,
+  totalPages: externalTotalPages,
   onPageChange: externalOnPageChange,
   searchQuery: externalSearchQuery,
   onSearch: externalOnSearch,
@@ -140,34 +142,45 @@ export default function NoticeBoard({
       };
     } else {
       // 외부에서 totalElements를 제공하는 경우 사용 (페이지네이션용)
+      // 외부에서 totalElements가 제공되면 백엔드에서 이미 페이지네이션된 데이터
+      const isBackendPaginated = externalTotalElements !== undefined;
+      
       // 고정 공지사항과 일반 공지사항 분리
       const pinnedItems = filteredStaticData.filter(item => item.pinned);
       const regularItems = filteredStaticData.filter(item => !item.pinned);
       
-      // 일반 공지사항만 페이지네이션 적용 (고정 공지사항은 제외)
-      // 일반 공지사항은 항상 10개씩 표시
-      const regularPageSize = 10;
-      const totalRegularItems = regularItems.length;
-      const totalPages = Math.ceil(totalRegularItems / regularPageSize);
+      // 백엔드에서 페이지네이션된 경우와 프론트에서 페이지네이션하는 경우 분리
+      let paginatedRegularItems: NoticeItem[];
+      let effectivePageSize: number;
       
-      // 페이지네이션 계산 (일반 공지사항만)
-      const start = (currentPage - 1) * regularPageSize;
-      const end = start + regularPageSize;
-      const paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
-        ...item,
-        __displayNo: totalRegularItems - start - index, // 내림차순 번호
-      }));
-      
+      if (isBackendPaginated) {
+        // 백엔드에서 이미 페이지네이션된 데이터이므로 그대로 사용 (슬라이스하지 않음)
+        // __displayNo는 이미 백엔드에서 받은 값이 설정되어 있으므로 그대로 사용
+        paginatedRegularItems = regularItems;
+        effectivePageSize = pageSize; // 외부에서 전달받은 pageSize 사용
+      } else {
+        // 프론트에서 페이지네이션 처리
+        const regularPageSize = 10;
+        const totalRegularItems = regularItems.length;
+        const start = (currentPage - 1) * regularPageSize;
+        const end = start + regularPageSize;
+        paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
+          ...item,
+          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산
+          __displayNo: item.__displayNo !== undefined ? item.__displayNo : (totalRegularItems - start - index),
+        }));
+        effectivePageSize = regularPageSize;
+      }
       
       // 고정 공지사항 + 현재 페이지의 일반 공지사항
       const rows = [...pinnedItems, ...paginatedRegularItems];
       
-      // 전체 개수는 일반 공지사항 개수만 (페이지네이션용)
-      const total = totalRegularItems;
+      // 전체 개수는 외부에서 제공된 totalElements 사용 (백엔드 값), 없으면 일반 공지사항 개수
+      const total = externalTotalElements !== undefined ? externalTotalElements : regularItems.length;
       
-      return { rows, total, effectivePageSize: regularPageSize };
+      return { rows, total, effectivePageSize };
     }
-  }, [useApi, apiData, filteredStaticData, currentPage, pageSize]);
+  }, [useApi, apiData, filteredStaticData, currentPage, pageSize, externalTotalElements]);
 
   // 페이지 변경 시 처리
   const handlePageChange = (page: number) => {
@@ -244,6 +257,7 @@ export default function NoticeBoard({
           showTotalText={true}
           showPageIndicator={true}
           className="bg-white px-1 sm:px-6"
+          totalPages={externalTotalPages}
         />
 
         {/* 페이지네이션 */}

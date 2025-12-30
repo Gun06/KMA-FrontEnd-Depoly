@@ -41,7 +41,8 @@ export default function EventInquiryPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
-  const [allInquiries, setAllInquiries] = useState<InquiryResponse | null>(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedSearchType, setSelectedSearchType] = useState<SearchTarget>('ALL');
@@ -77,27 +78,29 @@ export default function EventInquiryPage() {
     const userId = getCurrentUserId();
     setCurrentUserId(userId);
 
-    const fetchAllInquiries = async () => {
+    const fetchInquiries = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // 모든 데이터를 한 번에 가져오기 (페이지네이션 없이)
+        // 페이지당 표시할 개수를 size로 설정하여 백엔드에서 페이지네이션 처리
         const data = await fetchInquiryList(
           eventId, 
-          1, // 첫 페이지
-          100, // 충분히 큰 페이지 크기
+          currentPage, // 현재 페이지
+          pageSize, // 페이지당 표시할 개수
           appliedSearchKeyword ? appliedSearchType : undefined, // 검색어가 있을 때만 타입 전달
           appliedSearchKeyword || undefined // 빈 문자열 대신 undefined 전달
         );
         
         // API 응답 데이터 유효성 검사
         if (data && typeof data === 'object' && Array.isArray(data.content)) {
-          setAllInquiries(data);
+          setInquiryData(data);
+          setTotalPages(data.totalPages);
+          setTotalElements(data.totalElements);
           setError(null);
         } else {
           setError('API 응답 데이터 구조가 올바르지 않습니다.');
-          setAllInquiries(null);
+          setInquiryData(null);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '네트워크 오류가 발생했습니다.';
@@ -107,8 +110,8 @@ export default function EventInquiryPage() {
       }
     };
 
-    fetchAllInquiries();
-  }, [eventId, appliedSearchType, appliedSearchKeyword]);
+    fetchInquiries();
+  }, [eventId, currentPage, pageSize, appliedSearchType, appliedSearchKeyword]);
 
   // 행 클릭 시 처리 (상세 페이지로 이동)
   const handleRowClick = (id: string | number) => {
@@ -117,12 +120,12 @@ export default function EventInquiryPage() {
     
     if (!rowData) return;
     
-    // 답변 항목인지 확인
-    if (rowData.originalQuestionId) {
-      // 답변 항목인 경우 - 원본 문의글이 비밀글인지 확인
-      const inquiry = allInquiries?.content.find(item => 
-        item.questionHeader.id === String(rowData.originalQuestionId)
-      );
+      // 답변 항목인지 확인
+      if (rowData.originalQuestionId) {
+        // 답변 항목인 경우 - 원본 문의글이 비밀글인지 확인
+        const inquiry = inquiryData?.content.find(item => 
+          item.questionHeader.id === String(rowData.originalQuestionId)
+        );
       
       if (inquiry) {
         // 원본 문의글이 비밀글인지 확인
@@ -143,7 +146,7 @@ export default function EventInquiryPage() {
       return;
     } else {
       // 질문 항목인 경우
-      const inquiry = allInquiries?.content.find(item => 
+      const inquiry = inquiryData?.content.find(item => 
         item.questionHeader.id === String(id)
       );
       
@@ -418,16 +421,12 @@ export default function EventInquiryPage() {
     );
   }
 
-  // API 데이터를 TableNoticeItem 타입으로 변환 (질문 + 답변)
+  // API 데이터를 TableNoticeItem 타입으로 변환 (질문 + 답변 표시, 답변은 번호 없음)
   const displayInquiries: TableNoticeItem[] = (() => {
-    if (allInquiries && allInquiries.content && allInquiries.content.length > 0) {
+    if (inquiryData && inquiryData.content && inquiryData.content.length > 0) {
       const items: TableNoticeItem[] = [];
-      let answerIdCounter = 10000; // 답변 ID용 카운터 (충돌 방지)
       
-      // 전체 문의글 개수
-      const totalQuestions = allInquiries.content.length;
-      
-      allInquiries.content.forEach((inquiry: InquiryItem, index: number) => {
+      inquiryData.content.forEach((inquiry: InquiryItem) => {
         // 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD)
         const formatDate = (dateString: string) => {
           try {
@@ -436,11 +435,8 @@ export default function EventInquiryPage() {
             return '2025-01-01';
           }
         };
-
-        // 문의글 번호 계산 (내림차순: 9번부터 시작)
-        const questionNumber = totalQuestions - index;
         
-        // 메인 문의 항목 추가
+        // 질문 항목 추가 - 백엔드에서 받은 no 사용
         const questionItem: TableNoticeItem = {
           id: inquiry.questionHeader.id,
           title: inquiry.questionHeader.title,
@@ -451,14 +447,15 @@ export default function EventInquiryPage() {
           pinned: false,
           category: '문의' as const,
           secret: inquiry.questionHeader.secret && !(currentUserId && inquiry.questionHeader.authorName === currentUserId),
-          __displayNo: questionNumber, // 문의글 번호 미리 할당
+          __displayNo: inquiry.questionHeader.no, // 백엔드에서 받은 no 사용
+          answered: inquiry.questionHeader.answered, // 답변 여부
         };
         items.push(questionItem);
 
-        // 답변이 있는 경우 답변 항목도 추가
+        // 답변이 있는 경우 답변 항목도 추가 - 번호는 표시하지 않음
         if (inquiry.answerHeader) {
           const answerItem: TableNoticeItem = {
-            id: `answer_${answerIdCounter++}`, // 고유한 답변 ID 생성
+            id: `answer-${inquiry.questionHeader.id}`, // 답변 행의 ID는 고유하게 생성
             title: inquiry.answerHeader.title || '답변',
             author: maskAuthorName(inquiry.answerHeader.authorName, currentUserId),
             date: formatDate(inquiry.answerHeader.createdAt),
@@ -469,11 +466,10 @@ export default function EventInquiryPage() {
             secret: false, // 답변은 항상 공개 (비밀번호 요구 안함)
             originalQuestionId: inquiry.questionHeader.id, // 원본 문의 ID 저장 (string으로 유지)
             answerHeaderId: inquiry.answerHeader.id, // 답변 헤더 ID 저장
-            __displayNo: undefined, // 답변은 번호 없음
+            __displayNo: undefined, // 답변 행은 번호 숨김
           };
           items.push(answerItem);
         }
-
       });
 
       return items;
@@ -481,15 +477,6 @@ export default function EventInquiryPage() {
       return [];
     }
   })();
-
-  // 실제 표시되는 항목 수 계산 (질문 + 답변)
-  const actualTotalElements = displayInquiries.length;
-  
-
-  // 클라이언트 측 페이지네이션 처리
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedInquiries = displayInquiries.slice(startIndex, endIndex);
 
 
   // 빈 데이터 상태 처리
@@ -564,7 +551,8 @@ export default function EventInquiryPage() {
           onRowClick={(id) => handleRowClick(id)}
           showSearch={false}
           currentPage={currentPage}
-          totalElements={actualTotalElements}
+          totalElements={totalElements}
+          totalPages={totalPages}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
         />

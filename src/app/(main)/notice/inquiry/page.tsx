@@ -235,6 +235,7 @@ export default function InquiryPage() {
           numberDesc={true}
           currentPage={currentPage}
           totalElements={totalElements}
+          totalPages={totalPages}
           onPageChange={handlePageChange}
           showPinnedBadgeInNo={false}
           pinnedClickable={true}

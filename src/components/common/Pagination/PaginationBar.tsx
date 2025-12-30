@@ -14,6 +14,8 @@ type Props = {
   showPageIndicator?: boolean;
   className?: string;
   totalTextFormatter?: (total: number) => React.ReactNode;
+  /** 백엔드에서 받은 totalPages (있으면 우선 사용, 없으면 total/pageSize로 계산) */
+  totalPages?: number;
 };
 
 export default function PaginationBar({
@@ -26,8 +28,10 @@ export default function PaginationBar({
   showPageIndicator = true,
   className,
   totalTextFormatter,
+  totalPages,
 }: Props) {
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  // 백엔드에서 받은 totalPages가 있으면 우선 사용, 없으면 계산
+  const pageCount = totalPages !== undefined ? totalPages : Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className={cn("w-full", className)}>
