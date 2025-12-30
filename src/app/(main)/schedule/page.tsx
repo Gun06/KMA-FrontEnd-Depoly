@@ -20,6 +20,10 @@ export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'all' | 'marathon' | 'national'>('all');
   const monthRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const monthScrollRef = useRef<HTMLDivElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   
   // 각 월별로 API 호출하여 전체 연도 데이터 수집
   const year = currentDate.getFullYear();
@@ -164,6 +168,30 @@ export default function SchedulePage() {
     scrollToMonth(newDate.getMonth());
   };
 
+  // 월간 네비게이션 드래그 핸들러
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!monthScrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - monthScrollRef.current.offsetLeft);
+    setScrollLeft(monthScrollRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !monthScrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - monthScrollRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // 스크롤 속도 조절
+    monthScrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
   const handleViewModeChange = (mode: 'calendar' | 'all' | 'marathon' | 'national') => {
     setViewMode(mode);
   };
@@ -262,8 +290,18 @@ export default function SchedulePage() {
           
           {/* 월 선택 */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="overflow-x-auto no-scrollbar w-full">
-                <div className="flex gap-1 flex-nowrap min-w-max">
+              <div 
+                ref={monthScrollRef}
+                className={clsx(
+                  "overflow-x-auto no-scrollbar w-full cursor-grab",
+                  isDragging && "cursor-grabbing"
+                )}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="flex gap-0.5 flex-nowrap min-w-max">
               {monthNames.map((month, index) => {
                 const hasEvents = eventsByMonth[index] && eventsByMonth[index].length > 0;
                 return (
@@ -430,6 +468,14 @@ export default function SchedulePage() {
                           const isPast = eventDate < today;
                           
                           // EventCard에 필요한 props 매핑
+                          // API 상태 값을 한글로 변환
+                          const getStatusText = (status: string) => {
+                            if (status === 'OPEN') return '접수중';
+                            if (status === 'PENDING') return '비접수';
+                            if (status === 'CLOSED') return '접수마감';
+                            return '상태불명'; // 예상치 못한 상태 값의 경우
+                          };
+                          
                           const eventCardProps = {
                             imageSrc: event.eventImgSrc,
                             imageAlt: event.eventNameKr,
@@ -437,8 +483,9 @@ export default function SchedulePage() {
                             subtitle: event.eventNameEn,
                             date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
                             price: `₩${event.lowerPrice.toLocaleString()}`,
-                            status: isPast ? '접수마감' : event.status === 'PENDING' ? '접수중' : event.status,
-                            eventDate: event.eventDate
+                            status: isPast ? '접수마감' : getStatusText(event.status),
+                            eventDate: event.eventDate,
+                            eventId: event.eventId
                           };
                           
                           return (
