@@ -36,18 +36,18 @@ export const fetchIndividualGroupRegistration = async (
         const serverMsg = errorJson?.message || '';
 
         if (status === 400 || status === 404) {
-          throw new Error('입력한 정보와 일치하는 신청 내역을 찾을 수 없습니다. 정보를 다시 확인해주세요.');
+          throw new Error('신청정보 또는 비밀번호가 다름니다.');
         }
         if (status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-        throw new Error(serverMsg || '인증에 실패했습니다. 입력 정보를 확인해주세요.');
+        throw new Error('신청정보 또는 비밀번호가 다름니다.');
       } catch (parseError) {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-        throw new Error('인증에 실패했습니다. 입력 정보를 확인해주세요.');
+        throw new Error('신청정보 또는 비밀번호가 다름니다.');
       }
     }
     

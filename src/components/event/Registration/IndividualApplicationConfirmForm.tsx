@@ -137,28 +137,26 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
           const code = errorJson?.code || '';
           const serverMsg = errorJson?.message || '';
 
-          if (status === 400 && (code === 'NOT_MATCHED_PASSWORD' || serverMsg.includes('비밀번호'))) {
-            setError('이름, 생년월일 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
-          } else if (status === 404) {
-            setError('해당 정보로 신청 내역을 찾을 수 없습니다. 입력 정보를 다시 확인해주세요.');
+          if (status === 400 || status === 404) {
+            setError('신청정보 또는 비밀번호가 다름니다.');
           } else if (status >= 500) {
-            setError('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
+            setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           } else {
-            setError(serverMsg || '신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
+            setError('신청정보 또는 비밀번호가 다름니다.');
           }
         } catch {
-          if (response.status === 404) {
-            setError('해당 정보로 신청 내역을 찾을 수 없습니다. 입력 정보를 다시 확인해주세요.');
+          if (response.status === 400 || response.status === 404) {
+            setError('신청정보 또는 비밀번호가 다름니다.');
           } else if (response.status >= 500) {
-            setError('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
+            setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           } else {
-            setError('신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
+            setError('신청정보 또는 비밀번호가 다름니다.');
           }
         }
       }
     } catch (error) {
-      // 404 에러는 이미 setError로 처리되었으므로 추가 처리 불필요
-      if (error instanceof Error && !error.message.includes('404')) {
+      // 네트워크 오류 등 기타 에러 처리
+      if (error instanceof Error && !error.message.includes('404') && !error.message.includes('400')) {
         setError('신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
       }
     } finally {

@@ -120,7 +120,7 @@ export default function Page() {
         </span>
       }
       headerButton={{
-        label: "전마협 메인 FAQ 관리하기 >",
+        label: "공통 FAQ 관리하기 >",
         size: "sm",
         tone: "primary",
         onClick: () => router.push("/admin/boards/faq/main"),

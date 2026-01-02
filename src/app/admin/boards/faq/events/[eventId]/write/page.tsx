@@ -101,7 +101,7 @@ export default function Page() {
                   showTextColor
                   showImageUpload={false}
                   height="200px"
-                  initialContent="질문 내용을 입력하세요..."
+                  placeholder="질문 내용을 입력하세요..."
                   onChange={setQuestionContent}
                 />
               </div>
@@ -119,7 +119,7 @@ export default function Page() {
                   showTextColor
                   showImageUpload={false}
                   height="300px"
-                  initialContent="답변 내용을 입력하세요..."
+                  placeholder="답변 내용을 입력하세요..."
                   onChange={setAnswerContent}
                 />
               </div>
