@@ -83,11 +83,6 @@ export default function EventSection() {
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // 카드나 링크를 클릭한 경우 드래그 시작하지 않음
-    const target = e.target as HTMLElement;
-    if (target.closest('a, button, [role="button"]')) {
-      return;
-    }
     setIsDragging(true);
     setDragStartTransform(currentTransform);
     setStartX(e.pageX);
@@ -124,18 +119,11 @@ export default function EventSection() {
   };
 
   const handleMouseUp = () => {
-    const wasDragging = isDragging;
     setIsDragging(false);
-    // 드래그가 끝난 후 즉시 거리 초기화 (클릭 이벤트가 처리되기 전에)
-    // 실제 드래그가 있었던 경우에만 약간의 지연을 두어 클릭 방지
-    if (wasDragging && dragDistance > 10) {
-      setTimeout(() => {
-        setDragDistance(0);
-      }, 50);
-    } else {
-      // 클릭인 경우 즉시 초기화
+    // 드래그가 끝난 후 잠시 후 거리 초기화 (클릭 이벤트 처리 후)
+    setTimeout(() => {
       setDragDistance(0);
-    }
+    }, 100);
   };
 
   const handleMouseLeave = () => {
@@ -144,11 +132,6 @@ export default function EventSection() {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // 카드나 링크를 터치한 경우 드래그 시작하지 않음
-    const target = e.target as HTMLElement;
-    if (target.closest('a, button, [role="button"]')) {
-      return;
-    }
     setIsDragging(true);
     setDragStartTransform(currentTransform);
     setStartX(e.touches[0].pageX);
@@ -185,18 +168,11 @@ export default function EventSection() {
   };
 
   const handleTouchEnd = () => {
-    const wasDragging = isDragging;
     setIsDragging(false);
-    // 드래그가 끝난 후 즉시 거리 초기화 (클릭 이벤트가 처리되기 전에)
-    // 실제 드래그가 있었던 경우에만 약간의 지연을 두어 클릭 방지
-    if (wasDragging && dragDistance > 10) {
-      setTimeout(() => {
-        setDragDistance(0);
-      }, 50);
-    } else {
-      // 클릭인 경우 즉시 초기화
+    // 드래그가 끝난 후 잠시 후 거리 초기화 (클릭 이벤트 처리 후)
+    setTimeout(() => {
       setDragDistance(0);
-    }
+    }, 100);
   };
 
   return (
@@ -311,21 +287,14 @@ export default function EventSection() {
                     {/* 세로선 */}
                     <div className="w-0.5 h-24 md:h-28 lg:h-32 bg-gray-200"></div>
                     {/* 원형 버튼 - 세로선 중앙에 위치 */}
-                    <Link 
-                      href="/schedule"
+                    <button 
                       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:bg-gray-100 transition-all duration-200 cursor-pointer"
-                      onClick={(e) => {
-                        // 드래그 중이면 클릭 방지
-                        if (isDragging || dragDistance > 10) {
-                          e.preventDefault();
-                        }
-                      }}
                     >
                       {/* 오른쪽을 향하는 화살표 */}
                       <svg className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>

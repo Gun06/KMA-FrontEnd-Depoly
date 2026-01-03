@@ -88,7 +88,7 @@ export default function AdminHomePage() {
           value={inquiriesLoading ? '...' : unansweredInquiries.toLocaleString()}
           icon={FileText}
           color="red"
-          href="/admin/boards/inquiry"
+          href="/admin/boards/inquiry/all?isAnswered=false"
         />
       </div>
 

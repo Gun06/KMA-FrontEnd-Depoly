@@ -40,6 +40,7 @@ export type InquirySearchParams = {
   keyword?: string;
   questionSearchKey?: 'TITLE' | 'AUTHOR';
   questionSortKey?: 'LATEST' | 'TITLE';
+  isAnswered?: boolean;
   page?: number;
   size?: number;
 };

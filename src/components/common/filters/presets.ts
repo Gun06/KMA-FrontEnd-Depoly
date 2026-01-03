@@ -215,6 +215,14 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "게시글명", value: "post" },
           ],
         },
+        {
+          label: "답변상태",
+          options: [
+            { label: "전체", value: "" },
+            { label: "답변완료", value: "true" },
+            { label: "미답변", value: "false" },
+          ],
+        },
       ],
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [{ label: "검색", tone: "dark" }],

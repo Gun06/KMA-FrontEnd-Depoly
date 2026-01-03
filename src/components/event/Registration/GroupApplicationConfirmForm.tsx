@@ -32,20 +32,23 @@ const verifyGroupRegistration = async (eventId: string, data: any): Promise<Grou
         const code = errorJson?.code || '';
         const serverMsg = errorJson?.message || '';
 
-        if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        if (status === 400 && code === 'NOT_MATCHED_PASSWORD') {
+          throw new Error('단체신청용 ID 또는 비밀번호가 일치하지 않습니다. 다시 확인해주세요.');
+        }
+        if (status === 404) {
+          throw new Error('해당 정보로 신청 내역을 찾을 수 없습니다. 입력한 단체신청용 ID와 비밀번호를 확인해주세요.');
         }
         if (status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          throw new Error('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
         }
-        // 기타 케이스
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        // 기타 케이스: 서버 메시지가 있으면 노출, 없으면 기본 메시지
+        throw new Error(serverMsg || '인증에 실패했습니다. 입력 정보를 확인해주세요.');
       } catch {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+          throw new Error('사용자 정보를 찾을 수 없습니다. 신청내역 정보를 다시 확인해주세요.');
         }
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        throw new Error('인증에 실패했습니다. 입력 정보를 확인해주세요.');
       }
     }
     
@@ -160,10 +163,10 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
         // 성공 시 결과 페이지로 이동 (organizationAccount만 전달)
         router.push(`/event/${eventId}/registration/confirm/group/result?orgAccount=${encodeURIComponent(response.organizationAccount)}`);
       } else {
-        setError('신청정보 또는 비밀번호가 다름니다.');
+        setError('인증에 실패했습니다. 단체명과 비밀번호를 확인해주세요.');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다름니다.');
+      setError(error instanceof Error ? error.message : '인증에 실패했습니다. 입력 정보를 확인해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +224,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
       });
       router.push(`/event/${eventId}/registration/confirm/group/individual/result?${params.toString()}`);
     } catch (error) {
-      setIndividualError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다름니다.');
+      setIndividualError(error instanceof Error ? error.message : '인증에 실패했습니다. 입력 정보를 확인해주세요.');
       setIndividualLoading(false);
     }
   };

@@ -24,7 +24,7 @@ export const inquiryKeys = {
 
 // 1) 홈페이지 문의 목록 조회 (검색 기능 포함)
 export function useHomepageInquiries(params: InquirySearchParams = {}, options: QueryOptions = {}) {
-  const { keyword, questionSearchKey, questionSortKey, page = 1, size = 20 } = params;
+  const { keyword, questionSearchKey, questionSortKey, isAnswered, page = 1, size = 20 } = params;
   const { enabled = true } = options;
   
   // 일반 목록 API
@@ -54,13 +54,14 @@ export function useHomepageInquiries(params: InquirySearchParams = {}, options: 
   if (keyword) queryParamsSearch.append('keyword', keyword);
   if (questionSearchKey) queryParamsSearch.append('questionSearchKey', questionSearchKey);
   if (questionSortKey) queryParamsSearch.append('questionSortKey', questionSortKey);
+  if (isAnswered !== undefined) queryParamsSearch.append('isAnswered', String(isAnswered));
   
   const searchQuery = useGetQuery(
     inquiryKeys.homepageSearch(params),
     `/api/v1/homepage/question/search?${queryParamsSearch.toString()}`,
     'admin',
     {
-      enabled: enabled && !!(keyword || questionSearchKey || questionSortKey), // 검색 조건이 있을 때만 활성화
+      enabled: enabled && !!(keyword || questionSearchKey || questionSortKey || isAnswered !== undefined), // 검색 조건이 있을 때만 활성화
       staleTime: 10 * 60 * 1000,
       gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: false,
@@ -70,7 +71,7 @@ export function useHomepageInquiries(params: InquirySearchParams = {}, options: 
   );
   
   // 검색 조건이 있으면 검색 결과, 없으면 일반 결과 반환
-  if (keyword || questionSearchKey || questionSortKey) {
+  if (keyword || questionSearchKey || questionSortKey || isAnswered !== undefined) {
     return searchQuery;
   }
   return generalQuery;
@@ -78,7 +79,7 @@ export function useHomepageInquiries(params: InquirySearchParams = {}, options: 
 
 // 2) 대회별 문의 목록 조회 (검색 기능 포함)
 export function useEventInquiries(eventId: string, params: InquirySearchParams = {}, options: QueryOptions = {}) {
-  const { keyword, questionSearchKey, questionSortKey, page = 1, size = 20 } = params;
+  const { keyword, questionSearchKey, questionSortKey, isAnswered, page = 1, size = 20 } = params;
   const { enabled = true } = options;
   
   // 일반 목록 API
@@ -108,13 +109,14 @@ export function useEventInquiries(eventId: string, params: InquirySearchParams =
   if (keyword) queryParamsSearch.append('keyword', keyword);
   if (questionSearchKey) queryParamsSearch.append('questionSearchKey', questionSearchKey);
   if (questionSortKey) queryParamsSearch.append('questionSortKey', questionSortKey);
+  if (isAnswered !== undefined) queryParamsSearch.append('isAnswered', String(isAnswered));
   
   const searchQuery = useGetQuery(
     inquiryKeys.eventSearch(eventId, params),
     `/api/v1/${eventId}/question/search?${queryParamsSearch.toString()}`,
     'admin',
     {
-      enabled: enabled && !!(eventId && (keyword || questionSearchKey || questionSortKey)), // 검색 조건이 있을 때만 활성화
+      enabled: enabled && !!(eventId && (keyword || questionSearchKey || questionSortKey || isAnswered !== undefined)), // 검색 조건이 있을 때만 활성화
       staleTime: 10 * 60 * 1000,
       gcTime: 15 * 60 * 1000,
       refetchOnWindowFocus: false,
@@ -124,7 +126,7 @@ export function useEventInquiries(eventId: string, params: InquirySearchParams =
   );
   
   // 검색 조건이 있으면 검색 결과, 없으면 일반 결과 반환
-  if (keyword || questionSearchKey || questionSortKey) {
+  if (keyword || questionSearchKey || questionSortKey || isAnswered !== undefined) {
     return searchQuery;
   }
   return generalQuery;
@@ -132,7 +134,7 @@ export function useEventInquiries(eventId: string, params: InquirySearchParams =
 
 // 3) 전체 문의 목록 조회 (검색 기능 포함)
 export function useAllInquiries(params: InquirySearchParams = {}, options: QueryOptions = {}) {
-  const { keyword, questionSearchKey, questionSortKey, page = 1, size = 20 } = params;
+  const { keyword, questionSearchKey, questionSortKey, isAnswered, page = 1, size = 20 } = params;
   const { enabled = true } = options;
 
   const queryParams = new URLSearchParams();
@@ -142,6 +144,7 @@ export function useAllInquiries(params: InquirySearchParams = {}, options: Query
   if (keyword) queryParams.append('keyword', keyword);
   if (questionSearchKey) queryParams.append('questionSearchKey', questionSearchKey);
   if (questionSortKey) queryParams.append('questionSortKey', questionSortKey);
+  if (isAnswered !== undefined) queryParams.append('isAnswered', String(isAnswered));
 
   return useGetQuery(
     inquiryKeys.allList(params),

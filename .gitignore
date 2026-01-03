@@ -13,7 +13,6 @@ yarn-error.log*
 **/.pnpm-store/
 .pnpm-debug.log*
 pnpm-lock.yaml
-~/
 
 
 # Next.js
@@ -132,9 +131,6 @@ playwright/.cache/
 
 # Turbo
 .turbo/
-
-# Vite/Vitest
-.vite/
 
 # 패키지 매니저 락 파일 (pnpm-workspace.yaml은 유지)
 # pnpm-lock.yaml

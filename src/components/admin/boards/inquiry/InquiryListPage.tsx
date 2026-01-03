@@ -80,6 +80,16 @@ export default function InquiryListPage({
   const [page, setPage] = React.useState<number>(normalizedCurrentPage ?? pageFromSearchParams ?? 1);
   const [q, setQ] = React.useState("");
   const [searchMode, setSearchMode] = React.useState<SearchMode>("all");
+  
+  // URL 파라미터에서 isAnswered 초기값 읽기
+  const initialIsAnswered = React.useMemo(() => {
+    const value = searchParamsHook?.get?.("isAnswered");
+    if (value === "true") return true;
+    if (value === "false") return false;
+    return undefined;
+  }, [searchParamsHook]);
+  
+  const [isAnswered, setIsAnswered] = React.useState<boolean | undefined>(initialIsAnswered);
   const [_rev, setRev] = React.useState(0);
   
   // 비밀번호 초기화 모달 상태
@@ -101,6 +111,13 @@ export default function InquiryListPage({
     }
   }, [normalizedCurrentPage, pageFromSearchParams, page]);
 
+  // URL 파라미터 변경 시 isAnswered 상태 업데이트
+  React.useEffect(() => {
+    if (initialIsAnswered !== isAnswered) {
+      setIsAnswered(initialIsAnswered);
+    }
+  }, [initialIsAnswered]);
+
   const updatePageInUrl = React.useCallback((nextPage: number) => {
     if (!router || !pathname) return;
     const params = new URLSearchParams(searchParamsString);
@@ -120,9 +137,10 @@ export default function InquiryListPage({
   const searchParams = React.useMemo(() => ({
     keyword: q || undefined,
     questionSearchKey: q && searchMode !== 'all' ? (searchMode === 'name' ? 'AUTHOR' as const : 'TITLE' as const) : undefined,
+    isAnswered,
     page,
     size: pageSize,
-  }), [q, searchMode, page, pageSize]);
+  }), [q, searchMode, isAnswered, page, pageSize]);
 
   const { data: homepageData, isLoading: homepageLoading, error: homepageError } = useHomepageInquiries(
     searchParams,
@@ -231,19 +249,31 @@ export default function InquiryListPage({
   const preset = PRESETS[presetKey]?.props;
   const norm = (s?: string) => (s ?? "").replace(/\s/g, "");
 
+  // FilterBar 초기값 (URL 파라미터 반영 - 한 번만 계산)
+  const filterInitialValues = React.useMemo(() => {
+    const answeredValue = initialIsAnswered === true ? "true" : initialIsAnswered === false ? "false" : "";
+    return ["all", answeredValue];
+  }, [initialIsAnswered]);
+
   const filterControls = preset && (
     <div className="flex flex-wrap items-center gap-2">
       <FilterBar
+        key={`filter-${initialIsAnswered}`} // URL 파라미터 변경 시 FilterBar 재마운트
         {...preset}
         className="!gap-3"
-        initialValues={["all"]}
+        initialValues={filterInitialValues}
         onFieldChange={(label, value) => {
           const L = norm(String(label));
           if (L === "검색키") setSearchMode(value as SearchMode);
+          if (L === "답변상태") {
+            if (value === "true") setIsAnswered(true);
+            else if (value === "false") setIsAnswered(false);
+            else setIsAnswered(undefined);
+          }
           setPage(1);
         }}
         onSearch={(value) => { setQ(value); setPage(1); }}
-        onReset={() => { setQ(""); setSearchMode("all"); setPage(1); }}
+        onReset={() => { setQ(""); setSearchMode("all"); setIsAnswered(undefined); setPage(1); }}
       />
     </div>
   );
