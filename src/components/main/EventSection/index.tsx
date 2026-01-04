@@ -129,7 +129,7 @@ export default function EventSection() {
     // 드래그가 끝난 후 즉시 거리 초기화 (클릭 이벤트가 처리되기 전에)
     // 실제 드래그가 있었던 경우에만 약간의 지연을 두어 클릭 방지
     if (wasDragging && dragDistance > 10) {
-      setTimeout(() => {
+    setTimeout(() => {
         setDragDistance(0);
       }, 50);
     } else {
@@ -190,7 +190,7 @@ export default function EventSection() {
     // 드래그가 끝난 후 즉시 거리 초기화 (클릭 이벤트가 처리되기 전에)
     // 실제 드래그가 있었던 경우에만 약간의 지연을 두어 클릭 방지
     if (wasDragging && dragDistance > 10) {
-      setTimeout(() => {
+    setTimeout(() => {
         setDragDistance(0);
       }, 50);
     } else {

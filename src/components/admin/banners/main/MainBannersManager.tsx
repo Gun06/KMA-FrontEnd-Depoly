@@ -175,48 +175,7 @@ export default function MainBannersManager() {
     try {
       setIsLoading(true);
       
-      // 필수 필드 검증
-      const invalidRows = rows.filter(row => 
-        !row.title.trim() || 
-        !row.subtitle.trim() || 
-        !row.date.trim() || 
-        !row.eventId ||
-        !row.image
-      );
-      
-      if (invalidRows.length > 0) {
-        setErrorModal({
-          isOpen: true,
-          message: '모든 필드를 입력해주세요. (제목, 부제목, 날짜, 대회 선택, 이미지)',
-        });
-        return;
-      }
-      
-      // 날짜 형식 검증
-      const invalidDates = rows.filter(row => {
-        if (!row.draft) return false;
-        const trimmedDate = row.date.trim();
-        const dateRegex = /^\d{4}\.\d{1,2}\.\d{1,2}$/;
-        return !dateRegex.test(trimmedDate);
-      });
-      
-      if (invalidDates.length > 0) {
-        setErrorModal({
-          isOpen: true,
-          message: '날짜는 YYYY.MM.DD 형식으로 입력해주세요. (예: 2025.01.01)',
-        });
-        return;
-      }
-      
       const { mainBannerInfos, images } = convertLocalToApi(rows);
-      
-      if (mainBannerInfos.length === 0) {
-        setErrorModal({
-          isOpen: true,
-          message: '저장할 배너 데이터가 없습니다.',
-        });
-        return;
-      }
       
       const deletedIds = apiMainBanners
         ?.filter(apiBanner => !rows.some(r => r.id === apiBanner.id))
