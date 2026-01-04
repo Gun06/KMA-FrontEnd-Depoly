@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import type { StaticImageData } from 'next/image';
 import clsx from 'clsx';
 interface EventCardProps {
@@ -96,7 +97,7 @@ export default function EventCard({
   const cardContent = (
     <div className={clsx(
       sizeClasses[size],
-      "select-none bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 ease-in-out cursor-pointer transform hover:-translate-y-2 md:hover:-translate-y-3 lg:hover:-translate-y-5 hover:shadow-2xl",
+      "select-none bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-500 ease-in-out transform hover:-translate-y-2 md:hover:-translate-y-3 lg:hover:-translate-y-5 hover:shadow-2xl",
       className
     )} style={{ filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.05))' }}>
       {/* 이미지 영역 */}
@@ -139,40 +140,31 @@ export default function EventCard({
           </p>
         </div>
         
-        {/* 하단 상태 정보 - 파란색 배지 (왼쪽 정렬) */}
-        <div className="flex items-center justify-start mt-2 md:mt-5 lg:mt-6">
+        {/* 하단 상태 정보 및 가기 버튼 */}
+        <div className="flex items-center justify-between mt-2 md:mt-5 lg:mt-6">
           <div className="bg-[#ECF2FE] text-blue-600 px-1.5 md:px-3 lg:px-4 py-1 md:py-1.5 lg:py-2 rounded-md md:rounded-lg text-xs md:text-sm font-medium flex items-center gap-1 md:gap-2 lg:gap-3">
             <span className="whitespace-nowrap">{displayStatus}</span>
             <div className="w-px h-2.5 md:h-4 bg-blue-600 opacity-60"></div>
             <span className="whitespace-nowrap">{dDay}</span>
           </div>
+          {eventId && (
+            <Link
+              href={`/event/${eventId}`}
+              onClick={(e) => {
+                // 버튼 클릭 시 드래그 이벤트 전파 방지
+                e.stopPropagation();
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 lg:px-4 py-1 md:py-1.5 lg:py-2 rounded-md md:rounded-lg text-xs md:text-sm font-medium transition-colors duration-200 flex items-center gap-1 md:gap-1.5"
+              title="바로가기"
+            >
+              <span className="whitespace-nowrap">바로가기</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>
   );
 
-  // 드래그 중이거나 일정 거리 이상 움직였으면 링크 클릭 방지
-  const handleLinkClick = (e: React.MouseEvent) => {
-    // 드래그 중이거나 5픽셀 이상 움직였으면 클릭 무시
-    if (isDragging || dragDistance > 5) {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    }
-  };
-
-  // eventId가 있으면 Link로 감싸고, 없으면 그대로 반환
-  if (eventId) {
-    return (
-      <Link 
-        href={`/event/${eventId}`}
-        onClick={handleLinkClick}
-        style={{ pointerEvents: isDragging ? 'none' : 'auto' }}
-      >
-        {cardContent}
-      </Link>
-    );
-  }
-
-  return cardContent;
+  // 카드를 Link로 감싸지 않고 그대로 반환 (가기 버튼으로만 이동)
+  return <li className="shrink-0 list-none">{cardContent}</li>;
 }
