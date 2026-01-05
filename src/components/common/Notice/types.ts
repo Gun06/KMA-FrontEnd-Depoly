@@ -1,7 +1,7 @@
 // src/data/notice/types.ts
 import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadge";
 
-export type NoticeType = "match" | "event" | "notice" | "general";
+export type NoticeType = "match" | "event" | "notice" | "general" | "mustread";
 export type Visibility = "open" | "closed";
 
 export type NoticeFile = {

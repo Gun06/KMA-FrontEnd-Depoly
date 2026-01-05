@@ -87,21 +87,41 @@ export default function NoticeSection({
         }
         
         const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/${eventId}/notice?page=1&size=20`;
+        const CATEGORY_ENDPOINT = `${API_BASE_URL}/api/v1/public/notice/category`;
 
-        const response = await fetch(API_ENDPOINT);
+        const [response, categoryResponse] = await Promise.all([
+          fetch(API_ENDPOINT),
+          fetch(CATEGORY_ENDPOINT).catch(() => null)
+        ]);
         
         if (response.ok) {
           const data: NoticeResponse = await response.json();
           
-          // 고정 공지사항과 일반 공지사항을 합쳐서 "공지" 카테고리만 필터링
+          // 카테고리 목록 가져오기
+          let categoryIdToName = new Map<string, string>();
+          if (categoryResponse && categoryResponse.ok) {
+            try {
+              const categories = await categoryResponse.json();
+              categories.forEach((cat: { id: string; name: string }) => {
+                categoryIdToName.set(cat.id, cat.name);
+              });
+            } catch {}
+          }
+          
+          // 고정 공지사항과 일반 공지사항을 합쳐서 "필독" 카테고리만 필터링
           const allNotices = [
             ...(data.pinnedNoticeList || []),
             ...(data.noticePage.content || [])
           ];
-          const filteredNotices = allNotices.filter(notice => notice.category === '공지');
+          const filteredNotices = allNotices.filter(notice => {
+            // category가 ID일 수도 있고 이름일 수도 있으므로 둘 다 확인
+            const categoryName = categoryIdToName.get(notice.category) || notice.category;
+            return categoryName === '필독';
+          });
           setNotices(filteredNotices);
-          // 캐시에 저장
+          // 캐시 클리어 (필독 필터링이 변경되었으므로)
           try {
+            localStorage.removeItem(`notice_section_${eventId}`);
             localStorage.setItem(`notice_section_${eventId}`, JSON.stringify({ data: filteredNotices, ts: Date.now() }));
           } catch {}
         } else {
@@ -173,10 +193,18 @@ export default function NoticeSection({
   
   const currentNotice = notices[currentNoticeIndex];
   
+  // 카테고리별 색상 설정
+  const getCategoryColor = (category: string) => {
+    if (category === '필독') return 'text-red-600';
+    if (category === '공지') return 'text-blue-600';
+    if (category === '이벤트') return 'text-purple-600';
+    return currentNotice.categoryColor || 'text-gray-600';
+  };
+  
   return (
     <div className={`text-center py-1 sm:py-2 lg:py-3 px-2 sm:px-4 ${className}`}>
       <Link href={`/event/${eventId}/notices/notice`} className="inline-flex items-center gap-1 sm:gap-2 cursor-pointer select-none">
-        <span className={`font-semibold text-sm sm:text-base lg:text-lg ${currentNotice.categoryColor || 'text-red-600'}`}>
+        <span className={`font-semibold text-sm sm:text-base lg:text-lg ${getCategoryColor(currentNotice.category)}`}>
           {currentNotice.category}
         </span>
         <span className="text-gray-400 text-sm sm:text-base">•</span>

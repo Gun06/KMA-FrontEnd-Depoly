@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import NoticeTable from '@/components/common/Table/NoticeTable';
 import Pagination from '@/components/common/Pagination/Pagination';
 import PaginationBar from '@/components/common/Pagination/PaginationBar';
@@ -8,15 +8,7 @@ import FilterBar from '@/components/common/filters/FilterBar';
 import { ChevronDown } from 'lucide-react';
 import { useNotices, useEventNotices } from '@/hooks/useNotices';
 import type { NoticeItem } from '@/components/common/Table/types';
-
-const CATEGORY_OPTIONS = [
-  { value: '', label: '전체' },
-  { value: '공지', label: '공지' },
-  { value: '이벤트', label: '이벤트' },
-  { value: '대회', label: '대회' },
-  { value: '문의', label: '문의' },
-  { value: '답변', label: '답변' },
-];
+import { useGetQuery } from '@/hooks/useFetch';
 
 type Props = {
   // 정적 데이터 사용 시
@@ -76,6 +68,29 @@ export default function NoticeBoard({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // 카테고리 목록 조회 (public API)
+  const { data: categoriesData } = useGetQuery(
+    ['notice', 'categories', 'public'],
+    '/api/v1/public/notice/category',
+    'user',
+    {
+      staleTime: 30 * 60 * 1000, // 30분
+    },
+    false // withAuth = false (public API)
+  ) as { data: Array<{ id: string; name: string }> | undefined };
+
+  // 카테고리 옵션 생성
+  const categoryOptions = useMemo(() => {
+    const options = [{ value: '', label: '전체' }];
+    if (categoriesData && Array.isArray(categoriesData)) {
+      options.push(...categoriesData.map((cat) => ({
+        value: cat.id,
+        label: cat.name,
+      })));
+    }
+    return options;
+  }, [categoriesData]);
 
   // 외부에서 페이지를 제어하는 경우 외부 값을 사용, 아니면 내부 상태 사용
   const currentPage = externalCurrentPage ?? internalCurrentPage;

@@ -5,10 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button/Button";
 import FilterBar from "@/components/common/filters/FilterBar";
-import { PRESETS } from "@/components/common/filters/presets";
-
 import NoticeEventTable from "@/components/admin/boards/notice/NoticeEventTable";
-import { useHomepageNotices } from "@/hooks/useNotices";
+import { useHomepageNotices, useNoticeCategories } from "@/hooks/useNotices";
 import { deleteNotice, searchHomepageNotices, NoticeSearchParams } from "@/services/admin/notices";
 import { useQueryClient } from "@tanstack/react-query";
 import type { NoticeType } from "@/types/notice";
@@ -53,6 +51,8 @@ type TransformedRow = {
   author: string;
   date: string;
   views: number;
+  categoryName?: string;
+  categoryId?: string;
 };
 
 export default function Client() {
@@ -61,16 +61,21 @@ export default function Client() {
 
   const [page, setPage] = React.useState(1);
   const [sort, setSort] = React.useState<Sort>("new");
-  const [kind, setKind] = React.useState<NoticeType | undefined>(undefined);
+  const [categoryId, setCategoryId] = React.useState<string | undefined>(undefined);
   const [q, setQ] = React.useState("");
   const [rev, setRev] = React.useState(0);
   const [searchData, setSearchData] = React.useState<NoticeListResponse | null>(null);
   const [_isSearching, setIsSearching] = React.useState(false);
 
+  // 카테고리 목록 조회
+  const { data: categories } = useNoticeCategories() as {
+    data: Array<{ id: string; name: string }> | undefined;
+  };
+
   // ✅ 모든 의존성을 하나의 args 객체로
   const args = React.useMemo(
-    () => ({ page, pageSize: PAGE_SIZE, sort, kind, q, rev }),
-    [page, sort, kind, q, rev]
+    () => ({ page, pageSize: PAGE_SIZE, sort, categoryId, q, rev }),
+    [page, sort, categoryId, q, rev]
   );
 
   // 검색 파라미터 구성
@@ -87,15 +92,9 @@ export default function Client() {
       params.noticeSortKey = "VIEW_COUNT";
     }
 
-    // 카테고리 매핑
-    if (args.kind) {
-      const categoryMap: Record<NoticeType, string> = {
-        notice: "801", // 공지
-        event: "803",  // 이벤트
-        match: "802",  // 대회
-        general: "804", // 일반
-      };
-      params.categoryId = categoryMap[args.kind];
+    // 카테고리 ID 사용
+    if (args.categoryId) {
+      params.categoryId = args.categoryId;
     }
 
     // 검색어
@@ -153,60 +152,25 @@ export default function Client() {
       // 여러 가능한 조회수 필드명 확인
       const noticeWithExtra = notice as typeof notice & { views?: number; hitCount?: number; readCount?: number };
       
-      // 백엔드에서 제공하는 categoryName을 기반으로 타입 결정
-      const categoryName = notice.categoryName;
-      let type: NoticeType = 'notice'; // 기본값
-      
-      if (categoryName === '공지') {
-        type = 'notice';
-      } else if (categoryName === '이벤트') {
-        type = 'event';
-      } else if (categoryName === '대회') {
-        type = 'match';
-      } else if (categoryName === '일반') {
-        type = 'general';
-      }
-      
       // 여러 가능한 조회수 필드명 확인
       const viewCount = notice.viewCount || noticeWithExtra.views || noticeWithExtra.hitCount || noticeWithExtra.readCount || 0;
       
       return {
         id,
-        type,
+        type: 'notice' as NoticeType, // 타입 정의상 필수이지만 실제로는 categoryName 사용
         title: notice.title || '제목 없음',
         author: notice.author || '작성자 없음',
         date: notice.createdAt ? formatDateOnly(notice.createdAt) : '날짜 없음', // 2025-08-25T10:00:00 -> 2025.08.25
         views: viewCount,
-        categoryName: categoryName, // API에서 받은 categoryName 그대로 전달
-      };
+        categoryName: notice.categoryName, // API에서 받은 categoryName 그대로 전달
+        categoryId: notice.categoryId || notice.noticeCategoryId, // 카테고리 ID 전달
+        };
     });
 
-    // 필터링 적용
-    let filtered: TransformedRow[] = transformedRows;
-    
-    if (args.kind) {
-      filtered = filtered.filter((r: TransformedRow) => r.type === args.kind);
-    }
-    
-    if (args.q) {
-      const query = args.q.toLowerCase();
-      filtered = filtered.filter((r: TransformedRow) => 
-        r.title.toLowerCase().includes(query) || 
-        r.author.toLowerCase().includes(query)
-      );
-    }
-
-    // 정렬 적용
-    if (args.sort === 'hit') {
-      filtered.sort((a: TransformedRow, b: TransformedRow) => b.views - a.views);
-    } else {
-      filtered.sort((a: TransformedRow, b: TransformedRow) => b.date.localeCompare(a.date));
-    }
-
-    return { rows: filtered, total: dataSource.totalElements || 0 };
+    // 서버에서 이미 필터링 및 정렬된 결과를 반환
+    return { rows: transformedRows, total: dataSource.totalElements || 0 };
   }, [searchData, noticeListData, args]);
 
-  const preset = PRESETS["관리자 / 대회_공지사항"]?.props;
   const norm = (s?: string) => (s ?? "").replace(/\s/g, "");
 
   const handleDelete = async (id: number | string) => {
@@ -272,28 +236,48 @@ export default function Client() {
         </Link>
       </div>
 
-      {preset && (
-        <FilterBar
-          {...preset}
-          className="ml-auto !gap-3"
-          buttons={[
-            { label: "검색", tone: "dark" },
-            { label: "등록하기", tone: "primary" },
-          ]}
-          showReset
-          onFieldChange={(label, value) => {
-            const L = norm(String(label));
-            if (L === "정렬") setSort(value as Sort);
-            else if (L === "유형") setKind(value as NoticeType);
-            setPage(1);
-          }}
-          onSearch={(value) => { setQ(value); setPage(1); }}
-          onActionClick={(label) => {
-            if (label === "등록하기") router.push("/admin/boards/notice/main/write");
-          }}
-          onReset={() => { setSort("new"); setKind(undefined); setQ(""); setPage(1); }}
-        />
-      )}
+      <FilterBar
+        buttonTextMode="current"
+        fields={[
+          {
+            label: "정렬",
+            options: [
+              { label: "최신순", value: "new" },
+              { label: "조회수순", value: "hit" },
+            ],
+          },
+          {
+            label: "유형",
+            options: [
+              { label: "전체", value: "" },
+              ...(categories || []).map((cat) => ({
+                label: cat.name,
+                value: cat.id,
+              })),
+            ],
+          },
+        ]}
+        initialValues={[sort, categoryId || ""]}
+        initialSearchValue={q}
+        searchPlaceholder="검색어를 입력해주세요."
+        buttons={[
+          { label: "검색", tone: "dark" },
+          { label: "등록하기", tone: "primary" },
+        ]}
+        showReset
+        className="ml-auto !gap-3"
+        onFieldChange={(label, value) => {
+          const L = norm(String(label));
+          if (L === "정렬") setSort(value as Sort);
+          else if (L === "유형") setCategoryId(value || undefined);
+          setPage(1);
+        }}
+        onSearch={(value) => { setQ(value); setPage(1); }}
+        onActionClick={(label) => {
+          if (label === "등록하기") router.push("/admin/boards/notice/main/write");
+        }}
+        onReset={() => { setSort("new"); setCategoryId(undefined); setQ(""); setPage(1); }}
+      />
 
       <NoticeEventTable
         rows={rows}

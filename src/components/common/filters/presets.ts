@@ -189,11 +189,11 @@ export const PRESETS: Record<string, FilterBarPreset> = {
         {
           label: "유형",
           options: [
+            { label: "필독", value: "mustread" },
             { label: "대회", value: "match" },
             { label: "이벤트", value: "event" },
             { label: "공지", value: "notice" },
             { label: "일반", value: "general" },
-
           ],
         },
       ],

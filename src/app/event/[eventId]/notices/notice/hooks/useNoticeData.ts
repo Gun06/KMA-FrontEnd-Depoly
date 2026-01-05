@@ -55,6 +55,14 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
         const pinnedList = noticeData.pinnedNoticeList || [];
         const contentList = noticeData.noticePage.content || [];
         
+        // 카테고리 ID를 이름으로 매핑
+        const categoryIdToName = new Map<string, string>();
+        if (categories && categories.length > 0) {
+          categories.forEach(cat => {
+            categoryIdToName.set(cat.id, cat.name);
+          });
+        }
+        
         // 모든 공지사항을 합치고 중복 제거 (id 기준)
         const allNoticesMap = new Map();
         
@@ -72,16 +80,16 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
         
         const allNoticesFromApi = Array.from(allNoticesMap.values());
         
-        // 상단 고정: 변환하지 않은 "필독" 카테고리만 (pinnedNoticeList + contentList 모두)
+        // API 응답의 category 필드가 ID일 수도 있고 이름일 수도 있으므로 둘 다 확인
         const 필독카테고리Items = allNoticesFromApi
-          .filter(notice => notice.category === '필독') // 변환하지 않은 "필독"만
+          .filter(notice => {
+            const categoryName = categoryIdToName.get(notice.category) || notice.category;
+            return categoryName === '필독';
+          })
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         
-        // 상단 고정할 필독의 ID 세트
-        const pinnedIds = new Set(필독카테고리Items.map(n => n.id));
-        
-        // 상단 고정: 모든 필독 카테고리 (최신순 정렬)
-        const pinnedNoticeItems = 필독카테고리Items
+        // 필독만 반환 (번호는 최신순으로 계산)
+        const 필독NoticeItems = 필독카테고리Items
           .map((notice, index): TableNoticeItem => ({
             id: `pinned_${index}_${notice.id}`,
             title: notice.title,
@@ -90,25 +98,11 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
             attachments: 0,
             views: notice.viewCount || 0,
             pinned: true,
-            category: '필독' as const // 변환하지 않고 그대로 "필독"
+            category: '필독' as const,
+            __displayNo: '필독' as const // 번호 열에 "필독" 표시
           }));
         
-        // 하단 일반: 필독이 아닌 모든 글들 (no 값 순서 유지)
-        const regularItems = allNoticesFromApi
-          .filter(notice => !pinnedIds.has(notice.id)) // 필독 제외
-          .sort((a, b) => (b.no || 0) - (a.no || 0)) // no 값으로 내림차순 정렬
-          .map((notice): TableNoticeItem => ({
-            id: `regular_${notice.id}`,
-            title: notice.title,
-            author: notice.author,
-            date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',
-            attachments: 0,
-            views: notice.viewCount || 0,
-            pinned: false,
-            category: convertCategory(notice.category || '일반') // 공지는 그대로 "공지"로 유지
-          }));
-        
-        return [...pinnedNoticeItems, ...regularItems];
+        return 필독NoticeItems;
       })()
     : [];
 

@@ -103,7 +103,7 @@ export default function Page() {
             <div className="flex items-center gap-2 mb-2">
               {(detail.noticeCategoryId || detail.categoryId) && categories && (() => {
                 const categoryName = categories.find(cat => cat.id === (detail.noticeCategoryId || detail.categoryId))?.name;
-                if (categoryName && ['필독', '공지', '이벤트', '대회', '문의', '답변', '일반'].includes(categoryName)) {
+                if (categoryName) {
                   return <CategoryBadge category={categoryName as Category} size="smd" />;
                 }
                 return null;

@@ -28,12 +28,34 @@ export default function SouvenirSelectionModal({
     // 모달이 열릴 때, 실제 기념품이 1개 이상 있으면 모두 자동 선택
     if (isOpen && eventInfo) {
       // 거리와 세부종목 이름을 함께 고려해서 찾기
-      const selectedCategory = eventInfo.categorySouvenirList.find(c => {
+      let selectedCategory = eventInfo.categorySouvenirList.find(c => {
         if (distance) {
           return c.categoryName === categoryName && c.distance === distance;
         }
         return c.categoryName === categoryName;
       });
+
+      // 매칭이 안 된 경우, categoryName에 "|"가 포함되어 있으면 파싱해서 다시 시도
+      if (!selectedCategory && categoryName.includes('|')) {
+        const parts = categoryName.split('|').map((p: string) => p.trim());
+        if (parts.length >= 2) {
+          const possibleDistance = parts[0];
+          const possibleCategoryName = parts.slice(1).join(' | ').trim();
+          
+          // 거리와 세부종목으로 다시 매칭 시도
+          selectedCategory = eventInfo.categorySouvenirList.find(c => {
+            return c.categoryName === possibleCategoryName && c.distance === possibleDistance;
+          });
+          
+          // 여전히 안 되면 거리만으로 시도
+          if (!selectedCategory) {
+            selectedCategory = eventInfo.categorySouvenirList.find(c => {
+              return c.distance === possibleDistance;
+            });
+          }
+        }
+      }
+
       const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
       
       // "기념품 없음"을 제외한 실제 기념품 목록
@@ -92,12 +114,34 @@ export default function SouvenirSelectionModal({
   if (!isOpen) return null;
 
   // 거리와 세부종목 이름을 함께 고려해서 찾기
-  const selectedCategory = eventInfo?.categorySouvenirList.find(c => {
+  let selectedCategory = eventInfo?.categorySouvenirList.find(c => {
     if (distance) {
       return c.categoryName === categoryName && c.distance === distance;
     }
     return c.categoryName === categoryName;
   });
+
+  // 매칭이 안 된 경우, categoryName에 "|"가 포함되어 있으면 파싱해서 다시 시도
+  if (!selectedCategory && categoryName.includes('|')) {
+    const parts = categoryName.split('|').map((p: string) => p.trim());
+    if (parts.length >= 2) {
+      const possibleDistance = parts[0];
+      const possibleCategoryName = parts.slice(1).join(' | ').trim();
+      
+      // 거리와 세부종목으로 다시 매칭 시도
+      selectedCategory = eventInfo?.categorySouvenirList.find(c => {
+        return c.categoryName === possibleCategoryName && c.distance === possibleDistance;
+      });
+      
+      // 여전히 안 되면 거리만으로 시도
+      if (!selectedCategory) {
+        selectedCategory = eventInfo?.categorySouvenirList.find(c => {
+          return c.distance === possibleDistance;
+        });
+      }
+    }
+  }
+
   const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
 
   const handleSouvenirToggle = (souvenirId: string, souvenirName: string) => {

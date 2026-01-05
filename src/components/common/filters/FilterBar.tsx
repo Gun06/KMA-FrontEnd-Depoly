@@ -27,6 +27,7 @@ export type FilterBarProps = {
   buttons?: FilterButtonSpec[];
   showReset?: boolean;
   initialValues?: string[]; // 필드별 초기값
+  initialSearchValue?: string; // 검색어 초기값
   onFieldChange?: (label: string, value: string) => void;
   onSearch?: (q: string) => void;
   onActionClick?: (labelOrValue: string) => void; // 메뉴 value도 전달
@@ -41,6 +42,7 @@ export default function FilterBar({
   buttons = [],
   showReset = false,
   initialValues,
+  initialSearchValue = "",
   onFieldChange,
   onSearch,
   onActionClick,
@@ -51,7 +53,7 @@ export default function FilterBar({
       ? initialValues
       : fields.map(() => "")
   );
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialSearchValue);
 
   useEffect(() => {
     if (initialValues && initialValues.length === fields.length) {
@@ -60,6 +62,10 @@ export default function FilterBar({
       setValues(fields.map(() => ""));
     }
   }, [fields, initialValues]);
+
+  useEffect(() => {
+    setQ(initialSearchValue);
+  }, [initialSearchValue]);
 
   const handleChange = (i: number, v: string) => {
     setValues((prev) => {
