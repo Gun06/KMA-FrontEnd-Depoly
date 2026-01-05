@@ -59,7 +59,7 @@ export interface HomepageQuestionResponse {
 }
 
 /**
- * 홈페이지 문의사항 목록 조회 API
+ * 홈페이지 문의사항 목록 조회 API (이벤트와 동일한 구조)
  */
 export const fetchHomepageQuestions = async (
   page: number = 1, 
@@ -69,15 +69,23 @@ export const fetchHomepageQuestions = async (
 ): Promise<HomepageQuestionResponse> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
   
-  // 검색 조건이 있으면 검색 API 사용, 없으면 일반 목록 API 사용
-  let API_ENDPOINT;
-  if (keyword && questionSearchKey) {
-    API_ENDPOINT = `${API_BASE_URL}/api/v1/public/homepage/question/search?page=${page}&size=${size}&keyword=${encodeURIComponent(keyword)}&questionSearchKey=${questionSearchKey}`;
-  } else {
-    API_ENDPOINT = `${API_BASE_URL}/api/v1/public/homepage/question?page=${page}&size=${size}`;
+  // 쿼리 파라미터 구성
+  const params = new URLSearchParams({
+    page: page.toString(),
+    size: size.toString(),
+  });
+
+  // 검색 파라미터 추가 (검색어가 있을 때만)
+  if (keyword && keyword.trim()) {
+    if (questionSearchKey) {
+      params.append('target', questionSearchKey);
+    }
+    params.append('keyword', keyword.trim());
   }
 
-  // JWT 토큰 가져오기
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/homepage/question?${params.toString()}`;
+
+  // JWT 토큰 가져오기 (선택적)
   const { getAccessToken, isTokenValid } = await import('@/utils/jwt');
   const token = getAccessToken();
   
@@ -87,6 +95,7 @@ export const fetchHomepageQuestions = async (
     'Accept': 'application/json',
   };
 
+  // 토큰이 유효한 경우에만 Authorization 헤더 추가
   if (token && isTokenValid(token)) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -146,18 +155,61 @@ export interface HomepageQuestionDetail {
 }
 
 /**
- * 홈페이지 문의사항 상세 조회 API
- * GET /api/v1/public/question/{questionId}
+ * 홈페이지 문의사항 상세 조회 API (수정용 - 이벤트와 동일)
+ * POST /api/v0/public/question/{questionId}
+ */
+export const fetchInquiryForEdit = async (
+  questionId: string,
+  password: string
+): Promise<{ 
+  title: string; 
+  content: string; 
+  authorName: string; 
+  secret: boolean;
+  attachmentInfoList?: Array<{
+    url: string;
+    originName: string;
+    originMb: number;
+  }>;
+}> => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionId}`;
+
+  const response = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API 요청 실패 (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  
+  return {
+    title: data.title || '',
+    content: data.content || '',
+    authorName: data.author || data.authorName || data.nickName || '',
+    secret: data.isSecret || data.secret || false,
+    attachmentInfoList: data.attachmentInfoList || data.attachmentDetailList || []
+  };
+};
+
+/**
+ * @deprecated 더 이상 사용되지 않음. fetchInquiryForEdit 사용 권장
  */
 export const fetchHomepageQuestionDetail = async (questionId: string | number): Promise<HomepageQuestionDetail> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
   const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/question/${questionId}`;
 
-  // JWT 토큰 가져오기
   const { getAccessToken, isTokenValid } = await import('@/utils/jwt');
   const token = getAccessToken();
   
-  // 헤더 구성 (토큰이 있으면 Authorization 헤더 포함)
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -174,7 +226,6 @@ export const fetchHomepageQuestionDetail = async (questionId: string | number): 
 
   if (!response.ok) {
     const errorText = await response.text();
-    // 상태 코드에 따른 사용자 친화적 메시지
     if (response.status === 401) {
       throw new ApiError('로그인이 필요합니다.', 401);
     }
@@ -192,25 +243,18 @@ export const fetchHomepageQuestionDetail = async (questionId: string | number): 
 };
 
 /**
- * 메인 문의사항 작성 API
- * POST /api/v1/homepage/question
+ * 메인 문의사항 작성 API (비회원/비밀번호 버전 - 이벤트와 동일)
+ * POST /api/v0/public/homepage/question
  */
 export const createHomepageQuestion = async (formData: FormData): Promise<{ id: string; result: string }> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-  const API_ENDPOINT = `${API_BASE_URL}/api/v1/homepage/question`;
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/homepage/question`;
 
-  const { getAccessToken, isTokenValid } = await import('@/utils/jwt');
-  const token = getAccessToken();
-  
-  if (!token || !isTokenValid(token)) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
+  // 비회원 공개 API: 인증 헤더 없이 전송
   const response = await fetch(API_ENDPOINT, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
     },
     body: formData
   });
@@ -218,6 +262,33 @@ export const createHomepageQuestion = async (formData: FormData): Promise<{ id: 
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`API 요청 실패 (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+/**
+ * 비밀번호 검증 API (이벤트와 동일)
+ * POST /api/v0/public/question/{questionId}
+ */
+export const verifyQuestionPassword = async (
+  questionId: string,
+  password: string
+): Promise<HomepageQuestionDetail> => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionId}`;
+
+  const response = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    throw new Error('비밀번호가 올바르지 않습니다.');
   }
 
   const data = await response.json();
@@ -269,33 +340,32 @@ export const createHomepageQuestionJSON = async (requestData: {
 
 /**
  * 홈페이지 문의사항 수정 API
- * PATCH /api/v1/homepage/question/{questionId}
+ * PATCH /api/v0/public/question/{questionId}
  */
 export const updateHomepageQuestion = async (
   questionId: string,
   formData: FormData
 ): Promise<{ result: string }> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-  const API_ENDPOINT = `${API_BASE_URL}/api/v1/homepage/question/${questionId}`;
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionId}`;
 
-  const { getAccessToken, isTokenValid } = await import('@/utils/jwt');
-  const token = getAccessToken();
-  
-  if (!token || !isTokenValid(token)) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
+  // 비회원 공개 API: 인증 헤더 없이 전송
   const response = await fetch(API_ENDPOINT, {
     method: 'PATCH',
     headers: {
       'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
     },
     body: formData
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    
+    // 특정 에러 메시지 처리
+    if (errorText.includes('ALREADY_ANSWERED_QUESTION')) {
+      throw new Error('ALREADY_ANSWERED_QUESTION');
+    }
+    
     throw new Error(`API 요청 실패 (${response.status}): ${errorText}`);
   }
 
@@ -305,27 +375,23 @@ export const updateHomepageQuestion = async (
 
 /**
  * 홈페이지 문의사항 삭제 API
- * DELETE /api/v1/homepage/question/{questionId}
+ * DELETE /api/v0/public/question/{questionId}
  */
 export const deleteHomepageQuestion = async (
-  questionId: string
-): Promise<{ result: string }> => {
+  questionId: string,
+  password: string
+): Promise<{ result: string } | string> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-  const API_ENDPOINT = `${API_BASE_URL}/api/v1/homepage/question/${questionId}`;
+  const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionId}`;
 
-  const { getAccessToken, isTokenValid } = await import('@/utils/jwt');
-  const token = getAccessToken();
-  
-  if (!token || !isTokenValid(token)) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
+  // 비회원 공개 API: 비밀번호를 body에 JSON으로 전송 (이벤트와 동일)
   const response = await fetch(API_ENDPOINT, {
     method: 'DELETE',
     headers: {
+      'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': `Bearer ${token}`,
     },
+    body: JSON.stringify({ password }),
   });
 
   if (!response.ok) {

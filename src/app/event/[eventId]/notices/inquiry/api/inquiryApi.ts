@@ -227,7 +227,17 @@ export const fetchInquiryDetail = async (
 export const fetchInquiryForEdit = async (
   questionId: string,
   password: string
-): Promise<{ title: string; content: string; authorName: string; secret: boolean }> => {
+): Promise<{ 
+  title: string; 
+  content: string; 
+  authorName: string; 
+  secret: boolean;
+  attachmentInfoList?: Array<{
+    url: string;
+    originName: string;
+    originMb: number;
+  }>;
+}> => {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
   const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${questionId}`;
 
@@ -252,7 +262,8 @@ export const fetchInquiryForEdit = async (
     title: data.title || '',
     content: data.content || '',
     authorName: data.author || data.authorName || data.nickName || '',
-    secret: data.isSecret || data.secret || false
+    secret: data.isSecret || data.secret || false,
+    attachmentInfoList: data.attachmentInfoList || data.attachmentDetailList || []
   };
 };
 

@@ -1,6 +1,7 @@
 import { Download, ChevronLeft } from 'lucide-react';
 import { AnswerHeader, AnswerDetail, InquiryDetail } from '../types/types';
 import { formatDate, formatFileSize } from '../utils/formatters';
+import { AnswerContent } from './AnswerContent';
 
 // 이름 마스킹 함수
 const maskAuthorName = (authorName: string, currentUserId?: string | null): string => {
@@ -165,11 +166,7 @@ export const AnswerSection = ({
               ) : answerDetail ? (
                 <div>
                   {answerDetail.content ? (
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: answerDetail.content }}
-                      className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-                    />
+                    <AnswerContent content={answerDetail.content} />
                   ) : (
                     <p className="text-gray-500 italic">답변 내용이 없습니다.</p>
                   )}
@@ -208,11 +205,7 @@ export const AnswerSection = ({
               ) : answerHeader?.content && 
                   answerHeader.content !== inquiryDetail?.content ? (
                 <div>
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: answerHeader.content }}
-                      className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-                  />
+                  <AnswerContent content={answerHeader.content} />
                 </div>
               ) : (
                 <div>
@@ -309,11 +302,7 @@ export const AnswerSection = ({
               ) : answerDetail ? (
                 <div>
                   {answerDetail.content ? (
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: answerDetail.content }}
-                      className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-                    />
+                    <AnswerContent content={answerDetail.content} />
                   ) : (
                     <p className="text-gray-500 italic">답변 내용이 없습니다.</p>
                   )}
@@ -352,11 +341,7 @@ export const AnswerSection = ({
               ) : answerHeader?.content && 
                   answerHeader.content !== inquiryDetail?.content ? (
                 <div>
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: answerHeader.content }}
-                      className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                      style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-                  />
+                  <AnswerContent content={answerHeader.content} />
                 </div>
               ) : (
                 <div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchHomepageQuestions, HomepageQuestionResponse } from '../api/inquiryApi';
 import { NoticeItem } from '@/components/common/Table/types';
-import { maskAuthorName, getSecretTitle } from '../utils/secretUtils';
 
 export const useInquiryData = (
   page: number = 1, 
@@ -36,11 +35,11 @@ export const useInquiryData = (
           const canViewContent = !isSecret || !!isAuthor;
           
           
-          // 제목 처리: 비밀글이고 본인이 쓴 글이 아니면 "비밀글입니다" 표시
-          const displayTitle = isSecret && !isAuthor ? getSecretTitle(item.questionHeader.title, isSecret) : item.questionHeader.title;
+          // 제목 처리: 마스킹 없이 그대로 표시
+          const displayTitle = item.questionHeader.title;
           
-          // 작성자명 처리: 비밀글이고 본인이 쓴 글이 아니면 마스킹
-          const displayAuthor = isSecret && !isAuthor ? maskAuthorName(item.questionHeader.authorName, isSecret) : item.questionHeader.authorName;
+          // 작성자명 처리: 마스킹 없이 그대로 표시
+          const displayAuthor = item.questionHeader.authorName;
           
           const inquiryItem: NoticeItem = {
             id: item.questionHeader.id, // string으로 유지

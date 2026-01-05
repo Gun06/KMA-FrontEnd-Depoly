@@ -10,7 +10,6 @@ export default function InquiryClient() {
   return (
     <BoardEventList
       title={undefined}
-      basePath="inquiry"
       titleAddon={
         <InquiryToggleTabs
           active="event"
@@ -19,6 +18,9 @@ export default function InquiryClient() {
           }}
         />
       }
+      tableCtaLabel="전마협 메인 문의사항 관리하기 >"
+      tableCtaHref="/admin/boards/inquiry/main"
+      basePath="inquiry"
     />
   );
 }

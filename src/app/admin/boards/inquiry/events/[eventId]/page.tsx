@@ -4,6 +4,7 @@ import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import InquiryListPage from "@/components/admin/boards/inquiry/InquiryListPage";
 import { useEventList } from "@/hooks/useNotices";
+import { InquiryToggleTabs } from "@/components/admin/boards/inquiry/InquiryToggleTabs";
 
 export default function Page() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -19,11 +20,19 @@ export default function Page() {
       apiType="event"
       eventId={eventId}
       title={<span>선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> 문의사항</span>}
-      headerButton={{ 
-        label: "전체 문의사항 관리하기 >",  
+      titleAddon={
+        <InquiryToggleTabs
+          active="event"
+          onSelect={(value) => {
+            if (value === 'all') router.push('/admin/boards/inquiry/all');
+          }}
+        />
+      }
+      headerButton={{
+        label: "전마협 메인 문의사항 관리하기 >",
         size: "sm",
-        tone: "primary", 
-        onClick: () => router.push("/admin/boards/inquiry/all") 
+        tone: "primary",
+        onClick: () => router.push("/admin/boards/inquiry/main")
       }}
       linkForRow={(r) => r.__replyOf
         ? `/admin/boards/inquiry/events/${eventId}/${r.__replyOf}#answer`

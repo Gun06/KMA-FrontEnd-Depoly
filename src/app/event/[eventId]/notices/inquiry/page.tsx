@@ -11,7 +11,7 @@ import { ChevronDown } from 'lucide-react';
 import type { NoticeItem as TableNoticeItem } from '@/components/common/Table/types';
 import { fetchInquiryList, type InquiryResponse, type InquiryItem, type SearchTarget } from './api/inquiryApi';
 import { formatDate, maskAuthorName } from './utils/formatters';
-import { SecretPostModal } from './components/SecretPostModal';
+import { SecretPostModal } from '@/components/common/Modal/SecretPostModal';
 import InquirySkeleton from './components/InquirySkeleton';
 
 // 문의사항 상세보기 API 응답 인터페이스

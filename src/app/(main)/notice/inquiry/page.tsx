@@ -9,6 +9,9 @@ import type { NoticeItem as TableNoticeItem } from '@/components/common/Table/ty
 import { useInquiryData } from './hooks/useInquiryData';
 import { authService } from '@/services/auth';
 import { getAccessToken, isTokenValid, decodeToken } from '@/utils/jwt';
+import { SecretPostModal } from '@/components/common/Modal/SecretPostModal';
+import { verifyQuestionPassword } from './api/inquiryApi';
+import InquirySkeleton from './components/InquirySkeleton';
 
 export default function InquiryPage() {
   const router = useRouter();
@@ -18,9 +21,10 @@ export default function InquiryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchKey, setSearchKey] = useState<'TITLE' | 'AUTHOR'>('TITLE');
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showSecretModal, setShowSecretModal] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isSecretModalOpen, setIsSecretModalOpen] = useState(false);
+  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
   // 현재 로그인한 사용자 ID 가져오기 (event 문의사항과 동일한 로직)
   const getCurrentUserId = () => {
@@ -106,7 +110,9 @@ export default function InquiryPage() {
           const canViewContent = !isSecret || isAuthor;
           
           if (!canViewContent) {
-            setShowSecretModal(true);
+            // 비밀번호 입력 모달 표시
+            setSelectedInquiryId(String(originalQuestionId));
+            setIsSecretModalOpen(true);
             return;
           }
           
@@ -129,7 +135,9 @@ export default function InquiryPage() {
         const canViewContent = !isSecret || isAuthor;
         
         if (!canViewContent) {
-          setShowSecretModal(true);
+          // 비밀번호 입력 모달 표시
+          setSelectedInquiryId(String(id));
+          setIsSecretModalOpen(true);
           return;
         }
       }
@@ -138,15 +146,36 @@ export default function InquiryPage() {
       router.push(`/notice/inquiry/particular?id=${rowData?.id}`);
     };
 
-  // 글쓰기 페이지로 이동 (로그인 체크)
-  const handleGoToWrite = () => {
-    const isAuthenticated = !!authService.getToken();
+  // 비밀번호 확인 핸들러 (이벤트와 동일)
+  const handlePasswordConfirm = async (password: string) => {
+    if (!selectedInquiryId) return;
     
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
+    try {
+      setIsPasswordLoading(true);
+      
+      // 비밀번호 검증 API 호출
+      await verifyQuestionPassword(selectedInquiryId, password);
+      
+      // 비밀번호가 맞으면 상세 페이지로 이동
+      router.push(`/notice/inquiry/particular?id=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+      setIsSecretModalOpen(false);
+      setSelectedInquiryId(null);
+    } catch (error) {
+      // 에러를 다시 throw하여 모달에서 처리하도록 함
+      throw error;
+    } finally {
+      setIsPasswordLoading(false);
     }
-    
+  };
+
+  // 비밀글 모달 닫기
+  const handleSecretModalClose = () => {
+    setIsSecretModalOpen(false);
+    setSelectedInquiryId(null);
+  };
+
+  // 글쓰기 페이지로 이동 (로그인 체크 제거)
+  const handleGoToWrite = () => {
     router.push('/notice/inquiry/write');
   };
 
@@ -161,9 +190,93 @@ export default function InquiryPage() {
         }}
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-            <span className="ml-4 text-gray-600">문의사항을 불러오는 중...</span>
+          {/* 안내문구 */}
+          <div className="mb-6">
+            <div className="bg-gray-100 rounded-lg p-4 text-center">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                전마협 관련 문의사항을 남겨주시면 빠른 시간 내에 답변드리겠습니다. 
+                문의하실 때는 구체적인 내용을 작성해 주시기 바라며, 
+                비밀글 설정 시 비밀번호를 잊지 않도록 주의해 주세요.
+              </p>
+            </div>
+          </div>
+
+          {/* 스켈레톤 UI */}
+          <InquirySkeleton />
+          
+          {/* 검색 영역 - 로딩 중에도 표시 */}
+          <div className="mt-8 flex justify-center px-1 sm:px-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              {/* 검색 타입 드롭다운 */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
+                >
+                  <span className="text-[15px] leading-[26px] text-[#1E2124]">
+                    {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '제목'}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isDropdownOpen && (
+                  <>
+                    {/* 백드롭 */}
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
+                    {/* 드롭다운 메뉴 */}
+                    <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-[#CDD1D5] rounded-md shadow-lg z-20 py-1">
+                      {searchOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setSelectedSearchType(option.value);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 ${
+                            selectedSearchType === option.value ? 'bg-[#EEF2F7]' : ''
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* 검색 입력창 */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="검색어를 입력해주세요."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  className="h-10 pl-4 pr-12 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-80"
+                />
+                <button 
+                  onClick={handleSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* 글쓰기 버튼 */}
+              <button 
+                onClick={handleGoToWrite}
+                className="h-10 px-6 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                글쓰기
+              </button>
+            </div>
           </div>
         </div>
       </SubmenuLayout>
@@ -204,6 +317,17 @@ export default function InquiryPage() {
         }}
       >
         <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+          {/* 안내문구 */}
+          <div className="mb-6">
+            <div className="bg-gray-100 rounded-lg p-4 text-center">
+              <p className="text-gray-700 text-sm leading-relaxed">
+                전마협 관련 문의사항을 남겨주시면 빠른 시간 내에 답변드리겠습니다. 
+                문의하실 때는 구체적인 내용을 작성해 주시기 바라며, 
+                비밀글 설정 시 비밀번호를 잊지 않도록 주의해 주세요.
+              </p>
+            </div>
+          </div>
+
           <div className="text-center">
             <div className="text-gray-500 text-lg mb-2">등록된 문의사항이 없습니다</div>
             <div className="text-sm text-gray-400 mb-4">첫 번째 문의사항을 작성해보세요</div>
@@ -227,6 +351,17 @@ export default function InquiryPage() {
       }}
     >
       <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        {/* 안내문구 */}
+        <div className="mb-6">
+          <div className="bg-gray-100 rounded-lg p-4 text-center">
+            <p className="text-gray-700 text-sm leading-relaxed">
+              전마협 관련 문의사항을 남겨주시면 빠른 시간 내에 답변드리겠습니다. 
+              문의하실 때는 구체적인 내용을 작성해 주시기 바라며, 
+              비밀글 설정 시 비밀번호를 잊지 않도록 주의해 주세요.
+            </p>
+          </div>
+        </div>
+
         <NoticeBoard
           data={inquiryData}
           onRowClick={handleRowClick}
@@ -325,84 +460,13 @@ export default function InquiryPage() {
 
       </div>
 
-      {/* 로그인 필요 모달 */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="text-center">
-              <div className="text-gray-500 text-4xl mb-4">🔒</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                로그인이 필요합니다
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                문의사항을 작성하려면 로그인해주세요.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => setShowLoginModal(false)}
-                  className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    router.push('/login');
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  로그인하기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 비밀글 모달 */}
-      {showSecretModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* 배경 오버레이 */}
-          <div 
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setShowSecretModal(false)}
-          />
-          
-          {/* 모달 컨텐츠 */}
-          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            {/* 닫기 버튼 */}
-            <button
-              onClick={() => setShowSecretModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            {/* 모달 내용 */}
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
-                <Lock className="w-8 h-8 text-red-500" />
-              </div>
-              
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                비밀글입니다!
-              </h3>
-              
-              <p className="text-gray-600 mb-6">
-                이 글은 비밀글로 설정되어 있어<br />
-                작성자만 볼 수 있습니다.
-              </p>
-              
-              <button
-                onClick={() => setShowSecretModal(false)}
-                className="w-full bg-gray-900 text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 비밀번호 입력 모달 */}
+      <SecretPostModal
+        isOpen={isSecretModalOpen}
+        onClose={handleSecretModalClose}
+        onConfirm={handlePasswordConfirm}
+        isLoading={isPasswordLoading}
+      />
     </SubmenuLayout>
   );
 }

@@ -61,6 +61,21 @@ export default function EventInquiryWritePage() {
         setAuthorName(editData.authorName);
         setPassword(editPassword); // 기존 비밀번호 설정
         // isSecret은 항상 true로 하드코딩되어 있으므로 설정 불필요
+        
+        // 기존 첨부파일 목록 설정
+        if (editData.attachmentInfoList && editData.attachmentInfoList.length > 0) {
+          const existingFiles: UploadItem[] = editData.attachmentInfoList.map((file, index) => ({
+            id: `existing-${index}`,
+            file: null, // 기존 파일은 File 객체가 없음
+            name: file.originName,
+            size: file.originMb,
+            sizeMB: Math.ceil(file.originMb / (1024 * 1024)), // bytes를 MB로 변환
+            tooLarge: false, // 기존에 업로드된 파일은 크기 제한 통과
+            isExisting: true, // 기존 파일 표시
+            url: file.url,
+          }));
+          setFiles(existingFiles);
+        }
       } catch (error) {
         setErrorMessage('문의사항 데이터를 불러오는데 실패했습니다.');
         setShowErrorModal(true);
@@ -366,13 +381,15 @@ export default function EventInquiryWritePage() {
                         onChange={handlePasswordChange}
                         placeholder="비밀번호 (4자리 이상)"
                         className={`w-full h-10 px-3 pr-10 border rounded-md text-sm focus:outline-none focus:ring-2 ${
-                          password && password.length > 0
-                            ? isPasswordValid(password)
-                              ? 'border-green-500 focus:ring-green-500'
-                              : 'border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:ring-blue-500'
+                          isEditMode
+                            ? 'border-gray-300 bg-gray-100 cursor-not-allowed focus:ring-gray-300'
+                            : password && password.length > 0
+                              ? isPasswordValid(password)
+                                ? 'border-green-500 focus:ring-green-500'
+                                : 'border-red-500 focus:ring-red-500'
+                              : 'border-gray-300 focus:ring-blue-500'
                         }`}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isEditMode}
                       />
                       <button
                         type="button"
@@ -389,8 +406,15 @@ export default function EventInquiryWritePage() {
                       </button>
                     </div>
                     
-                    {/* 비밀번호 유효성 검사 안내 */}
-                    {password && password.length > 0 && (
+                    {/* 수정 모드일 때 안내 문구 */}
+                    {isEditMode && (
+                      <p className="text-xs text-red-600 mt-2 font-medium">
+                        ※ 비밀번호는 수정이 불가합니다.
+                      </p>
+                    )}
+                    
+                    {/* 비밀번호 유효성 검사 안내 (작성 모드일 때만) */}
+                    {!isEditMode && password && password.length > 0 && (
                       <div className="mt-2 space-y-1">
                         <div className={`flex items-center text-xs ${
                           password.length >= 4 ? 'text-green-600' : 'text-red-500'
@@ -411,9 +435,11 @@ export default function EventInquiryWritePage() {
                       </div>
                     )}
                     
-                    <p className="text-xs text-gray-500 mt-2">
-                      비밀글 조회/수정/삭제 시 필요합니다. (4자리 이상, 공백 불가)
-                    </p>
+                    {!isEditMode && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        비밀글 조회/수정/삭제 시 필요합니다. (4자리 이상, 공백 불가)
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
