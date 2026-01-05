@@ -169,13 +169,20 @@ export default function NoticeBoard({
       let effectivePageSize: number;
       
       if (isBackendPaginated) {
-        // 백엔드에서 이미 페이지네이션된 데이터이므로 그대로 사용 (슬라이스하지 않음)
-        // __displayNo는 이미 백엔드에서 받은 값이 설정되어 있으므로 그대로 사용
-        paginatedRegularItems = regularItems;
-        effectivePageSize = pageSize; // 외부에서 전달받은 pageSize 사용
+        // 클라이언트 사이드 페이지네이션 처리 (externalTotalElements는 총 개수만 전달)
+        const regularPageSize = pageSize;
+        const totalRegularItems = regularItems.length;
+        const start = (currentPage - 1) * regularPageSize;
+        const end = start + regularPageSize;
+        paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
+          ...item,
+          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산
+          __displayNo: item.__displayNo !== undefined ? item.__displayNo : (totalRegularItems - start - index),
+        }));
+        effectivePageSize = regularPageSize;
       } else {
         // 프론트에서 페이지네이션 처리
-        const regularPageSize = 10;
+        const regularPageSize = pageSize;
         const totalRegularItems = regularItems.length;
         const start = (currentPage - 1) * regularPageSize;
         const end = start + regularPageSize;

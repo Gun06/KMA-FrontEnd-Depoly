@@ -14,7 +14,7 @@ export default function EventNoticePage() {
   const eventId = params.eventId as string;
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(15);
   
   // API에서 모든 데이터를 가져오기 위해 큰 size 사용 (클라이언트 페이지네이션)
   const { noticeData, isLoading, error, displayNotices } = useNoticeData(eventId, 1, 1000);
@@ -29,8 +29,12 @@ export default function EventNoticePage() {
     let originalId = id;
     
     if (typeof id === 'string') {
+      // _regular suffix 제거 (필독 항목의 일반 목록 버전)
+      if (id.endsWith('_regular')) {
+        originalId = id.replace('_regular', '');
+      }
       // 다양한 접두사 패턴 제거
-      if (id.startsWith('pinned_')) {
+      else if (id.startsWith('pinned_')) {
         // pinned_0_uuid 형식에서 uuid 추출
         originalId = id.replace(/^pinned_\d+_/, '');
       } else if (id.startsWith('regular_')) {
@@ -98,7 +102,7 @@ export default function EventNoticePage() {
           showSearch={false}
           useApi={false}
           currentPage={currentPage}
-          totalElements={displayNotices.length}
+          totalElements={displayNotices.filter(item => !item.pinned).length}
           onPageChange={handlePageChange}
         />
       </div>

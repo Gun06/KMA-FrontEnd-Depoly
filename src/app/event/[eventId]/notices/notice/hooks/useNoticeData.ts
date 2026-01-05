@@ -63,36 +63,18 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
           });
         }
         
-        // 모든 항목을 합치고 중복 제거 (id 기준, contentList 우선)
-        const allNoticesMap = new Map();
-        
-        // 먼저 pinnedNoticeList 추가
-        pinnedList.forEach(notice => {
-          allNoticesMap.set(notice.id, notice);
-        });
-        
-        // contentList 추가 (중복이면 덮어쓰기 - contentList가 우선)
-        contentList.forEach(notice => {
-          allNoticesMap.set(notice.id, notice);
-        });
-        
-        const allNotices = Array.from(allNoticesMap.values());
-        
-        // 필독 항목과 일반 항목 분리
+        // 상단 고정용 필독 항목 (최대 10개)
         const 필독Items: TableNoticeItem[] = [];
-        const regularItems: TableNoticeItem[] = [];
-        const processedIds = new Set<string>();
+        const 필독Ids = new Set<string>();
         
-        allNotices.forEach((notice) => {
+        // contentList에서 필독 항목을 찾아서 상단 고정에 추가 (최대 10개)
+        for (const notice of contentList) {
+          if (필독Items.length >= 10) break; // 최대 10개 제한
+          
           const categoryName = categoryIdToName.get(notice.category) || notice.category;
           const category = convertCategory(categoryName);
           
-          // contentList에서 no 값 확인
-          const contentNotice = contentList.find(n => n.id === notice.id);
-          const no = contentNotice?.no;
-          
           if (category === '필독') {
-            // 필독은 모두 고정으로 표시
             필독Items.push({
               id: notice.id,
               title: notice.title,
@@ -104,24 +86,35 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
               category: '필독' as const,
               __displayNo: '필독' as const
             });
-          } else {
-            // 공지 등 다른 카테고리는 일반 항목으로 처리
-            regularItems.push({
-              id: notice.id,
-              title: notice.title,
-              author: notice.author,
-              date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',
-              attachments: 0,
-              views: notice.viewCount || 0,
-              pinned: false,
-              category: category,
-              __displayNo: no
-            });
+            필독Ids.add(notice.id);
           }
-          processedIds.add(notice.id);
-        });
+        }
         
-        // 필독 고정 항목 먼저, 그 다음 일반 항목
+        // contentList를 원래 순서대로 순회하여 일반 목록 구성 (필독 포함)
+        const regularItems: TableNoticeItem[] = [];
+        
+        for (const notice of contentList) {
+          const categoryName = categoryIdToName.get(notice.category) || notice.category;
+          const category = convertCategory(categoryName);
+          
+          // 필독 항목이 상단 고정에 있으면 일반 목록용으로 다른 ID 사용
+          const is필독InPinned = category === '필독' && 필독Ids.has(notice.id);
+          const itemId = is필독InPinned ? `${notice.id}_regular` : notice.id;
+          
+          regularItems.push({
+            id: itemId,
+            title: notice.title,
+            author: notice.author,
+            date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',
+            attachments: 0,
+            views: notice.viewCount || 0,
+            pinned: false,
+            category: category,
+            __displayNo: notice.no
+          });
+        }
+        
+        // 필독 고정 항목 먼저, 그 다음 일반 항목 (contentList 원래 순서대로)
         return [...필독Items, ...regularItems];
       })()
     : [];
