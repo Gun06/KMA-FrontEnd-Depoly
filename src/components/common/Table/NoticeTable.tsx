@@ -32,40 +32,14 @@ export default function NoticeTable({
 }: Props) {
 
   const rows = useMemo<DisplayRow[]>(() => {
-    // 질문과 답변을 별도 행으로 변환 (답변은 번호 없음)
-    const expandedRows: NoticeItem[] = [];
+    // 모든 데이터를 그대로 사용 (필터링하지 않음)
+    // 데이터는 이미 상위 컴포넌트에서 처리되어 전달됨
     
-    data.forEach((row) => {
-      // 질문 행 추가
-      expandedRows.push(row);
-      
-      // 답변이 있는 경우 답변 행 추가 (번호는 표시하지 않음)
-      if (row.answer) {
-        const answerRow: NoticeItem = {
-          ...row,
-          id: `answer-${row.id}`, // 답변 행의 ID는 고유하게 생성
-          title: `↳ [RE] ${row.title}`, // 화살표와 [RE] 추가
-          category: row.category, // 답변도 같은 카테고리로 유지
-          author: row.answer.author,
-          date: row.answer.date,
-          // 답변 행은 번호 없음 (명시적으로 undefined 설정)
-          __displayNo: undefined,
-          originalQuestionId: row.id, // 원본 질문 ID 저장
-          answerHeaderId: row.answerHeaderId,
-          // 원본 질문의 권한 정보 상속 (답변도 같은 권한을 가짐)
-          canViewContent: row.canViewContent,
-          isAuthor: row.isAuthor,
-          secret: row.secret // 원본 질문의 비밀글 여부 상속
-        };
-        expandedRows.push(answerRow);
-      }
-    });
-
     // pinned 항목과 일반 항목 분리
-    const pinned = expandedRows.filter((r) => r.pinned);
+    const pinned = data.filter((r) => r.pinned);
     const effectivePinned = pinLimit ? pinned.slice(0, pinLimit) : pinned;
     const pinnedIdSet = new Set<string | number>(effectivePinned.map((r) => r.id));
-    const nonPinned = expandedRows.filter((r) => !pinnedIdSet.has(r.id));
+    const nonPinned = data.filter((r) => !pinnedIdSet.has(r.id));
 
     // 정렬: pinned 먼저, 그 다음 일반 항목
     const sorted = [...effectivePinned, ...nonPinned];
