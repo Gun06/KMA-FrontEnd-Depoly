@@ -452,7 +452,7 @@ export default function EventInquiryPage() {
         };
         items.push(questionItem);
 
-        // 답변이 있는 경우 답변 항목도 추가 - 번호는 표시하지 않음
+        // 답변이 있는 경우 답변 항목도 추가 - 번호는 표시하지 않음 (질문과 같은 번호이지만 화면에 표시 안 함)
         if (inquiry.answerHeader) {
           const answerItem: TableNoticeItem = {
             id: `answer-${inquiry.questionHeader.id}`, // 답변 행의 ID는 고유하게 생성
@@ -466,7 +466,7 @@ export default function EventInquiryPage() {
             secret: false, // 답변은 항상 공개 (비밀번호 요구 안함)
             originalQuestionId: inquiry.questionHeader.id, // 원본 문의 ID 저장 (string으로 유지)
             answerHeaderId: inquiry.answerHeader.id, // 답변 헤더 ID 저장
-            __displayNo: undefined, // 답변 행은 번호 숨김
+            __displayNo: undefined, // 답변 행은 번호 숨김 (질문과 같은 번호이지만 화면에 표시 안 함)
           };
           items.push(answerItem);
         }

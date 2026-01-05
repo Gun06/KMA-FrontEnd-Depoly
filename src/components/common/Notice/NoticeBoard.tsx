@@ -176,8 +176,10 @@ export default function NoticeBoard({
         const end = start + regularPageSize;
         paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
           ...item,
-          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산
-          __displayNo: item.__displayNo !== undefined ? item.__displayNo : (totalRegularItems - start - index),
+          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산 (답변 항목은 제외)
+          __displayNo: item.__displayNo !== undefined 
+            ? item.__displayNo 
+            : (item.category === '답변' ? undefined : (totalRegularItems - start - index)),
         }));
         effectivePageSize = regularPageSize;
       } else {
@@ -188,8 +190,10 @@ export default function NoticeBoard({
         const end = start + regularPageSize;
         paginatedRegularItems = regularItems.slice(start, end).map((item, index) => ({
           ...item,
-          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산
-          __displayNo: item.__displayNo !== undefined ? item.__displayNo : (totalRegularItems - start - index),
+          // 이미 __displayNo가 설정되어 있으면 그대로 사용, 없으면 계산 (답변 항목은 제외)
+          __displayNo: item.__displayNo !== undefined 
+            ? item.__displayNo 
+            : (item.category === '답변' ? undefined : (totalRegularItems - start - index)),
         }));
         effectivePageSize = regularPageSize;
       }
