@@ -32,25 +32,20 @@ export default function NoticeTable({
 }: Props) {
 
   const rows = useMemo<DisplayRow[]>(() => {
-    // 필독 카테고리만 먼저 필터링
-    const 필독Data = data.filter((row) => row.category === '필독');
-    
     // 질문과 답변을 별도 행으로 변환 (답변은 번호 없음)
-    // 단, 필독 카테고리인 경우에만 답변 추가 (실제로는 필독에는 답변이 없을 것으로 예상)
     const expandedRows: NoticeItem[] = [];
     
-    필독Data.forEach((row) => {
-      // 질문 행 추가 (필독만)
+    data.forEach((row) => {
+      // 질문 행 추가
       expandedRows.push(row);
       
       // 답변이 있는 경우 답변 행 추가 (번호는 표시하지 않음)
-      // 필독에는 답변이 없을 것으로 예상되지만, 안전을 위해 유지
-      if (row.answer && row.category === '필독') {
+      if (row.answer) {
         const answerRow: NoticeItem = {
           ...row,
           id: `answer-${row.id}`, // 답변 행의 ID는 고유하게 생성
           title: `↳ [RE] ${row.title}`, // 화살표와 [RE] 추가
-          category: '필독' as const, // 답변도 필독으로 유지
+          category: row.category, // 답변도 같은 카테고리로 유지
           author: row.answer.author,
           date: row.answer.date,
           // 답변 행은 번호 없음 (명시적으로 undefined 설정)
@@ -66,21 +61,20 @@ export default function NoticeTable({
       }
     });
 
-    // 필독 카테고리만 필터링 (이미 필터링했지만 안전을 위해 추가)
-    const 필독Items = expandedRows.filter((row) => row.category === '필독');
-    
-    const autoPinned = 필독Items.map((row) => ({ ...row, pinned: true }));
-    const pinned = autoPinned.filter((r) => r.pinned);
+    // pinned 항목과 일반 항목 분리
+    const pinned = expandedRows.filter((r) => r.pinned);
     const effectivePinned = pinLimit ? pinned.slice(0, pinLimit) : pinned;
     const pinnedIdSet = new Set<string | number>(effectivePinned.map((r) => r.id));
-    const nonPinned = autoPinned.filter((r) => !pinnedIdSet.has(r.id));
+    const nonPinned = expandedRows.filter((r) => !pinnedIdSet.has(r.id));
 
-    // 번호는 이미 inquiry/page.tsx에서 계산되어 전달됨
+    // 정렬: pinned 먼저, 그 다음 일반 항목
     const sorted = [...effectivePinned, ...nonPinned];
 
     return sorted.map((row) => {
-      if (pinnedIdSet.has(row.id)) return { ...row, __displayNo: '필독' as const };
-      
+      // pinned 항목이면서 __displayNo가 '필독'인 경우 '필독'으로 표시
+      if (pinnedIdSet.has(row.id) && row.__displayNo === '필독') {
+        return { ...row, __displayNo: '필독' as const };
+      }
       // __displayNo는 이미 전달받은 값 사용
       return { ...row, __displayNo: row.__displayNo };
     });

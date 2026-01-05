@@ -60,10 +60,10 @@ export default function NoticeSection({
   // 컴포넌트 마운트 후 캐시된 데이터 로드
   useEffect(() => {
     setIsMounted(true);
-    const cachedNotices = getCachedNotices();
-    if (cachedNotices.length > 0) {
-      setNotices(cachedNotices);
-    }
+    // 캐시 클리어 (필독 필터링을 위해)
+    try {
+      localStorage.removeItem(`notice_section_${eventId}`);
+    } catch {}
   }, [eventId]);
   
   // API에서 공지사항 가져오기 (마운트 후 캐시가 없을 때만)
@@ -71,8 +71,7 @@ export default function NoticeSection({
     if (!isMounted) return;
 
     const fetchNotices = async () => {
-      // 캐시가 있으면 로딩하지 않음
-      if (getCachedNotices().length > 0) return;
+      // 캐시를 사용하지 않고 항상 새로 가져오기 (필독 필터링을 위해)
       
       try {
         setIsLoading(true);
@@ -113,13 +112,36 @@ export default function NoticeSection({
             ...(data.pinnedNoticeList || []),
             ...(data.noticePage.content || [])
           ];
-          const filteredNotices = allNotices.filter(notice => {
-            // category가 ID일 수도 있고 이름일 수도 있으므로 둘 다 확인
-            const categoryName = categoryIdToName.get(notice.category) || notice.category;
-            return categoryName === '필독';
-          });
+          
+          // 필독 카테고리 ID 찾기
+          let 필독CategoryId: string | null = null;
+          for (const [id, name] of categoryIdToName.entries()) {
+            if (name === '필독') {
+              필독CategoryId = id;
+              break;
+            }
+          }
+          
+          // 필독만 필터링 (원본 category 값 사용 - ID일 수도 있고 이름일 수도 있음)
+          const filteredNotices = allNotices
+            .filter(notice => {
+              // 원본 notice.category가 필독 카테고리 ID인지 확인
+              const is필독ByID = 필독CategoryId && notice.category === 필독CategoryId;
+              // 또는 원본 notice.category가 이미 '필독' 이름인지 확인
+              const is필독ByName = notice.category === '필독';
+              // 또는 카테고리 이름으로 변환했을 때 '필독'인지 확인
+              const categoryName = categoryIdToName.get(notice.category);
+              const is필독ByConvertedName = categoryName === '필독';
+              
+              return is필독ByID || is필독ByName || is필독ByConvertedName;
+            })
+            .map(notice => ({
+              ...notice,
+              category: '필독' // 필터링 후 강제로 '필독'으로 설정
+            }));
+          
           setNotices(filteredNotices);
-          // 캐시 클리어 (필독 필터링이 변경되었으므로)
+          // 캐시 저장 (카테고리 이름으로 변환된 데이터)
           try {
             localStorage.removeItem(`notice_section_${eventId}`);
             localStorage.setItem(`notice_section_${eventId}`, JSON.stringify({ data: filteredNotices, ts: Date.now() }));

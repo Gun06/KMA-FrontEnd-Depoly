@@ -45,8 +45,8 @@ export const NoticeHeader = ({ noticeDetail }: NoticeHeaderProps) => {
         </span>
         <span className="text-gray-400">·</span>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words flex-1">
-          {noticeDetail.title}
-        </h1>
+        {noticeDetail.title}
+      </h1>
       </div>
       
       <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-gray-600">

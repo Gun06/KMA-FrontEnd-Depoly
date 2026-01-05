@@ -164,7 +164,7 @@ export default function Client() {
         views: viewCount,
         categoryName: notice.categoryName, // API에서 받은 categoryName 그대로 전달
         categoryId: notice.categoryId || notice.noticeCategoryId, // 카테고리 ID 전달
-        };
+      };
     });
 
     // 서버에서 이미 필터링 및 정렬된 결과를 반환
@@ -236,7 +236,7 @@ export default function Client() {
         </Link>
       </div>
 
-      <FilterBar
+        <FilterBar
         buttonTextMode="current"
         fields={[
           {
@@ -260,24 +260,24 @@ export default function Client() {
         initialValues={[sort, categoryId || ""]}
         initialSearchValue={q}
         searchPlaceholder="검색어를 입력해주세요."
-        buttons={[
-          { label: "검색", tone: "dark" },
-          { label: "등록하기", tone: "primary" },
-        ]}
-        showReset
+          buttons={[
+            { label: "검색", tone: "dark" },
+            { label: "등록하기", tone: "primary" },
+          ]}
+          showReset
         className="ml-auto !gap-3"
-        onFieldChange={(label, value) => {
-          const L = norm(String(label));
-          if (L === "정렬") setSort(value as Sort);
+          onFieldChange={(label, value) => {
+            const L = norm(String(label));
+            if (L === "정렬") setSort(value as Sort);
           else if (L === "유형") setCategoryId(value || undefined);
-          setPage(1);
-        }}
-        onSearch={(value) => { setQ(value); setPage(1); }}
-        onActionClick={(label) => {
-          if (label === "등록하기") router.push("/admin/boards/notice/main/write");
-        }}
+            setPage(1);
+          }}
+          onSearch={(value) => { setQ(value); setPage(1); }}
+          onActionClick={(label) => {
+            if (label === "등록하기") router.push("/admin/boards/notice/main/write");
+          }}
         onReset={() => { setSort("new"); setCategoryId(undefined); setQ(""); setPage(1); }}
-      />
+        />
 
       <NoticeEventTable
         rows={rows}
