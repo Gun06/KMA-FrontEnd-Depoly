@@ -4,7 +4,7 @@ import { convertPaymentStatusToKorean } from "@/types/registration";
 
 /**
  * 카테고리 문자열에서 거리와 세부종목 이름을 추출
- * @param category "10km | 짝궁마라톤" 형식의 문자열
+ * @param category "10km | 짝궁마라톤" 또는 "half | 세부종목" 형식의 문자열
  * @returns { distance: string, categoryName: string }
  */
 export const parseCategoryWithDistance = (category: string): { distance: string; categoryName: string } => {
@@ -12,16 +12,13 @@ export const parseCategoryWithDistance = (category: string): { distance: string;
     return { distance: '', categoryName: category };
   }
 
+  // | 기준으로 앞부분은 거리(종목), 뒷부분은 세부종목으로 처리
   const parts = category.split('|').map((p: string) => p.trim());
-  if (parts.length > 0) {
-    const firstPart = parts[0];
-    // 첫 번째 부분이 거리 형식인지 확인 (예: "10km", "3km" 등)
-    if (firstPart.match(/^\d+km$/i)) {
-      return {
-        distance: firstPart,
-        categoryName: parts.slice(1).join(' | ').trim()
-      };
-    }
+  if (parts.length >= 2) {
+    return {
+      distance: parts[0], // 앞부분을 거리로 (예: "10km", "half" 등)
+      categoryName: parts.slice(1).join(' | ').trim() // 뒷부분을 세부종목으로
+    };
   }
 
   return { distance: '', categoryName: category };
@@ -44,7 +41,8 @@ export const calculateParticipantFee = (category: string, eventInfo: EventRegist
   
   const selectedCategory = eventInfo.categorySouvenirList.find(c => {
     if (distance) {
-      return c.categoryName === categoryName && c.distance === distance;
+      // distance 비교 시 대소문자 무시 (Half vs half 등)
+      return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
     }
     return c.categoryName === categoryName;
   });
@@ -119,9 +117,10 @@ export const getCategoryDisplayText = (
   const { distance, categoryName } = parseCategoryWithDistance(participant.category);
   
   // categorySouvenirList에서 거리 정보 확인
+  // distance 비교 시 대소문자 무시 (Half vs half 등)
   const selectedCategory = eventInfo.categorySouvenirList.find(c => {
     if (distance) {
-      return c.categoryName === categoryName && c.distance === distance;
+      return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
     }
     return c.categoryName === categoryName;
   });

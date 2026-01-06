@@ -32,9 +32,10 @@ export const isSizeDisabled = (
   if (eventInfo && participant.category) {
     const { distance, categoryName } = parseCategoryWithDistance(participant.category);
     
+    // distance 비교 시 대소문자 무시 (Half vs half 등)
     const selectedCategory = eventInfo.categorySouvenirList.find(c => {
       if (distance) {
-        return c.categoryName === categoryName && c.distance === distance;
+        return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
       }
       return c.categoryName === categoryName;
     });
@@ -90,9 +91,10 @@ export const getSouvenirDisplayText = (
   if (participant.souvenir && participant.souvenir !== '') {
     const { distance, categoryName } = parseCategoryWithDistance(participant.category);
     
+    // distance 비교 시 대소문자 무시 (Half vs half 등)
     const selectedCategory = eventInfo.categorySouvenirList.find(c => {
       if (distance) {
-        return c.categoryName === categoryName && c.distance === distance;
+        return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
       }
       return c.categoryName === categoryName;
     });
