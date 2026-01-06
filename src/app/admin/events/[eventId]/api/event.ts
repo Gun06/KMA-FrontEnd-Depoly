@@ -60,5 +60,26 @@ export interface EventDetailApiResponse {
     name: string;
     sizes: string;
   }>;
+  // 페이지별 이미지 (다중 이미지 지원)
+  outlinePageImages?: Array<{
+    imageUrl: string;
+    orderNumber: number;
+  }>;
+  noticePageImages?: Array<{
+    imageUrl: string;
+    orderNumber: number;
+  }>;
+  meetingPlacePageImages?: Array<{
+    imageUrl: string;
+    orderNumber: number;
+  }>;
+  coursePageImages?: Array<{
+    imageUrl: string;
+    orderNumber: number;
+  }>;
+  souvenirPageImages?: Array<{
+    imageUrl: string;
+    orderNumber: number;
+  }>;
 }
 

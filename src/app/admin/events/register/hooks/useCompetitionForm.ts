@@ -595,7 +595,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
           const urlItem = item as { url: string };
           return {
             id: `api-upload-${index}-${Date.now()}`,
-            file: new File([], urlItem.url), // 빈 File 객체 (API 이미지는 File이 없음)
+            // 기존 이미지는 URL만 있으므로 file은 null로 설정하고 url로만 미리보기/식별
+            file: null,
+            url: urlItem.url,
             name: urlItem.url.split('/').pop() || 'image',
             size: 0,
             sizeMB: 0,

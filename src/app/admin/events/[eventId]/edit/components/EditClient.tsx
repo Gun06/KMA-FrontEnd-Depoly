@@ -15,7 +15,7 @@ import { useEventDetail } from '@/hooks/useEventDetail';
 import { transformApiResponseToFormPrefill, extractGroupsFromApiResponse, useEventCategoryDropdown } from '@/app/admin/events/register/api';
 import { useApiMutation } from '@/hooks/useFetch';
 import { FormDataBuilder } from '@/app/admin/events/register/api/formDataBuilder';
-import { updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi } from '@/app/admin/events/register/api';
+import { updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi, updateAllPageImages } from '@/app/admin/events/register/api';
 import Button from '@/components/common/Button/Button';
 import InfoModal from '@/app/admin/events/register/components/parts/InfoModal';
 
@@ -130,7 +130,7 @@ export default function EditClient({
     if (apiData) {
       // apiData.souvenirs에서 ID 매핑
       if (apiData.souvenirs && apiData.souvenirs.length > 0) {
-        apiData.souvenirs.forEach((souvenir, index) => {
+        apiData.souvenirs.forEach(souvenir => {
           const giftIndex = initialGifts.findIndex(
             g => g.name === souvenir.name && g.size === souvenir.sizes
           );
@@ -251,13 +251,13 @@ export default function EditClient({
             size: gift.size || '',
           })),
         })),
-      } as any;
+      } as UseCompetitionPrefill;
     }
 
     // API 데이터가 없으면 기존 로직 사용 (폴백)
     return (
-      (forms[eventId] as any) ??
-      (rowToPrefill(currentRow) as any) ??
+      (forms[eventId] as UseCompetitionPrefill | undefined) ??
+      (rowToPrefill(currentRow) as UseCompetitionPrefill) ??
       prefillForm
     );
   }, [apiData, forms, eventId, currentRow, prefillForm, bankName, virtualAccount]);
@@ -270,12 +270,43 @@ export default function EditClient({
       const formData = FormDataBuilder.buildEventUpdateFormData(
         eventId,
         payload,
-        apiData?.eventCategories as any,
-        apiData?.eventBanners as any,
+        apiData?.eventCategories,
+        apiData?.eventBanners?.map(banner => ({
+          id: banner.id ?? '',
+          imageUrl: banner.imageUrl,
+          url: banner.url,
+          providerName: banner.providerName,
+          bannerType: banner.bannerType,
+          static: banner.static,
+        })),
         apiData?.eventInfo?.eventStatus
       );
 
       await updateEventMutation.mutateAsync(formData);
+
+      // 페이지별 이미지 업데이트 (다중 이미지 지원)
+      const uploads = payload.uploads;
+      if (uploads) {
+        const result = await updateAllPageImages(eventId, {
+          outline: uploads.imgPost || [],     // 대회요강
+          notice: uploads.imgNotice || [],    // 유의사항
+          meeting: uploads.imgConfirm || [],  // 집결출발
+          course: uploads.imgCourse || [],    // 코스
+          souvenir: uploads.imgGift || [],    // 기념품
+        });
+
+        // 페이지별 이미지 업데이트 실패 시 경고 (대회 기본 정보는 이미 수정됨)
+        // 단, 에러가 있어도 refetch는 수행하여 최신 데이터 확인
+        if (!result.success && result.errors.length > 0) {
+          console.warn('페이지별 이미지 업데이트 실패:', result.errors);
+          setInfoModalType('warning');
+          setInfoModalMessage(
+            `대회 기본 정보는 수정되었으나 일부 이미지 업데이트에 실패했습니다:\n\n${result.errors.join('\n')}\n\n페이지를 새로고침하여 확인해주세요.`
+          );
+          setInfoModalOpen(true);
+          // 에러가 있어도 refetch는 수행
+        }
+      }
 
       // 성공 시 로컬 상태도 업데이트
       const patch = payloadToEventPatch(payload, currentRow);
@@ -293,6 +324,9 @@ export default function EditClient({
         queryClient.invalidateQueries({ queryKey: ['adminEventList'] }), // 대회 목록도 무효화
       ]);
 
+      // 페이지 이미지 데이터도 즉시 재조회 (public API는 React Query를 사용하지 않으므로 refetch 호출)
+      await refetch();
+
       if (payload.bank || payload.virtualAccount) {
         setBankName(payload.bank || '');
         setVirtualAccount(payload.virtualAccount || '');
@@ -303,7 +337,7 @@ export default function EditClient({
       setInfoModalType('success');
       setInfoModalMessage('대회 기본 정보가 성공적으로 수정되었습니다.');
       setInfoModalOpen(true);
-    } catch (error) {
+    } catch (_error) {
       // 에러 모달 표시
       setInfoModalType('error');
       setInfoModalMessage('대회 수정에 실패했습니다. 다시 시도해주세요.');
@@ -424,8 +458,10 @@ export default function EditClient({
   }
 
   // 에러 상태 처리 - SQL 오류 등은 치명적이지 않으므로 폼은 보여줌
-  const errorMessage = error 
-    ? (error as any)?.message || (error as any)?.data?.message || String(error) 
+  const errorMessage = error
+    ? (error.data as { message?: string } | undefined)?.message ??
+      error.message ??
+      String(error)
     : '';
   const isCriticalError = error && !apiData && isLoading === false;
   const isSouvenirError = error && (
@@ -503,7 +539,18 @@ export default function EditClient({
         onSubmit={handleSubmit}
         onSaveSouvenirs={handleSaveSouvenirs}
         onSaveCourses={handleSaveCategories}
-        existingEventBanners={apiData?.eventBanners as any}
+        existingEventBanners={
+          apiData?.eventBanners as
+            | Array<{
+                id: string;
+                imageUrl: string;
+                url: string;
+                providerName: string;
+                bannerType: string;
+                static: boolean;
+              }>
+            | undefined
+        }
         initialGifts={initialGifts}
         initialCourses={initialCourses}
       />

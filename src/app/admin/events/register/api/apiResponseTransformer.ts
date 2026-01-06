@@ -255,6 +255,16 @@ export function transformApiResponseToFormPrefill(
     });
   }
 
+  // 페이지별 이미지 배열을 orderNumber로 정렬하여 반환하는 헬퍼 함수
+  const sortImagesByOrder = (
+    images?: Array<{ imageUrl: string; orderNumber: number }>
+  ): Array<{ url: string }> => {
+    if (!images || images.length === 0) return [];
+    return images
+      .sort((a, b) => a.orderNumber - b.orderNumber)
+      .map((img) => ({ url: img.imageUrl }));
+  };
+
   // 업로드 정보 구성 (이미지 URL → UploadItem 형태)
   const uploads = {
     // 파트너 배너들
@@ -275,7 +285,7 @@ export function transformApiResponseToFormPrefill(
         ?.filter((banner) => banner.bannerType === 'ASSIST' && banner.imageUrl)
         .map((banner) => ({ url: banner.imageUrl })) || [],
 
-    // 메인/요강/페이지별 이미지들
+    // 메인/요강/단일 이미지들
     bannerMainDesktop: eventInfo.mainBannerPcImageUrl
       ? [{ url: eventInfo.mainBannerPcImageUrl }]
       : [],
@@ -294,24 +304,16 @@ export function transformApiResponseToFormPrefill(
     bannerSideMenu: eventInfo.sideMenuBannerImageUrl
       ? [{ url: eventInfo.sideMenuBannerImageUrl }]
       : [],
-    imgPost: eventInfo.eventOutlinePageImageUrl
-      ? [{ url: eventInfo.eventOutlinePageImageUrl }]
-      : [],
-    imgNotice: eventInfo.noticePageImageUrl
-      ? [{ url: eventInfo.noticePageImageUrl }]
-      : [],
-    imgGift: eventInfo.souvenirPageImageUrl
-      ? [{ url: eventInfo.souvenirPageImageUrl }]
-      : [],
-    imgConfirm: eventInfo.meetingPlacePageImageUrl
-      ? [{ url: eventInfo.meetingPlacePageImageUrl }]
-      : [],
     imgResult: eventInfo.resultImageUrl
       ? [{ url: eventInfo.resultImageUrl }]
       : [],
-    imgCourse: eventInfo.coursePageImageUrl
-      ? [{ url: eventInfo.coursePageImageUrl }]
-      : [],
+
+    // 페이지별 다중 이미지 (orderNumber로 정렬)
+    imgPost: sortImagesByOrder(apiData.outlinePageImages), // 대회요강
+    imgNotice: sortImagesByOrder(apiData.noticePageImages), // 유의사항
+    imgGift: sortImagesByOrder(apiData.souvenirPageImages), // 기념품
+    imgConfirm: sortImagesByOrder(apiData.meetingPlacePageImages), // 집결출발
+    imgCourse: sortImagesByOrder(apiData.coursePageImages), // 코스
   };
 
   return {

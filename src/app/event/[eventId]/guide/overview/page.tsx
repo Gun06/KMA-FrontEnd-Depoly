@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import Image from "next/image";
 
-interface EventOutlineInfo {
-  eventOutlinePageImageUrlById: string;
+interface EventPageImage {
+  imageUrl: string;
+  orderNumber: number;
 }
 
 export default function GuideOverviewPage({ params }: { params: { eventId: string } }) {
   const { eventId } = params;
-  const [eventData, setEventData] = useState<EventOutlineInfo | null>(null);
+  const [images, setImages] = useState<EventPageImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,12 +29,22 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
         
         if (response.ok) {
           const data = await response.json();
-          setEventData(data);
+          // API 응답이 배열인 경우 처리
+          if (Array.isArray(data) && data.length > 0) {
+            // orderNumber로 정렬하여 모든 이미지 저장
+            const sortedImages = [...data].sort((a, b) => a.orderNumber - b.orderNumber);
+            setImages(sortedImages);
+          } else if (data && typeof data === 'object' && 'eventOutlinePageImageUrlById' in data) {
+            // 단일 객체 응답인 경우 (하위 호환성)
+            setImages([{ imageUrl: data.eventOutlinePageImageUrlById, orderNumber: 0 }]);
+          } else {
+            setImages([]);
+          }
         } else {
           const errorText = await response.text();
           throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
         }
-      } catch (error) {
+      } catch (_error) {
         setError('이벤트 정보를 불러올 수 없습니다.');
       } finally {
         setIsLoading(false);
@@ -43,12 +54,9 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
     fetchEventData();
   }, [eventId]);
 
-  // API 데이터만 사용
-  const imageUrl = eventData?.eventOutlinePageImageUrlById;
-
   // 로딩 상태 제거 - 바로 콘텐츠 표시
 
-  if (error && !eventData) {
+  if (error && images.length === 0) {
     return (
       <SubmenuLayout 
         eventId={eventId}
@@ -83,23 +91,27 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
             <div className="flex justify-center mb-6">
               <div className="w-full max-w-4xl h-[600px] bg-gray-200 rounded-lg animate-pulse" />
             </div>
-          ) : imageUrl ? (
-            <div className="flex justify-center mb-6">
-              <Image
-                src={imageUrl}
-                alt="대회 개요 이미지"
-                width={800}
-                height={600}
-                priority
-                className="max-w-full h-auto select-none pointer-events-none"
-                draggable={false}
-                style={{
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  MozUserSelect: 'none',
-                  msUserSelect: 'none'
-                }}
-              />
+          ) : images.length > 0 ? (
+            <div>
+              {images.map((image, index) => (
+                <div key={`${image.orderNumber}-${index}`} className="flex justify-center mb-6">
+                  <Image
+                    src={image.imageUrl}
+                    alt={`대회 개요 이미지 ${index + 1}`}
+                    width={800}
+                    height={600}
+                    priority={index === 0}
+                    className="max-w-full h-auto select-none pointer-events-none"
+                    draggable={false}
+                    style={{
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none'
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           ) : null}
       </div>
