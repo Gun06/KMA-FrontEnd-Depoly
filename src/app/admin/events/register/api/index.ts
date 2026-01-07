@@ -10,13 +10,6 @@ export { transformApiResponseToFormPrefill, extractGroupsFromApiResponse } from 
 export { useSouvenirDropdown, useEventCategoryDropdown } from './dropdownApi';
 export type { SouvenirDropdownItem, EventCategoryDropdownItem } from './dropdownApi';
 
-// 페이지별 이미지 관리 API
-export { 
-  buildPageImageFormData,
-  updatePageImages,
-  updateAllPageImages,
-} from './pageImageApi';
-
 // 대회등록 관련 타입 export
 export type {
   BannerType,
@@ -40,10 +33,4 @@ export type {
   EventFormState,
   EventCreatePayload,
   EventStatus,
-  // 페이지별 이미지 타입
-  EventPageImage,
-  EventDetailPageImages,
-  EventPageImageRequest,
-  EventPageImageUpdateRequest,
-  PageImageApiPayload,
 } from './types';

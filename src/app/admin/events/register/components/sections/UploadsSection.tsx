@@ -4,7 +4,6 @@ import { cn } from "@/utils/cn";
 import FormTable from "@/components/admin/Form/FormTable";
 import NoticeMessage from "@/components/admin/Form/NoticeMessage";
 import FileSection from "@/components/admin/Form/FileSection";
-import SortableFileSection from "@/components/admin/Form/SortableFileSection";
 import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
 
@@ -161,9 +160,9 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
         />
       </div>
 
-      {/* 3. 각 페이지별 이미지 등록 (드래그 앤 드롭 + 순서 변경 버튼) */}
+      {/* 3. 각 페이지별 이미지 등록 */}
       <FormTable title="각 페이지별 이미지 등록" labelWidth={200} center>
-        <SortableFileSection
+        <FileSection
           label="유의사항 페이지"
           editable={!readOnly}
           accept="image/*"
@@ -174,7 +173,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueReadonly={toRO(f.imgNotice)}
           contentClassName={cn("px-4", contentPad((f.imgNotice ?? []).length))}
         />
-        <SortableFileSection
+        <FileSection
           label="대회요강 페이지"
           editable={!readOnly}
           accept="image/*"
@@ -185,7 +184,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueReadonly={toRO(f.imgPost)}
           contentClassName={cn("px-4", contentPad((f.imgPost ?? []).length))}
         />
-        <SortableFileSection
+        <FileSection
           label="대회코스 페이지"
           editable={!readOnly}
           accept="image/*"
@@ -196,7 +195,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueReadonly={toRO(f.imgCourse)}
           contentClassName={cn("px-4", contentPad((f.imgCourse ?? []).length))}
         />
-        <SortableFileSection
+        <FileSection
           label="기념품 상세 페이지"
           editable={!readOnly}
           accept="image/*"
@@ -207,7 +206,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueReadonly={toRO(f.imgGift)}
           contentClassName={cn("px-4", contentPad((f.imgGift ?? []).length))}
         />
-        <SortableFileSection
+        <FileSection
           label="집결/출발 이미지"
           editable={!readOnly}
           accept="image/*"
@@ -218,25 +217,19 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueReadonly={toRO(f.imgConfirm)}
           contentClassName={cn("px-4", contentPad((f.imgConfirm ?? []).length))}
         />
-      </FormTable>
-
-      {/* 인증서 배경 이미지 (단일 파일) */}
-      <FormTable title="인증서 배경 이미지" labelWidth={200} center>
         <FileSection
           label="인증서 배경 이미지"
           editable={!readOnly}
           accept="image/*"
           maxSizeMB={30}
-          helper={"선택된 파일 없음 / 30MB 이내"}
+          helper={"선택된 파일 없음. 최대 10개 / 30MB 이내"}
           valueEditable={f.imgResult}
           onChangeEditable={f.setImgResult}
           valueReadonly={toRO(f.imgResult)}
           contentClassName={cn("px-4", contentPad((f.imgResult ?? []).length))}
-          single={true}
         />
       </FormTable>
 
-      {/* 인증서 배경 이미지 안내 메시지 */}
       <div className="flex mx-auto px-4">
         <NoticeMessage
           items={[

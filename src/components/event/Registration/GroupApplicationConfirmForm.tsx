@@ -420,7 +420,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
                 
                 {openDropdown === 'year' && (
                   <div className="absolute top-full left-0 mt-1 w-20 sm:w-24 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                    {Array.from({ length: 100 }, (_, i) => 2025 - i).map(year => (
+                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
                       <button
                         key={year}
                         onClick={() => {

@@ -8,7 +8,7 @@ import { EventDataTransformer } from './api/eventDataTransformer';
 import { FormDataBuilder } from './api/formDataBuilder';
 import type { EventCreatePayload } from './api/types';
 import { createImageUploadErrorMessage } from '@/utils/errorHandler';
-import { useCreateEvent, updateAllPageImages } from './api';
+import { useCreateEvent, updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi } from './api';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
 import SuccessModal from './components/parts/SuccessModal';
 import LoadingModal from './components/parts/LoadingModal';
@@ -71,30 +71,6 @@ export default function Client() {
           },
         });
       });
-
-      // 6. 페이지별 이미지 업데이트 (다중 이미지 지원)
-      const uploads = payload.uploads;
-      if (uploads) {
-        const result = await updateAllPageImages(eventId, {
-          outline: uploads.imgPost || [],     // 대회요강
-          notice: uploads.imgNotice || [],    // 유의사항
-          meeting: uploads.imgConfirm || [],  // 집결출발
-          course: uploads.imgCourse || [],    // 코스
-          souvenir: uploads.imgGift || [],    // 기념품
-        });
-
-        // 페이지별 이미지 업데이트 실패 시 경고 (대회는 이미 생성됨)
-        if (!result.success) {
-          console.warn('페이지별 이미지 업데이트 실패:', result.errors);
-          setLoadingModalOpen(false);
-          setErrorMessage(
-            `대회는 생성되었으나 일부 이미지 업데이트에 실패했습니다:\n\n${result.errors.join('\n')}\n\n대회 수정 페이지에서 이미지를 다시 업로드해주세요.`
-          );
-          setErrorModalOpen(true);
-          setCreatedEventId(eventId);
-          return;
-        }
-      }
 
       // 기념품과 종목은 대회 생성 후 대회 수정 페이지에서 관리하므로 여기서는 호출하지 않음
 

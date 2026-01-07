@@ -278,19 +278,28 @@ export class EventDataTransformer {
       'mainBannerMobileImage': '메인 배너 (모바일)',
       'mainOutlinePcImage': '요강 배너 (PC)',
       'mainOutlineMobileImage': '요강 배너 (모바일)',
+      'eventOutlineImage': '홍보 배너',
       'promotionBannerImage': '홍보 배너',
+      'souvenirImage': '기념품 이미지',
+      'noticeImage': '공지사항 이미지',
+      'meetingPlaceImage': '장소 안내 이미지',
       'resultImage': '결과 이미지',
+      'courseImage': '코스 이미지',
     };
 
-    // 1. 필수 이미지 검증 (백엔드 스펙에 맞춰 페이지별 이미지 제외)
-    // 페이지별 이미지(eventOutlineImage, souvenirImage, noticeImage, meetingPlaceImage, courseImage)는 별도 API로 업로드
+    // 1. 필수 이미지 검증 (메인/요강 배너 4종 포함)
     const requiredImages = [
       'mainBannerPcImage',
       'mainBannerMobileImage',
       'mainOutlinePcImage',
       'mainOutlineMobileImage',
+      'eventOutlineImage',
       'promotionBannerImage',
+      'souvenirImage',
+      'noticeImage',
+      'meetingPlaceImage',
       'resultImage',
+      'courseImage',
     ] as const;
 
     for (const imageKey of requiredImages) {

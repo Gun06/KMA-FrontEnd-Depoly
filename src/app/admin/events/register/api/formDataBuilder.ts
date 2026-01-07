@@ -114,10 +114,14 @@ export class FormDataBuilder {
     }
 
     // 2) 나머지 필수/선택 이미지들 — 존재 시 추가
-    // 백엔드 스펙: 페이지별 이미지(eventOutlineImage, souvenirImage, noticeImage, meetingPlaceImage, courseImage)는 제외
     const otherImages = [
+      { key: 'eventOutlineImage', file: imageFiles.eventOutlineImage },
       { key: 'promotionBannerImage', file: imageFiles.promotionBannerImage },
+      { key: 'souvenirImage', file: imageFiles.souvenirImage },
+      { key: 'noticeImage', file: imageFiles.noticeImage },
+      { key: 'meetingPlaceImage', file: imageFiles.meetingPlaceImage },
       { key: 'resultImage', file: imageFiles.resultImage },
+      { key: 'courseImage', file: imageFiles.courseImage },
       // 선택: 사이드메뉴 배너(herosection 이미지)
       { key: 'sideMenuBannerImage', file: imageFiles.sideMenuBannerImage },
     ];
@@ -168,7 +172,7 @@ export class FormDataBuilder {
         id: string;
         name: string;
         sizes: string;
-        eventCategoryId?: string;
+        eventCategoryId: string;
       }>;
     }>,
     existingEventBanners?: Array<{
@@ -179,7 +183,7 @@ export class FormDataBuilder {
       bannerType: string;
       static: boolean;
     }>,
-    _existingEventStatus?: string // 기존 eventStatus (현재는 사용하지 않음)
+    existingEventStatus?: string // 기존 eventStatus 추가
   ): FormData {
     const formData = new FormData();
 
@@ -388,7 +392,7 @@ export class FormDataBuilder {
           // imageUrl로 찾지 못한 경우, bannerType과 providerName으로 찾기 (fallback)
           if (!existingBanner && !newFile) {
             // existingBannerMap에서 SPONSOR 타입이고 providerName이 일치하는 배너 찾기
-            for (const [, banner] of existingBannerMap.entries()) {
+            for (const [imageUrl, banner] of existingBannerMap.entries()) {
               if (banner.bannerType === 'SPONSOR' && banner.providerName === trimmedName) {
                 existingBanner = banner;
                 break;
@@ -419,7 +423,7 @@ export class FormDataBuilder {
           // imageUrl로 찾지 못한 경우, bannerType과 providerName으로 찾기 (fallback)
           if (!existingBanner && !newFile) {
             // existingBannerMap에서 ASSIST 타입이고 providerName이 일치하는 배너 찾기
-            for (const [, banner] of existingBannerMap.entries()) {
+            for (const [imageUrl, banner] of existingBannerMap.entries()) {
               if (banner.bannerType === 'ASSIST' && banner.providerName === trimmedName) {
                 existingBanner = banner;
                 break;

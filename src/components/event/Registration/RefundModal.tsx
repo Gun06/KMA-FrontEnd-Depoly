@@ -43,6 +43,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   });
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false); // 2중 팝업 확인 다이얼로그 표시 여부
   const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
   const bankDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -102,12 +103,19 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
     }
 
     setError(null);
+    // 폼 검증 통과 시 확인 다이얼로그 표시
+    setShowConfirmDialog(true);
+  };
 
+  // 확인 다이얼로그에서 최종 환불 신청 처리
+  const handleFinalSubmit = async () => {
     try {
       await onSubmit(formData.bankName.trim(), formData.accountNumber.trim(), formData.accountHolderName.trim());
       // 성공 시 성공 상태로 전환
+      setShowConfirmDialog(false);
       setIsSuccess(true);
     } catch (error) {
+      setShowConfirmDialog(false);
       setError(error instanceof Error ? error.message : '환불 요청에 실패했습니다.');
     }
   };
@@ -116,6 +124,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
     setFormData({ bankName: '', accountNumber: '', accountHolderName: '' });
     setError(null);
     setIsSuccess(false);
+    setShowConfirmDialog(false);
     setIsBankDropdownOpen(false);
     onClose();
   };
@@ -133,11 +142,11 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-7 w-full max-w-sm sm:max-w-md mx-4">
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">환불 신청</h2>
+        <div className="flex items-start justify-between mb-5">
+          <h2 className="text-lg font-semibold text-gray-900 leading-none">환불 신청</h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -149,27 +158,57 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
 
         {/* 성공 메시지 */}
         {isSuccess ? (
-          <div className="space-y-4">
-            <div className="text-center py-4">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="space-y-2">
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50 ring-8 ring-green-50">
+                <svg className="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-base font-medium text-gray-900 mb-2">
-                환불요청되었습니다
-              </p>
-              <p className="text-sm text-gray-600">
-                관리자 검토 후 진행됩니다.
-              </p>
+              <h3 className="text-lg font-semibold text-gray-900">환불 요청이 접수되었습니다</h3>
+              <p className="mt-1 text-sm text-gray-600">관리자 검토 후 진행됩니다.</p>
             </div>
-            <div className="flex justify-center pt-4">
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={handleSuccessConfirm}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="w-full h-10 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
               >
                 확인
+              </button>
+            </div>
+          </div>
+        ) : showConfirmDialog ? (
+          /* 확인 다이얼로그 (2중 팝업) */
+          <div className="space-y-5">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 ring-8 ring-blue-50">
+                <svg className="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-gray-900">최종 확인</h3>
+              <div className="mt-2 text-sm text-gray-600 space-y-1">
+                <p>환불 접수시 재신청이 불가합니다.</p>
+                <p>재신청 또는 단체로 재등록을 원하시는 경우에는 사무국으로 연락 바랍니다.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 h-10 px-4 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors"
+                disabled={isLoading}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleFinalSubmit}
+                className="flex-1 h-10 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? '처리 중...' : '환불 신청'}
               </button>
             </div>
           </div>
@@ -255,8 +294,10 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
             )}
 
             {/* 안내 문구 */}
-            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md space-y-1">
               <p>신청 하신 후 검토를 거쳐 3주 이내 환불 될 예정입니다.</p>
+              <p>환불 접수시 재신청이 불가합니다.</p>
+              <p>재신청 또는 단체로 재등록을 원하시는 경우에는 사무국으로 연락 바랍니다.</p>
             </div>
 
             {/* 버튼들 */}

@@ -165,7 +165,9 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
   };
 
 
-  const years = Array.from({ length: 100 }, (_, i) => 2025 - i);
+  // 현재 연도를 기준으로 100년 범위 생성 (예: 2026, 2025, ... )
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
 

@@ -3,6 +3,7 @@
 
 import { useApiMutation } from '@/hooks/useFetch';
 import { useQueryClient } from '@tanstack/react-query';
+import { extractApiErrorMessage } from '@/utils/errorHandler';
 import type { EventCreatePayload } from './types';
 import { useAdminEventsActions } from '@/components/providers/AdminEventsContext';
 
@@ -46,82 +47,4 @@ export function useCreateEvent() {
       // onError는 제거: 에러는 Client.tsx의 catch 블록에서 커스텀 모달로 처리
     }
   );
-}
-
-// ===== 페이지별 이미지 관리 API (스웨거 스펙 준수) =====
-
-/**
- * 페이지별 이미지 업데이트 API 호출 함수
- * POST /api/v1/event/{eventId}/{pageName}Page
- */
-async function updatePageImages(
-  eventId: string,
-  pageName: 'outline' | 'notice' | 'meeting' | 'course' | 'souvenir',
-  formData: FormData
-): Promise<void> {
-  const response = await fetch(`/api/v1/event/${eventId}/${pageName}Page`, {
-    method: 'POST',
-    body: formData,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || `${pageName} 페이지 이미지 업데이트 실패`);
-  }
-}
-
-/**
- * 대회요강 페이지 이미지 업데이트
- * POST /api/v1/event/{eventId}/outlinePage
- */
-export async function updateOutlinePageImages(
-  eventId: string,
-  formData: FormData
-): Promise<void> {
-  return updatePageImages(eventId, 'outline', formData);
-}
-
-/**
- * 유의사항 페이지 이미지 업데이트
- * POST /api/v1/event/{eventId}/noticePage
- */
-export async function updateNoticePageImages(
-  eventId: string,
-  formData: FormData
-): Promise<void> {
-  return updatePageImages(eventId, 'notice', formData);
-}
-
-/**
- * 집결출발 페이지 이미지 업데이트
- * POST /api/v1/event/{eventId}/meetingPage
- */
-export async function updateMeetingPageImages(
-  eventId: string,
-  formData: FormData
-): Promise<void> {
-  return updatePageImages(eventId, 'meeting', formData);
-}
-
-/**
- * 코스 페이지 이미지 업데이트
- * POST /api/v1/event/{eventId}/coursePage
- */
-export async function updateCoursePageImages(
-  eventId: string,
-  formData: FormData
-): Promise<void> {
-  return updatePageImages(eventId, 'course', formData);
-}
-
-/**
- * 기념품 페이지 이미지 업데이트
- * POST /api/v1/event/{eventId}/souvenirPage
- */
-export async function updateSouvenirPageImages(
-  eventId: string,
-  formData: FormData
-): Promise<void> {
-  return updatePageImages(eventId, 'souvenir', formData);
 }
