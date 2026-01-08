@@ -63,13 +63,13 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
           });
         }
         
-        // 상단 고정용 필독 항목 (최대 10개)
+        // 상단 고정용 필독 항목 (최대 20개)
         const 필독Items: TableNoticeItem[] = [];
         const 필독Ids = new Set<string>();
         
-        // contentList에서 필독 항목을 찾아서 상단 고정에 추가 (최대 10개)
+        // contentList에서 필독 항목을 찾아서 상단 고정에 추가 (최대 20개)
         for (const notice of contentList) {
-          if (필독Items.length >= 10) break; // 최대 10개 제한
+          if (필독Items.length >= 20) break; // 최대 20개 제한
           
           const categoryName = categoryIdToName.get(notice.category) || notice.category;
           const category = convertCategory(categoryName);
@@ -90,19 +90,21 @@ export const useNoticeData = (eventId: string, currentPage: number, pageSize: nu
           }
         }
         
-        // contentList를 원래 순서대로 순회하여 일반 목록 구성 (필독 포함)
+        // contentList를 원래 순서대로 순회하여 일반 목록 구성 (필독 제외)
         const regularItems: TableNoticeItem[] = [];
         
         for (const notice of contentList) {
           const categoryName = categoryIdToName.get(notice.category) || notice.category;
           const category = convertCategory(categoryName);
           
-          // 필독 항목이 상단 고정에 있으면 일반 목록용으로 다른 ID 사용
+          // 필독 항목이 상단 고정에 있으면 일반 목록에 추가하지 않음
           const is필독InPinned = category === '필독' && 필독Ids.has(notice.id);
-          const itemId = is필독InPinned ? `${notice.id}_regular` : notice.id;
+          if (is필독InPinned) {
+            continue; // 중복 표기하지 않음
+          }
           
           regularItems.push({
-            id: itemId,
+            id: notice.id,
             title: notice.title,
             author: notice.author,
             date: notice.createdAt ? notice.createdAt.split('T')[0] : '2025-01-01',

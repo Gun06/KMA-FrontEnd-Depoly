@@ -25,6 +25,8 @@ type Props<T> = {
   zebra?: boolean;
   minWidth?: number | string;
   onRowClick?: (row: T) => void;
+  hideTopBorder?: boolean;
+  hideHeader?: boolean;
 };
 
 export default function BaseTable<T>({
@@ -36,6 +38,8 @@ export default function BaseTable<T>({
   zebra = false,
   minWidth,
   onRowClick,
+  hideTopBorder = false,
+  hideHeader = false,
 }: Props<T>) {
   const thAlign = (a?: "left" | "center" | "right") =>
     a === "left" ? "text-left" : a === "right" ? "text-right" : "text-center";
@@ -46,24 +50,24 @@ export default function BaseTable<T>({
   return (
     <div className="hidden md:block w-full overflow-x-auto">
       <table
-        className="w-full border-t border-[#E5E7EB]"
+        className={clsx("w-full", hideTopBorder ? "" : "border-t border-[#E5E7EB]")}
         style={minWidth ? { minWidth } : undefined}
       >
-        <thead>
-          <tr className={clsx(headRowClassName)}>
+        <thead className={hideHeader ? "h-0 p-0 m-0" : ""}>
+          <tr className={clsx(headRowClassName, hideHeader ? "h-0 p-0 m-0" : "")}>
             {columns.map((c, i) => (
               <th
                 key={String(c.key) + i}
                 scope="col"
-                style={{ width: c.width }}
+                style={{ width: c.width, ...(hideHeader ? { height: 0, padding: 0, margin: 0, border: 0, lineHeight: 0 } : {}) }}
                 className={clsx(
-                  "h-12 px-2.5 lg:px-3.5 font-medium",
+                  hideHeader ? "h-0 p-0 m-0 border-0" : "h-12 px-2.5 lg:px-3.5 font-medium",
                   // ✅ 헤더는 기본 '가운데'. 필요하면 column.headerAlign으로 개별 지정
                   thAlign(c.headerAlign ?? "center"),
                   c.headerClassName
                 )}
               >
-                {c.header}
+                {hideHeader ? <span className="sr-only invisible">{c.header}</span> : c.header}
               </th>
             ))}
           </tr>

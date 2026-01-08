@@ -31,7 +31,7 @@ export default function NoticeTable({
   totalElements = 0,
 }: Props) {
 
-  const rows = useMemo<DisplayRow[]>(() => {
+  const { pinnedRows, regularRows } = useMemo(() => {
     // 모든 데이터를 그대로 사용 (필터링하지 않음)
     // 데이터는 이미 상위 컴포넌트에서 처리되어 전달됨
     
@@ -41,18 +41,22 @@ export default function NoticeTable({
     const pinnedIdSet = new Set<string | number>(effectivePinned.map((r) => r.id));
     const nonPinned = data.filter((r) => !pinnedIdSet.has(r.id));
 
-    // 정렬: pinned 먼저, 그 다음 일반 항목
-    const sorted = [...effectivePinned, ...nonPinned];
+    const pinnedRows: DisplayRow[] = effectivePinned.map((row) => ({
+      ...row,
+      __displayNo: row.__displayNo,
+    }));
 
-    return sorted.map((row) => {
-      // pinned 항목이면서 __displayNo가 '필독'인 경우 '필독'으로 표시
-      if (pinnedIdSet.has(row.id) && row.__displayNo === '필독') {
-        return { ...row, __displayNo: '필독' as const };
-      }
-      // __displayNo는 이미 전달받은 값 사용
-      return { ...row, __displayNo: row.__displayNo };
-    });
+    const regularRows: DisplayRow[] = nonPinned.map((row) => ({
+      ...row,
+      __displayNo: row.__displayNo,
+    }));
+
+    return { pinnedRows, regularRows };
   }, [data, pinLimit]);
+
+  const rows = useMemo<DisplayRow[]>(() => {
+    return [...pinnedRows, ...regularRows];
+  }, [pinnedRows, regularRows]);
 
   const handleRowKeyDown =
     (id: string | number, clickable: boolean) =>
@@ -72,7 +76,8 @@ export default function NoticeTable({
       align: "center",
       className: "align-middle whitespace-nowrap",
       render: (row) => {
-        const isPinned = row.__displayNo === '필독';
+        const isPinned = row.pinned;
+        // 고정글인 경우
         if (isPinned) {
           return showPinnedBadgeInNo ? (
             <div className="flex items-center justify-center">
@@ -82,11 +87,20 @@ export default function NoticeTable({
             <span className="inline-block w-4 h-4" />
           );
         }
+        // 일반글인 경우 - 태그로 표시
+        if (row.category) {
+          return (
+            <div className="flex items-center justify-center">
+              <CategoryBadge category={row.category} size="md" />
+            </div>
+          );
+        }
         // __displayNo가 없으면 빈 값 표시 (답변 행 등)
         if (row.__displayNo === undefined) {
           return <span className="text-[14px] text-[#111827]"></span>;
         }
-        return <span className="text-[14px] text-[#111827]">{row.__displayNo}</span>;
+        // 폴백: 태그가 없으면 빈 값
+        return <span className="text-[14px] text-[#111827]"></span>;
       },
     },
     {
@@ -95,13 +109,10 @@ export default function NoticeTable({
       align: "left",
       className: "text-left",
       render: (row) => {
-        const isPinned = row.__displayNo === '필독';
+        const isPinned = row.pinned;
         const clickable = !(isPinned && !pinnedClickable);
         return (
-          <div className="flex min-w-0 items-center gap-2">
-            {!isPinned && row.category && (
-              <CategoryBadge category={row.category} size="xs" />
-            )}
+          <div className="flex min-w-0 items-center">
             <span
               className={`text-[15px] text-[#0F1113] truncate ${clickable ? 'cursor-pointer hover:underline' : ''}`}
               title={row.title}
@@ -140,81 +151,172 @@ export default function NoticeTable({
   return (
     <div className="w-full">
       {/* Desktop / Tablet */}
-      <BaseTable
-        columns={columns}
-        data={rows}
-        rowKey={(r) => r.id}
-        headRowClassName="bg-[#3B3F45] text-white text-center"
-        zebra={false}
-        // 모든 행에 동일한 hover 스타일 적용
-        rowClassName={(row) => {
-          const isPinned = row.__displayNo === '필독';
-          const clickable = !(isPinned && !pinnedClickable);
-          return `hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
-        }}
-        onRowClick={(row) => {
-          const isPinned = row.__displayNo === '필독';
-          const clickable = !(isPinned && !pinnedClickable);
-          if (clickable) {
-            onRowClick?.(row.id);
-          }
-        }}
-      />
-
-      {/* Mobile */}
-      <ul className="md:hidden divide-y divide-[#F1F3F5]">
-        {rows.map((row) => {
-          const isPinned = row.__displayNo === '필독';
-          const clickable = pinnedClickable || !isPinned;
-
-          return (
-            <li
-              key={row.id}
-              tabIndex={-1}
-              className={[
-                'px-2 py-3 transition-colors outline-none sm:px-4 active:bg-transparent focus:bg-transparent',
-                // 모든 행에 동일한 스타일 적용
-                'bg-white hover:bg-[#F8FAFF]',
-                clickable ? 'cursor-pointer' : '',
-              ].join(' ')}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
+      <div className="hidden md:block">
+        {/* 고정글 섹션 */}
+        {pinnedRows.length > 0 && (
+          <div className="bg-white">
+            <BaseTable
+              columns={columns}
+              data={pinnedRows}
+              rowKey={(r) => r.id}
+              headRowClassName="bg-[#3B3F45] text-white text-center"
+              zebra={false}
+              rowClassName={(row) => {
+                const isPinned = row.pinned;
+                const clickable = !(isPinned && !pinnedClickable);
+                return `bg-white hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
+              }}
+              onRowClick={(row) => {
+                const isPinned = row.pinned;
+                const clickable = !(isPinned && !pinnedClickable);
                 if (clickable) {
                   onRowClick?.(row.id);
                 }
               }}
-              onKeyDown={handleRowKeyDown(row.id, clickable)}
-            >
-              <div className="grid grid-cols-[40px_1fr] gap-3 items-start">
-                <div className="h-6 flex items-center justify-center">
-                  <CategoryBadge category={isPinned ? '필독' : (row.category ?? '일반')} size="xs" />
-                </div>
+            />
+          </div>
+        )}
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start gap-1.5">
-                    <span
-                      className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
-                      title={row.title}
-                    >
-                      {row.title}
-                    </span>
-                  </div>
+        {/* 일반글 섹션 */}
+        {regularRows.length > 0 && (
+          <div className="bg-white">
+            <BaseTable
+              columns={columns}
+              data={regularRows}
+              rowKey={(r) => r.id}
+              headRowClassName={pinnedRows.length > 0 ? undefined : "bg-[#3B3F45] text-white text-center"}
+              zebra={false}
+              hideTopBorder={pinnedRows.length > 0}
+              hideHeader={pinnedRows.length > 0}
+              rowClassName={(row) => {
+                const clickable = true;
+                return `bg-white hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
+              }}
+              onRowClick={(row) => {
+                onRowClick?.(row.id);
+              }}
+            />
+          </div>
+        )}
+      </div>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280]">
-                    <span className="shrink-0">{row.author}</span>
-                    <span className="opacity-30">·</span>
-                    <span className="shrink-0">{row.date}</span>
-                    <span className="opacity-30">·</span>
-                    <span className="shrink-0">첨부 {row.attachments ?? 0}</span>
-                    <span className="opacity-30">·</span>
-                    <span className="shrink-0">조회 {row.views}</span>
-                  </div>
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {/* Mobile */}
+      <div className="md:hidden">
+        {/* 고정글 섹션 */}
+        {pinnedRows.length > 0 && (
+          <div className="bg-white">
+            <ul className="divide-y divide-[#F1F3F5]">
+              {pinnedRows.map((row) => {
+                const isPinned = row.pinned;
+                const clickable = pinnedClickable || !isPinned;
+
+                return (
+                  <li
+                    key={row.id}
+                    tabIndex={-1}
+                    className={[
+                      'px-2 py-3 transition-colors outline-none sm:px-4 active:bg-transparent focus:bg-transparent',
+                      'bg-white hover:bg-[#F8FAFF]',
+                      clickable ? 'cursor-pointer' : '',
+                    ].join(' ')}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      if (clickable) {
+                        onRowClick?.(row.id);
+                      }
+                    }}
+                    onKeyDown={handleRowKeyDown(row.id, clickable)}
+                  >
+                    <div className="grid grid-cols-[40px_1fr] gap-3 items-start">
+                      <div className="h-6 flex items-center justify-center">
+                        <CategoryBadge category={row.category ?? '필독'} size="xs" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-1.5">
+                          <span
+                            className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
+                            title={row.title}
+                          >
+                            {row.title}
+                          </span>
+                        </div>
+
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280]">
+                          <span className="shrink-0">{row.author}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">{row.date}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">첨부 {row.attachments ?? 0}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">조회 {row.views}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* 일반글 섹션 */}
+        {regularRows.length > 0 && (
+          <div className="bg-white">
+            <ul className="divide-y divide-[#F1F3F5]">
+              {regularRows.map((row) => {
+                const clickable = true;
+
+                return (
+                  <li
+                    key={row.id}
+                    tabIndex={-1}
+                    className={[
+                      'px-2 py-3 transition-colors outline-none sm:px-4 active:bg-transparent focus:bg-transparent',
+                      'bg-white hover:bg-[#F8FAFF]',
+                      clickable ? 'cursor-pointer' : '',
+                    ].join(' ')}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      if (clickable) {
+                        onRowClick?.(row.id);
+                      }
+                    }}
+                    onKeyDown={handleRowKeyDown(row.id, clickable)}
+                  >
+                    <div className="grid grid-cols-[40px_1fr] gap-3 items-start">
+                      <div className="h-6 flex items-center justify-center">
+                        <CategoryBadge category={row.category ?? '일반'} size="xs" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-1.5">
+                          <span
+                            className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
+                            title={row.title}
+                          >
+                            {row.title}
+                          </span>
+                        </div>
+
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] leading-[18px] text-[#6B7280]">
+                          <span className="shrink-0">{row.author}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">{row.date}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">첨부 {row.attachments ?? 0}</span>
+                          <span className="opacity-30">·</span>
+                          <span className="shrink-0">조회 {row.views}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
