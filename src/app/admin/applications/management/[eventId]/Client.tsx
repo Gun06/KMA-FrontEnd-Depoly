@@ -57,6 +57,22 @@ export default function Client({
     }
   }, [eventId]);
 
+  // 드롭다운 외부 클릭 감지
+  const eventDropdownRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
+        setIsEventDropdownOpen(false);
+      }
+    };
+    if (isEventDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isEventDropdownOpen]);
+
   // 항상 검색 API 사용 (서버에서 정렬과 번호를 내려줌)
   const searchParams = React.useMemo(() => ({
     eventIds: selectedEventIds.length > 0 ? selectedEventIds : [eventId],
@@ -344,22 +360,6 @@ export default function Client({
     return <div className="p-6">에러가 발생했습니다: {error.message}</div>;
   }
 
-  // 드롭다운 외부 클릭 감지
-  const eventDropdownRef = React.useRef<HTMLDivElement>(null);
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
-        setIsEventDropdownOpen(false);
-      }
-    };
-    if (isEventDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isEventDropdownOpen]);
-
   return (
     <div className="space-y-6">
       {/* 대회 다중 선택 드롭다운 */}
@@ -450,7 +450,7 @@ export default function Client({
           >
             <span className="text-left">
               {selectedEvents.length > 0 
-                ? `${selectedEvents.length}개 대회 선택됨` 
+                ? `${selectedEvents.length}개 대회의 신청자를 조회 중입니다.` 
                 : '대회를 선택하세요'}
             </span>
             <ChevronDown
@@ -527,14 +527,17 @@ export default function Client({
             </div>
           )}
         </div>
-        
-        {/* 선택 정보 표시 */}
-        {selectedEventIds.length > 1 && (
-          <div className="text-sm text-gray-600">
-            {selectedEventIds.length}개 대회의 신청자를 조회 중입니다.
-          </div>
-        )}
       </div>
+
+      {/* 데이터가 없을 때 안내 메시지 */}
+      {!isLoading && rows.length === 0 && total === 0 && (
+        <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-600 mb-2">신청자가 없습니다.</p>
+          <p className="text-sm text-gray-500">
+            선택된 대회({selectedEvents.map(e => e.nameKr || e.nameEn || e.id).join(', ')})에 등록된 신청자가 없습니다.
+          </p>
+        </div>
+      )}
 
       <ApplicantsManageTable
         rows={rows}

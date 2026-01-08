@@ -105,6 +105,14 @@ export function transformApiDataToEventDetail(
     return colorMap[hexColor] || 'grad-blue';
   };
 
+  // visibleStatus 변환 (boolean 레거시 지원)
+  const normalizeVisibleStatus = (status: 'OPEN' | 'TEST' | 'CLOSE' | boolean): 'OPEN' | 'TEST' | 'CLOSE' => {
+    if (typeof status === 'boolean') {
+      return status ? 'OPEN' : 'CLOSE';
+    }
+    return status;
+  };
+
   return {
     id: eventInfo.id,
     nameKr: eventInfo.nameKr,
@@ -131,7 +139,7 @@ export function transformApiDataToEventDetail(
     coursePageImageUrl: eventInfo.coursePageImageUrl,
     eventsPageUrl: eventInfo.eventsPageUrl,
     eventStatus: eventInfo.eventStatus,
-    visibleStatus: eventInfo.visibleStatus,
+    visibleStatus: normalizeVisibleStatus(eventInfo.visibleStatus),
     registDeadline: eventInfo.registDeadline,
     paymentDeadline: eventInfo.paymentDeadline,
     bank: eventInfo.bank,

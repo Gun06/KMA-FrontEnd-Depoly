@@ -17,11 +17,17 @@ export function useRegistrationSearch(
   params: RegistrationSearchRequest,
   searchField?: 'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'
 ) {
+  // eventId 또는 eventIds가 있어야 쿼리 실행
+  const hasEventId = !!params.eventId;
+  const hasEventIds = !!(params.eventIds && params.eventIds.length > 0);
+  const isEnabled = hasEventId || hasEventIds;
+  
   return useQuery({
     // searchField도 queryKey에 포함하여 변경 시 새 쿼리 실행
-    queryKey: ['registrationSearch', params.eventId, params.page, params.size, params.registrationSearchKey, params.direction, params.paymentStatus, params.keyword, searchField],
+    // eventIds도 queryKey에 포함
+    queryKey: ['registrationSearch', params.eventId, params.eventIds, params.page, params.size, params.registrationSearchKey, params.direction, params.paymentStatus, params.keyword, searchField],
     queryFn: () => searchRegistrationList(params),
-    enabled: !!params.eventId,
+    enabled: isEnabled,
     staleTime: 0, // 정렬 변경 시 즉시 반영을 위해 staleTime을 0으로 설정
     gcTime: 5 * 60 * 1000, // 캐시 유지 시간은 5분
   });

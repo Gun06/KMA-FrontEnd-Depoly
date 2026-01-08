@@ -76,7 +76,13 @@ export function payloadToEventPatch(payload: EventCreatePayload, prefill: EventR
   }
 
   // 공개여부
-  const vis = toPublicVisibility(payload, prefill.isPublic);
+  // prefill.isPublic이 enum인 경우 boolean으로 변환
+  const prefillIsPublic = typeof prefill.isPublic === 'boolean' 
+    ? prefill.isPublic 
+    : prefill.isPublic === 'OPEN' ? true 
+    : prefill.isPublic === 'TEST' ? true 
+    : false; // 'CLOSE'는 false
+  const vis = toPublicVisibility(payload, prefillIsPublic);
   if (typeof vis === 'boolean') patch.isPublic = vis;
 
   // ✅ 신청 상태: payload에서 오면 반영, 없으면 prefill 유지
