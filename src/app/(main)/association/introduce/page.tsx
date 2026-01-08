@@ -18,7 +18,7 @@ export default function IntroducePage() {
     },
     yeongnam: {
       title: "전마협 영남지사",
-      address: "경상북도 상주시 낙양동 146-110",
+      address: "경북 상주시 삼백로 60-9번지(향군회관 3층)",
       tel: "054) 535-1080",
       fax: "054) 531-1082",
       homepage: "WWW.RUN1080.COM"
@@ -158,7 +158,7 @@ export default function IntroducePage() {
             )}
             {activeTab === 'yeongnam' && (
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3211.0148260273727!2d128.1479576765432!3d36.408836589661774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3565b2a6ff09ceed%3A0x99d4e5179da5d1ec!2z6rK97IOB67aB64-EIOyDgeyjvOyLnCDrgpnslpHrj5kgMTQ2LTExMA!5e0!3m2!1sko!2skr!4v1755626666916!5m2!1sko!2skr"
+                src={`https://www.google.com/maps?q=${encodeURIComponent('경북 상주시 삼백로 60-9 향군회관')}&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

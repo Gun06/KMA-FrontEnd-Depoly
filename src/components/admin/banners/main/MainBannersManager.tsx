@@ -5,7 +5,7 @@ import Button from '@/components/common/Button/Button';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import type { UploadItem } from '@/components/common/Upload/types';
 import MainBannersPreview, { MainBannerRow } from './components/MainBannersPreview';
-import MainBannerGrid from './components/MainBannerGrid';
+import MainBannerGrid, { type MainBannerGridItem } from './components/MainBannerGrid';
 import MainBannerModal from './components/MainBannerModal';
 import type { MainBannerFormData } from './types';
 import { useMainBannersForAdmin, useCreateOrUpdateMainBanners, useUpdateMainBanner } from '@/hooks/useMainBanners';
@@ -75,6 +75,19 @@ export default function MainBannersManager() {
 
   const updateRow = (id: string | number, patch: Partial<MainBannerRowType>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const handleReorder = (reorderedItems: MainBannerGridItem[]) => {
+    // gridItems를 rows로 변환하여 orderNo 업데이트
+    const updatedRows = reorderedItems.map((item) => {
+      const row = rows.find((r) => r.id === item.id);
+      if (row) {
+        return { ...row, orderNo: item.orderNo };
+      }
+      return row;
+    }).filter(Boolean) as MainBannerRowType[];
+    
+    setRows(updatedRows);
+  };
 
   const handleAdd = () => {
     const newId = `temp_${Date.now()}`;
@@ -408,7 +421,7 @@ export default function MainBannersManager() {
               </div>
             </div>
           ) : (
-            <div className="max-w-[1300px] mx-auto w-full">
+            <div className="max-w-[1300px] mx-auto w-full" style={{ overflow: 'visible' }}>
               <MainBannerGrid
                 items={gridItems}
                 onItemClick={(id) => {
@@ -419,6 +432,7 @@ export default function MainBannersManager() {
                     handleOpenView(id);
                   }
                 }}
+                onReorder={handleReorder}
               />
             </div>
           )}
@@ -427,6 +441,7 @@ export default function MainBannersManager() {
             <NoticeMessage
               items={[
                 { text: '※ 새 배너를 추가하려면 "새 배너 추가" 버튼을 클릭하여 등록한 후, 반드시 "저장하기" 버튼을 눌러주세요.' },
+                { text: '※ 배너 왼쪽 상단의 드래그 핸들(⋮⋮)을 잡고 드래그하여 순서를 변경할 수 있습니다. 변경 후 "저장하기" 버튼을 눌러주세요.' },
                 { text: '※ 이미지를 클릭하면 수정할 수 있습니다.' },
                 { text: '※ 이미지는 JPG/PNG 권장, 가로 1600px 이상, 20MB 이하.' },
                 { text: '※ 저장 전 항목은 목록에서 바로 수정 가능하며, 저장 후에는 이미지를 클릭하여 수정하세요.' },

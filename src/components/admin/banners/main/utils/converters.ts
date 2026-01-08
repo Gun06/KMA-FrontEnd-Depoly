@@ -32,19 +32,19 @@ export function convertLocalToApi(rows: MainBannerRowType[]): { mainBannerInfos:
   const images: File[] = [];
   
   rows.forEach((row, index) => {
-    // eventId 검증
-    if (!row.eventId || row.eventId.trim() === '') {
-      return; // eventId가 없으면 해당 행을 건너뜀
+    // 이미지가 없으면 건너뜀
+    if (!row.image) {
+      return;
     }
     
     if (row.draft) {
       // 새로 생성되는 배너
       mainBannerInfos.push({
         id: null,
-        title: row.title,
-        subtitle: row.subtitle,
-        date: row.date,
-        eventId: row.eventId,
+        title: row.title || '',
+        subtitle: row.subtitle || '',
+        date: row.date || '',
+        eventId: row.eventId || '', // eventId가 없어도 빈 문자열로 전송
         orderNo: index + 1,
       });
       
@@ -56,10 +56,10 @@ export function convertLocalToApi(rows: MainBannerRowType[]): { mainBannerInfos:
       // 기존 배너 수정
       mainBannerInfos.push({
         id: typeof row.id === 'string' ? row.id : row.id.toString(),
-        title: row.title,
-        subtitle: row.subtitle,
-        date: row.date,
-        eventId: row.eventId,
+        title: row.title || '',
+        subtitle: row.subtitle || '',
+        date: row.date || '',
+        eventId: row.eventId || '', // eventId가 없어도 빈 문자열로 전송
         orderNo: index + 1,
       });
     }

@@ -38,7 +38,7 @@ export default function MainBannersPreview({ rows }: { rows: MainBannerRow[] }) 
   const slides = React.useMemo(
     () =>
       rows
-        .filter(r => r.visible && r.eventId && r.image) // visible이고 eventId와 image가 있는 것만
+        .filter(r => r.image) // image가 있는 것만 (eventId는 선택사항)
         .map(r => ({
           id: r.id,
           imageUrl: srcFromFile(r.image) || '',
@@ -54,7 +54,7 @@ export default function MainBannersPreview({ rows }: { rows: MainBannerRow[] }) 
   if (slides.length === 0) {
     return (
       <div className="flex items-center justify-center h-[320px] rounded-lg border border-dashed text-gray-500">
-        노출할 배너가 없습니다. &quot;공개&quot;로 전환하고 이미지를 등록해 주세요.
+        노출할 배너가 없습니다. 이미지를 등록해 주세요.
       </div>
     );
   }

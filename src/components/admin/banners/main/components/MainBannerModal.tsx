@@ -53,9 +53,6 @@ export default function MainBannerModal({
 
   if (!isOpen) return null;
 
-  // 기본 이미지
-  const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f3f4f6' width='400' height='200'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E이미지 없음%3C/text%3E%3C/svg%3E";
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ overflow: 'visible' }}>
       {/* 배경 오버레이 */}
@@ -130,57 +127,75 @@ export default function MainBannerModal({
                         ) : (
                           <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400" />
                         )}
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
-                        {/* Content overlay - 축소 버전 */}
-                        <div className="absolute inset-0 flex items-center justify-start">
-                          <div className="text-left text-white max-w-full px-4 sm:px-6 flex flex-col relative">
-                            <div className="relative z-10 w-full">
-                              {/* Category badge - 축소 */}
-                              {value.eventId && (
-                                <div className="inline-block w-fit bg-white/30 backdrop-blur-sm rounded-full text-[8px] font-medium px-1.5 py-0.5 mb-1.5 border border-white/20">
-                                  대회 안내
+                        {/* 텍스트가 있을 때만 오버레이와 콘텐츠 표시 */}
+                        {(value.title || value.subtitle || value.date) && (
+                          <>
+                            {/* Dark overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
+                            {/* Content overlay - 축소 버전 */}
+                            <div className="absolute inset-0 flex items-center justify-start">
+                              <div className="text-left text-white max-w-full px-4 sm:px-6 flex flex-col relative">
+                                <div className="relative z-10 w-full">
+                                  {/* Category badge - 축소, 텍스트가 있을 때만 */}
+                                  {value.eventId && (
+                                    <div className="inline-block w-fit bg-white/30 backdrop-blur-sm rounded-full text-[8px] font-medium px-1.5 py-0.5 mb-1.5 border border-white/20">
+                                      대회 안내
+                                    </div>
+                                  )}
+                                  {/* Main title & description - 축소 */}
+                                  {(value.title || value.subtitle) && (
+                                    <h1 className="font-giants text-sm sm:text-base font-bold mb-1 leading-tight text-left">
+                                      {value.title && (
+                                        <div className="whitespace-nowrap">{value.title}</div>
+                                      )}
+                                      {value.subtitle && (
+                                        <div className="whitespace-nowrap">{value.subtitle}</div>
+                                      )}
+                                    </h1>
+                                  )}
+                                  {/* Date - 축소 */}
+                                  {value.date && (
+                                    <p className="text-[10px] sm:text-xs text-white/95 mb-2">
+                                      {value.date}
+                                    </p>
+                                  )}
+                                  {/* Action buttons - 축소 버전, 텍스트가 있고 eventId가 있을 때만 표시 */}
+                                  {value.eventId && (
+                                    <div className="hidden sm:flex flex-row gap-1.5 mt-1.5">
+                                      <button
+                                        className="px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        신청하기
+                                      </button>
+                                      <button
+                                        className="px-2 py-1 text-[10px] font-medium text-gray-900 bg-white rounded hover:bg-gray-100 transition-colors"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        대회 요강
+                                      </button>
+                                      <button
+                                        className="px-2 py-1 text-[10px] font-medium text-gray-900 bg-white rounded hover:bg-gray-100 transition-colors"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }}
+                                      >
+                                        신청 확인
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {/* Main title & description - 축소 */}
-                              <h1 className="font-giants text-sm sm:text-base font-bold mb-1 leading-tight text-left">
-                                <div className="whitespace-nowrap">{value.title || '제목 없음'}</div>
-                                {value.subtitle && (
-                                  <div className="whitespace-nowrap">{value.subtitle}</div>
-                                )}
-                              </h1>
-                              {/* Date - 축소 */}
-                              {value.date && (
-                                <p className="text-[10px] sm:text-xs text-white/95 mb-2">
-                                  {value.date}
-                                </p>
-                              )}
-                              {/* Action buttons - 축소 버전, eventId가 있을 때만 표시 */}
-                              {value.eventId && (
-                                <div className="hidden sm:flex flex-row gap-1.5 mt-1.5">
-                                  <button
-                                    className="px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                  >
-                                    신청하기
-                                  </button>
-                                  <button
-                                    className="px-2 py-1 text-[10px] font-medium text-gray-900 bg-white rounded hover:bg-gray-100 transition-colors"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                    }}
-                                  >
-                                    대회 요강
-                                  </button>
-                                </div>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          </>
+                        )}
                         {/* per-slide fraction - 축소 */}
                         <div className="absolute right-2 bottom-2 z-10">
                           <div className="px-1.5 py-0.5 rounded-full bg-black/50 text-white text-[10px] backdrop-blur-sm border border-white/20">

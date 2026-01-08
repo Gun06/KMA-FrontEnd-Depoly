@@ -9,7 +9,6 @@ import Image from "next/image";
 import { HelpCircle } from "lucide-react";
 import { formatBytes } from "@/components/common/Upload/utils";
 import type { UploadItem } from "@/components/common/Upload/types";
-import clsx from "clsx";
 import EventDropdownPortal from "./EventDropdownPortal";
 import { getSimpleEventList } from "@/services/event";
 import type { MainBannerFormData, Opt } from "../types";
@@ -61,7 +60,6 @@ export default function MainBannerForm({
 
   const patch = (p: Partial<MainBannerFormData>) => onChange?.({ ...value, ...p });
 
-  const dimCls = readOnly ? "text-[#646464]" : "text-black";
   const readOnlyInputCls = "!border-0 !ring-0 !outline-none bg-transparent";
   const computedInputCls = inputColorCls ?? (readOnly ? readOnlyInputCls : "");
   const pad = dense ? "p-0" : "p-4";
@@ -86,8 +84,6 @@ export default function MainBannerForm({
 
   // 이미지 미리보기 컴포넌트 (2:1 비율, 가로 1600px 기준)
   const ImagePreview = () => {
-    const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f3f4f6' width='400' height='200'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E이미지 없음%3C/text%3E%3C/svg%3E";
-
     return (
       <div className="relative h-[200px] w-[400px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0">
         {previewUrl ? (
@@ -167,9 +163,6 @@ export default function MainBannerForm({
                 placeholder="대회를 선택해주세요"
                 readOnly={readOnly}
               />
-              {!readOnly && value.eventId && (
-                <p className="mt-1 text-xs text-gray-500">버튼 경로는 자동으로 생성됩니다.</p>
-              )}
             </FormRow>
           </div>
 
@@ -248,57 +241,18 @@ export default function MainBannerForm({
             </FormRow>
           </div>
 
-          {/* 6) 공개 여부 */}
-          <div className={pad}>
-            <FormRow label="공개 여부" contentClassName="items-center">
-              {readOnly ? (
-                <div className="inline-flex items-center gap-1 pl-4">
-                  {value.visible ? (
-                    <span className="inline-flex items-center rounded-full px-2.5 h-7 text-[12px] font-medium border bg-[#1E5EFF] border-[#1E5EFF] text-white">
-                      공개
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full px-2.5 h-7 text-[12px] font-medium border bg-[#EF4444] border-[#EF4444] text-white">
-                      비공개
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-1 pl-4">
-                  <button
-                    type="button"
-                    className={clsx('rounded-full px-2.5 h-7 text-[12px] font-medium border transition-colors',
-                      value.visible 
-                        ? 'bg-[#1E5EFF] border-[#1E5EFF] text-white' 
-                        : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200')}
-                    onClick={() => patch({ visible: true })}
-                  >
-                    공개
-                  </button>
-                  <button
-                    type="button"
-                    className={clsx('rounded-full px-2.5 h-7 text-[12px] font-medium border transition-colors',
-                      !value.visible 
-                        ? 'bg-[#EF4444] border-[#EF4444] text-white' 
-                        : 'bg-gray-100 border-gray-200 text-gray-600 hover:bg-gray-200')}
-                    onClick={() => patch({ visible: false })}
-                  >
-                    비공개
-                  </button>
-                </div>
-              )}
-            </FormRow>
-          </div>
         </div>
       </div>
 
       {/* 하단 노티스 */}
       {!readOnly && (
-        <div className="flex mx-auto px-4 mt-10 mb-10">
+        <div className="flex mx-auto px-4 mt-5 mb-10">
           <NoticeMessage
             items={[
               { text: "※ 이미지는 JPG, PNG 권장, 가로 1600px 이상, 20MB 이하." },
               { text: "※ 날짜는 YYYY.MM.DD 형식으로 입력해주세요. (예: 2025.01.01)" },
+              { text: "※ 이미지만 넣어도 등록 가능합니다." },
+              { text: "※ 메인화면에서 배너 클릭 시 대회 사이트로 연결되게 하려면 대회를 선택해주세요." },
             ]}
           />
         </div>
