@@ -37,7 +37,7 @@ export type EventDetailData = {
   coursePageImageUrl?: string;
   eventsPageUrl?: string;
   eventStatus: string;
-  visibleStatus: boolean;
+  visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   registDeadline?: string;
   paymentDeadline?: string;
   /** 은행명 (예: 국민은행) */
@@ -292,12 +292,18 @@ export default function EventDetailView({
               <div className="pt-1">
                 <span
                   className={`inline-flex items-center justify-center w-[70px] h-9 rounded-[6px] text-[13px] leading-[22px] font-medium ${
-                    eventData.visibleStatus
+                    eventData.visibleStatus === 'OPEN'
                       ? 'bg-kma-blue text-white'
-                      : 'bg-kma-red text-white'
+                      : eventData.visibleStatus === 'TEST'
+                        ? 'bg-[#FFA500] text-white'
+                        : 'bg-kma-red text-white'
                   }`}
                 >
-                  {eventData.visibleStatus ? '공개' : '비공개'}
+                  {eventData.visibleStatus === 'OPEN'
+                    ? '공개'
+                    : eventData.visibleStatus === 'TEST'
+                      ? '테스트'
+                      : '비공개'}
                 </span>
               </div>
             </div>

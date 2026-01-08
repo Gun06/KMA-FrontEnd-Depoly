@@ -191,7 +191,19 @@ export function transformApiToFormPrefill(
     courses,
     gifts,
     groups, // 참가부문과 기념품 정보
-    visibility: eventInfo.visibleStatus ? '공개' : '비공개',
+    visibility: (() => {
+      const visible = eventInfo.visibleStatus;
+      // boolean 레거시 처리
+      if (typeof visible === 'boolean') {
+        return visible ? '공개' : '비공개';
+      }
+      // enum 처리
+      const visibleStr = String(visible).toUpperCase();
+      if (visibleStr === 'OPEN') return '공개';
+      if (visibleStr === 'TEST') return '테스트';
+      if (visibleStr === 'CLOSE') return '비공개';
+      return '비공개';
+    })(),
 
     // 신청 정보
     applyType: undefined, // 타입 불일치 방지: 기본값 미설정

@@ -59,9 +59,9 @@ export function useEventCategoryDropdown(eventId: string) {
     'admin',
     {
       enabled: !!eventId,
-      staleTime: 0, // 항상 최신 데이터 확인
-      gcTime: 0, // 캐시를 즉시 제거하여 항상 서버에서 가져오기
-      refetchOnMount: 'always', // 컴포넌트 마운트 시 항상 재조회
+      staleTime: 30 * 1000, // 30초간 캐시 유지 (중복 요청 방지)
+      gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
+      refetchOnMount: false, // 마운트 시 재조회 안 함 (캐시 사용)
       retry: 2,
     },
     true // 인증 필요

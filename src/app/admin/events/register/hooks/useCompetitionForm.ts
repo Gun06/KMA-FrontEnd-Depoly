@@ -246,7 +246,16 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   // (구) applyType — 유지만
   const [applyType, setApplyType] = React.useState<ApplyType>('일반');
 
-  const [visibility, setVisibility] = React.useState<Visibility>('공개');
+  const [visibility, setVisibility] = React.useState<Visibility>(() => {
+    // prefill이 있으면 초기값으로 사용
+    // 없으면 '공개' 기본값 (새로 생성할 때만 사용, 편집 시에는 prefill에서 오므로 문제 없음)
+    if (prefill?.visibility) {
+      return prefill.visibility as Visibility;
+    }
+    // 편집 모드에서는 prefill이 나중에 로드되므로 빈 값으로 시작
+    // useEffect에서 prefill이 로드되면 설정됨
+    return '공개' as Visibility; // 타입 에러 방지를 위한 기본값 (실제로는 useEffect에서 덮어씀)
+  });
   const [deliveryMethod, setDeliveryMethod] =
     React.useState<DeliveryMethod>('택배배송');
   const [shuttle, setShuttle] = React.useState<Shuttle>('운행');
@@ -369,13 +378,14 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   React.useEffect(() => {
     if (!prefill) return;
     
-    // prefill의 주요 필드들을 조합하여 변경 감지 (eventTheme 포함)
+    // prefill의 주요 필드들을 조합하여 변경 감지 (eventTheme, visibility 포함)
     const currentKey = JSON.stringify({
       titleKo: prefill.titleKo,
       eventTheme: prefill.eventTheme,
       date: prefill.date,
       deadlineDate: prefill.deadlineDate,
       paymentDeadlineDate: prefill.paymentDeadlineDate,
+      visibility: prefill.visibility, // visibility 변경도 감지하도록 추가
     });
     
     // 동일한 prefill이면 스킵 (중복 적용 방지)
@@ -387,7 +397,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setTitleEn(prefill.titleEn ?? '');
 
     if (prefill.applyType) setApplyType(prefill.applyType);
-    if (prefill.visibility) setVisibility(prefill.visibility);
+    // visibility는 항상 설정 (undefined/null이 아니면)
+    // prefill에 visibility가 있으면 무조건 설정 (초기값 '공개'를 덮어씀)
+    if (prefill.visibility !== undefined && prefill.visibility !== null) {
+      setVisibility(prefill.visibility);
+    }
     if (prefill.deliveryMethod) setDeliveryMethod(prefill.deliveryMethod);
     if (prefill.shuttle) setShuttle(prefill.shuttle);
     setPlace(prefill.place ?? '');

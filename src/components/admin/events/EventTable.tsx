@@ -20,7 +20,7 @@ export type EventRow = {
   place: string;
   host: string;
   applyStatus: RegStatus; // '접수중' | '비접수' | '접수완료'
-  isPublic: boolean;
+  isPublic: 'OPEN' | 'TEST' | 'CLOSE' | boolean; // boolean은 레거시 지원
 };
 
 type PublicFilter = '' | '공개' | '비공개';
@@ -113,12 +113,24 @@ export default function EventTable({
       header: '공개여부',
       width: 100,
       align: 'center',
-      render: r =>
-        r.isPublic ? (
-          <span className="text-[#1E5EFF]">공개</span>
-        ) : (
-          <span className="text-[#D12D2D]">비공개</span>
-        ),
+      render: r => {
+        // boolean 레거시 처리
+        if (typeof r.isPublic === 'boolean') {
+          return r.isPublic ? (
+            <span className="text-[#1E5EFF]">공개</span>
+          ) : (
+            <span className="text-[#D12D2D]">비공개</span>
+          );
+        }
+        // enum 처리
+        if (r.isPublic === 'OPEN') {
+          return <span className="text-[#1E5EFF]">공개</span>;
+        } else if (r.isPublic === 'TEST') {
+          return <span className="text-[#FFA500]">테스트</span>;
+        } else {
+          return <span className="text-[#D12D2D]">비공개</span>;
+        }
+      },
     },
   ];
 

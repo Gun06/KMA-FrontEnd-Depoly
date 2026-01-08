@@ -22,7 +22,7 @@ export interface EventInfo {
   /** 신청 상태 (서버 Event.eventStatus와 매핑) */
   eventStatus?: EventStatus;
   /** 공개 여부 (서버 API 스펙) */
-  visibleStatus?: boolean;
+  visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
   /** 은행명 (예: 국민은행) */
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
@@ -91,7 +91,7 @@ import type { UploadItem } from '@/components/common/Upload/types';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 
 export type ApplyType = '일반' | '비회원';
-export type Visibility = '공개' | '비공개';
+export type Visibility = '공개' | '테스트' | '비공개';
 export type DeliveryMethod = '택배배송' | '현장배부';
 export type Shuttle = '운행' | '비운행';
 
@@ -221,7 +221,7 @@ export interface AdminEventItem {
   region: string;
   host: string;
   eventStatus: EventStatus;
-  visibleStatus: boolean;
+  visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   eventsPageUrl: string;
 }
 

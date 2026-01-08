@@ -64,8 +64,8 @@ export class EventDataTransformer {
       mainBannerColor: data.eventTheme || 'blue', // 테마 이름을 그대로 전송 (기본값: blue)
       paymentDeadline: data.paymentDeadline || this.getDefaultDeadline(),
       eventStatus,
-      // 공개 여부 (visibility: '공개' | '비공개' -> visibleStatus: boolean)
-      visibleStatus: data.visibility === '공개',
+      // 공개 여부 (visibility: '공개' | '테스트' | '비공개' -> visibleStatus: 'OPEN' | 'TEST' | 'CLOSE')
+      visibleStatus: data.visibility === '공개' ? 'OPEN' : data.visibility === '테스트' ? 'TEST' : 'CLOSE',
       // 결제 정보
       bank: data.bank || undefined,
       virtualAccount: data.virtualAccount || undefined,

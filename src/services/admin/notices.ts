@@ -90,7 +90,7 @@ export interface EventItem {
   region: string;
   host: string;
   eventStatus: string;
-  visibleStatus: boolean;
+  visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   eventsPageUrl: string;
 }
 

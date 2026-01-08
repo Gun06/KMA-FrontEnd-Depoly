@@ -13,10 +13,10 @@ export function useEventDetail(eventId: string) {
     'admin', // 관리자 서버 사용
     {
       enabled: !!eventId, // eventId가 있을 때만 쿼리 실행
-      staleTime: 0, // 항상 최신 데이터 확인 (캐시 사용 안 함)
-      gcTime: 0, // 캐시를 즉시 제거하여 항상 서버에서 가져오기
-      refetchOnMount: 'always', // 컴포넌트 마운트 시 항상 재조회
-      refetchOnWindowFocus: false, // 윈도우 포커스 시 재조회 안 함 (선택 사항)
+      staleTime: 30 * 1000, // 30초간 캐시 유지 (중복 요청 방지)
+      gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
+      refetchOnMount: false, // 마운트 시 재조회 안 함 (캐시 사용)
+      refetchOnWindowFocus: false, // 윈도우 포커스 시 재조회 안 함
       retry: 2, // 실패 시 2번 재시도
     },
     true // 인증 불필요 (공개 API)

@@ -116,8 +116,22 @@ export function transformApiResponseToFormPrefill(
   };
 
   // 공개 여부 변환 (visibleStatus -> visibility)
-  const visibleStatusToVisibility = (visible: boolean): '공개' | '비공개' => {
-    return visible ? '공개' : '비공개';
+  // boolean (레거시) 또는 enum 모두 처리
+  const visibleStatusToVisibility = (visible: 'OPEN' | 'TEST' | 'CLOSE' | boolean): '공개' | '테스트' | '비공개' => {
+    // boolean 레거시 처리
+    if (typeof visible === 'boolean') {
+      return visible ? '공개' : '비공개';
+    }
+    
+    // enum 처리 (문자열 비교 - 공백 제거 및 대문자 변환)
+    const visibleStr = String(visible).trim().toUpperCase();
+    
+    if (visibleStr === 'OPEN') return '공개';
+    if (visibleStr === 'TEST') return '테스트';
+    if (visibleStr === 'CLOSE') return '비공개';
+    
+    // 기본값 (fallback)
+    return '비공개';
   };
 
   // 주최/주관/후원/협력 ASSIST 분리 (문자열 배열)

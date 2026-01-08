@@ -355,16 +355,8 @@ export default function ApplicantsManageTable({
         : r.birth,
     },
     {
-      key: 'phone', header: '연락처', width: 180, align: 'center',
-      render: (r) => isRowEditing(r.id)
-        ? <input 
-            className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-            value={String((drafts[r.id]?.phone ?? r.phone))}
-            onChange={(e) => setDraftField(r.id, 'phone', e.target.value)}
-            autoComplete="off"
-            data-stop-bubble="true"
-          />
-        : r.phone,
+      key: 'eventName', header: '대회명', width: 180, align: 'center',
+      render: (r) => r.eventName || '-',
     },
     {
       key: 'regDate',

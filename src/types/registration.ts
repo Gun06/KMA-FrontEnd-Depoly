@@ -83,7 +83,8 @@ export interface RegistrationListRequest {
 
 // 검색 API 관련 타입
 export interface RegistrationSearchRequest {
-  eventId: string;
+  eventId?: string; // 단일 선택용 (하위 호환성)
+  eventIds?: string[]; // 다중 선택용
   page?: number;
   size?: number;
   registrationSearchKey?: 'NAME' | 'ORGANIZATION' | 'BIRTH' | 'REGISTRATION_DATE' | 'ADDRESS' | 'PH_NUM' | 'PAYMENTER_NAME' | 'MEMO' | 'NOTE' | 'DETAIL_MEMO' | 'MATCHING_LOG';
@@ -107,6 +108,7 @@ export interface ApplicantManageRow {
   gender: '남' | '여';
   birth: string;
   phone: string;
+  eventName?: string; // 대회명
   regDate: string;
   regDateRaw?: string;
   fee: number;
@@ -183,6 +185,7 @@ export function convertRegistrationToManageRow(item: RegistrationItem, index?: n
     gender: normalizeGender(item.gender),
     birth: formatBirthDisplay(item.birth),
     phone: formatPhoneDisplay(item.phNum), // 서버에서 내려주는 phNum
+    eventName: item.eventName, // 대회명
     regDate: formatDateTimeDisplay(item.registrationDate), // 서버에서 내려주는 registrationDate
     fee: item.amount ?? 0, // 서버에서 내려주는 amount
     paid: !!item.depositFlag,

@@ -347,6 +347,7 @@ export default function EditForm({
                   gapPx={40}
                   options={[
                     { value: '공개', label: '공개' },
+                    { value: '테스트', label: '테스트' },
                     { value: '비공개', label: '비공개' },
                   ]}
                 />

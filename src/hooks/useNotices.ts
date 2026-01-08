@@ -157,7 +157,7 @@ export function useEventSearch(params: {
   size?: number;
   keyword?: string;
   year?: number;
-  visibleStatus?: boolean;
+  visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
   eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED';
   eventSortKey?: 'NO' | 'START_DATE' | 'NAME' | 'REGION' | 'HOST';
 }, enabled: boolean = true) {

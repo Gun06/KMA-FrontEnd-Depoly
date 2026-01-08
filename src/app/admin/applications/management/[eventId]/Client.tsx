@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useRegistrationList, useRegistrationSearch, useRegistrationDetail } from '@/hooks/useRegistration';
 import { useEventList } from '@/hooks/useNotices';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
@@ -14,6 +15,8 @@ import { downloadGroupForm, uploadGroupForm } from '@/components/admin/applicati
 import { downloadPersonalForm } from '@/components/admin/applications/api/personalUpload';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast, type Id } from 'react-toastify';
+import { ChevronDown, X } from 'lucide-react';
+import clsx from 'clsx';
 import type {
   SortKey,
   PaidFilter,
@@ -33,8 +36,13 @@ type Props = {
 export default function Client({
   eventId, initialPage, pageSize,
 }: Props) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState<number>(initialPage);
+  const [isEventDropdownOpen, setIsEventDropdownOpen] = React.useState(false);
+  
+  // 선택된 대회 IDs (다중 선택 지원)
+  const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([eventId]);
 
   const [query, setQuery] = React.useState<string>('');
   const [paidFilter, setPaidFilter] = React.useState<PaidFilter>('');
@@ -42,30 +50,89 @@ export default function Client({
   const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>('all');
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
+  // eventId가 변경되면 selectedEventIds에 추가
+  React.useEffect(() => {
+    if (eventId && !selectedEventIds.includes(eventId)) {
+      setSelectedEventIds(prev => [...prev, eventId]);
+    }
+  }, [eventId]);
+
   // 항상 검색 API 사용 (서버에서 정렬과 번호를 내려줌)
   const searchParams = React.useMemo(() => ({
-    eventId,
+    eventIds: selectedEventIds.length > 0 ? selectedEventIds : [eventId],
     page,
     size: pageSize,
     ...convertFiltersToApiParams(sortKey, paidFilter, query, searchField),
-  }), [eventId, page, pageSize, sortKey, paidFilter, query, searchField]);
+  }), [selectedEventIds, eventId, page, pageSize, sortKey, paidFilter, query, searchField]);
 
   // 항상 검색 API만 사용
   const { data: registrationData, isLoading, error } = useRegistrationSearch(searchParams, searchField as any);
 
-  // 대회 정보 조회 (제목용)
+  // 대회 정보 조회 (제목용 및 드롭다운용)
   const { data: eventListData } = useEventList(1, 100);
-  const currentEvent = (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string }> })?.content?.find((e) => e.id === eventId);
+  const eventList = (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string; startDate?: string }> })?.content || [];
+  const currentEvent = eventList.find((e) => e.id === eventId);
+  const selectedEvents = eventList.filter(e => selectedEventIds.includes(e.id));
+  
+  // 대회 토글 핸들러 (다중 선택)
+  const handleEventToggle = (selectedEventId: string) => {
+    setSelectedEventIds(prev => {
+      if (prev.includes(selectedEventId)) {
+        // 이미 선택된 경우 제거 (최소 1개는 유지)
+        if (prev.length === 1) {
+          toast.warning('최소 1개의 대회는 선택되어야 합니다.');
+          return prev;
+        }
+        return prev.filter(id => id !== selectedEventId);
+      } else {
+        // 선택되지 않은 경우 추가
+        return [...prev, selectedEventId];
+      }
+    });
+    setPage(1); // 페이지 초기화
+  };
+  
+  // 대회 제거 핸들러 (태그에서 X 클릭)
+  const handleEventRemove = (eventIdToRemove: string) => {
+    if (selectedEventIds.length === 1) {
+      toast.warning('최소 1개의 대회는 선택되어야 합니다.');
+      return;
+    }
+    setSelectedEventIds(prev => prev.filter(id => id !== eventIdToRemove));
+    setPage(1);
+  };
+  
+  // 전체 선택/해제
+  const handleSelectAll = () => {
+    const allIds = eventList.map(e => e.id);
+    setSelectedEventIds(allIds);
+    setPage(1);
+  };
+  
+  const handleDeselectAll = () => {
+    if (selectedEventIds.length === 1) {
+      toast.warning('최소 1개의 대회는 선택되어야 합니다.');
+      return;
+    }
+    // 현재 URL의 eventId만 남김
+    setSelectedEventIds([eventId]);
+    setPage(1);
+  };
 
   // API 데이터를 테이블 형식으로 변환
   const data = React.useMemo(() => {
     if (!registrationData?.content) return [];
     
     // 변환 (서버에서 이미 검색과 정렬이 완료된 결과를 사용, no는 서버에서 내려주는 값 사용)
-    return registrationData.content.map((item, index) => 
-      convertRegistrationToManageRow(item, index)
-    );
-  }, [registrationData]);
+    return registrationData.content.map((item, index) => {
+      const row = convertRegistrationToManageRow(item, index);
+      // API 응답에 eventName이 없으면 currentEvent의 이름을 사용
+      if (!row.eventName && currentEvent) {
+        row.eventName = currentEvent.nameKr || currentEvent.nameEn || '';
+      }
+      return row;
+    });
+  }, [registrationData, currentEvent]);
 
   // 검색 필드에 따라 total 계산
   const total = React.useMemo(() => {
@@ -151,11 +218,12 @@ export default function Client({
     setSelectedIds([]);
   };
 
-  // Excel 다운로드 처리
+  // Excel 다운로드 처리 (다중 대회 지원)
   const handleDownloadApplicants = async () => {
     try {
-      await downloadRegistrationList(eventId);
-      toast.success('Excel 다운로드가 완료되었습니다!');
+      const eventIdsToDownload = selectedEventIds.length > 0 ? selectedEventIds : [eventId];
+      await downloadRegistrationList(eventIdsToDownload);
+      toast.success(`선택된 ${eventIdsToDownload.length}개 대회의 Excel 다운로드가 완료되었습니다!`);
     } catch (_error) {
       toast.error('다운로드에 실패했습니다.');
     }
@@ -276,8 +344,198 @@ export default function Client({
     return <div className="p-6">에러가 발생했습니다: {error.message}</div>;
   }
 
+  // 드롭다운 외부 클릭 감지
+  const eventDropdownRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
+        setIsEventDropdownOpen(false);
+      }
+    };
+    if (isEventDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isEventDropdownOpen]);
+
   return (
     <div className="space-y-6">
+      {/* 대회 다중 선택 드롭다운 */}
+      <div className="mb-4 space-y-3" ref={eventDropdownRef}>
+        <div className="relative w-full">
+          {/* 선택된 대회 태그들 */}
+          {selectedEvents.length > 0 && (
+            <div 
+              className="mb-2 flex gap-2 overflow-x-auto pb-1 w-full no-scrollbar"
+              onWheel={(e) => {
+                e.currentTarget.scrollLeft += e.deltaY;
+                e.preventDefault();
+              }}
+              style={{ 
+                cursor: 'grab',
+                WebkitOverflowScrolling: 'touch'
+              }}
+              onMouseDown={(e) => {
+                // 태그 버튼 클릭은 스크롤과 구분
+                if ((e.target as HTMLElement).closest('button')) return;
+                
+                const element = e.currentTarget;
+                let isDown = true;
+                let startX = e.pageX - element.offsetLeft;
+                let scrollLeft = element.scrollLeft;
+
+                const onMouseMove = (e: MouseEvent) => {
+                  if (!isDown) return;
+                  e.preventDefault();
+                  const x = e.pageX - element.offsetLeft;
+                  const walk = (x - startX) * 2;
+                  element.scrollLeft = scrollLeft - walk;
+                };
+
+                const onMouseUp = () => {
+                  isDown = false;
+                  element.style.cursor = 'grab';
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+
+                element.style.cursor = 'grabbing';
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            >
+              {selectedEvents.map((event) => (
+                <span
+                  key={event.id}
+                  className={clsx(
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium flex-shrink-0',
+                    'bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap'
+                  )}
+                >
+                  <span className="truncate">
+                    {event.nameKr || event.nameEn || event.id}
+                  </span>
+                  {selectedEventIds.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEventRemove(event.id);
+                      }}
+                      className="hover:bg-blue-100 rounded-full p-0.5 transition-colors flex-shrink-0"
+                      aria-label={`${event.nameKr || event.id} 제거`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+          
+          {/* 드롭다운 버튼 */}
+          <button
+            type="button"
+            onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
+            className={clsx(
+              'flex items-center justify-between w-auto min-w-[400px] max-w-[800px] px-4 py-2.5 text-sm font-medium',
+              'bg-white border border-gray-300 rounded-md shadow-sm',
+              'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              'transition-colors'
+            )}
+            aria-haspopup="listbox"
+            aria-expanded={isEventDropdownOpen}
+          >
+            <span className="text-left">
+              {selectedEvents.length > 0 
+                ? `${selectedEvents.length}개 대회 선택됨` 
+                : '대회를 선택하세요'}
+            </span>
+            <ChevronDown
+              className={clsx(
+                'ml-2 h-4 w-4 text-gray-500 transition-transform flex-shrink-0',
+                isEventDropdownOpen && 'rotate-180'
+              )}
+            />
+          </button>
+          
+          {/* 드롭다운 메뉴 */}
+          {isEventDropdownOpen && (
+            <div className="absolute z-50 w-auto min-w-[400px] max-w-[800px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto">
+              <div role="listbox" className="py-2">
+                {/* 전체 선택/해제 */}
+                <div className="px-4 py-2 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={eventList.length > 0 && selectedEventIds.length === eventList.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            handleSelectAll();
+                          } else {
+                            handleDeselectAll();
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        전체 선택 ({selectedEventIds.length}/{eventList.length})
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                
+                {/* 대회 목록 */}
+                {eventList.length === 0 ? (
+                  <div className="px-4 py-2 text-sm text-gray-500">등록된 대회가 없습니다.</div>
+                ) : (
+                  eventList.map((event) => {
+                    const isSelected = selectedEventIds.includes(event.id);
+                    return (
+                      <label
+                        key={event.id}
+                        className={clsx(
+                          'flex items-center gap-3 px-4 py-2 text-sm cursor-pointer transition-colors',
+                          'hover:bg-gray-50',
+                          isSelected && 'bg-blue-50'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleEventToggle(event.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <span className={clsx(
+                          'flex-1 truncate',
+                          isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                        )}>
+                          {event.nameKr || event.nameEn || event.id}
+                        </span>
+                        {isSelected && (
+                          <span className="text-xs text-blue-600 font-medium">선택됨</span>
+                        )}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* 선택 정보 표시 */}
+        {selectedEventIds.length > 1 && (
+          <div className="text-sm text-gray-600">
+            {selectedEventIds.length}개 대회의 신청자를 조회 중입니다.
+          </div>
+        )}
+      </div>
+
       <ApplicantsManageTable
         rows={rows}
         total={total}

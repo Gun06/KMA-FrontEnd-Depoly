@@ -197,7 +197,7 @@ export default function EditClient({
     let ignore = false;
     const load = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+        const base = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN;
         const res = await fetch(`${base}/api/v1/public/event/${eventId}/payment-info`, {
           headers: { 'Accept': 'application/json' },
           cache: 'no-store'
@@ -237,7 +237,7 @@ export default function EditClient({
     if (apiData) {
       const result = transformApiResponseToFormPrefill(apiData);
       const groups = extractGroupsFromApiResponse(apiData);
-      return {
+      const finalPrefill = {
         ...result,
         bank: apiData.eventInfo.bank ?? bankName,
         virtualAccount: apiData.eventInfo.virtualAccount ?? virtualAccount,
@@ -252,15 +252,24 @@ export default function EditClient({
           })),
         })),
       } as UseCompetitionPrefill;
+      
+      return finalPrefill;
     }
 
-    // API 데이터가 없으면 기존 로직 사용 (폴백)
-    return (
+    // API 데이터가 없고 로딩 중이면 빈 객체 반환 (초기 렌더링 방지)
+    if (isLoading) {
+      return {} as UseCompetitionPrefill;
+    }
+
+    // API 데이터가 없고 로딩도 완료되었으면 기존 로직 사용 (폴백)
+    const fallbackPrefill = (
       (forms[eventId] as UseCompetitionPrefill | undefined) ??
       (rowToPrefill(currentRow) as UseCompetitionPrefill) ??
       prefillForm
     );
-  }, [apiData, forms, eventId, currentRow, prefillForm, bankName, virtualAccount]);
+    
+    return fallbackPrefill;
+  }, [apiData, forms, eventId, currentRow, prefillForm, bankName, virtualAccount, isLoading]);
 
   const goDetail = () => router.replace(`/admin/events/${eventId}`);
 

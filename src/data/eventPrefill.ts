@@ -59,7 +59,9 @@ export function rowToPrefill(row: EventRow): EventPrefill {
   return {
     titleKo: row.title,
     titleEn: row.titleEn ?? "",
-    visibility: row.isPublic ? "공개" : "비공개",
+    visibility: typeof row.isPublic === 'boolean' 
+      ? (row.isPublic ? "공개" : "비공개")
+      : (row.isPublic === 'OPEN' ? "공개" : row.isPublic === 'TEST' ? "테스트" : "비공개"),
     applyStatus: row.applyStatus,
     deliveryMethod: "택배배송",
     shuttle: "운행",

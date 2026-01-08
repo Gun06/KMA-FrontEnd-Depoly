@@ -38,7 +38,7 @@ export default function Page({ params }: { params: { eventId: string } }) {
       place: '',
       host: '',
       applyStatus: '접수중' as RegStatus,
-      isPublic: true,
+      isPublic: 'OPEN',
     } as EventRow);
 
   return (

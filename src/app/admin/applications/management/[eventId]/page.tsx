@@ -10,7 +10,7 @@ export default function Page({
 }) {
   const eventId = params.eventId;
   const initialPage = Math.max(1, Number(searchParams?.page ?? 1));
-  const pageSize = 20;
+  const pageSize = 50;
 
   return (
     <main className="mx-auto max-w-[1600px] px-4 py-6">

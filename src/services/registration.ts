@@ -21,10 +21,21 @@ export async function getRegistrationList(params: RegistrationListRequest): Prom
 
 // 대회별 신청자 검색
 export async function searchRegistrationList(params: RegistrationSearchRequest): Promise<RegistrationListResponse> {
-  const { eventId, page = 1, size = 20, registrationSearchKey, direction, paymentStatus, keyword } = params;
+  const { eventId, eventIds, page = 1, size = 20, registrationSearchKey, direction, paymentStatus, keyword } = params;
   
   // URL에 쿼리 파라미터 추가
   const searchParams = new URLSearchParams();
+  
+  // 다중 선택 우선, 없으면 단일 선택
+  if (eventIds && eventIds.length > 0) {
+    // 여러 eventIds를 각각 추가
+    eventIds.forEach(id => {
+      searchParams.append('eventIds', id);
+    });
+  } else if (eventId) {
+    searchParams.set('eventIds', eventId);
+  }
+  
   searchParams.set('page', page.toString());
   searchParams.set('size', size.toString());
   
@@ -33,7 +44,7 @@ export async function searchRegistrationList(params: RegistrationSearchRequest):
   if (paymentStatus) searchParams.set('paymentStatus', paymentStatus);
   if (keyword) searchParams.set('keyword', keyword);
   
-  const url = `/api/v1/${eventId}/registration/search?${searchParams.toString()}`;
+  const url = `/api/v1/registration/search?${searchParams.toString()}`;
   
   return request<RegistrationListResponse>(
     'admin',
@@ -45,8 +56,16 @@ export async function searchRegistrationList(params: RegistrationSearchRequest):
 }
 
 // 신청자 목록 Excel 다운로드
-export async function downloadRegistrationList(eventId: string): Promise<void> {
-  const url = `/api/v1/${eventId}/registration/download`;
+export async function downloadRegistrationList(eventIds: string | string[]): Promise<void> {
+  const searchParams = new URLSearchParams();
+  
+  // 여러 eventIds를 각각 추가
+  const ids = Array.isArray(eventIds) ? eventIds : [eventIds];
+  ids.forEach(id => {
+    searchParams.append('eventIds', id);
+  });
+  
+  const url = `/api/v1/registration/download?${searchParams.toString()}`;
   
   
   try {

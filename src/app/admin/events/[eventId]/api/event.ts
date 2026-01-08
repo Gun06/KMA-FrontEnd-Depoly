@@ -28,7 +28,7 @@ export interface EventDetailApiResponse {
     coursePageImageUrl: string;
     eventsPageUrl: string;
     eventStatus: 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
-    visibleStatus: boolean;
+    visibleStatus: 'OPEN' | 'TEST' | 'CLOSE' | boolean; // boolean은 레거시 지원
     registDeadline: string; // ISO 8601
     paymentDeadline: string; // ISO 8601
     /** 은행명 (예: 국민은행) */

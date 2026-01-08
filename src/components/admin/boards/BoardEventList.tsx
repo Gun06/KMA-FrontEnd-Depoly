@@ -18,11 +18,11 @@ type BoardEventRow = {
   date: string;   // YYYY-MM-DD
   title: string;
   applyStatus: RegStatus;
-  isPublic: boolean;
+  isPublic: 'OPEN' | 'TEST' | 'CLOSE';
   url: string;
 };
 
-type PublicFilter = '' | '공개' | '비공개';
+type PublicFilter = '' | '공개' | '테스트' | '비공개';
 
 const mapStatus = (v: string): RegStatus | '' => {
   if (v === '접수중') return '접수중';
@@ -33,6 +33,7 @@ const mapStatus = (v: string): RegStatus | '' => {
 
 const mapPublic = (v: string): PublicFilter => {
   if (v === '공개') return '공개';
+  if (v === '테스트') return '테스트';
   if (v === '비공개') return '비공개';
   return '';
 };
@@ -64,7 +65,7 @@ export const BoardEventList = ({
 
   const [q, setQ] = React.useState('');
   const [status, setStatus] = React.useState<'접수중' | '접수마감' | '비접수' | ''>('');
-  const [pub, setPub] = React.useState<'' | '공개' | '비공개'>('');
+  const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>('');
   const [year, setYear] = React.useState<string>('');        
   const [page, setPage] = React.useState(1);
   const pageSize = 16;
@@ -96,9 +97,10 @@ export const BoardEventList = ({
     }
   }, [status]);
 
-  const visibleStatus = React.useMemo(() => {
-    if (pub === '공개') return true;
-    if (pub === '비공개') return false;
+  const visibleStatus = React.useMemo((): 'OPEN' | 'TEST' | 'CLOSE' | undefined => {
+    if (pub === '공개') return 'OPEN';
+    if (pub === '테스트') return 'TEST';
+    if (pub === '비공개') return 'CLOSE';
     return undefined;
   }, [pub]);
 
@@ -193,12 +195,15 @@ export const BoardEventList = ({
       header: '공개여부',
       width: 100,
       align: 'center',
-      render: (r) =>
-        r.isPublic ? (
-          <span className="text-[#1E5EFF]">공개</span>
-        ) : (
-          <span className="text-[#D12D2D]">비공개</span>
-        ),
+      render: (r) => {
+        if (r.isPublic === 'OPEN') {
+          return <span className="text-[#1E5EFF]">공개</span>;
+        } else if (r.isPublic === 'TEST') {
+          return <span className="text-[#FFA500]">테스트</span>;
+        } else {
+          return <span className="text-[#D12D2D]">비공개</span>;
+        }
+      },
     },
     {
       key: 'url',
