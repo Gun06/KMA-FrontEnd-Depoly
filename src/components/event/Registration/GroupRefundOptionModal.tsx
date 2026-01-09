@@ -8,6 +8,7 @@ interface GroupRefundOptionModalProps {
   onClose: () => void;
   onSelectGroupRefund: () => void; // 단체 전체 환불 선택
   onSelectIndividualRefund: () => void; // 개별 환불 선택
+  allCompleted?: boolean; // 모든 참가자가 결제 완료 상태인지 여부
 }
 
 export default function GroupRefundOptionModal({
@@ -15,6 +16,7 @@ export default function GroupRefundOptionModal({
   onClose,
   onSelectGroupRefund,
   onSelectIndividualRefund,
+  allCompleted = false,
 }: GroupRefundOptionModalProps) {
   if (!isOpen) return null;
 
@@ -43,14 +45,25 @@ export default function GroupRefundOptionModal({
           <button
             type="button"
             onClick={() => {
-              onSelectGroupRefund();
-              onClose();
+              if (allCompleted) {
+                onSelectGroupRefund();
+                onClose();
+              }
             }}
-            className="w-full p-4 border-2 border-blue-500 rounded-lg hover:bg-blue-50 transition-colors text-left"
+            disabled={!allCompleted}
+            className={`w-full p-4 border-2 rounded-lg transition-colors text-left ${
+              allCompleted
+                ? 'border-blue-500 hover:bg-blue-50 cursor-pointer'
+                : 'border-gray-300 bg-gray-100 cursor-not-allowed opacity-50'
+            }`}
           >
-            <div className="font-semibold text-gray-900 mb-1">단체 전체 환불</div>
-            <div className="text-sm text-gray-600">
-              단체 신청 내 모든 참가자를 일괄 환불합니다.
+            <div className={`font-semibold mb-1 ${allCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
+              단체 전체 환불
+            </div>
+            <div className={`text-sm ${allCompleted ? 'text-gray-600' : 'text-gray-400'}`}>
+              {allCompleted
+                ? '단체 신청 내 모든 참가자를 일괄 환불합니다.'
+                : '전체 환불은 모든 참가자가 결제 완료 상태여야 합니다.'}
             </div>
           </button>
 

@@ -505,14 +505,39 @@ export default function GroupApplicationConfirmResultPage() {
       throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
     }
 
+    // 모든 참가자의 registrationId 수집 (결제 완료 상태인 참가자만)
+    const participants = groupApplicationData.innerUserRegistrationList || [];
+    const allRegistrationIds: string[] = [];
+    
+    participants.forEach(participant => {
+      const registrationId = participant.registrationId;
+      if (registrationId) {
+        const detailedParticipant: InnerUserRegistration = loadedParticipantsMap.has(registrationId)
+          ? (loadedParticipantsMap.get(registrationId) || participant)
+          : participant;
+        const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
+        // 결제 완료 상태인 참가자만 포함
+        if (paymentStatus === 'COMPLETED' || paymentStatus === 'PAID') {
+          allRegistrationIds.push(registrationId);
+        }
+      }
+    });
+
+    // 모든 참가자가 결제 완료 상태인지 확인
+    if (allRegistrationIds.length !== participants.length) {
+      throw new Error('전체 환불은 모든 참가자가 결제 완료 상태여야 합니다.');
+    }
+
     setIsRefundLoading(true);
     try {
+      // 전체 환불 시 모든 참가자의 registrationId를 전달
       await requestGroupRefund(
         eventId,
         groupApplicationData.organizationId, // DB PK 값 사용
         bankName,
         accountNumber,
-        accountHolderName
+        accountHolderName,
+        allRegistrationIds // 모든 참가자의 registrationId 배열
       );
       // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
     } catch (error) {
@@ -1389,6 +1414,17 @@ export default function GroupApplicationConfirmResultPage() {
         onClose={() => setIsRefundOptionModalOpen(false)}
         onSelectGroupRefund={handleSelectGroupRefund}
         onSelectIndividualRefund={handleSelectIndividualRefund}
+        allCompleted={(() => {
+          const participants = groupApplicationData?.innerUserRegistrationList || [];
+          return participants.length > 0 && participants.every(participant => {
+            const registrationId = participant.registrationId;
+            const detailedParticipant: InnerUserRegistration = registrationId && loadedParticipantsMap.has(registrationId)
+              ? (loadedParticipantsMap.get(registrationId) || participant)
+              : participant;
+            const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
+            return paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+          });
+        })()}
       />
 
       {/* 사용자 선택 모달 (개별 환불용) */}

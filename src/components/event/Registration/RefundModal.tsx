@@ -187,8 +187,9 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M12 3a9 9 0 110 18 9 9 0 010-18z" />
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-gray-900">최종 확인</h3>
-              <div className="mt-2 text-sm text-gray-600 space-y-1">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">환불하시겠습니까?</h3>
+              <div className="mt-2 text-sm text-gray-600 space-y-2 text-left bg-gray-50 p-3 rounded-md">
+                <p>신청 하신 후 검토를 거쳐 3주 이내 환불 될 예정입니다.</p>
                 <p>환불 접수시 재신청이 불가합니다.</p>
                 <p>재신청 또는 단체로 재등록을 원하시는 경우에는 사무국으로 연락 바랍니다.</p>
               </div>
