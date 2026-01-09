@@ -453,7 +453,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
                 </button>
                 
                 {openDropdown === 'month' && (
-                  <div className="absolute top-full left-0 mt-1 w-18 sm:w-20 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="absolute top-full left-0 mt-1 w-18 sm:w-20 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                       <button
                         key={month}
