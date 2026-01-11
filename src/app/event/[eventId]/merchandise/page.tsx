@@ -126,14 +126,8 @@ export default function MerchandisePage({ params }: { params: { eventId: string 
                     width={800}
                     height={600}
                     priority={index === 0}
-                    className="max-w-full h-auto select-none pointer-events-none"
-                    draggable={false}
-                    style={{
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      MozUserSelect: 'none',
-                      msUserSelect: 'none'
-                    }}
+                    className="max-w-full h-auto"
+                    style={{ touchAction: 'auto' }}
                   />
                 </div>
               ))}

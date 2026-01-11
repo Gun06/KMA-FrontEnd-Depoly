@@ -125,98 +125,38 @@ export const checkGroupId = async (eventId: string, groupId: string): Promise<bo
   }
 };
 
-// 배치 검증 에러 타입
-export interface BatchValidationError {
-  row: number;
-  field: string | null;
-  target: string;
-  code: string | null;
-  message: string;
-  rejectedValue: string;
-}
-
-export interface BatchValidationErrorResponse {
-  httpStatus: string;
-  code: string;
-  message: string;
-  errors: BatchValidationError[];
-}
-
 // 단체 사용자 환불 요청
 export const requestGroupRefund = async (
   eventId: string,
   organizationId: string,
   bankName: string,
   accountNumber: string,
-  accountHolderName: string,
-  registrationIds?: string[] // 선택한 사용자들의 registrationId 배열 (개별 환불 시 사용, 없으면 전체 환불)
+  accountHolderName: string
 ): Promise<void> => {
   try {
     const url = `${API_BASE_URL}/api/v0/public/event/${eventId}/registration/organization/${organizationId}/refund`;
-    
-    // API 문서에 따른 request body 구조
-    const requestBody: {
-      refundTargetRegistrationIdList?: string[];
-      refundInfoRequest: {
-        accountNumber: string;
-        paymenterBank: string;
-        accountHolderName: string;
-      };
-    } = {
-      refundInfoRequest: {
-        accountNumber: accountNumber,
-        paymenterBank: bankName,
-        accountHolderName: accountHolderName
-      }
-    };
-
-    // 개별 환불인 경우 refundTargetRegistrationIdList 추가
-    if (registrationIds && registrationIds.length > 0) {
-      requestBody.refundTargetRegistrationIdList = registrationIds;
-    }
     
     const response = await fetch(url, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        paymenterBank: bankName,
+        accountNumber: accountNumber,
+        accountHolderName: accountHolderName
+      }),
     });
     
     if (!response.ok) {
       const errorText = await response.text();
       let errorMessage = `환불 요청 실패: ${response.status}`;
-      
       try {
         const errorJson = JSON.parse(errorText);
-        
-        // 배치 검증 에러인 경우 상세 에러 메시지 생성
-        if (errorJson.code === 'BATCH_VALIDATION_FAILED' && errorJson.errors && Array.isArray(errorJson.errors)) {
-          const batchError = errorJson as BatchValidationErrorResponse;
-          const errorMessages = batchError.errors.map((err, index) => {
-            return `${err.row}번째 사용자 (ID: ${err.rejectedValue}): ${err.message}`;
-          });
-          errorMessage = `${batchError.message}\n\n${errorMessages.join('\n')}`;
-        } else {
-          errorMessage = errorJson?.message || errorJson?.error || errorText;
-        }
+        errorMessage = errorJson?.message || errorJson?.error || errorText;
       } catch {
         errorMessage = errorText || errorMessage;
       }
-      
-      // 배치 검증 에러인 경우 특별한 에러 객체로 throw
-      if (errorText.includes('BATCH_VALIDATION_FAILED')) {
-        try {
-          const errorJson = JSON.parse(errorText);
-          if (errorJson.code === 'BATCH_VALIDATION_FAILED') {
-            const batchError = errorJson as BatchValidationErrorResponse;
-            throw { ...batchError, isBatchError: true };
-          }
-        } catch {
-          // 파싱 실패 시 일반 에러로 처리
-        }
-      }
-      
       throw new Error(errorMessage);
     }
   } catch (error) {

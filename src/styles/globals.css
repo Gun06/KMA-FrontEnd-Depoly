@@ -98,6 +98,8 @@ body {
     'Droid Sans',
     'Helvetica Neue',
     sans-serif;
+  touch-action: auto;
+  -ms-touch-action: auto;
 }
 
 a {
@@ -193,4 +195,10 @@ input[type='checkbox'].appearance-none:disabled:checked {
   border-color: #2563eb !important;
   opacity: 1 !important;
   cursor: not-allowed !important;
+}
+
+/* 인앱 브라우저에서 이미지 줌인/줌아웃 및 스크롤 허용 */
+img {
+  touch-action: auto;
+  -ms-touch-action: auto;
 }

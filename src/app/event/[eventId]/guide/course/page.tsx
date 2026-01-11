@@ -88,18 +88,6 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
     >
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 sm:mb-4 text-left">출발지 안내</h2>
-          <hr className="border-black mb-3 sm:mb-4" style={{ borderWidth: '1.7px' }} />
-          
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-extrabold text-gray-800 mb-2 sm:mb-3 text-left">풀코스 안내</h3>
-            <div className="text-gray-700 space-y-2 sm:space-y-3 text-left">
-              <p className="text-sm sm:text-base leading-relaxed">
-                출발그룹은 최고기록을 바탕으로 배정되었으며 플래카드의 유도 지시에 따라 순서대로 자신의 출발그룹별 지점에 위치해 주시기 바랍니다.
-              </p>
-            </div>
-          </div>
-          
           {/* coursePageImageUrl 이미지 표시 */}
           {images.length > 0 && (
             <div>
@@ -111,14 +99,8 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
                     width={800}
                     height={600}
                     priority={index === 0}
-                    className="max-w-full h-auto select-none pointer-events-none"
-                    draggable={false}
-                    style={{
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      MozUserSelect: 'none',
-                      msUserSelect: 'none'
-                    }}
+                    className="max-w-full h-auto"
+                    style={{ touchAction: 'auto' }}
                   />
                 </div>
               ))}
