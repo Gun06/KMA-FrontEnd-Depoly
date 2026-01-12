@@ -27,6 +27,7 @@ type Props<T> = {
   onRowClick?: (row: T) => void;
   hideTopBorder?: boolean;
   hideHeader?: boolean;
+  allowTextSelection?: boolean;
 };
 
 export default function BaseTable<T>({
@@ -40,6 +41,7 @@ export default function BaseTable<T>({
   onRowClick,
   hideTopBorder = false,
   hideHeader = false,
+  allowTextSelection = false,
 }: Props<T>) {
   const thAlign = (a?: "left" | "center" | "right") =>
     a === "left" ? "text-left" : a === "right" ? "text-right" : "text-center";
@@ -96,7 +98,10 @@ export default function BaseTable<T>({
                   if (target.closest('input, textarea, select, [data-stop-bubble="true"]')) {
                     return;
                   }
-                  e.preventDefault();
+                  // 텍스트 선택 허용 모드에서는 preventDefault() 실행 안 함
+                  if (!allowTextSelection) {
+                    e.preventDefault();
+                  }
                 }}
                 onClick={(e) => {
                   // 인풋 필드나 편집 가능한 요소는 이벤트 차단하지 않음

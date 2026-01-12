@@ -232,7 +232,7 @@ export function convertFiltersToApiParams(
       apiParams.keyword = keyword.replace(/[^0-9]/g, '');
     } else if (searchField === 'tel') {
       apiParams.registrationSearchKey = 'PH_NUM';
-      apiParams.keyword = keyword.replace(/[^0-9]/g, '');
+      apiParams.keyword = keyword; // 하이픈 포함 그대로 전달 (백엔드가 하이픈 포함 형식 지원)
     } else if (searchField === 'paymenterName') {
       // 입금자명으로 검색
       apiParams.registrationSearchKey = 'PAYMENTER_NAME';

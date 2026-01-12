@@ -194,6 +194,7 @@ export default function OrgMembersTable({
         renderActions={Actions}
         pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
         minWidth={1160}
+        allowTextSelection={true}
       />
     </div>
   );

@@ -580,6 +580,7 @@ export default function ApplicantsManageTable({
           },
         }}
         minWidth={1400}
+        allowTextSelection={true}
       />
     </div>
   );

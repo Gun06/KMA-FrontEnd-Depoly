@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useRegistrationList, useRegistrationSearch, useRegistrationDetail } from '@/hooks/useRegistration';
 import { useEventList } from '@/hooks/useNotices';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
@@ -37,17 +37,30 @@ export default function Client({
   eventId, initialPage, pageSize,
 }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
   const queryClient = useQueryClient();
-  const [page, setPage] = React.useState<number>(initialPage);
+  
+  // URL에서 초기 상태 읽기
+  const readInit = React.useCallback(() => {
+    const page = Number(sp.get('page') ?? initialPage);
+    const q = sp.get('q') ?? '';
+    const field = (sp.get('field') as 'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all') ?? 'all';
+    const paid = (sp.get('paid') as PaidFilter) ?? '';
+    const sort = (sp.get('sort') as SortKey) ?? 'id';
+    return { page, q, field, paid, sort };
+  }, [sp, initialPage]);
+
+  const [page, setPage] = React.useState<number>(() => readInit().page);
   const [isEventDropdownOpen, setIsEventDropdownOpen] = React.useState(false);
   
   // 선택된 대회 IDs (다중 선택 지원)
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([eventId]);
 
-  const [query, setQuery] = React.useState<string>('');
-  const [paidFilter, setPaidFilter] = React.useState<PaidFilter>('');
-  const [sortKey, setSortKey] = React.useState<SortKey>('id');
-  const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>('all');
+  const [query, setQuery] = React.useState<string>(() => readInit().q);
+  const [paidFilter, setPaidFilter] = React.useState<PaidFilter>(() => readInit().paid);
+  const [sortKey, setSortKey] = React.useState<SortKey>(() => readInit().sort);
+  const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>(() => readInit().field);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   // eventId가 변경되면 selectedEventIds에 추가
@@ -72,6 +85,23 @@ export default function Client({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isEventDropdownOpen]);
+
+  // URL 동기화
+  const syncURL = React.useCallback(() => {
+    const p = new URLSearchParams();
+    if (page !== 1) p.set('page', String(page));
+    if (query.trim()) p.set('q', query.trim());
+    if (searchField !== 'all') p.set('field', searchField);
+    if (paidFilter) p.set('paid', paidFilter);
+    if (sortKey !== 'id') p.set('sort', sortKey);
+
+    const next = p.toString() ? `${pathname}?${p.toString()}` : pathname;
+    router.replace(next);
+  }, [router, pathname, page, query, searchField, paidFilter, sortKey]);
+
+  React.useEffect(() => {
+    syncURL();
+  }, [syncURL]);
 
   // 항상 검색 API 사용 (서버에서 정렬과 번호를 내려줌)
   const searchParams = React.useMemo(() => ({
@@ -252,9 +282,9 @@ export default function Client({
   
   // 입금내역 업로드 성공 후 처리
   const handlePaymentUploadSuccess = async () => {
-    // 데이터 새로고침
-    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
-    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+    // 데이터 새로고침 (exact: false로 패턴 매칭)
+    await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
   };
 
   const handleCancelUploadPayments = () => {
@@ -288,9 +318,9 @@ export default function Client({
   
   // 단체 업로드 성공 후 처리
   const handleGroupUploadSuccess = async () => {
-    // 데이터 새로고침
-    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
-    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+    // 데이터 새로고침 (exact: false로 패턴 매칭)
+    await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
   };
 
   // 개인 신청 양식 다운로드 처리
@@ -310,9 +340,9 @@ export default function Client({
   
   // 개인 업로드 성공 후 처리
   const handlePersonalUploadSuccess = async () => {
-    // 데이터 새로고침
-    await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
-    await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+    // 데이터 새로고침 (exact: false로 패턴 매칭)
+    await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
   };
 
   // 툴바 액션 처리
@@ -342,12 +372,14 @@ export default function Client({
       }
 
       // ApplicantsManageTable에서 이미 API 호출을 완료했으므로
-      // 여기서는 쿼리 캐시만 무효화하여 데이터 새로고침
+      // 여기서는 쿼리 캐시만 무효화하여 데이터 새로고침 (exact: false로 패턴 매칭)
       await queryClient.invalidateQueries({
-        queryKey: ['registrationList', eventId],
+        queryKey: ['registrationList'],
+        exact: false,
       });
       await queryClient.invalidateQueries({
-        queryKey: ['registrationSearch', eventId],
+        queryKey: ['registrationSearch'],
+        exact: false,
       });
       
       toast.success('수정이 완료되었습니다!');
@@ -587,9 +619,9 @@ export default function Client({
         onSave={async () => {
           if (!selectedId) return;
           try {
-            // 저장 후 목록 및 상세 새로고침
-            await queryClient.invalidateQueries({ queryKey: ['registrationList', eventId] });
-            await queryClient.invalidateQueries({ queryKey: ['registrationSearch', eventId] });
+            // 저장 후 목록 및 상세 새로고침 (exact: false로 패턴 매칭)
+            await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+            await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
             await queryClient.invalidateQueries({ queryKey: ['registrationDetail', selectedId] });
             toast.success('신청 정보가 수정되었습니다.');
           } catch (_e) {

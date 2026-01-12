@@ -73,8 +73,7 @@ export default function Client() {
   // API → 화면 행 변환 (서버 측 검색/정렬 사용)
   useEffect(() => {
     if (!apiData) {
-      setRows([]);
-      setTotal(0);
+      // placeholderData로 이전 데이터가 유지되므로, apiData가 없을 때는 이전 상태 유지
       return;
     }
     // API 원본을 표 행으로 변환
@@ -105,13 +104,10 @@ export default function Client() {
     return rows.map(r => r.id);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">단체 회원을 불러오는 중...</div>
-      </div>
-    );
-  }
+  // FilterBar 초기값 설정
+  const filterInitialValues = useMemo(() => {
+    return [sortBy, field];
+  }, [sortBy, field]);
 
   if (error) {
     return (
@@ -127,6 +123,7 @@ export default function Client() {
       total={total}
       page={page}
       pageSize={pageSize}
+      isLoading={isLoading}
       onPageChange={setPage}
 
       // 상단 필터바 연동(✅ 파라미터 타입 명시)
@@ -156,6 +153,8 @@ export default function Client() {
         setPage(1);
         setSelectedIds([]);
       }}
+      initialSearchValue={query}
+      initialFilterValues={filterInitialValues}
     />
   );
 }

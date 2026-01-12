@@ -18,6 +18,7 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
+  isLoading?: boolean;
   onPageChange: (p: number) => void;
 
   onSearch?: (q: string) => void;
@@ -30,13 +31,17 @@ type Props = {
   selectedIds?: number[];
   onToggleSelectOne?: (id: number, checked: boolean) => void;
   onToggleSelectAll?: (checked: boolean, idsOnPage: number[]) => void;
+  initialSearchValue?: string;
+  initialFilterValues?: string[];
 };
 
 export default function OrganizationUsersTable({
-  rows, total, page, pageSize, onPageChange,
+  rows, total, page, pageSize, isLoading = false, onPageChange,
   onSearch, onSearchFieldChange, onSortByChange, onMemberFilterChange,
   onClickExcel, onResetFilters,
   selectedIds = [], onToggleSelectOne, onToggleSelectAll,
+  initialSearchValue = '',
+  initialFilterValues = [],
 }: Props) {
 
   /** 현재 페이지에 렌더된 행들의 id */
@@ -104,6 +109,8 @@ export default function OrganizationUsersTable({
       {...presetProps}
       className="!gap-3"
       showReset
+      initialValues={initialFilterValues}
+      initialSearchValue={initialSearchValue}
       onFieldChange={(label, value) => {
         const L = norm(label);
         const v = String(value);
@@ -121,8 +128,26 @@ export default function OrganizationUsersTable({
     />
   ) : null;
 
-  // 빈 상태 처리
-  if (rows.length === 0 && total === 0) {
+  // 처음 로드 시 로딩 메시지 표시 (total이 0이고 데이터가 없을 때만)
+  if (isLoading && rows.length === 0 && total === 0) {
+    return (
+      <AdminTable<OrganizationRow>
+        columns={columns}
+        rows={[]}
+        rowKey={(r, idx) => r.id || `row-${idx}`}
+        renderFilters={null}
+        renderSearch={null}
+        renderActions={Actions}
+        pagination={false}
+        minWidth={1200}
+        allowTextSelection={true}
+        loadingMessage="단체 회원을 불러오는 중입니다"
+      />
+    );
+  }
+
+  // 빈 상태 처리 (로딩 중이 아닐 때만 표시)
+  if (!isLoading && rows.length === 0 && total === 0) {
     return (
       <div className="w-full">
         <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
@@ -146,6 +171,7 @@ export default function OrganizationUsersTable({
       renderActions={Actions}
       pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
       minWidth={1200}
+      allowTextSelection={true}
     />
   );
 }

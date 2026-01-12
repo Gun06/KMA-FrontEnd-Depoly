@@ -40,9 +40,9 @@ export function useUpdatePaymentStatus() {
   return useMutation({
     mutationFn: updatePaymentStatus,
     onSuccess: () => {
-      // 관련 쿼리들 무효화하여 데이터 새로고침
-      queryClient.invalidateQueries({ queryKey: ['registrationList'] });
-      queryClient.invalidateQueries({ queryKey: ['registrationSearch'] });
+      // 관련 쿼리들 무효화하여 데이터 새로고침 (exact: false로 패턴 매칭)
+      queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
     },
     onError: (error) => {
       // API 호출 실패

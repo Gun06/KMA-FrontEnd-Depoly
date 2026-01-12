@@ -25,6 +25,8 @@ type Props<T> = {
   stickyHeader?: boolean;
   minWidth?: number | string;
   contentMinHeight?: number | string | null;
+  allowTextSelection?: boolean;
+  loadingMessage?: string;
 };
 
 export default function AdminTableShell<T>({
@@ -42,6 +44,8 @@ export default function AdminTableShell<T>({
   stickyHeader = true,
   minWidth,
   contentMinHeight = '100vh',
+  allowTextSelection = false,
+  loadingMessage,
 }: Props<T>) {
   const minH = contentMinHeight 
     ? (typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight)
@@ -63,7 +67,7 @@ export default function AdminTableShell<T>({
       )}
 
       <div
-        className={contentMinHeight ? 'flex-1' : ''}
+        className={clsx(contentMinHeight ? 'flex-1' : '', 'relative')}
         onClick={(e) => {
           const el = e.target as HTMLElement;
           if (el.closest('[data-allow-bubble="true"]')) return;
@@ -90,8 +94,14 @@ export default function AdminTableShell<T>({
             stickyHeader && 'sticky top-0 z-10'
           )}
           zebra={false}
+          allowTextSelection={allowTextSelection}
           {...(minWidth ? { minWidth } : {})}
         />
+        {loadingMessage && rows.length === 0 && (
+          <div className="absolute top-12 left-0 right-0 bottom-0 flex items-start justify-center bg-white pt-20">
+            <div className="text-gray-500 text-base">{loadingMessage}</div>
+          </div>
+        )}
       </div>
 
       {pagination && (

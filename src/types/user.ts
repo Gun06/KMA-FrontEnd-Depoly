@@ -195,6 +195,7 @@ export interface OrganizationApiData {
   addressDetail?: string;
   email?: string;
   registrationDate?: string;
+  createdAt?: string; // 등록일 (백엔드에서 제공 예정)
   organizationHeadCount?: number;
   sumAmount?: number;
   totalAmount?: number;

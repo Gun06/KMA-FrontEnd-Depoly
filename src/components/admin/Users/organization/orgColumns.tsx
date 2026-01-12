@@ -84,7 +84,19 @@ export default function createOrgColumns(
       render: (r) => <span className="block max-w-[140px] truncate mx-auto">{r.ownerId}</span>,
     },
 
-    { key: 'createdAt', header: '등록일', width: 140, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    {
+      key: 'createdAt',
+      header: '등록일',
+      width: 140,
+      align: 'center',
+      className: 'whitespace-nowrap tabular-nums',
+      render: (r) => {
+        if (!r.createdAt || r.createdAt === '-') return '-';
+        // ISO 8601 형식에서 날짜 부분만 추출 (YYYY-MM-DD)
+        const dateOnly = r.createdAt.split('T')[0];
+        return dateOnly;
+      },
+    },
 
     { key: 'memberCount', header: '회원수', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
 

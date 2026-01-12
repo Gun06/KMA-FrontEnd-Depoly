@@ -117,9 +117,9 @@ export default function EventTable({
         // boolean 레거시 처리
         if (typeof r.isPublic === 'boolean') {
           return r.isPublic ? (
-          <span className="text-[#1E5EFF]">공개</span>
-        ) : (
-          <span className="text-[#D12D2D]">비공개</span>
+            <span className="text-[#1E5EFF]">공개</span>
+          ) : (
+            <span className="text-[#D12D2D]">비공개</span>
           );
         }
         // enum 처리

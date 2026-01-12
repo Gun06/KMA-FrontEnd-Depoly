@@ -16,6 +16,7 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
+  isLoading?: boolean;
   onPageChange: (p: number) => void;
 
   onSearch?: (q: string) => void;
@@ -27,6 +28,8 @@ type Props = {
   selectedIds?: string[];
   onToggleSelectOne?: (id: string, checked: boolean) => void;
   onToggleSelectAll?: (checked: boolean, idsOnPage: string[]) => void;
+  initialSearchValue?: string;
+  initialFilterValues?: string[];
 };
 
 export default function IndividualUsersTable({
@@ -34,6 +37,7 @@ export default function IndividualUsersTable({
   total,
   page,
   pageSize,
+  isLoading = false,
   onPageChange,
   onSearch,
   onSortKeyChange,
@@ -44,6 +48,8 @@ export default function IndividualUsersTable({
   selectedIds,
   onToggleSelectOne,
   onToggleSelectAll,
+  initialSearchValue = '',
+  initialFilterValues = [],
 }: Props) {
   // ---- 선택 제어 ----
   const controlled = Array.isArray(selectedIds) && !!onToggleSelectOne;
@@ -132,6 +138,8 @@ export default function IndividualUsersTable({
       {...presetProps}
       className="!gap-3"
       showReset
+      initialValues={initialFilterValues}
+      initialSearchValue={initialSearchValue}
       onFieldChange={(label, value) => {
         const L = norm(label);
         if (L === '번호') onSortKeyChange?.(value as SortKey);
@@ -145,8 +153,26 @@ export default function IndividualUsersTable({
     />
   ) : null;
 
-  // 빈 상태 처리
-  if (rows.length === 0 && total === 0) {
+  // 처음 로드 시 로딩 메시지 표시 (total이 0이고 데이터가 없을 때만, 페이지 전환 시에는 표시 안 함)
+  if (isLoading && rows.length === 0 && total === 0) {
+    return (
+      <AdminTable<IndividualUserRow>
+        columns={columns}
+        rows={[]}
+        rowKey={(r) => r.id}
+        renderFilters={null}
+        renderSearch={null}
+        renderActions={Actions}
+        pagination={false}
+        minWidth={1240}
+        allowTextSelection={true}
+        loadingMessage="개인회원을 불러오는 중입니다"
+      />
+    );
+  }
+
+  // 빈 상태 처리 (로딩 중이 아닐 때만 표시)
+  if (!isLoading && rows.length === 0 && total === 0) {
     return (
       <div className="w-full">
         <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
@@ -170,6 +196,7 @@ export default function IndividualUsersTable({
       renderActions={Actions}
       pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
       minWidth={1240}   // 1200으로 내려도 됨. 컬럼 폭은 1200 안에 들어가게 맞춰둠.
+      allowTextSelection={true}
     />
   );
 }

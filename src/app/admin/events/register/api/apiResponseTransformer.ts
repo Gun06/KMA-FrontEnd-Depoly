@@ -120,7 +120,7 @@ export function transformApiResponseToFormPrefill(
   const visibleStatusToVisibility = (visible: 'OPEN' | 'TEST' | 'CLOSE' | boolean): '공개' | '테스트' | '비공개' => {
     // boolean 레거시 처리
     if (typeof visible === 'boolean') {
-    return visible ? '공개' : '비공개';
+      return visible ? '공개' : '비공개';
     }
     
     // enum 처리 (문자열 비교 - 공백 제거 및 대문자 변환)

@@ -166,31 +166,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {showFontSize && (
           <>
             <div className="w-px h-6 bg-gray-300" />
-            <div className="relative">
-              <select 
-                value={fontSize}
-                onChange={(e) => onFontSizeChange(e.target.value)}
-                className="px-3 py-2 pr-8 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[90px]"
-                style={{
-                  fontSize: fontSize !== 'default' ? fontSize : '14px'
-                }}
-              >
-                <option value="default">기본 (14px)</option>
-                <option value="12px">12px</option>
-                <option value="14px">14px</option>
-                <option value="16px">16px</option>
-                <option value="18px">18px</option>
-                <option value="20px">20px</option>
-                <option value="24px">24px</option>
-                <option value="28px">28px</option>
-                <option value="32px">32px</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <select 
+              value={fontSize}
+              onChange={(e) => onFontSizeChange(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="default">기본</option>
+              <option value="12px">12px</option>
+              <option value="14px">14px</option>
+              <option value="16px">16px</option>
+              <option value="18px">18px</option>
+              <option value="20px">20px</option>
+              <option value="24px">24px</option>
+              <option value="28px">28px</option>
+              <option value="32px">32px</option>
+            </select>
           </>
         )}
 
@@ -198,42 +188,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         {showTextColor && (
           <>
             <div className="w-px h-6 bg-gray-300" />
-            <div className="relative">
-              <select 
-                value={textColor}
-                onChange={(e) => {
-                  // 색상 변경 (에디터 포커스는 핸들러 내에서 처리)
-                  onTextColorChange(e.target.value);
-                }}
-                className="px-3 py-2 pr-8 pl-8 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[110px]"
-                style={{
-                  color: textColor !== 'default' ? textColor : '#374151'
-                }}
-              >
-                <option value="default">기본 (검정)</option>
-                <option value="#000000">검정</option>
-                <option value="#ef4444">빨강</option>
-                <option value="#3b82f6">파랑</option>
-                <option value="#22c55e">초록</option>
-                <option value="#f59e0b">주황</option>
-                <option value="#8b5cf6">보라</option>
-                <option value="#ec4899">분홍</option>
-                <option value="#6b7280">회색</option>
-              </select>
-              {/* 색상 미리보기 원 */}
-              <div 
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-gray-300 pointer-events-none"
-                style={{
-                  backgroundColor: textColor !== 'default' ? textColor : '#374151'
-                }}
-              />
-              {/* 드롭다운 화살표 */}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <select 
+              value={textColor}
+              onChange={(e) => onTextColorChange(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="default">기본</option>
+              <option value="#000000">검정</option>
+              <option value="#ef4444">빨강</option>
+              <option value="#3b82f6">파랑</option>
+              <option value="#22c55e">초록</option>
+              <option value="#f59e0b">주황</option>
+              <option value="#8b5cf6">보라</option>
+              <option value="#ec4899">분홍</option>
+              <option value="#6b7280">회색</option>
+            </select>
           </>
         )}
 

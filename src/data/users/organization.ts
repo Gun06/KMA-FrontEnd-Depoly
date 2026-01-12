@@ -61,6 +61,9 @@ export function transformOrganizationApiToRow(item: OrganizationApiData, index?:
     finalId = (numId && numId !== 0) ? numId : (1000000 + (index ?? 0));
   }
   
+  // 등록일 처리: createdAt 우선, 없으면 registrationDate 사용, 둘 다 없으면 '-'
+  const createdAt = item.createdAt || item.registrationDate || '-';
+  
   return {
     id: finalId,
     no: typeof item.no === 'number' ? item.no : undefined,
@@ -69,7 +72,7 @@ export function transformOrganizationApiToRow(item: OrganizationApiData, index?:
     org: item.name,
     owner: item.leaderName,
     ownerId: item.account, // 대표자 아이디 (account 필드 사용)
-    createdAt: '-',
+    createdAt: createdAt,
     joinCount: 0,
     memberCount: item.memberCount,
     isMember: true,

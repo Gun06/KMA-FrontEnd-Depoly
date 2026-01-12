@@ -8,7 +8,7 @@ import CategoryBadge from "@/components/common/Badge/CategoryBadge";
 import type { Category } from "@/components/common/Table/types";
 import { useNoticeDetail, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
-import { useAdminAuthStore } from "@/stores";
+import { useAuthStore } from "@/stores";
 
 // 날짜시간 포맷팅 함수 (백엔드에서 한국시간으로 제공)
 function formatDateTime(dateString: string): string {
@@ -45,8 +45,8 @@ export default function Page() {
     data: NoticeCategory[] | undefined;
   };
   
-  // 현재 관리자 사용자 정보
-  const { user } = useAdminAuthStore();
+  // 현재 사용자 정보
+  const { user } = useAuthStore();
 
   const goList = () => router.replace(`/admin/boards/notice/main?_r=${Date.now()}`);
   const goEdit = () => router.push(`/admin/boards/notice/main/${noticeId}/edit`);
@@ -118,7 +118,7 @@ export default function Page() {
           </header>
           <div className="h-px bg-gray-100" />
           <div
-            className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p:has(br)]:min-h-[1.5em] [&_p:empty]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+            className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
             style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
             dangerouslySetInnerHTML={{ __html: detail.content ?? "" }}
           />

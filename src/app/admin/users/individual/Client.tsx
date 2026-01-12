@@ -9,6 +9,24 @@ import { useIndividualUsersList } from '@/services/admin/users';
 type SortKey = 'id' | 'name' | 'birth' | 'member' | 'createdAt';
 type MemberFilter = '' | 'member' | 'nonMember';
 
+// API 파라미터 변환 헬퍼
+const convertSortKeyToApi = (sortKey: SortKey): 'NAME' | 'BIRTH' | 'NO' | undefined => {
+  switch (sortKey) {
+    case 'name': return 'NAME';
+    case 'birth': return 'BIRTH';
+    case 'id': return 'NO';
+    default: return undefined;
+  }
+};
+
+const convertMemberFilterToApi = (memberFilter: MemberFilter): 'USER' | 'GUEST' | undefined => {
+  switch (memberFilter) {
+    case 'member': return 'USER';
+    case 'nonMember': return 'GUEST';
+    default: return undefined;
+  }
+};
+
 export default function Client() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,10 +51,19 @@ export default function Client() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // API 파라미터 변환
+  const apiAuth = convertMemberFilterToApi(memberFilter);
+  const apiSearchKey = convertSortKeyToApi(sortKey);
+  const apiDirection: 'ASC' | 'DESC' = 'DESC'; // 기본 내림차순
+
   // API 호출
   const { data: apiResponse, isLoading, error } = useIndividualUsersList({
     page,
     size: pageSize,
+    auth: apiAuth,
+    searchKey: apiSearchKey,
+    direction: apiDirection,
+    keyword: query.trim() || undefined,
   });
 
   // URL 동기화
@@ -55,71 +82,29 @@ export default function Client() {
     syncURL();
   }, [syncURL]);
 
-  // API 응답을 테이블 형식으로 변환하고 필터링
+  // API 응답을 테이블 형식으로 변환 (서버에서 검색/필터링/정렬 완료)
   const { rows, total } = useMemo(() => {
     if (!apiResponse) {
       return { rows: [], total: 0 };
     }
 
-    let transformedRows = apiResponse.content.map(transformApiDataToTableRow);
-
-    // 검색 필터링
-    if (query.trim()) {
-      const searchTerm = query.toLowerCase();
-      transformedRows = transformedRows.filter(row => 
-        row.name.toLowerCase().includes(searchTerm) ||
-        row.userId.toLowerCase().includes(searchTerm) ||
-        row.phone.includes(query) ||
-        row.address.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // 회원/비회원 필터링
-    if (memberFilter) {
-      transformedRows = transformedRows.filter(row => 
-        memberFilter === 'member' ? row.isMember : !row.isMember
-      );
-    }
-
-    // 정렬
-    transformedRows.sort((a, b) => {
-      const dir = -1; // 기본 내림차순 정렬
-      
-      switch (sortKey) {
-        case 'id':
-          return dir * (Number(a.id) - Number(b.id));
-        case 'name':
-          return dir * a.name.localeCompare(b.name);
-        case 'birth':
-          return dir * a.birth.localeCompare(b.birth);
-        case 'member':
-          return dir * (Number(a.isMember) - Number(b.isMember));
-        case 'createdAt':
-          return dir * a.createdAt.localeCompare(b.createdAt);
-        default:
-          return 0;
-      }
-    });
+    const transformedRows = apiResponse.content.map(transformApiDataToTableRow);
 
     return {
       rows: transformedRows,
       total: apiResponse.totalElements
     };
-  }, [apiResponse, query, memberFilter, sortKey]);
+  }, [apiResponse]);
 
   // 현재 필터로 모든 행의 id 얻기 (엑셀/전체선택에 사용)
   const getAllFilteredIds = useCallback(() => {
     return rows.map((r) => r.id);
   }, [rows]);
 
-  // 로딩 상태 처리
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">회원 목록을 불러오는 중...</div>
-      </div>
-    );
-  }
+  // FilterBar 초기값 설정
+  const filterInitialValues = useMemo(() => {
+    return [sortKey, memberFilter];
+  }, [sortKey, memberFilter]);
 
   // 에러 상태 처리
   if (error) {
@@ -138,11 +123,14 @@ export default function Client() {
       total={total}
       page={page}
       pageSize={pageSize}
+      isLoading={isLoading}
       onPageChange={setPage}
       onSearch={(q) => { setQuery(q); setPage(1); }}
       onSortKeyChange={(k) => { setSortKey(k); setPage(1); }}
       onMemberFilterChange={(v) => { setMemberFilter(v); setPage(1); }} 
       selectedIds={selectedIds}
+      initialSearchValue={query}
+      initialFilterValues={filterInitialValues}
       onToggleSelectOne={(id, checked) => {
         setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
       }}
