@@ -92,6 +92,15 @@ export default function FaqPage() {
     })
   }
 
+  // FAQ 항목의 HTML을 미리 계산 (조건부 return 이전에 호출)
+  const faqItemsWithHtml = useMemo(() => {
+    return faqData.map(item => ({
+      ...item,
+      questionHtml: prepareHtmlForDisplay(item.question),
+      answerHtml: prepareHtmlForDisplay(item.answer),
+    }));
+  }, [faqData]);
+
   // 로딩 상태
   if (isLoading) {
     return (
@@ -148,9 +157,9 @@ export default function FaqPage() {
         <div className="bg-white rounded-lg shadow-sm">
           {/* FAQ 내용 */}
           <div className="px-6 md:px-8 py-6">
-            {faqData.length > 0 ? (
+            {faqItemsWithHtml.length > 0 ? (
               <div className="divide-y divide-gray-200">
-                {faqData.map((item, index) => {
+                {faqItemsWithHtml.map((item, index) => {
                   const isOpen = openSet.has(index)
                   const buttonId = `faq-button-${index}`
                   const panelId = `faq-panel-${index}`
@@ -168,7 +177,7 @@ export default function FaqPage() {
                         </span>
                         <span 
                           className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
-                          dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.question), [item.question]) }}
+                          dangerouslySetInnerHTML={{ __html: item.questionHtml }}
                         />
                         <span aria-hidden>
                           <Image
@@ -189,7 +198,7 @@ export default function FaqPage() {
                       >
                         <div 
                           className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
-                          dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.answer), [item.answer]) }}
+                          dangerouslySetInnerHTML={{ __html: item.answerHtml }}
                         />
                       </div>
                     </div>

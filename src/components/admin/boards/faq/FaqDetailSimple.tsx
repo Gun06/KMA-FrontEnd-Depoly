@@ -27,6 +27,9 @@ export default function FaqDetailSimple({
     return [...q, ...ans];
   }, [detail.files, detail.answer?.files, showQuestionFiles]);
 
+  const questionHtml = React.useMemo(() => prepareHtmlForDisplay(detail.question), [detail.question]);
+  const answerHtml = React.useMemo(() => prepareHtmlForDisplay(detail.answer?.content || ''), [detail.answer?.content]);
+
   return (
     <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
       {/* 상단 액션 */}
@@ -48,7 +51,7 @@ export default function FaqDetailSimple({
             <div 
               className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
               style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: React.useMemo(() => prepareHtmlForDisplay(detail.question), [detail.question]) }} 
+              dangerouslySetInnerHTML={{ __html: questionHtml }} 
             />
           ) : (
             <p className="text-gray-600">질문 내용이 없습니다.</p>
@@ -62,7 +65,7 @@ export default function FaqDetailSimple({
             <div
               className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
               style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: React.useMemo(() => prepareHtmlForDisplay(detail.answer?.content || ''), [detail.answer?.content]) }}
+              dangerouslySetInnerHTML={{ __html: answerHtml }}
             />
           ) : (
             <p className="text-gray-600">등록된 답변이 없습니다.</p>

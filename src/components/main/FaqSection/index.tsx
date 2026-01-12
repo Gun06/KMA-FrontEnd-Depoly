@@ -117,6 +117,15 @@ export default function FaqSection({
     })
   }
 
+  // FAQ 항목의 HTML을 미리 계산
+  const faqItemsWithHtml = useMemo(() => {
+    return faqItems.map(item => ({
+      ...item,
+      questionHtml: prepareHtmlForDisplay(item.question),
+      answerHtml: prepareHtmlForDisplay(item.answer),
+    }));
+  }, [faqItems]);
+
   return (
     <section aria-labelledby="faq-title" className="bg-white">
       <SectionPanel
@@ -150,9 +159,9 @@ export default function FaqSection({
                 </div>
               ))}
             </div>
-          ) : faqItems.length > 0 ? (
+          ) : faqItemsWithHtml.length > 0 ? (
             <div className="divide-y divide-gray-200 bg-white rounded-md">
-              {faqItems.map((item, index) => {
+              {faqItemsWithHtml.map((item, index) => {
                 const isOpen = openSet.has(index)
                 const buttonId = `faq-button-${index}`
                 const panelId = `faq-panel-${index}`
@@ -170,7 +179,7 @@ export default function FaqSection({
                       </span>
                       <span 
                         className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
-                        dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.question), [item.question]) }}
+                        dangerouslySetInnerHTML={{ __html: item.questionHtml }}
                       />
                       <span aria-hidden>
                         <Image
@@ -191,7 +200,7 @@ export default function FaqSection({
                     >
                       <div 
                         className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
-                        dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.answer), [item.answer]) }}
+                        dangerouslySetInnerHTML={{ __html: item.answerHtml }}
                       />
                     </div>
                   </div>
