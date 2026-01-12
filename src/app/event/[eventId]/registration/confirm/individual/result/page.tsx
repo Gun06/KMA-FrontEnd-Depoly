@@ -22,6 +22,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [isRefundLoading, setIsRefundLoading] = useState(false);
   const [isUnpaidAlertOpen, setIsUnpaidAlertOpen] = useState(false);
+  const [isEditDisabledAlertOpen, setIsEditDisabledAlertOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -195,6 +196,16 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   };
 
   const handleEdit = () => {
+    // 결제 상태 확인: 미결제 또는 결제완료 상태일 때만 수정 가능
+    const paymentStatus = registrationData?.paymentStatus?.toUpperCase();
+    const canEdit = paymentStatus === 'UNPAID' || paymentStatus === 'PAID' || paymentStatus === 'COMPLETED';
+    
+    if (!canEdit) {
+      // 수정 불가 상태일 때 커스텀 알림 모달 표시
+      setIsEditDisabledAlertOpen(true);
+      return;
+    }
+    
     // 수정 모드로 개인신청 페이지로 이동 (기존 데이터와 함께)
     if (!registrationData) return; // null 체크
     
@@ -448,7 +459,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 </div>
                 
                 <div className="flex items-center justify-between pb-4">
-                  <label className="text-base font-medium text-black">개인계좌</label>
+                  <label className="text-base font-medium text-black">회원구분</label>
                   <span className="text-base text-black">
                     {registrationData.personalAccount || "없음"}
                   </span>
@@ -621,19 +632,39 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
           {/* 버튼 그룹 */}
           <div className="flex justify-center gap-4 mt-8">
-            {/* TODO: 결제상태에 따른 수정하기 버튼 비활성화 조건 일시적으로 주석처리 - 모든 경우에 수정 가능 */}
-            {/* disabled={registrationData.paymentStatus !== 'UNPAID' && registrationData.paymentStatus !== 'PAID'} */}
-            <button
-              onClick={handleEdit}
-              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
-                // registrationData.paymentStatus === 'UNPAID' || registrationData.paymentStatus === 'PAID'
-                //   ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
-                //   : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
-                'bg-white text-black border-2 border-black hover:bg-gray-100'
-              }`}
-            >
-              수정하기
-            </button>
+            {/* 수정 가능 여부 판단: 미결제(UNPAID) 또는 결제완료(COMPLETED/PAID) 상태일 때만 수정 가능 */}
+            {(() => {
+              const paymentStatus = registrationData.paymentStatus?.toUpperCase();
+              const canEdit = paymentStatus === 'UNPAID' || paymentStatus === 'PAID' || paymentStatus === 'COMPLETED';
+              const disabledMessage = canEdit 
+                ? '' 
+                : '현재 결제 상태에서는 신청 정보를 수정할 수 없습니다. 미결제 또는 결제완료 상태에서만 수정이 가능합니다.';
+              
+              return (
+                <div className="relative group">
+                  <button
+                    onClick={handleEdit}
+                    title={disabledMessage}
+                    className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${
+                      canEdit
+                        ? 'bg-white text-black border-2 border-black hover:bg-gray-100'
+                        : 'bg-gray-300 text-gray-500 border-2 border-gray-300 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    수정하기
+                  </button>
+                  {/* 툴팁: 비활성화 상태일 때만 표시 */}
+                  {!canEdit && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-64 text-center">
+                      {disabledMessage}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                        <div className="border-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {/* 환불하기 버튼: 항상 표시 */}
             <button
               onClick={() => {
@@ -674,6 +705,15 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         onClose={() => setIsUnpaidAlertOpen(false)}
         title="환불 요청 불가"
         message="결제내역이 확인되지 않아 현재는 환불요청이 불가합니다. 입금 확인은 3~5일 소요됩니다!"
+        confirmText="확인"
+      />
+
+      {/* 수정 불가 안내 모달 */}
+      <ErrorModal
+        isOpen={isEditDisabledAlertOpen}
+        onClose={() => setIsEditDisabledAlertOpen(false)}
+        title="수정 불가"
+        message="현재 결제 상태에서는 신청 정보를 수정할 수 없습니다. 미결제 또는 결제완료 상태에서만 수정이 가능합니다."
         confirmText="확인"
       />
     </SubmenuLayout>

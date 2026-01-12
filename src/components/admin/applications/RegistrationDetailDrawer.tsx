@@ -1026,7 +1026,7 @@ export default function RegistrationDetailDrawer({
 
               {/* 사용자 비고 */}
               <div className="mt-4">
-                <div className="text-sm text-gray-500 mb-1">비고(사용자)</div>
+                <div className="text-sm text-gray-500 mb-1">쿠폰 일련번호(참가자 기재)</div>
                 <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap min-h-[64px]">
                   {item.note ? item.note : ''}
                 </div>
@@ -1034,7 +1034,7 @@ export default function RegistrationDetailDrawer({
 
               {/* 관리자 메모 */}
               <div className="mt-4">
-                <div className="text-sm text-gray-700 mb-1">메모(관리자만 보입니다)</div>
+                <div className="text-sm text-gray-700 mb-1">키워드 (관리자 기재)</div>
                 <textarea
                   className={clsx(
                     'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
@@ -1053,7 +1053,7 @@ export default function RegistrationDetailDrawer({
 
               {/* 상세 메모 */}
               <div className="mt-4">
-                <div className="text-sm text-gray-700 mb-1">상세메모</div>
+                <div className="text-sm text-gray-700 mb-1">상세메모 (관리자 기재)</div>
                 <textarea
                   className={clsx(
                     'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',

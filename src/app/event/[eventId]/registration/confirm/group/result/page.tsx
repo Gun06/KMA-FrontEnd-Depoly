@@ -1,13 +1,15 @@
 "use client";
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-import { GroupRegistrationConfirmData } from "./types";
+import { GroupRegistrationConfirmData, InnerUserRegistration } from "./types";
 import { fetchGroupRegistrationConfirm, createEditData } from "./api";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
-import { requestGroupRefund } from "@/app/event/[eventId]/registration/apply/shared/api/group";
+import GroupRefundOptionModal from "@/components/event/Registration/GroupRefundOptionModal";
+import GroupRefundUserSelectModal from "@/components/event/Registration/GroupRefundUserSelectModal";
+import { requestGroupRefund, BatchValidationErrorResponse, BatchValidationError } from "@/app/event/[eventId]/registration/apply/shared/api/group";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 
 
@@ -21,35 +23,36 @@ export default function GroupApplicationConfirmResultPage() {
   const [error, setError] = useState<string | null>(null);
   const [displayedCount, setDisplayedCount] = useState(10); // 초기 표시 개수
   const [isLoadingMore, setIsLoadingMore] = useState(false); // 더보기 로딩 중
-  const [loadedParticipantsMap, setLoadedParticipantsMap] = useState<Map<string, any>>(new Map()); // 상세 정보가 로드된 참가자들 (registrationId를 키로)
+  const [loadedParticipantsMap, setLoadedParticipantsMap] = useState<Map<string, InnerUserRegistration>>(new Map()); // 상세 정보가 로드된 참가자들 (registrationId를 키로)
   const [bankName, setBankName] = useState('');
   const [virtualAccount, setVirtualAccount] = useState('');
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [isRefundLoading, setIsRefundLoading] = useState(false);
   const [isUnpaidAlertOpen, setIsUnpaidAlertOpen] = useState(false);
+  const [isRefundOptionModalOpen, setIsRefundOptionModalOpen] = useState(false);
+  const [isUserSelectModalOpen, setIsUserSelectModalOpen] = useState(false);
+  const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<string[]>([]);
+  const [refundMode, setRefundMode] = useState<'group' | 'individual'>('group'); // 'group': 단체 전체, 'individual': 개별
   
   // 참가자 상세 정보 로드 함수
-  const loadParticipantDetails = async (participants: any[], startIndex: number, count: number): Promise<Map<string, any>> => {
+  const loadParticipantDetails = useCallback(async (participants: InnerUserRegistration[], startIndex: number, count: number): Promise<Map<string, InnerUserRegistration>> => {
     const participantsToLoad = participants.slice(startIndex, startIndex + count);
-    const newMap = new Map(loadedParticipantsMap);
     
-    const BATCH_SIZE = 10;
-    const DELAY_BETWEEN_BATCHES = 100;
-    
-    // 배치 처리로 로드
-    for (let i = 0; i < participantsToLoad.length; i += BATCH_SIZE) {
-      const batch = participantsToLoad.slice(i, i + BATCH_SIZE);
-      
-      const batchResults = await Promise.all(
-        batch.map(async (participant) => {
+    // 함수형 업데이트로 최신 값을 가져와서 처리
+    return new Promise((resolve) => {
+      setLoadedParticipantsMap(prev => {
+        const newMap = new Map(prev); // 항상 최신 prev 값 사용
+        
+        // 참가자 정보 처리 (동기적으로 처리)
+        participantsToLoad.forEach((participant) => {
           const registrationId = participant.registrationId;
           if (!registrationId || newMap.has(registrationId)) {
-            return { registrationId, participant: newMap.get(registrationId) || participant };
+            return;
           }
           
           // 사용자 페이지에서는 관리자 API를 사용하지 않고 기존 데이터만 사용
           // participant에 이미 모든 정보가 포함되어 있음
-          const updatedParticipant = {
+          const updatedParticipant: InnerUserRegistration = {
             ...participant,
             registrationId: registrationId,
             paymentStatus: participant.paymentStatus || 'UNPAID',
@@ -61,19 +64,14 @@ export default function GroupApplicationConfirmResultPage() {
           };
           
           newMap.set(registrationId, updatedParticipant);
-          return { registrationId, participant: updatedParticipant };
-        })
-      );
-      
-      // 배치 간 딜레이
-      if (i + BATCH_SIZE < participantsToLoad.length) {
-        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
-      }
-    }
-    
-    setLoadedParticipantsMap(newMap);
-    return newMap; // 업데이트된 맵 반환
-  };
+        });
+        
+        // Promise를 resolve하여 반환값 제공
+        setTimeout(() => resolve(newMap), 0);
+        return newMap; // 업데이트된 맵 반환
+      });
+    });
+  }, []);
   
   // 더보기 버튼 클릭 핸들러
   const handleLoadMore = async () => {
@@ -84,7 +82,7 @@ export default function GroupApplicationConfirmResultPage() {
       const currentParticipants = groupApplicationData.innerUserRegistrationList || [];
       await loadParticipantDetails(currentParticipants, displayedCount, 10);
       setDisplayedCount(prev => prev + 10);
-    } catch (error) {
+    } catch (_error) {
       // 에러 처리
     } finally {
       setIsLoadingMore(false);
@@ -108,7 +106,7 @@ export default function GroupApplicationConfirmResultPage() {
       
       // 전체 개수로 표시 개수 설정
       setDisplayedCount(totalCount);
-    } catch (error) {
+    } catch (_error) {
       // 에러 처리
     } finally {
       setIsLoadingMore(false);
@@ -171,17 +169,11 @@ export default function GroupApplicationConfirmResultPage() {
             }
             // 사용 후 즉시 삭제하지 않고 API 호출 성공 후 삭제 (보안)
           }
-          } catch (e) {
+          } catch (_e) {
           // 세션 스토리지 접근 실패 시 무시
           }
         
-        // 저장된 데이터가 없으면 에러 표시
-        if (!storedData) {
-          setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
-          setIsLoading(false);
-          return;
-        }
-        
+        // orgAccount가 있으면 API를 직접 호출 시도 (sessionStorage에 데이터가 없어도 가능)
         try {
           // 최신 데이터 가져오기 (비밀번호가 있으면 사용)
           const latestGroupData = await fetchGroupRegistrationConfirm(eventId, organizationAccount, storedPassword);
@@ -189,7 +181,7 @@ export default function GroupApplicationConfirmResultPage() {
           // API 호출 성공 후 sessionStorage 삭제
           try {
             sessionStorage.removeItem(storageKey);
-          } catch (e) {
+          } catch (_e) {
             // 무시
           }
               
@@ -201,7 +193,7 @@ export default function GroupApplicationConfirmResultPage() {
             const loadedDetails = await loadParticipantDetails(participantsToUpdate, 0, initialLoadCount);
             
             // 로드된 상세 정보를 맵에 저장
-            const initialMap = new Map<string, any>();
+            const initialMap = new Map<string, InnerUserRegistration>();
             loadedDetails.forEach((detail) => {
               const registrationId = detail.registrationId;
               if (registrationId) {
@@ -211,13 +203,14 @@ export default function GroupApplicationConfirmResultPage() {
             setLoadedParticipantsMap(initialMap);
             
             // 전체 참가자 목록은 기본 데이터를 유지하되, 로드된 참가자는 업데이트된 정보 사용
-            const updatedParticipants = participantsToUpdate.map(participant => {
+            const updatedParticipants: InnerUserRegistration[] = participantsToUpdate.map(participant => {
               const registrationId = participant.registrationId;
               if (registrationId && initialMap.has(registrationId)) {
-                return initialMap.get(registrationId);
+                const loaded = initialMap.get(registrationId);
+                return loaded || participant;
               }
               return participant;
-            });
+            }).filter((p): p is InnerUserRegistration => p !== undefined);
             
             // 단체 전체 결제 상태 확인: 모든 참가자의 결제 상태를 확인 (기본 정보 기준)
             // 모두가 COMPLETED → COMPLETED, 모두가 UNPAID → UNPAID, 모두가 MUST_CHECK → MUST_CHECK
@@ -277,27 +270,21 @@ export default function GroupApplicationConfirmResultPage() {
             setGroupApplicationData(updatedData);
             setIsLoading(false);
             return; // 성공하면 여기서 종료
-          } catch (apiError) {
-            // API 호출 실패 시 저장된 데이터를 사용 (이미 표시되어 있음)
-            // 추가 업데이트만 시도
+          } catch (_apiError) {
+            // API 호출 실패 시 처리
             try {
               sessionStorage.removeItem(storageKey);
-            } catch (e) {
+            } catch (_e) {
               // 무시
             }
             
-            // storedData가 이미 표시되어 있으므로 추가 처리만 수행
-            if (!storedData) {
-            setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
-            setIsLoading(false);
-            return;
-            }
-            
-            // 저장된 데이터를 baseData로 설정하여 추가 처리
-            baseData = storedData;
-            
-            // 참가자 결제 상태 확인 시도 (registrationId가 있는 경우)
-            if (baseData.innerUserRegistrationList && baseData.innerUserRegistrationList.length > 0) {
+            // storedData가 있으면 이미 표시되어 있으므로 추가 처리만 수행
+            if (storedData) {
+              // 저장된 데이터를 baseData로 설정하여 추가 처리
+              baseData = storedData;
+              
+              // 참가자 결제 상태 확인 시도 (registrationId가 있는 경우)
+              if (baseData.innerUserRegistrationList && baseData.innerUserRegistrationList.length > 0) {
               try {
                 // 초기에는 처음 10명만 로드
                 const participantsToUpdate = baseData.innerUserRegistrationList;
@@ -307,7 +294,7 @@ export default function GroupApplicationConfirmResultPage() {
                 const loadedDetails = await loadParticipantDetails(participantsToUpdate, 0, initialLoadCount);
                 
                 // 로드된 상세 정보를 맵에 저장
-                const initialMap = new Map<string, any>();
+                const initialMap = new Map<string, InnerUserRegistration>();
                 loadedDetails.forEach((detail) => {
                   const registrationId = detail.registrationId;
                   if (registrationId) {
@@ -317,13 +304,14 @@ export default function GroupApplicationConfirmResultPage() {
                 setLoadedParticipantsMap(initialMap);
                 
                 // 전체 참가자 목록은 기본 데이터를 유지하되, 로드된 참가자는 업데이트된 정보 사용
-                const updatedParticipants = participantsToUpdate.map(participant => {
+                const updatedParticipants: InnerUserRegistration[] = participantsToUpdate.map(participant => {
                   const registrationId = participant.registrationId;
                   if (registrationId && initialMap.has(registrationId)) {
-                    return initialMap.get(registrationId);
+                    const loaded = initialMap.get(registrationId);
+                    return loaded || participant;
                   }
                   return participant;
-                });
+                }).filter((p): p is InnerUserRegistration => p !== undefined);
                 
                 // 모든 가능한 상태에 대해 모두 같은 상태인지 확인
                 // 그 외 섞여 있을 때 → MUST_CHECK (부분 진행 중으로 표시)
@@ -361,25 +349,36 @@ export default function GroupApplicationConfirmResultPage() {
                   }
                   baseData.paymentStatus = overallPaymentStatus;
                   // 섞여 있는 상태 정보 저장
-                  (baseData as any)._isMixedStatus = isMixedStatus;
+                  (baseData as GroupRegistrationConfirmData & { _isMixedStatus?: boolean })._isMixedStatus = isMixedStatus;
                 }
                 
                 // 각 참가자의 결제 상태 업데이트
                 baseData.innerUserRegistrationList = updatedParticipants;
-              } catch (error) {
+              } catch (_error) {
                 // 참가자 결제 상태 확인 실패 시 무시
               }
+              }
+              setGroupApplicationData(baseData);
+              setIsLoading(false);
+              return;
+            } else {
+              // storedData도 없고 API 호출도 실패한 경우
+              setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
+              setIsLoading(false);
+              return;
             }
-            setGroupApplicationData(baseData);
           }
-      } catch (err) {
-        setError('데이터를 불러올 수 없습니다.');
+      } catch (_err) {
+        // 최상위 에러 처리: API 호출 자체가 실패한 경우
+        // storedData가 없으면 에러 표시
+        setError('신청 정보를 불러올 수 없습니다. 다시 확인해주세요.');
       } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, eventId]);
 
   // 결제 계좌 정보 로드 (신청하기와 동일한 방식)
@@ -402,7 +401,7 @@ export default function GroupApplicationConfirmResultPage() {
           }
           return;
         }
-      } catch (error) {
+      } catch (_error) {
         // 무시하고 fallback
       }
 
@@ -418,7 +417,7 @@ export default function GroupApplicationConfirmResultPage() {
           setBankName(String(eventData.eventInfo.bank || ''));
           setVirtualAccount(String(eventData.eventInfo.virtualAccount || ''));
         }
-      } catch (error) {
+      } catch (_error) {
         // 실패 시 계좌 정보 표시하지 않음
       }
     };
@@ -432,19 +431,113 @@ export default function GroupApplicationConfirmResultPage() {
     router.push(`/event/${eventId}/registration/confirm`);
   };
 
-  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+  // 개별 환불 처리 (선택한 사용자들에 대해) - 단체 환불 API 사용
+  const handleIndividualRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+    if (selectedRegistrationIds.length === 0) {
+      throw new Error('환불할 참가자를 선택해주세요.');
+    }
+
     if (!groupApplicationData?.organizationId) {
       throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
     }
 
     setIsRefundLoading(true);
     try {
+      // 단체 환불 API를 사용하되, 선택한 사용자들의 registrationIds를 전달
+      await requestGroupRefund(
+        eventId,
+        groupApplicationData.organizationId,
+        bankName,
+        accountNumber,
+        accountHolderName,
+        selectedRegistrationIds // 선택한 사용자들의 registrationId 배열
+      );
+      // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
+    } catch (error) {
+      setIsRefundLoading(false);
+      
+      // 배치 검증 에러인 경우 이름으로 변환
+      if (error && typeof error === 'object' && 'isBatchError' in error) {
+        const batchError = error as BatchValidationErrorResponse & { isBatchError?: boolean };
+        if (batchError.code === 'BATCH_VALIDATION_FAILED' && batchError.errors) {
+          // 참가자 목록에서 registrationId로 이름 찾기
+          const participants = groupApplicationData?.innerUserRegistrationList || [];
+          const participantMap = new Map<string, string>();
+          
+          // 기본 참가자 목록에서 이름 매핑
+          participants.forEach(participant => {
+            const registrationId = participant.registrationId;
+            if (registrationId) {
+              participantMap.set(registrationId, participant.name);
+            }
+          });
+          
+          // loadedParticipantsMap도 확인
+          loadedParticipantsMap.forEach((participant, registrationId) => {
+            if (participant && typeof participant === 'object' && 'name' in participant) {
+              const name = participant.name as string;
+              if (name) {
+                participantMap.set(registrationId, name);
+              }
+            }
+          });
+          
+          // 에러 메시지에 이름 포함
+          const errorMessages = batchError.errors.map((err: BatchValidationError) => {
+            const name = participantMap.get(err.rejectedValue) || '알 수 없음';
+            return `${err.row}번째 사용자 (${name}, ID: ${err.rejectedValue}): ${err.message}`;
+          });
+          
+          const errorMessage = `${batchError.message}\n\n${errorMessages.join('\n')}`;
+          throw new Error(errorMessage);
+        }
+      }
+      
+      throw error;
+    } finally {
+      setIsRefundLoading(false);
+    }
+  };
+
+  // 단체 전체 환불 처리 (기존 로직, 호환성을 위해 유지)
+  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+    if (!groupApplicationData?.organizationId) {
+      throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
+    }
+
+    // 모든 참가자의 registrationId 수집 (결제 완료 상태인 참가자만)
+    const participants = groupApplicationData.innerUserRegistrationList || [];
+    const allRegistrationIds: string[] = [];
+    
+    participants.forEach(participant => {
+      const registrationId = participant.registrationId;
+      if (registrationId) {
+        const detailedParticipant: InnerUserRegistration = loadedParticipantsMap.has(registrationId)
+          ? (loadedParticipantsMap.get(registrationId) || participant)
+          : participant;
+        const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
+        // 결제 완료 상태인 참가자만 포함
+        if (paymentStatus === 'COMPLETED' || paymentStatus === 'PAID') {
+          allRegistrationIds.push(registrationId);
+        }
+      }
+    });
+
+    // 모든 참가자가 결제 완료 상태인지 확인
+    if (allRegistrationIds.length !== participants.length) {
+      throw new Error('전체 환불은 모든 참가자가 결제 완료 상태여야 합니다.');
+    }
+
+    setIsRefundLoading(true);
+    try {
+      // 전체 환불 시 모든 참가자의 registrationId를 전달
       await requestGroupRefund(
         eventId,
         groupApplicationData.organizationId, // DB PK 값 사용
         bankName,
         accountNumber,
-        accountHolderName
+        accountHolderName,
+        allRegistrationIds // 모든 참가자의 registrationId 배열
       );
       // 성공 시 모달에서 성공 메시지 표시 (페이지 새로고침하지 않음)
     } catch (error) {
@@ -458,12 +551,36 @@ export default function GroupApplicationConfirmResultPage() {
   const handleRefundSuccess = () => {
     // 환불 신청 성공 후 신청확인 페이지로 이동
     setIsRefundModalOpen(false);
+    setSelectedRegistrationIds([]);
     router.push(`/event/${eventId}/registration/confirm/group`);
   };
 
-  const handlePrint = () => {
-    window.print();
+  // 환불 옵션 선택: 단체 전체 환불
+  const handleSelectGroupRefund = () => {
+    setRefundMode('group');
+    setSelectedRegistrationIds([]);
+    // 바로 환불 정보 기입 모달 열기
+    setIsRefundModalOpen(true);
   };
+
+  // 환불 옵션 선택: 개별 환불
+  const handleSelectIndividualRefund = () => {
+    setRefundMode('individual');
+    // 사용자 선택 모달 열기
+    setIsUserSelectModalOpen(true);
+  };
+
+  // 사용자 선택 모달에서 확인 버튼 클릭 시
+  const handleUserSelectConfirm = (registrationIds: string[]) => {
+    setSelectedRegistrationIds(registrationIds);
+    setIsUserSelectModalOpen(false);
+    // 환불 정보 기입 모달 열기
+    setIsRefundModalOpen(true);
+  };
+
+  // const handlePrint = () => {
+  //   window.print();
+  // };
 
   const getGenderLabel = (gender: "M" | "F") => {
     return gender === "M" ? "남성" : "여성";
@@ -649,7 +766,7 @@ export default function GroupApplicationConfirmResultPage() {
           <div className="mb-6">
               {(() => {
                 const paymentStatus = groupApplicationData.paymentStatus || 'UNPAID';
-                const isMixedStatus = (groupApplicationData as any)._isMixedStatus || false;
+                const isMixedStatus = (groupApplicationData as GroupRegistrationConfirmData & { _isMixedStatus?: boolean })._isMixedStatus || false;
                 
                 // 섞여 있는 경우 (부분 진행 중)
                 if (isMixedStatus) {
@@ -835,12 +952,12 @@ export default function GroupApplicationConfirmResultPage() {
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">대표자명</label>
-                  <span className="text-base text-black">{(groupApplicationData as any).leaderName || groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
+                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderName?: string }).leaderName || groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">대표자 생년월일</label>
-                  <span className="text-base text-black">{(groupApplicationData as any).leaderBirth || groupApplicationData.birth || "정보 없음"}</span>
+                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderBirth?: string }).leaderBirth || groupApplicationData.birth || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -870,7 +987,7 @@ export default function GroupApplicationConfirmResultPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                   <label className="text-base font-medium text-black">휴대폰번호</label>
-                  <span className="text-base text-black">{(groupApplicationData as any).leaderPhNum || groupApplicationData.phNum || "정보 없음"}</span>
+                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderPhNum?: string }).leaderPhNum || groupApplicationData.phNum || "정보 없음"}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4">
@@ -887,8 +1004,8 @@ export default function GroupApplicationConfirmResultPage() {
                 {groupApplicationData.innerUserRegistrationList.slice(0, displayedCount).map((participant, index) => {
                   // 상세 정보가 로드된 참가자는 업데이트된 정보 사용
                   const registrationId = participant.registrationId;
-                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                    ? loadedParticipantsMap.get(registrationId)
+                  const detailedParticipant: InnerUserRegistration = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? (loadedParticipantsMap.get(registrationId) || participant)
                     : participant;
                   
                   const isLeader = detailedParticipant.checkLeader === true;
@@ -968,7 +1085,7 @@ export default function GroupApplicationConfirmResultPage() {
                           <span className="text-gray-600">기념품</span>
                           <div className="text-black text-right">
                             {detailedParticipant.souvenir && detailedParticipant.souvenir.length > 0
-                              ? detailedParticipant.souvenir.map((item: any, idx: number) => {
+                              ? detailedParticipant.souvenir.map((item, idx: number) => {
                                   const size = (item.souvenirSize === '사이즈 없음' || item.souvenirSize === '기념품 없음') ? '' : ` (${item.souvenirSize})`;
                                   const label = (item.souvenirName === '기념품 없음') ? '없음' : `${item.souvenirName}${size}`;
                                   return (
@@ -1083,7 +1200,7 @@ export default function GroupApplicationConfirmResultPage() {
                 <div className="flex items-center justify-between pb-4">
                   <label className="text-base font-medium text-black">결제상태</label>
                   <span className={`text-base font-semibold ${getPaymentStatusColor(groupApplicationData.paymentStatus, true)}`}>
-                    {getPaymentStatusLabel(groupApplicationData.paymentStatus, true, (groupApplicationData as any)._isMixedStatus || false)}
+                    {getPaymentStatusLabel(groupApplicationData.paymentStatus, true, (groupApplicationData as GroupRegistrationConfirmData & { _isMixedStatus?: boolean })._isMixedStatus || false)}
                   </span>
                 </div>
               </div>
@@ -1097,7 +1214,6 @@ export default function GroupApplicationConfirmResultPage() {
               onClick={async () => {
                 // 수정하기 버튼 클릭 시 모든 참가자 정보를 먼저 로드
                 const allParticipants = groupApplicationData.innerUserRegistrationList || [];
-                const notLoadedCount = allParticipants.length - loadedParticipantsMap.size;
                 
                 // 아직 로드되지 않은 참가자 정보가 있으면 먼저 로드
                 // 모든 참가자를 확실하게 로드하기 위해 처음부터 다시 로드
@@ -1107,8 +1223,8 @@ export default function GroupApplicationConfirmResultPage() {
                   const allLoadedParticipants = await loadParticipantDetails(allParticipants, 0, allParticipants.length);
                   
                   // 로드된 결과를 맵으로 변환하여 사용
-                  const loadedMap = new Map<string, any>();
-                  allLoadedParticipants.forEach((loadedParticipant: any) => {
+                  const loadedMap = new Map<string, InnerUserRegistration>();
+                  allLoadedParticipants.forEach((loadedParticipant) => {
                     const registrationId = loadedParticipant.registrationId;
                     if (registrationId) {
                       loadedMap.set(registrationId, loadedParticipant);
@@ -1116,13 +1232,14 @@ export default function GroupApplicationConfirmResultPage() {
                   });
                   
                   // 로드된 참가자 정보로 업데이트된 데이터 생성
-                  const updatedParticipants = allParticipants.map(participant => {
+                  const updatedParticipants: InnerUserRegistration[] = allParticipants.map(participant => {
                     const registrationId = participant.registrationId;
                     if (registrationId && loadedMap.has(registrationId)) {
-                      return loadedMap.get(registrationId);
+                      const loaded = loadedMap.get(registrationId);
+                      return loaded || participant;
                     }
                     return participant;
-                  });
+                  }).filter((p): p is InnerUserRegistration => p !== undefined);
                   
                   // 주소에서 우편번호 제거하여 수정 페이지로 전달
                   const editData = createEditData({
@@ -1135,7 +1252,7 @@ export default function GroupApplicationConfirmResultPage() {
                   const storageKey = `group_edit_data_${eventId}_${groupApplicationData.organizationAccount}`;
                   try {
                     sessionStorage.setItem(storageKey, JSON.stringify(editData));
-                  } catch (e) {
+                  } catch (_e) {
                     // sessionStorage 접근 실패 시 기존 방식으로 fallback
                     const queryString = `?mode=edit&data=${encodeURIComponent(JSON.stringify(editData))}`;
                     router.push(`/event/${eventId}/registration/apply/group${queryString}`);
@@ -1145,20 +1262,21 @@ export default function GroupApplicationConfirmResultPage() {
                   // sessionStorage에 저장 후 mode만 쿼리 파라미터로 전달
                   router.push(`/event/${eventId}/registration/apply/group?mode=edit&orgAccount=${encodeURIComponent(groupApplicationData.organizationAccount)}`);
                   return;
-                } catch (error) {
+                } catch (_error) {
                   // 에러 발생 시에도 진행 (기존 정보 사용)
                 } finally {
                   setIsLoadingMore(false);
                 }
                 
                 // 에러 발생 시 기존 방식으로 진행
-                const updatedParticipants = allParticipants.map(participant => {
+                const updatedParticipants: InnerUserRegistration[] = allParticipants.map(participant => {
                   const registrationId = participant.registrationId;
                   if (registrationId && loadedParticipantsMap.has(registrationId)) {
-                    return loadedParticipantsMap.get(registrationId);
+                    const loaded = loadedParticipantsMap.get(registrationId);
+                    return loaded || participant;
                   }
                   return participant;
-                });
+                }).filter((p): p is InnerUserRegistration => p !== undefined);
                 
                 // 주소에서 우편번호 제거하여 수정 페이지로 전달
                 const editData = createEditData({
@@ -1171,7 +1289,7 @@ export default function GroupApplicationConfirmResultPage() {
                 const storageKey = `group_edit_data_${eventId}_${groupApplicationData.organizationAccount}`;
                 try {
                   sessionStorage.setItem(storageKey, JSON.stringify(editData));
-                } catch (e) {
+                } catch (_e) {
                   // sessionStorage 접근 실패 시 기존 방식으로 fallback
                 const queryString = `?mode=edit&data=${encodeURIComponent(JSON.stringify(editData))}`;
                   router.push(`/event/${eventId}/registration/apply/group${queryString}`);
@@ -1233,7 +1351,7 @@ export default function GroupApplicationConfirmResultPage() {
             {/* 환불하기 버튼: 항상 표시 */}
             <button
               onClick={() => {
-                // 모든 참가자가 결제완료(COMPLETED 또는 PAID)인지 확인
+                // 환불 옵션 선택 모달 열기
                 const participants = groupApplicationData?.innerUserRegistrationList || [];
                 
                 // 참가자가 없는 경우 처리
@@ -1242,23 +1360,39 @@ export default function GroupApplicationConfirmResultPage() {
                   return;
                 }
                 
+                // 단체 전체 환불의 경우: 모든 참가자가 결제완료인지 확인
                 const allCompleted = participants.every(participant => {
                   const registrationId = participant.registrationId;
-                  const detailedParticipant = registrationId && loadedParticipantsMap.has(registrationId)
-                    ? loadedParticipantsMap.get(registrationId)
+                  const detailedParticipant: InnerUserRegistration = registrationId && loadedParticipantsMap.has(registrationId)
+                    ? (loadedParticipantsMap.get(registrationId) || participant)
                     : participant;
                   const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
-                  // COMPLETED 또는 PAID 상태만 결제완료로 간주
                   return paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
                 });
                 
-                if (allCompleted) {
-                  // 모든 참가자가 결제완료인 경우에만 환불 모달 열기
-                  setIsRefundModalOpen(true);
-                } else {
-                  // 그 외의 경우(부분 진행 중, 미결제 등) 알림 모달 표시
+                // 개별 환불의 경우: 결제 완료 상태의 참가자가 있는지 확인
+                const updatedParticipants = participants.map(participant => {
+                  const registrationId = participant.registrationId;
+                  if (registrationId && loadedParticipantsMap.has(registrationId)) {
+                    const detailed = loadedParticipantsMap.get(registrationId);
+                    return detailed || participant;
+                  }
+                  return participant;
+                });
+                
+                const hasEligibleParticipants = updatedParticipants.some(participant => {
+                  const paymentStatus = participant.paymentStatus || 'UNPAID';
+                  return paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+                });
+                
+                // 환불 가능한 상태가 없으면 알림 모달 표시
+                if (!allCompleted && !hasEligibleParticipants) {
                   setIsUnpaidAlertOpen(true);
+                  return;
                 }
+                
+                // 환불 옵션 선택 모달 열기
+                setIsRefundOptionModalOpen(true);
               }}
               className="min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors bg-red-600 text-white hover:bg-red-700"
             >
@@ -1274,11 +1408,51 @@ export default function GroupApplicationConfirmResultPage() {
         </div>
       </div>
 
-      {/* 환불 모달 */}
+      {/* 환불 옵션 선택 모달 */}
+      <GroupRefundOptionModal
+        isOpen={isRefundOptionModalOpen}
+        onClose={() => setIsRefundOptionModalOpen(false)}
+        onSelectGroupRefund={handleSelectGroupRefund}
+        onSelectIndividualRefund={handleSelectIndividualRefund}
+        allCompleted={(() => {
+          const participants = groupApplicationData?.innerUserRegistrationList || [];
+          return participants.length > 0 && participants.every(participant => {
+            const registrationId = participant.registrationId;
+            const detailedParticipant: InnerUserRegistration = registrationId && loadedParticipantsMap.has(registrationId)
+              ? (loadedParticipantsMap.get(registrationId) || participant)
+              : participant;
+            const paymentStatus = detailedParticipant.paymentStatus || 'UNPAID';
+            return paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+          });
+        })()}
+      />
+
+      {/* 사용자 선택 모달 (개별 환불용) */}
+      <GroupRefundUserSelectModal
+        isOpen={isUserSelectModalOpen}
+        onClose={() => setIsUserSelectModalOpen(false)}
+        participants={
+          groupApplicationData?.innerUserRegistrationList.map(participant => {
+            const registrationId = participant.registrationId;
+            if (registrationId && loadedParticipantsMap.has(registrationId)) {
+              const detailed = loadedParticipantsMap.get(registrationId);
+              return detailed || participant;
+            }
+            return participant;
+          }) || []
+        }
+        onConfirm={handleUserSelectConfirm}
+      />
+
+      {/* 환불 정보 기입 모달 */}
       <RefundModal
         isOpen={isRefundModalOpen}
-        onClose={() => setIsRefundModalOpen(false)}
-        onSubmit={handleRefundSubmit}
+        onClose={() => {
+          setIsRefundModalOpen(false);
+          setSelectedRegistrationIds([]);
+          setRefundMode('group');
+        }}
+        onSubmit={refundMode === 'individual' && selectedRegistrationIds.length > 0 ? handleIndividualRefundSubmit : handleRefundSubmit}
         isLoading={isRefundLoading}
         onSuccess={handleRefundSuccess}
       />
@@ -1288,7 +1462,12 @@ export default function GroupApplicationConfirmResultPage() {
         isOpen={isUnpaidAlertOpen}
         onClose={() => setIsUnpaidAlertOpen(false)}
         title="환불 요청 불가"
-        message="모든 참가자의 결제가 완료된 경우에만 환불 요청이 가능합니다."
+        message={
+          <>
+            결제 완료 상태의 참가자가 없습니다.<br />
+            환불 신청은 결제 완료 상태의 참가자만 가능합니다.
+          </>
+        }
         confirmText="확인"
       />
     </SubmenuLayout>
