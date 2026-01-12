@@ -3,6 +3,7 @@
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 import type { Faq, FaqFile } from "@/types/faq";
 
 type Props = {
@@ -45,9 +46,9 @@ export default function FaqDetailSimple({
           <div className="text-sm font-semibold mb-2 text-gray-500">질문</div>
           {detail.question ? (
             <div 
-              className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+              className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
               style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: detail.question }} 
+              dangerouslySetInnerHTML={{ __html: React.useMemo(() => prepareHtmlForDisplay(detail.question), [detail.question]) }} 
             />
           ) : (
             <p className="text-gray-600">질문 내용이 없습니다.</p>
@@ -59,9 +60,9 @@ export default function FaqDetailSimple({
           <div className="text-sm font-semibold mb-2 text-gray-500">답변</div>
           {detail.answer ? (
             <div
-              className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+              className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
               style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: detail.answer.content }}
+              dangerouslySetInnerHTML={{ __html: React.useMemo(() => prepareHtmlForDisplay(detail.answer?.content || ''), [detail.answer?.content]) }}
             />
           ) : (
             <p className="text-gray-600">등록된 답변이 없습니다.</p>

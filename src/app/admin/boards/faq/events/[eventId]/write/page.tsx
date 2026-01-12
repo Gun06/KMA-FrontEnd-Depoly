@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/common/Button/Button';
 import TextEditor from '@/components/common/TextEditor/TextEditor';
+import type { Editor } from '@tiptap/react';
 import { useCreateEventFaq, faqKeys } from '@/hooks/useFaqs';
 
 export default function Page() {
@@ -15,32 +16,59 @@ export default function Page() {
   const [questionContent, setQuestionContent] = useState('');
   const [answerContent, setAnswerContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const questionEditorRef = useRef<Editor | null>(null);
+  const answerEditorRef = useRef<Editor | null>(null);
 
   const createEventFaqMutation = useCreateEventFaq();
 
+  // 에디터 준비 완료 시 호출
+  const handleQuestionEditorReady = (editor: Editor | null) => {
+    questionEditorRef.current = editor;
+  };
+
+  const handleAnswerEditorReady = (editor: Editor | null) => {
+    answerEditorRef.current = editor;
+  };
+
   const handleSave = async () => {
-    if (!questionContent.trim()) {
+    // 저장 시 에디터에서 최신 HTML 가져오기 (작성한 대로 그대로 저장)
+    let finalQuestionContent = questionContent;
+    let finalAnswerContent = answerContent;
+    
+    if (questionEditorRef.current) {
+      finalQuestionContent = questionEditorRef.current.getHTML();
+    }
+    if (answerEditorRef.current) {
+      finalAnswerContent = answerEditorRef.current.getHTML();
+    }
+
+    // 내용 검증: HTML 태그 제거 후 실제 텍스트가 있는지 확인
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = finalQuestionContent || '';
+    const questionText = tempDiv.textContent || tempDiv.innerText || '';
+    
+    tempDiv.innerHTML = finalAnswerContent || '';
+    const answerText = tempDiv.textContent || tempDiv.innerText || '';
+    
+    if (!questionText.trim()) {
       alert('질문을 입력해주세요.');
       return;
     }
-    if (!answerContent.trim()) {
+    if (!answerText.trim()) {
       alert('답변을 입력해주세요.');
       return;
     }
+    
     setIsLoading(true);
     try {
       // FormData 생성
       const formData = new FormData();
-      
-      // HTML 태그 제거 함수
-      const stripHtmlTags = (html: string) => {
-        return html.replace(/<[^>]*>/g, '').trim();
-      };
 
-      // FAQ 생성 요청 데이터
+      // FAQ 생성 요청 데이터 (HTML 그대로 저장)
       const faqRequest = {
-        problem: stripHtmlTags(questionContent),
-        solution: stripHtmlTags(answerContent)
+        problem: finalQuestionContent,
+        solution: finalAnswerContent
       };
       
       formData.append('faqRequest', JSON.stringify(faqRequest));
@@ -103,6 +131,7 @@ export default function Page() {
                   height="200px"
                   placeholder="질문 내용을 입력하세요..."
                   onChange={setQuestionContent}
+                  onEditorReady={handleQuestionEditorReady}
                 />
               </div>
             </div>
@@ -121,6 +150,7 @@ export default function Page() {
                   height="300px"
                   placeholder="답변 내용을 입력하세요..."
                   onChange={setAnswerContent}
+                  onEditorReady={handleAnswerEditorReady}
                 />
               </div>
             </div>

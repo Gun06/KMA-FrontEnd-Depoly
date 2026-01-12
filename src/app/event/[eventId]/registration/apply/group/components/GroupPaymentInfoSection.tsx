@@ -7,12 +7,14 @@ interface GroupPaymentInfoSectionProps {
   formData: GroupFormData;
   onInputChange: (field: keyof GroupFormData, value: string) => void;
   eventId?: string;
+  isEditMode?: boolean;
 }
 
 export default function GroupPaymentInfoSection({
   formData,
   onInputChange,
-  eventId
+  eventId,
+  isEditMode = false
 }: GroupPaymentInfoSectionProps) {
   const [bankName, setBankName] = React.useState<string>('');
   const [virtualAccount, setVirtualAccount] = React.useState<string>('');
@@ -79,6 +81,12 @@ export default function GroupPaymentInfoSection({
               </span>
             </p>
             <p>※ 입금자명을 정확히 입력해주세요.</p>
+            {/* 수정 모드일 때만 표시되는 설명문 */}
+            {isEditMode && (
+              <p className="text-gray-600">
+                ※ 결제 정보를 수정할 경우, 현재 미결제 상태인 인원에 한해 적용됩니다.
+              </p>
+            )}
           </div>
         </div>
         

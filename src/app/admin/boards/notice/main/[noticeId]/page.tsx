@@ -8,7 +8,8 @@ import CategoryBadge from "@/components/common/Badge/CategoryBadge";
 import type { Category } from "@/components/common/Table/types";
 import { useNoticeDetail, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
-import { useAuthStore } from "@/stores";
+import { useAdminAuthStore } from "@/stores";
+import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 
 // 날짜시간 포맷팅 함수 (백엔드에서 한국시간으로 제공)
 function formatDateTime(dateString: string): string {
@@ -24,6 +25,7 @@ function formatDateTime(dateString: string): string {
   
   return `${year}.${month}.${day} ${hours}:${minutes}`;
 }
+
 
 export default function Page() {
   const { noticeId } = useParams<{ noticeId: string }>();
@@ -45,8 +47,14 @@ export default function Page() {
     data: NoticeCategory[] | undefined;
   };
   
-  // 현재 사용자 정보
-  const { user } = useAuthStore();
+  // 현재 관리자 사용자 정보
+  const { user } = useAdminAuthStore();
+
+  // 읽기 시 HTML 처리 (빈 <p> 태그를 <p><br></p>로 변환하여 개행 표시)
+  const displayContent = React.useMemo(() => {
+    if (!detail?.content) return '';
+    return prepareHtmlForDisplay(detail.content);
+  }, [detail?.content]);
 
   const goList = () => router.replace(`/admin/boards/notice/main?_r=${Date.now()}`);
   const goEdit = () => router.push(`/admin/boards/notice/main/${noticeId}/edit`);
@@ -118,9 +126,9 @@ export default function Page() {
           </header>
           <div className="h-px bg-gray-100" />
           <div
-            className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+            className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
             style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-            dangerouslySetInnerHTML={{ __html: detail.content ?? "" }}
+            dangerouslySetInnerHTML={{ __html: displayContent }}
           />
           <div className="px-6 pb-6">
             <BoardFileBox variant="view" files={(detail.attachmentUrls || detail.files || [])

@@ -464,7 +464,13 @@ export const transformGroupFormDataToUpdateApi = (
 
 
   // 단체신청 수정용 API 스키마에 맞춰 데이터 변환
-  const apiData = {
+  // 결제 정보는 미결제 인원이 있을 때만 포함 (테이블 규칙: COMPLETE 상태에서는 결제 정보 수정 불가/미동작)
+  const hasUnpaidParticipants = formData.participants.some(participant => {
+    const paymentStatus = participant.paymentStatus?.toUpperCase();
+    return paymentStatus === 'UNPAID';
+  });
+
+  const apiData: any = {
     organizationPatchRequest: {
       organizationPatchAccount: {
         organizationName: formData.groupName,
@@ -481,14 +487,18 @@ export const transformGroupFormDataToUpdateApi = (
         phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
         email: formatEmail(formData.email1, formData.emailDomain, ''),
         leaderName: formData.leaderName
-      },
-      paymentDefaultInfo: {
-        paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
-        paymenterName: formData.depositorName
       }
     },
     registrationInfoPerUserList: registrationInfoPerUserList
   };
+
+  // 미결제 인원이 있을 때만 결제 정보 포함 (테이블 규칙: COMPLETE 상태에서는 결제 정보 수정 불가/미동작)
+  if (hasUnpaidParticipants) {
+    apiData.organizationPatchRequest.paymentDefaultInfo = {
+      paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
+      paymenterName: formData.depositorName
+    };
+  }
 
   return apiData;
 };

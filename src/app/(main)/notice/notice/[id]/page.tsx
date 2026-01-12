@@ -1,11 +1,13 @@
 
 'use client';
 
+import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout';
 import { ChevronLeft, Download, Eye } from 'lucide-react';
 import { useNoticeDetail } from '../hooks/useNoticeDetail';
 import { sanitizeHtml } from '@/utils/sanitize';
+import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 
 export default function NoticeDetailPage() {
   const params = useParams();
@@ -14,6 +16,12 @@ export default function NoticeDetailPage() {
   
   // API에서 공지사항 상세 정보 로드
   const { noticeDetail, loading, error } = useNoticeDetail(noticeId);
+
+  // 읽기 시 HTML 처리 (빈 <p> 태그를 <p><br></p>로 변환하여 개행 표시)
+  const displayContent = React.useMemo(() => {
+    if (!noticeDetail?.content) return '';
+    return prepareHtmlForDisplay(sanitizeHtml(noticeDetail.content));
+  }, [noticeDetail?.content]);
 
   // 뒤로가기 함수
   const handleBack = () => {
@@ -165,7 +173,7 @@ export default function NoticeDetailPage() {
                     fontWeight: 100,
                     color: '#4b5563'
                   }}
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(noticeDetail.content) }}
+                  dangerouslySetInnerHTML={{ __html: displayContent }}
                 />
               ) : (
                 <p className="text-gray-500">내용이 없습니다.</p>

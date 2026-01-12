@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor/TextEditor";
-import { useFaqDetail, useUpdateFaq } from "@/hooks/useFaqs";
+import type { Editor } from "@tiptap/react";
+import { useFaqDetail, useUpdateFaq, faqKeys } from "@/hooks/useFaqs";
 
 export default function Page() {
   const { faqId } = useParams<{ faqId: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [questionContent, setQuestionContent] = useState("");
   const [answerContent, setAnswerContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  const questionEditorRef = useRef<Editor | null>(null);
+  const answerEditorRef = useRef<Editor | null>(null);
 
   // API에서 FAQ 상세 정보 가져오기 (임시로 목록에서 찾기)
   const { data: faqDetail, isLoading: detailLoading } = useFaqDetail(faqId);
@@ -34,23 +40,53 @@ export default function Page() {
     }
   }, [faqDetail]);
 
+  // 에디터 준비 완료 시 호출
+  const handleQuestionEditorReady = (editor: Editor | null) => {
+    questionEditorRef.current = editor;
+  };
+
+  const handleAnswerEditorReady = (editor: Editor | null) => {
+    answerEditorRef.current = editor;
+  };
+
   const handleSave = async () => {
-    if (!questionContent.trim()) return alert("질문을 입력해주세요.");
-    if (!answerContent.trim()) return alert("답변을 입력해주세요.");
+    // 저장 시 에디터에서 최신 HTML 가져오기 (작성한 대로 그대로 저장)
+    let finalQuestionContent = questionContent;
+    let finalAnswerContent = answerContent;
+    
+    if (questionEditorRef.current) {
+      finalQuestionContent = questionEditorRef.current.getHTML();
+    }
+    if (answerEditorRef.current) {
+      finalAnswerContent = answerEditorRef.current.getHTML();
+    }
+
+    // 내용 검증: HTML 태그 제거 후 실제 텍스트가 있는지 확인
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = finalQuestionContent || '';
+    const questionText = tempDiv.textContent || tempDiv.innerText || '';
+    
+    tempDiv.innerHTML = finalAnswerContent || '';
+    const answerText = tempDiv.textContent || tempDiv.innerText || '';
+    
+    if (!questionText.trim()) {
+      alert("질문을 입력해주세요.");
+      return;
+    }
+    if (!answerText.trim()) {
+      alert("답변을 입력해주세요.");
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // FormData 생성
       const formData = new FormData();
       
-      // FAQ 수정 요청 데이터
-      // HTML 태그 제거 함수
-      const stripHtmlTags = (html: string) => {
-        return html.replace(/<[^>]*>/g, '').trim();
-      };
-
+      // FAQ 수정 요청 데이터 (HTML 그대로 저장)
       const faqUpdate = {
-        problem: stripHtmlTags(questionContent),
-        solution: stripHtmlTags(answerContent),
+        problem: finalQuestionContent,
+        solution: finalAnswerContent,
         deleteFileUrls: [] // 삭제할 파일 URL (필요시 구현)
       };
       
@@ -61,13 +97,11 @@ export default function Page() {
         formData
       });
 
-      // 캐시 무효화 완료 대기
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // 캐시 무효화
+      await queryClient.invalidateQueries({ queryKey: faqKeys.homepage() });
 
       alert("수정되었습니다.");
-      router.push(`/admin/boards/faq/main/${faqId}`);
-      // 페이지 강제 새로고침으로 최신 데이터 보장
-      setTimeout(() => window.location.reload(), 100);
+      router.replace(`/admin/boards/faq/main/${faqId}`);
     } catch (error) {
       alert('FAQ 수정에 실패했습니다.');
     } finally {
@@ -128,6 +162,7 @@ export default function Page() {
                   showTextColor
                   showImageUpload={false}
                   onChange={setQuestionContent}
+                  onEditorReady={handleQuestionEditorReady}
                 />
               </div>
             </div>
@@ -145,6 +180,7 @@ export default function Page() {
                   showTextColor
                   showImageUpload={false}
                   onChange={setAnswerContent}
+                  onEditorReady={handleAnswerEditorReady}
                 />
               </div>
             </div>

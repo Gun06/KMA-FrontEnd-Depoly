@@ -5,6 +5,7 @@ import { ParticipantData } from "@/app/event/[eventId]/registration/apply/shared
 import { EventRegistrationInfo } from "@/app/event/[eventId]/registration/apply/shared/types/common";
 import SouvenirSelectionModal from './Modal/SouvenirSelectionModal';
 import CategorySelectionModal from './Modal/CategorySelectionModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 import { ParticipantsSectionProps } from './types';
 import { useParticipantHandlers } from './hooks/useParticipantHandlers';
 import { useModalState } from './hooks/useModalState';
@@ -96,6 +97,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
   isEditMode = false
 }: ParticipantsSectionProps) {
   const [pendingParticipantCount, setPendingParticipantCount] = useState(() => participants.length);
+  const [errorModalState, setErrorModalState] = useState({ isOpen: false, message: '' });
 
   const {
     handleParticipantChange,
@@ -155,18 +157,36 @@ const ParticipantsSection = memo(function ParticipantsSection({
     const index = categoryModalState.participantIndex;
     if (index === -1) return;
     
-    // 확인필요, 환불요청 상태인 경우 변경 불가
-    // 결제완료(COMPLETED/PAID)는 종목/기념품 수정 가능
     const participant = participants[index];
+    const paymentStatus = participant.paymentStatus?.toUpperCase();
+    
+    // 확인필요, 환불요청 상태인 경우 변경 불가
     if (isCategorySouvenirDisabled(participant.paymentStatus)) {
       closeCategoryModal();
       return;
     }
     
+    // 결제완료 상태에서 동일 금액 체크
+    const isCompleted = paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+    if (isCompleted && participant.originalAmount !== undefined) {
+      const newCategory = formatCategoryWithDistance(distance, categoryName);
+      const newAmount = calculateParticipantFee(newCategory, eventInfo);
+      
+      // 동일 금액이 아니면 변경 불가
+      if (newAmount !== participant.originalAmount) {
+        setErrorModalState({
+          isOpen: true,
+          message: `결제완료 상태에서는 동일 금액(${participant.originalAmount.toLocaleString()}원) 내에서만 종목을 변경할 수 있습니다.`
+        });
+        closeCategoryModal();
+        return;
+      }
+    }
+    
     const categoryWithDistance = formatCategoryWithDistance(distance, categoryName);
     handleParticipantChange(index, 'category', categoryWithDistance);
     closeCategoryModal();
-  }, [categoryModalState.participantIndex, handleParticipantChange, closeCategoryModal, participants, isCategorySouvenirDisabled]);
+  }, [categoryModalState.participantIndex, handleParticipantChange, closeCategoryModal, participants, isCategorySouvenirDisabled, eventInfo]);
 
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback((index: number) => {
@@ -190,12 +210,30 @@ const ParticipantsSection = memo(function ParticipantsSection({
     
     if (participantIndex === -1) return;
 
-    // 확인필요, 환불요청 상태인 경우 변경 불가
-    // 결제완료(COMPLETED/PAID)는 종목/기념품 수정 가능
     const participant = participants[participantIndex];
+    const paymentStatus = participant.paymentStatus?.toUpperCase();
+    
+    // 확인필요, 환불요청 상태인 경우 변경 불가
     if (isCategorySouvenirDisabled(participant.paymentStatus)) {
       closeSouvenirModal();
       return;
+    }
+
+    // 결제완료 상태에서 동일 금액 체크
+    // 기념품은 종목이 같으면 금액이 동일하므로, 종목이 변경되지 않았는지만 확인
+    // (기념품 자체는 추가 금액이 없으므로 종목 금액만 확인)
+    const isCompleted = paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+    if (isCompleted && participant.originalAmount !== undefined) {
+      // 종목이 변경되지 않았는지 확인 (기념품 변경은 종목 금액에 영향 없음)
+      const currentAmount = calculateParticipantFee(participant.category, eventInfo);
+      if (currentAmount !== participant.originalAmount) {
+        setErrorModalState({
+          isOpen: true,
+          message: `결제완료 상태에서는 동일 금액(${participant.originalAmount.toLocaleString()}원) 내에서만 기념품을 변경할 수 있습니다.`
+        });
+        closeSouvenirModal();
+        return;
+      }
     }
 
     const newParticipants = participants.map((p, i) => {
@@ -222,7 +260,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
     
     onParticipantsChange(newParticipants);
     closeSouvenirModal();
-  }, [souvenirModalState, participants, onParticipantsChange, closeSouvenirModal, isCategorySouvenirDisabled]);
+  }, [souvenirModalState, participants, onParticipantsChange, closeSouvenirModal, isCategorySouvenirDisabled, eventInfo]);
 
   // 현재 선택된 카테고리의 거리와 이름 추출 (모달용)
   const getCurrentCategoryInfo = useCallback((participant: ParticipantData) => {
@@ -404,14 +442,40 @@ const ParticipantsSection = memo(function ParticipantsSection({
           </thead>
           <tbody>
             {participants.map((participant, index) => {
-              const isDisabled = !isEditMode && participant.paymentStatus && participant.paymentStatus !== 'UNPAID';
-              // 종목/기념품 변경 불가 상태 (확인필요, 환불요청) - 수정 모드 포함
-              // 결제완료(COMPLETED/PAID)는 종목/기념품 수정 가능
-              const isCategorySouvenirChangeDisabled = (
-                participant.paymentStatus === 'MUST_CHECK' ||
-                participant.paymentStatus === 'NEED_REFUND' ||
-                participant.paymentStatus === 'NEED_PARTITIAL_REFUND'
+              const paymentStatus = participant.paymentStatus?.toUpperCase();
+              
+              // 전체 행 블락 상태: 확인필요, 환불요청(전액/차액), 환불완료 상태
+              // 이 상태에서는 모든 필드 수정 불가, 입력 클릭 차단, 행 전체 비활성화
+              const isRowBlocked = (
+                paymentStatus === 'MUST_CHECK' ||
+                paymentStatus === 'NEED_REFUND' ||
+                paymentStatus === 'NEED_PARTITIAL_REFUND' ||
+                paymentStatus === 'REFUNDED'
               );
+              
+              // 미결제 상태: 모든 필드 수정 가능
+              const isUnpaid = paymentStatus === 'UNPAID';
+              
+              // 결제완료 상태: 번호, 이름, 생년월일, 연락처, 성별 수정 가능
+              // 동일 금액 내에서만 종목/기념품 수정 가능
+              const isCompleted = (
+                paymentStatus === 'COMPLETED' ||
+                paymentStatus === 'PAID'
+              );
+              
+              // 참가자 기본 정보 수정 가능 여부: 미결제, 결제완료 상태에서만 수정 가능
+              const canEditParticipantInfo = isUnpaid || isCompleted;
+              
+              // 종목/기념품 변경 가능 여부
+              // - 미결제: 모두 수정 가능
+              // - 결제완료: 동일 금액 내에서만 수정 가능 (추후 구현)
+              // - 그 외: 수정 불가
+              const canEditCategorySouvenir = isUnpaid || isCompleted;
+              const isCategorySouvenirChangeDisabled = !canEditCategorySouvenir;
+              
+              // isDisabled는 행 블락 상태와 동일 (기존 코드 호환성)
+              const isDisabled = isRowBlocked;
+              
               const isLeader = participant.isLeader === true;
               
               return (
@@ -799,6 +863,15 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 size: participants[souvenirModalState.participantIndex].size || ''
               }] : [])
         ) : []}
+      />
+
+      {/* 동일 금액 체크 에러 모달 */}
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={() => setErrorModalState({ isOpen: false, message: '' })}
+        title="알림"
+        message={errorModalState.message}
+        confirmText="확인"
       />
     </div>
   );

@@ -1,7 +1,9 @@
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { DisplayFaqItem } from '../types';
 import downIcon from '@/assets/icons/main/down.svg';
 import upIcon from '@/assets/icons/main/up.svg';
+import { prepareHtmlForDisplay } from '@/components/common/TextEditor/utils/prepareHtmlForDisplay';
 
 interface FaqItemProps {
   item: DisplayFaqItem;
@@ -26,9 +28,10 @@ export const FaqItem = ({ item, index, isOpen, onToggle }: FaqItemProps) => {
         <span aria-hidden className="text-gray-800 font-giants text-[22px] md:text-[28px] leading-none">
           Q
         </span>
-        <span className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900">
-          {item.question}
-        </span>
+        <span 
+          className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
+          dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.question), [item.question]) }}
+        />
         <span aria-hidden>
           <Image
             src={isOpen ? upIcon : downIcon}
@@ -47,9 +50,10 @@ export const FaqItem = ({ item, index, isOpen, onToggle }: FaqItemProps) => {
         hidden={!isOpen}
         className="pb-6 pl-4 pr-4 sm:pl-10 sm:pr-0"
       >
-        <div className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] whitespace-pre-line">
-          {item.answer}
-        </div>
+        <div 
+          className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
+          dangerouslySetInnerHTML={{ __html: useMemo(() => prepareHtmlForDisplay(item.answer), [item.answer]) }}
+        />
       </div>
     </div>
   );

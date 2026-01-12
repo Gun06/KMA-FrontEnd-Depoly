@@ -104,6 +104,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
                 formData={formData}
                 onInputChange={handlers.handleInputChange}
                 eventId={params.eventId}
+                isEditMode={isEditMode}
               />
 
               {/* 하단 안내사항 */}

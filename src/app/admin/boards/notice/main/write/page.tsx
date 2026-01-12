@@ -8,11 +8,12 @@ import SelectMenu from "@/components/common/filters/SelectMenu";
 import TextField from "@/components/common/TextField/TextField";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import type { Editor } from "@tiptap/react";
 
 import type { NoticeFile } from "@/types/notice";
 import { useCreateHomepageNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeCategory } from "@/services/admin/notices";
-import { useAuthStore } from "@/stores";
+import { useAdminAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
@@ -25,28 +26,66 @@ export default function Page() {
     data: NoticeCategory[] | undefined;
   };
   
-  // 현재 사용자 정보
-  const { user } = useAuthStore();
+  // 현재 관리자 사용자 정보
+  const { user } = useAdminAuthStore();
 
   const [categoryId, setCategoryId] = React.useState<string>("");
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [files, setFiles] = React.useState<NoticeFile[]>([]);
+  const editorRef = React.useRef<Editor | null>(null);
 
   // 카테고리 변경 시 처리
   const handleCategoryChange = (categoryId: string) => {
     setCategoryId(categoryId);
   };
 
+  // 에디터 준비 완료 시 호출
+  const handleEditorReady = (editor: Editor | null) => {
+    editorRef.current = editor;
+  };
+
 
   const onSave = async () => {
+    // 제목 검증
     if (!title.trim()) { 
       alert("제목을 입력하세요."); 
       return; 
     }
+    
+    // 카테고리 검증
     if (!categoryId) { 
       alert("카테고리를 선택하세요."); 
       return; 
+    }
+
+    // 저장 시 에디터에서 최신 HTML 가져오기 (작성한 대로 그대로 저장)
+    let finalContent = content;
+    if (editorRef.current) {
+      finalContent = editorRef.current.getHTML();
+    }
+
+    // 내용 검증: HTML 태그 제거 후 실제 텍스트가 있는지 확인
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = finalContent || '';
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    const hasContent = textContent.trim().length > 0;
+    
+    if (!hasContent) {
+      alert("내용을 입력하세요.");
+      return;
+    }
+
+    // 내용 길이 검증 (HTML 포함 전체 길이)
+    if (finalContent.length > 50000) {
+      alert("내용이 너무 깁니다. 50,000자 이하로 작성해주세요.");
+      return;
+    }
+
+    // 작성자 정보 확인
+    if (!user?.account) {
+      alert("로그인이 필요합니다.");
+      return;
     }
 
     // 파일을 File 객체로 변환
@@ -59,8 +98,8 @@ export default function Page() {
     formData.append('noticeCreate', JSON.stringify({
       categoryId,
       title: title.trim(),
-      content,
-      author: user?.account || '관리자', // 작성자 정보
+      content: finalContent,
+      author: user.account,
     }));
     
     if (fileObjects.length > 0) {
@@ -149,6 +188,7 @@ export default function Page() {
       <TextEditor 
         initialContent={content} 
         onChange={setContent} 
+        onEditorReady={handleEditorReady}
         height="520px" 
         imageDomainType="NOTICE"
         placeholder="내용을 작성해주세요..."
@@ -171,7 +211,7 @@ export default function Page() {
         />
         <div className="text-sm text-gray-500 px-1 pt-1">
           <p>• 텍스트 에디터 내 이미지: JPG, PNG (크기 조절 가능)</p>
-          <p>• 첨부파일: JPG, PNG, PDF, DOC, XLS, XLSX</p>
+          <p>• 첨부파일: 모든 파일 형식 지원</p>
           <p>• 첨부파일 이름이 너무 길면 등록이 실패할 수 있습니다</p>
         </div>
       </div>

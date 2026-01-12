@@ -71,6 +71,7 @@ type Props = {
 
   /** 업로드 제약 */
   label?: string;               // 업로드 버튼 라벨
+  accept?: string;              // 허용할 파일 타입 (기본값: 모든 파일 허용)
   multiple?: boolean;
   maxCount?: number;
   maxSizeMB?: number;
@@ -90,6 +91,7 @@ function BoardFileBox({
   showQuotaText = true,         // ✅ 기본 표시
   helperText,
   label = "첨부파일 업로드",
+  accept = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg",
   multiple = true,
   maxCount = 10,
   maxSizeMB = 20,
@@ -189,7 +191,7 @@ function BoardFileBox({
             type="file"
             hidden
             multiple={multiple}
-            accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg"
+            accept={accept}
             onChange={handlePick}
           />
           <button

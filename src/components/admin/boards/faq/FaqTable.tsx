@@ -59,10 +59,19 @@ export default function FaqTable({
       header: <span className="block text-center">게시글명</span>,
       className: "text-left",
       render: (r) => {
+        // HTML 태그 제거하여 텍스트만 표시
+        const stripHtmlTags = (html: string) => {
+          if (!html) return '';
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = html;
+          return tempDiv.textContent || tempDiv.innerText || '';
+        };
+        
+        const displayTitle = stripHtmlTags(r.title);
         const href = (linkForRow ?? defaultLinkForRow)(r)?.trim();
         const text = (
-          <span className="truncate block max-w-full align-middle" title={r.title}>
-            {r.title}
+          <span className="truncate block max-w-full align-middle" title={displayTitle}>
+            {displayTitle}
           </span>
         );
         return href ? (

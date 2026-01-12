@@ -160,7 +160,9 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
               paymentStatus: participant.paymentStatus || 'UNPAID',
               registrationId: participant.registrationId,
               // 참가 대표자 여부 (checkLeader 필드에서 매핑)
-              isLeader: participant.checkLeader === true || participant.isLeader === true
+              isLeader: participant.checkLeader === true || participant.isLeader === true,
+              // 원본 금액 저장 (결제완료 상태에서 동일 금액 체크용)
+              originalAmount: participant.amount || undefined
             };
           });
           
