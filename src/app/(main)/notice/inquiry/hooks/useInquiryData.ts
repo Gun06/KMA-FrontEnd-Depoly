@@ -24,51 +24,60 @@ export const useInquiryData = (
         const response: HomepageQuestionResponse = await fetchHomepageQuestions(page, size, keyword, questionSearchKey);
         
         // API 응답을 NoticeItem 형식으로 변환 (질문과 답변을 하나로 통합)
+        // 대회 문의사항과 동일한 방식: 질문과 답변을 각각 별도 행으로 표시
         const displayInquiries: NoticeItem[] = [];
+        
+        // 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD)
+        const formatDate = (dateString: string) => {
+          try {
+            return new Date(dateString).toISOString().split('T')[0];
+          } catch (error) {
+            return '2025-01-01';
+          }
+        };
         
         response.content.forEach((item) => {
           const isSecret = item.questionHeader.secret;
-          const isLoggedIn = !!currentUserId;
           const isAuthor = !!(currentUserId && item.questionHeader.authorName === currentUserId);
           
-          // 비밀글 권한 체크: 본인이 쓴 글이거나 공개글이면 볼 수 있음
-          const canViewContent = !isSecret || !!isAuthor;
-          
-          
-          // 제목 처리: 마스킹 없이 그대로 표시
-          const displayTitle = item.questionHeader.title;
-          
-          // 작성자명 처리: 마스킹 없이 그대로 표시
-          const displayAuthor = item.questionHeader.authorName;
-          
-          const inquiryItem: NoticeItem = {
-            id: item.questionHeader.id, // string으로 유지
-            title: displayTitle,
-            author: displayAuthor,
-            authorId: item.questionHeader.authorId, // authorId 추가
-            date: item.questionHeader.createdAt ? item.questionHeader.createdAt.split('T')[0] : '2025-01-01',
+          // 질문 항목 추가 - 백엔드에서 받은 no 사용
+          const questionItem: NoticeItem = {
+            id: item.questionHeader.id,
+            title: item.questionHeader.title,
+            author: item.questionHeader.authorName,
+            authorId: item.questionHeader.authorId,
+            date: formatDate(item.questionHeader.createdAt),
             attachments: 0,
             views: 0,
             pinned: false,
             category: '문의' as const,
-            secret: isSecret && !isAuthor, // 비밀글이고 본인이 쓴 글이 아니면 secret: true
+            secret: isSecret && !isAuthor,
+            __displayNo: item.questionHeader.no, // 백엔드에서 받은 no 사용
             answered: item.questionHeader.answered,
-            canViewContent: canViewContent, // 권한 정보 추가
-            isAuthor: isAuthor, // 작성자 여부 추가
-            // 백엔드에서 받은 no를 기반으로 헤더 넘버링 처리
-            __displayNo: item.questionHeader.no,
-            // 답변 정보 추가 (관리자 방식 참고)
-            answer: item.answerHeader ? {
-              title: item.answerHeader.title,
-              content: '답변 내용을 보려면 클릭하세요', // 목록 API에서는 content가 제공되지 않음
-              author: item.answerHeader.authorName,
-              date: item.answerHeader.createdAt ? item.answerHeader.createdAt.split('T')[0] : '2025-01-01',
-              files: item.answerHeader.attachmentDetailList || []
-            } : undefined,
-            // 답변 ID 저장
-            answerHeaderId: item.answerHeader?.id
+            canViewContent: !isSecret || isAuthor,
+            isAuthor: isAuthor,
           };
-          displayInquiries.push(inquiryItem);
+          displayInquiries.push(questionItem);
+
+          // 답변이 있는 경우 답변 항목도 추가 - 번호는 표시하지 않음 (질문과 같은 번호이지만 화면에 표시 안 함)
+          if (item.answerHeader) {
+            const answerItem: NoticeItem = {
+              id: `answer-${item.questionHeader.id}`, // 답변 행의 ID는 고유하게 생성
+              title: item.answerHeader.title || '답변',
+              author: item.answerHeader.authorName,
+              authorId: item.answerHeader.authorId,
+              date: formatDate(item.answerHeader.createdAt),
+              attachments: 0,
+              views: 0,
+              pinned: false,
+              category: '답변' as const,
+              secret: false, // 답변은 항상 공개 (비밀번호 요구 안함)
+              originalQuestionId: item.questionHeader.id, // 원본 문의 ID 저장
+              answerHeaderId: item.answerHeader.id, // 답변 헤더 ID 저장
+              __displayNo: undefined, // 답변 행은 번호 숨김 (질문과 같은 번호이지만 화면에 표시 안 함)
+            };
+            displayInquiries.push(answerItem);
+          }
         });
 
         setInquiryData(displayInquiries);

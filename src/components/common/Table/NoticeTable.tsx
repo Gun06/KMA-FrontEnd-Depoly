@@ -77,6 +77,9 @@ export default function NoticeTable({
       className: "align-middle whitespace-nowrap",
       render: (row) => {
         const isPinned = row.pinned;
+        // 문의사항인지 확인 (category가 '문의' 또는 '답변'이거나, originalQuestionId/answerHeaderId가 있는 경우)
+        const isInquiry = row.category === '문의' || row.category === '답변' || row.originalQuestionId !== undefined || row.answerHeaderId !== undefined;
+        
         // 고정글인 경우
         if (isPinned) {
           return showPinnedBadgeInNo ? (
@@ -87,7 +90,17 @@ export default function NoticeTable({
             <span className="inline-block w-4 h-4" />
           );
         }
-        // 일반글인 경우 - 태그로 표시
+        
+        // 문의사항인 경우: 번호 열에는 번호만 표시
+        if (isInquiry) {
+          if (row.__displayNo !== undefined && typeof row.__displayNo === 'number') {
+            return <span className="text-[14px] text-[#111827] font-medium">{row.__displayNo}</span>;
+          }
+          // 답변 행 등 번호가 없는 경우 빈 값
+          return <span className="text-[14px] text-[#111827]"></span>;
+        }
+        
+        // 공지사항인 경우: 번호 열에는 태그만 표시 (번호 없음)
         if (row.category) {
           return (
             <div className="flex items-center justify-center">
@@ -95,11 +108,7 @@ export default function NoticeTable({
             </div>
           );
         }
-        // __displayNo가 없으면 빈 값 표시 (답변 행 등)
-        if (row.__displayNo === undefined) {
-          return <span className="text-[14px] text-[#111827]"></span>;
-        }
-        // 폴백: 태그가 없으면 빈 값
+        // category가 없으면 빈 값 표시
         return <span className="text-[14px] text-[#111827]"></span>;
       },
     },
@@ -111,8 +120,15 @@ export default function NoticeTable({
       render: (row) => {
         const isPinned = row.pinned;
         const clickable = !(isPinned && !pinnedClickable);
+        // 문의사항인지 확인 (category가 '문의' 또는 '답변'이거나, originalQuestionId/answerHeaderId가 있는 경우)
+        const isInquiry = row.category === '문의' || row.category === '답변' || row.originalQuestionId !== undefined || row.answerHeaderId !== undefined;
+        
         return (
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center gap-2">
+            {/* 문의사항인 경우: 제목 앞에 태그 표시 */}
+            {isInquiry && row.category && (
+              <CategoryBadge category={row.category} size="md" />
+            )}
             <span
               className={`text-[15px] text-[#0F1113] truncate ${clickable ? 'cursor-pointer hover:underline' : ''}`}
               title={row.title}

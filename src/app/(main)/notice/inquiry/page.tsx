@@ -87,63 +87,64 @@ export default function InquiryPage() {
     setCurrentUserId(userId);
   }, []);
 
-    // 행 클릭 시 처리 (상세 페이지로 이동)
+    // 행 클릭 시 처리 (상세 페이지로 이동) - 대회 문의사항과 동일한 방식
     const handleRowClick = (id: string | number) => {
-      // 답변 행 ID인지 확인 (answer- 접두사가 있는지)
-      const isAnswerRow = typeof id === 'string' && id.startsWith('answer-');
-      let originalQuestionId: string | undefined;
-      let answerHeaderId: string | undefined;
-
-      if (isAnswerRow) {
-        // 답변 행 ID에서 원본 질문 ID 추출
-        originalQuestionId = id.replace('answer-', '');
-
-        // 원본 질문 데이터 찾기
-        const originalQuestion = inquiryData.find(item => item.id === originalQuestionId);
-
-        if (originalQuestion) {
-          answerHeaderId = originalQuestion.answerHeaderId;
-          
-          // 권한 체크: 직접 계산
-          const isSecret = originalQuestion.secret;
-          const isAuthor = originalQuestion.isAuthor;
+      // 해당 행의 데이터 찾기 (전체 데이터에서 찾기)
+      const rowData = inquiryData.find(item => item.id === id);
+      
+      if (!rowData) return;
+      
+      // 답변 항목인지 확인
+      if (rowData.originalQuestionId) {
+        // 답변 항목인 경우 - 원본 문의글이 비밀글인지 확인
+        const question = inquiryData.find(item => 
+          item.id === String(rowData.originalQuestionId)
+        );
+      
+        if (question) {
+          // 원본 문의글이 비밀글인지 확인
+          const isSecret = question.secret;
+          const isAuthor = !!(currentUserId && question.isAuthor);
           const canViewContent = !isSecret || isAuthor;
           
           if (!canViewContent) {
-            // 비밀번호 입력 모달 표시
-            setSelectedInquiryId(String(originalQuestionId));
+            // 원본 문의글이 비밀글인 경우 - 비밀번호 입력 후 이동
+            setSelectedInquiryId(String(rowData.originalQuestionId));
+            setIsSecretModalOpen(true);
+            return;
+          }
+        }
+        
+        // 권한이 있거나 공개 문의글인 경우 - 답변은 항상 공개이므로 바로 이동
+        router.push(`/notice/inquiry/particular?id=${rowData.originalQuestionId}&answerId=${rowData.answerHeaderId}`);
+        return;
+      } else {
+        // 질문 항목인 경우
+        const inquiry = inquiryData.find(item => 
+          item.id === String(id)
+        );
+        
+        if (inquiry) {
+          // 메인 문의와 동일한 권한 규칙: 비밀글은 작성자만 열람 가능
+          const isSecret = inquiry.secret;
+          const isAuthor = !!(currentUserId && inquiry.isAuthor);
+          const canViewContent = !isSecret || isAuthor;
+          
+          if (!canViewContent) {
+            // 비밀글인 경우 - 질문 ID를 저장하고 모달 열기
+            setSelectedInquiryId(String(id));
             setIsSecretModalOpen(true);
             return;
           }
           
-          // 답변 상세 페이지로 이동
-          if (answerHeaderId) {
-            router.push(`/notice/inquiry/answer/${answerHeaderId}?inquiryId=${originalQuestionId}`);
-            return;
-          }
-        }
-        return;
-      }
-      
-      // 질문 행인 경우 기존 로직
-      const rowData = inquiryData.find(item => item.id === id);
-      
-      // 권한 체크: 직접 계산 (답변 행과 동일한 로직)
-      if (rowData) {
-        const isSecret = rowData.secret;
-        const isAuthor = rowData.isAuthor;
-        const canViewContent = !isSecret || isAuthor;
-        
-        if (!canViewContent) {
-          // 비밀번호 입력 모달 표시
-          setSelectedInquiryId(String(id));
-          setIsSecretModalOpen(true);
+          // 권한이 있는 경우 - 문의사항 상세 페이지로 이동
+          router.push(`/notice/inquiry/particular?id=${id}`);
           return;
         }
       }
       
-      // 질문 행인 경우 질문 상세 페이지로 이동
-      router.push(`/notice/inquiry/particular?id=${rowData?.id}`);
+      // 기본적으로 문의사항 상세 페이지로 이동 (메인과 동일한 방식)
+      router.push(`/notice/inquiry/particular?id=${id}`);
     };
 
   // 비밀번호 확인 핸들러 (이벤트와 동일)
@@ -153,11 +154,27 @@ export default function InquiryPage() {
     try {
       setIsPasswordLoading(true);
       
+      // 답변인지 질문인지 확인
+      const rowData = inquiryData.find(item => 
+        item.id === selectedInquiryId || 
+        item.answerHeaderId === selectedInquiryId
+      );
+      
+      // 답변인 경우 원본 문의글 ID로 비밀번호 검증
+      const questionIdForValidation = rowData?.originalQuestionId || selectedInquiryId;
+      
       // 비밀번호 검증 API 호출
-      await verifyQuestionPassword(selectedInquiryId, password);
+      await verifyQuestionPassword(questionIdForValidation, password);
       
       // 비밀번호가 맞으면 상세 페이지로 이동
-      router.push(`/notice/inquiry/particular?id=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+      if (rowData?.originalQuestionId) {
+        // 답변인 경우 - 현재 페이지로 이동하면서 answerId와 password 전달
+        router.push(`/notice/inquiry/particular?id=${rowData.originalQuestionId}&answerId=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+      } else {
+        // 질문인 경우 - 비밀번호를 URL 파라미터로 전달
+        router.push(`/notice/inquiry/particular?id=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
+      }
+      
       setIsSecretModalOpen(false);
       setSelectedInquiryId(null);
     } catch (error) {
