@@ -1,5 +1,5 @@
 import { useGetQuery } from '@/hooks/useFetch';
-import type { UserListResponse, UserRegistrationListResponse, OrganizationListResponse, OrganizationMemberListResponse } from '@/types/user';
+import type { UserListResponse, UserRegistrationListResponse, OrganizationListResponse, OrganizationMemberListResponse, OrganizationDetailResponse } from '@/types/user';
 
 // 개인 회원 목록 조회 API (검색 API 사용)
 export function useIndividualUsersList(params: {
@@ -109,6 +109,25 @@ export function useOrganizationUsersList(params: {
       refetchOnMount: 'always',
       refetchOnWindowFocus: false,
       placeholderData: (previousData) => previousData, // 이전 데이터 유지
+    },
+    true
+  );
+}
+
+// 단체 상세 정보 조회 API
+export function useOrganizationDetail(params: { organizationId: string }) {
+  const { organizationId } = params;
+  const isValidOrgId = !!organizationId && String(organizationId).trim() !== '';
+  
+  return useGetQuery<OrganizationDetailResponse>(
+    ['admin', 'users', 'organization', 'detail', organizationId],
+    `/api/v1/organization/${organizationId}`,
+    'admin',
+    {
+      enabled: isValidOrgId,
+      staleTime: 0,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: false,
     },
     true
   );

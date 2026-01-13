@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import OrgMembersTable from '@/components/admin/Users/organization/OrgMembersTable';
-import { useOrganizationMembersList, useOrganizationUsersList } from '@/services/admin/users';
+import { useOrganizationMembersList, useOrganizationDetail } from '@/services/admin/users';
 import { transformOrgMemberApiToRow, type OrgMemberRow } from '@/data/users/orgMembers';
 import { getRegistrationDetail, resetOrganizationPassword } from '@/services/registration';
 import { toast } from 'react-toastify';
@@ -27,24 +27,21 @@ export default function Client({ orgId }: { orgId: string }) {
   const isValidOrgId = typeof orgId === 'string' && orgId.trim().length > 0;
   const router = useRouter();
   
-  // 조직 정보 조회 - 조직 목록에서 해당 orgId 찾기
-  const { data: orgListData } = useOrganizationUsersList({ page: 1, size: 100 });
+  // 조직 상세 정보 조회
+  const { data: orgDetailData } = useOrganizationDetail({ organizationId: isValidOrgId ? orgId : '' });
   const org = useMemo(() => {
-    if (!orgListData?.content) return undefined;
-    const foundOrg = orgListData.content.find((o: any) => o.id === orgId);
-    if (!foundOrg) return undefined;
+    if (!orgDetailData) return undefined;
     
     return {
       id: numericOrgId,
-      org: foundOrg.name,
-      owner: foundOrg.leaderName,
-      ownerId: foundOrg.account,
-      ownerPhone: foundOrg.leaderPhNum,
-      eventTitle: foundOrg.eventName,
-      memberCount: foundOrg.memberCount,
-      createdAt: '-', // API 응답에 없으면 기본값
+      org: orgDetailData.groupName,
+      owner: orgDetailData.leaderName,
+      ownerId: orgDetailData.account,
+      ownerPhone: orgDetailData.leaderPhNum,
+      eventTitle: orgDetailData.eventName,
+      createdAt: orgDetailData.createdAt,
     };
-  }, [orgListData, orgId, numericOrgId]);
+  }, [orgDetailData, numericOrgId]);
 
 
   const [page, setPage] = useState(1);
@@ -178,7 +175,7 @@ export default function Client({ orgId }: { orgId: string }) {
     });
   }, [rows]);
 
-  const memberCountDisplay = org?.memberCount ?? total;
+  const memberCountDisplay = total;
   const applicationDate = latestRegDate;
   const totalAmountFromRows = useMemo(() => {
     return rows.reduce((sum, row) => {

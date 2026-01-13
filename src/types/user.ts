@@ -235,6 +235,21 @@ export interface OrganizationListResponse {
   empty: boolean;
 }
 
+// 단체 상세 정보 조회 API 응답 타입
+// GET /api/v1/organization/{organizationId}
+export interface OrganizationDetailResponse {
+  id: string;
+  account: string;
+  groupName: string;
+  leaderName: string;
+  leaderBirth: string;
+  leaderPhNum: string;
+  email: string;
+  eventName: string;
+  createdAt: string; // ISO 8601 형식
+  paymentStatus: string;
+}
+
 // ───────────── 단체 구성원 API 타입 ─────────────
 // GET /api/v1/organization/{organizationId}/user 응답 스키마 기반
 export interface OrganizationMemberApiData {
