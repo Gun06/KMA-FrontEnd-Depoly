@@ -459,6 +459,9 @@ export const transformGroupFormDataToUpdateApi = (
       transformedParticipant.note = participant.note;
     }
     
+    // registrationId 추가: 기존 참가자는 registrationId를, 새로 추가된 참가자는 null
+    transformedParticipant.registrationId = participant.registrationId || null;
+    
     return transformedParticipant;
   });
 

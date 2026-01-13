@@ -83,6 +83,7 @@ export interface GroupApiRequestData {
     };
   };
   registrationInfoPerUserList: Array<{
+    registrationId?: string | null; // 수정 모드에서 사용, 새로 추가된 row는 null
     mustRegistrationInfo: {
       personalInfo: {
         birth: string;
