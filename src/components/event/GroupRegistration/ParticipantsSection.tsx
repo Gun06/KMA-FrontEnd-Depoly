@@ -454,7 +454,8 @@ const ParticipantsSection = memo(function ParticipantsSection({
               );
               
               // 미결제 상태: 모든 필드 수정 가능
-              const isUnpaid = paymentStatus === 'UNPAID';
+              // paymentStatus가 없거나 undefined인 경우(새로 추가된 참가자)도 미결제로 간주
+              const isUnpaid = !paymentStatus || paymentStatus === 'UNPAID';
               
               // 결제완료 상태: 번호, 이름, 생년월일, 연락처, 성별 수정 가능
               // 동일 금액 내에서만 종목/기념품 수정 가능

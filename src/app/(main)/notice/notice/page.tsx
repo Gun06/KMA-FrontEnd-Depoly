@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout';
 import { NoticeBoard } from '@/components/common/Notice';
@@ -7,9 +8,16 @@ import { useNoticeData } from './hooks/useNoticeData';
 
 export default function NoticePage() {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   
   // API에서 공지사항 데이터 로드
-  const { noticeData, loading, error } = useNoticeData(1, 10);
+  const { noticeData, loading, error, totalPages, totalElements } = useNoticeData(currentPage, pageSize);
+  
+  // 페이지 변경 핸들러
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
   
   // 행 클릭 시 처리 (상세 페이지로 이동)
   const handleRowClick = (id: number) => {
@@ -72,12 +80,16 @@ export default function NoticePage() {
         <NoticeBoard
           data={noticeData}
           onRowClick={handleRowClick}
-          pageSize={10}
+          pageSize={pageSize}
           pinLimit={3}
           numberDesc={true}
           showPinnedBadgeInNo={true}
           pinnedClickable={true}
           showSearch={true}
+          currentPage={currentPage}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
         />
       </div>
     </SubmenuLayout>
