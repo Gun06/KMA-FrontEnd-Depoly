@@ -7,10 +7,35 @@ import type { RegistrationItem } from '@/types/registration';
 import { updateRegistrationDetail, resetRegistrationPassword, resetOrganizationPassword, deleteRegistration } from '@/services/registration';
 import { formatBirthInput, formatPhoneInput, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import { toast } from 'react-toastify';
-import { useEventDetail } from '@/hooks/useEventDetail';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
+import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
 
-type WindowWithDaum = Window & { daum?: any };
+// Daum Postcode API 타입 정의
+interface DaumPostcodeData {
+  address: string;
+  roadAddress: string;
+  jibunAddress: string;
+  userSelectedType: 'R' | 'J';
+  bname?: string;
+  buildingName?: string;
+  zonecode: string;
+}
+
+interface DaumPostcodeConstructor {
+  new (options: {
+    width: string;
+    height: string;
+    oncomplete: (data: DaumPostcodeData) => void;
+  }): {
+    embed(element: HTMLElement): void;
+  };
+}
+
+type WindowWithDaum = Window & { 
+  daum?: {
+    Postcode: DaumPostcodeConstructor;
+  };
+};
 
 // 주소에서 우편번호를 추출하고 분리하는 유틸리티 함수 (컴포넌트 외부로 이동)
 const extractZipCode = (address: string | undefined): { zipCode: string; cleanAddress: string } => {
@@ -61,11 +86,21 @@ export default function RegistrationDetailDrawer({
   isLoading = false,
   eventId,
   onClose,
-  onEdit,
+  onEdit: _onEdit,
   onSave,
 }: Props) {
+  // 편집 상태 및 폼 값 (모든 hooks는 return 전에 정의되어야 함)
+  const [isEditing, setIsEditing] = React.useState(false);
+  
   // 대회 정보 가져오기 (코스, 기념품 목록용)
-  const { data: eventData } = useEventDetail(eventId || '');
+  // item.eventId를 우선 사용하고, 없으면 prop의 eventId를 fallback으로 사용
+  const effectiveEventId = item?.eventId || eventId || '';
+  // 드롭다운 API만 사용 (수정 모드에서 사용, eventId가 있을 때만)
+  const { 
+    data: dropdownCategories, 
+    refetch: refetchDropdownCategories,
+    isFetching: isFetchingDropdownCategories 
+  } = useEventCategoryDropdown(effectiveEventId);
   const [memo, setMemo] = React.useState('');
   const [detailMemo, setDetailMemo] = React.useState('');
   const [saving, setSaving] = React.useState(false);
@@ -80,9 +115,6 @@ export default function RegistrationDetailDrawer({
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [showAddressModal, setShowAddressModal] = React.useState(false);
   const postcodeContainerRef = React.useRef<HTMLDivElement | null>(null);
-  
-  // 편집 상태 및 폼 값 (모든 hooks는 return 전에 정의되어야 함)
-  const [isEditing, setIsEditing] = React.useState(false);
   const handleAddressSelect = React.useCallback((postalCode: string, address: string) => {
     setForm((prev) => ({
       ...prev,
@@ -94,6 +126,8 @@ export default function RegistrationDetailDrawer({
   React.useEffect(() => {
     if (typeof window === 'undefined' || !showAddressModal) return;
     let cancelled = false;
+    // cleanup 함수에서 사용할 ref를 변수에 저장
+    const container = postcodeContainerRef.current;
 
     const ensureScript = () =>
       new Promise<void>((resolve) => {
@@ -117,11 +151,12 @@ export default function RegistrationDetailDrawer({
 
     ensureScript().then(() => {
       const win = window as WindowWithDaum;
-      if (cancelled || !postcodeContainerRef.current || !win.daum?.Postcode) return;
+      const currentContainer = postcodeContainerRef.current;
+      if (cancelled || !currentContainer || !win.daum?.Postcode) return;
       const postcode = new win.daum.Postcode({
         width: '100%',
         height: '100%',
-        oncomplete(data: any) {
+        oncomplete(data: DaumPostcodeData) {
           let fullAddress = data.address;
           if (data.userSelectedType === 'R') {
             fullAddress = data.roadAddress;
@@ -136,13 +171,13 @@ export default function RegistrationDetailDrawer({
           setShowAddressModal(false);
         },
       });
-      postcode.embed(postcodeContainerRef.current!);
+      postcode.embed(currentContainer);
     });
 
     return () => {
       cancelled = true;
-      if (postcodeContainerRef.current) {
-        postcodeContainerRef.current.innerHTML = '';
+      if (container) {
+        container.innerHTML = '';
       }
     };
   }, [handleAddressSelect, showAddressModal]);
@@ -222,6 +257,7 @@ export default function RegistrationDetailDrawer({
       initialMemoRef.current = '';
       initialDetailMemoRef.current = '';
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id, item?.memo, item?.detailMemo]);
 
   const handleDelete = React.useCallback(async () => {
@@ -232,7 +268,7 @@ export default function RegistrationDetailDrawer({
       toast.success('신청 정보가 삭제되었습니다.');
       await onSave?.();
       onClose();
-    } catch (error) {
+    } catch (_error) {
       toast.error('신청 정보 삭제에 실패했습니다.');
     } finally {
       setDeleting(false);
@@ -279,20 +315,25 @@ export default function RegistrationDetailDrawer({
     };
   }, [item]);
 
+  // 드롭다운 API 데이터 사용 (수정 모드에서만 필요하지만, 읽기 모드에서도 코스 정보 표시용으로 사용)
+  const categoriesForDisplay = React.useMemo(() => {
+    return dropdownCategories || [];
+  }, [dropdownCategories]);
+
   // 선택된 카테고리 정보
   const selectedCategory = React.useMemo(() => {
-    if (!eventData?.eventCategories?.length) return undefined;
+    if (!categoriesForDisplay?.length) return undefined;
     if (form.eventCategoryId) {
-      const matchById = eventData.eventCategories.find((c) => c.id === form.eventCategoryId);
+      const matchById = categoriesForDisplay.find((c) => c.id === form.eventCategoryId);
       if (matchById) return matchById;
     }
     const courseLabel = (item?.eventCategory || item?.categoryName || '').trim();
     if (courseLabel) {
-      const matchByName = eventData.eventCategories.find((c) => c.name === courseLabel);
+      const matchByName = categoriesForDisplay.find((c) => c.name === courseLabel);
       if (matchByName) return matchByName;
     }
     return undefined;
-  }, [eventData?.eventCategories, form.eventCategoryId, item?.eventCategory, item?.categoryName]);
+  }, [categoriesForDisplay, form.eventCategoryId, item?.eventCategory, item?.categoryName]);
 
   // 현재 코스명 계산
   const courseName = React.useMemo(() => {
@@ -316,11 +357,11 @@ export default function RegistrationDetailDrawer({
     // eventCategoryId 추출: souvenirListDetail에서 첫 번째 항목의 eventCategoryId 사용
     let currentEventCategoryId = item.souvenirListDetail?.[0]?.eventCategoryId || '';
     
-    // eventCategoryId가 없고 eventData가 이미 로드되어 있다면, 코스 이름으로 찾기
-    if (!currentEventCategoryId && eventData?.eventCategories?.length) {
+    // eventCategoryId가 없고 드롭다운 API 데이터가 로드되어 있다면, 코스 이름으로 찾기
+    if (!currentEventCategoryId && dropdownCategories?.length) {
       const courseLabel = (item.eventCategory || item.categoryName || item.eventCategoryName || '').trim();
       if (courseLabel) {
-        const courseByName = eventData.eventCategories.find(c => c.name === courseLabel);
+        const courseByName = dropdownCategories.find(c => c.name === courseLabel);
         if (courseByName?.id) {
           currentEventCategoryId = courseByName.id;
         }
@@ -361,24 +402,24 @@ export default function RegistrationDetailDrawer({
     if (open) {
       setIsEditing(false);
     }
-  }, [item, open, eventData?.eventCategories]);
+  }, [item, open, dropdownCategories]);
 
   // 이벤트 데이터 로드 후 코스 ID 자동 매핑 (없을 때만)
   React.useEffect(() => {
     if (!item) return;
     if (form.eventCategoryId) return;
-    if (!eventData?.eventCategories?.length) return;
+    if (!categoriesForDisplay?.length) return;
     const courseLabel = (item.eventCategory || item.categoryName || item.eventCategoryName || '').trim();
     if (!courseLabel) return;
-    const courseByName = eventData.eventCategories.find(c => c.name === courseLabel);
+    const courseByName = categoriesForDisplay.find(c => c.name === courseLabel);
     if (courseByName?.id) {
       setForm((prev) => ({ ...prev, eventCategoryId: courseByName.id }));
     }
-  }, [item, eventData?.eventCategories, form.eventCategoryId]);
+  }, [item, categoriesForDisplay, form.eventCategoryId]);
 
   // 코스 선택 시 모든 기념품을 자동으로 추가 (기념품이 1개 이상인 경우)
   React.useEffect(() => {
-    if (!form.eventCategoryId || !eventData?.eventCategories?.length) return;
+    if (!form.eventCategoryId || !categoriesForDisplay?.length) return;
     if (!isEditing) return; // 수정 모드일 때만 적용
     
     // canEditFields 계산 (item이 있을 때만)
@@ -386,7 +427,7 @@ export default function RegistrationDetailDrawer({
     const canEditFields = isEditing && isUnpaid;
     if (!canEditFields) return; // 기본 정보 필드 수정 불가능한 경우 건너뛰기
     
-    const selectedCategory = eventData.eventCategories.find(c => c.id === form.eventCategoryId);
+    const selectedCategory = categoriesForDisplay.find(c => c.id === form.eventCategoryId);
     if (!selectedCategory?.souvenirs?.length) return;
 
     // 현재 선택된 기념품 ID 목록
@@ -419,7 +460,7 @@ export default function RegistrationDetailDrawer({
       
       setForm(prev => ({ ...prev, souvenirJsonList: newSouvenirList }));
     }
-  }, [form.eventCategoryId, eventData?.eventCategories, isEditing, item?.paymentStatus]);
+  }, [form.eventCategoryId, form.souvenirJsonList, categoriesForDisplay, isEditing, item?.paymentStatus]);
 
   // 주소와 우편번호 분리 (hooks는 조건부 return 전에 호출되어야 함)
   const { zipCode, cleanAddress } = React.useMemo(() => {
@@ -546,7 +587,18 @@ export default function RegistrationDetailDrawer({
                 {!isEditing ? (
                   <button 
                     className="px-4 py-1.5 rounded border border-blue-600 bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors whitespace-nowrap" 
-                    onClick={() => setIsEditing(true)}
+                    onClick={async () => {
+                      setIsEditing(true);
+                      // 수정 모드 진입 시 드롭다운 API 강제 refetch (이미 로딩 중이면 스킵)
+                      if (effectiveEventId && !isFetchingDropdownCategories) {
+                        try {
+                          await refetchDropdownCategories();
+                        } catch (_error) {
+                          // refetch 실패해도 기존 데이터 사용 가능하므로 에러는 무시
+                          // 필요시 toast.error('코스 정보를 불러오는데 실패했습니다.');
+                        }
+                      }
+                    }}
                     disabled={isLoading}
                   >
                     수정하기
@@ -598,7 +650,7 @@ export default function RegistrationDetailDrawer({
                           if (onSave) {
                             await onSave();
                           }
-                        } catch (error) {
+                        } catch (_error) {
                           alert('수정에 실패했습니다. 다시 시도해주세요.');
                         } finally {
                           setSaving(false);
@@ -670,7 +722,7 @@ export default function RegistrationDetailDrawer({
                     type="button"
                     className="w-full rounded border px-2 py-1 pr-8 text-left bg-white hover:bg-gray-50 flex items-center justify-between"
                     onClick={() => {
-                      if (!eventId) {
+                      if (!effectiveEventId) {
                         alert('대회 정보가 없어 단체 목록을 불러올 수 없습니다.');
                         return;
                       }
@@ -680,11 +732,11 @@ export default function RegistrationDetailDrawer({
                       if (willOpen) {
                         setIsOrganizationSearching(true);
                         setOrganizationSearchKeyword(''); // 검색 키워드 초기화
-                        searchOrganizationsByEventAdmin(eventId, '')
+                        searchOrganizationsByEventAdmin(effectiveEventId, '')
                           .then(results => {
                             setOrganizationSearchResults(results);
                           })
-                          .catch(error => {
+                          .catch(_error => {
                             toast.error('단체 목록을 불러오는데 실패했습니다.');
                             setOrganizationSearchResults([]);
                           })
@@ -734,19 +786,19 @@ export default function RegistrationDetailDrawer({
                                 clearTimeout(organizationSearchTimeoutRef.current);
                               }
                               
-                              if (!eventId) {
+                              if (!effectiveEventId) {
                                 setOrganizationSearchResults([]);
                                 return;
                               }
                               
                               organizationSearchTimeoutRef.current = setTimeout(async () => {
-                                if (!eventId) return;
+                                if (!effectiveEventId) return;
                                 setIsOrganizationSearching(true);
                                 try {
                                   // 키워드가 없으면 빈 문자열로 전체 조회
-                                  const results = await searchOrganizationsByEventAdmin(eventId, keyword);
+                                  const results = await searchOrganizationsByEventAdmin(effectiveEventId, keyword);
                                   setOrganizationSearchResults(results);
-                                } catch (error) {
+                                } catch (_error) {
                                   setOrganizationSearchResults([]);
                                 } finally {
                                   setIsOrganizationSearching(false);
@@ -815,11 +867,11 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('코스', courseName) : editLine('코스', (
                 <>
-                  {!eventId ? (
+                  {!effectiveEventId ? (
                     <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
                       대회 정보를 불러올 수 없어 코스를 선택할 수 없습니다. (eventId 없음)
                     </div>
-                  ) : !eventData?.eventCategories?.length ? (
+                  ) : !categoriesForDisplay?.length ? (
                     <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-2">
                       코스 정보를 불러오는 중...
                     </div>
@@ -829,7 +881,7 @@ export default function RegistrationDetailDrawer({
                   value={form.eventCategoryId}
                   onChange={e => {
                     const nextId = e.target.value;
-                    const selectedCategory = eventData?.eventCategories?.find(c => c.id === nextId);
+                    const selectedCategory = categoriesForDisplay?.find(c => c.id === nextId);
                     // 코스 변경 시 모든 기념품을 자동으로 추가 (사이즈는 첫 번째 옵션)
                     const newSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
                     if (selectedCategory?.souvenirs?.length) {
@@ -851,7 +903,7 @@ export default function RegistrationDetailDrawer({
                   }}
                 >
                   <option value="">코스를 선택하세요</option>
-                      {eventData.eventCategories.map((category) => (
+                      {categoriesForDisplay.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
                     </option>
@@ -862,7 +914,7 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('기념품', souvenirDisplay.names) : editLine('기념품', (
                 <div className="space-y-2">
-                  {form.eventCategoryId && eventData?.eventCategories?.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
+                  {form.eventCategoryId && categoriesForDisplay?.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
                     // 수정 모드에서는 모든 기념품을 필수 선택으로 표시 (체크박스 비활성화)
                     return (
                       <div key={souvenir.id} className="flex items-center gap-2">
@@ -880,8 +932,8 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('사이즈', souvenirDisplay.sizes) : editLine('사이즈', (
                 <div className="space-y-2">
-                  {form.eventCategoryId && eventData?.eventCategories?.find(c => c.id === form.eventCategoryId)?.souvenirs?.length ? (
-                    eventData.eventCategories.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
+                  {form.eventCategoryId && categoriesForDisplay?.find(c => c.id === form.eventCategoryId)?.souvenirs?.length ? (
+                    categoriesForDisplay.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
                       // 현재 선택된 기념품에서 사이즈 찾기
                       const selectedSouvenir = form.souvenirJsonList.find(s => s.souvenirId === souvenir.id);
                       
@@ -1147,15 +1199,11 @@ export default function RegistrationDetailDrawer({
                   }
                   try {
                     setPwdSaving(true);
-                    const isGroup = !!(item as any).organizationName && (item as any).organizationName !== '개인';
+                    const isGroup = !!item.organizationName && item.organizationName !== '개인';
                     if (isGroup) {
                       // 여러 필드명으로 시도: organizationId, organizationAccount, account 등
                       const orgId = item.organizationId 
-                        || item.organizationAccount 
-                        || (item as any).organizationId
-                        || (item as any).organizationAccount
-                        || (item as any).account
-                        || (item as any).organizationAccountId;
+                        || item.organizationAccount;
                       if (!orgId) {
                         toast.info('단체 ID 확인 중... 상세 정보를 다시 불러오는 중...');
                         // 상세 데이터를 다시 불러와서 시도
@@ -1164,14 +1212,7 @@ export default function RegistrationDetailDrawer({
                           const refreshed = await getRegistrationDetail(item.id);
                           // 더 많은 필드명 시도
                           const refreshedOrgId = refreshed.organizationId 
-                            || refreshed.organizationAccount
-                            || (refreshed as any).organizationId
-                            || (refreshed as any).organizationAccount
-                            || (refreshed as any).account
-                            || (refreshed as any).organizationAccountId
-                            || (refreshed as any).organization?.id
-                            || (refreshed as any).organization?.account
-                            || (refreshed as any).organization?.organizationAccount;
+                            || refreshed.organizationAccount;
                           if (!refreshedOrgId) {
                             toast.error('단체 ID를 찾을 수 없습니다. 백엔드 API가 organizationId 또는 organizationAccount를 반환해야 합니다. 콘솔 로그를 확인해주세요.');
                             setPwdSaving(false);
