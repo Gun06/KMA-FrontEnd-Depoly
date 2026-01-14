@@ -123,7 +123,11 @@ export default function OrganizationUsersTable({
         }
       }}
       onSearch={(q) => onSearch?.(q)}
-      onActionClick={(label) => { if (label === 'Excel') onClickExcel?.(); }}
+      onActionClick={(value) => {
+        if (value === 'downloadOrganizationList') {
+          onClickExcel?.();
+        }
+      }}
       onReset={onResetFilters}
     />
   ) : null;

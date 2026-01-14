@@ -146,8 +146,10 @@ export default function IndividualUsersTable({
         else if (L === '회원여부') onMemberFilterChange?.(value as MemberFilter);
       }}
       onSearch={(q) => onSearch?.(q)}
-      onActionClick={(label) => {
-        if (label === 'Excel') onClickExcel?.();
+      onActionClick={(value) => {
+        if (value === 'downloadIndividualUserList') {
+          onClickExcel?.();
+        }
       }}
       onReset={onResetFilters}
     />

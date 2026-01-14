@@ -174,8 +174,7 @@ export default function OrgMembersTable({
       }}
       onSearch={(q) => onSearch?.(q)}
       onActionClick={(label) => {
-        if (label === 'Excel') onClickExcel?.();
-        else if (label === '뒤로가기') onClickBack?.();
+        if (label === '뒤로가기') onClickBack?.();
       }}
       onReset={onResetFilters}
     />
