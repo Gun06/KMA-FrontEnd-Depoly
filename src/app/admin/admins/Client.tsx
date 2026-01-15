@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Users, Shield, UserPlus, HelpCircle, Info, AlertCircle, ChevronDown } from 'lucide-react';
+import { Plus, Users, Shield, UserPlus, HelpCircle, Info, AlertCircle, ChevronDown, Check, X, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { useAdminEventList } from '@/services/admin';
@@ -59,6 +59,15 @@ export default function Client() {
     board: true,
     banner: true,
     gallery: true,
+  });
+  const [accountCheckStatus, setAccountCheckStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string;
+  }>({
+    checking: false,
+    available: null,
+    message: '',
   });
 
   // 권한 확인: 총관리자(SUPER_ADMIN)만 접근 가능
@@ -152,6 +161,72 @@ export default function Client() {
 
   const selectedRoleData = rolesData?.find((r) => r.id === formData.roleId);
   const roleLabel = selectedRoleData ? selectedRoleData.name : (isLoadingRoles ? '권한 목록 로딩 중...' : rolesError ? '권한 목록을 불러올 수 없습니다' : '권한을 선택하세요');
+
+  // 아이디 중복 확인 (debounce)
+  useEffect(() => {
+    const account = formData.account.trim();
+    
+    // 빈 값이면 상태 초기화
+    if (!account) {
+      setAccountCheckStatus({
+        checking: false,
+        available: null,
+        message: '',
+      });
+      return;
+    }
+
+    // 최소 길이 체크 (선택사항)
+    if (account.length < 2) {
+      setAccountCheckStatus({
+        checking: false,
+        available: null,
+        message: '',
+      });
+      return;
+    }
+
+    // debounce: 500ms 후에 API 호출
+    const timeoutId = setTimeout(async () => {
+      setAccountCheckStatus({
+        checking: true,
+        available: null,
+        message: '',
+      });
+
+      try {
+        const response = await request<{ duplicated: boolean }>(
+          'admin',
+          `/api/v1/admin/duplicate-check?account=${encodeURIComponent(account)}`,
+          'GET',
+          undefined,
+          true // withAuth: true - 인증 헤더 포함
+        );
+
+        if (response && response.duplicated) {
+          setAccountCheckStatus({
+            checking: false,
+            available: false,
+            message: '이미 사용 중인 아이디입니다',
+          });
+        } else if (response) {
+          setAccountCheckStatus({
+            checking: false,
+            available: true,
+            message: '사용 가능한 아이디입니다',
+          });
+        }
+      } catch (_error) {
+        setAccountCheckStatus({
+          checking: false,
+          available: null,
+          message: '중복 확인 중 오류가 발생했습니다',
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.account]);
 
   // 부서 목록 조회 제거됨
 
@@ -299,7 +374,7 @@ export default function Client() {
         break;
     }
     
-    // 권한 설정에서 선택한 권한에 따라 권한조회 드롭다운 자동 선택
+    // 권한 설정에서 선택한 권한에 따라 권한 선택 드롭다운 자동 선택
     if (rolesData && rolesData.length > 0) {
       let matchedRole: RoleItem | undefined;
       
@@ -352,11 +427,11 @@ export default function Client() {
     }));
   };
 
-  // 권한조회 드롭다운에서 직접 선택할 때
+  // 권한 선택 드롭다운에서 직접 선택할 때
   const handleRoleIdChange = (roleId: string) => {
     setFormData({ ...formData, roleId });
     
-    // 권한조회 드롭다운에서 선택한 권한에 따라 권한 설정도 자동 선택
+    // 권한 선택 드롭다운에서 선택한 권한에 따라 권한 설정도 자동 선택
     if (rolesData && rolesData.length > 0) {
       const selectedRoleData = rolesData.find((r) => r.id === roleId);
       if (selectedRoleData) {
@@ -391,6 +466,22 @@ export default function Client() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 아이디 중복 확인
+    if (accountCheckStatus.checking) {
+      showErrorToast('아이디 중복 확인 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
+    if (accountCheckStatus.available === false) {
+      showErrorToast('이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.');
+      return;
+    }
+
+    if (formData.account.trim() && accountCheckStatus.available === null) {
+      showErrorToast('아이디 중복 확인을 완료해주세요.');
+      return;
+    }
 
     const validation = validateAdminForm(formData, selectedRole, selectedEventId);
     if (!validation.isValid) {
@@ -561,10 +652,42 @@ export default function Client() {
                     name="account"
                     value={formData.account}
                     onChange={(e) => setFormData({ ...formData, account: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className={clsx(
+                      'w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
+                      accountCheckStatus.available === false
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                        : accountCheckStatus.available === true
+                        ? 'border-green-300 focus:border-green-500 focus:ring-green-500'
+                        : 'border-gray-300'
+                    )}
                     placeholder="관리자 아이디를 입력하세요"
                     required
                   />
+                  {formData.account.trim() && (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {accountCheckStatus.checking ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                          <span className="text-xs text-gray-500">확인 중...</span>
+                        </>
+                      ) : accountCheckStatus.available === true ? (
+                        <>
+                          <Check className="w-4 h-4 text-green-600" />
+                          <span className="text-xs text-green-600">{accountCheckStatus.message}</span>
+                        </>
+                      ) : accountCheckStatus.available === false ? (
+                        <>
+                          <X className="w-4 h-4 text-red-600" />
+                          <span className="text-xs text-red-600">{accountCheckStatus.message}</span>
+                        </>
+                      ) : accountCheckStatus.message ? (
+                        <>
+                          <AlertCircle className="w-4 h-4 text-gray-400" />
+                          <span className="text-xs text-gray-500">{accountCheckStatus.message}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -585,7 +708,7 @@ export default function Client() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    권한조회 <span className="text-red-500">*</span>
+                    권한 선택 <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <button

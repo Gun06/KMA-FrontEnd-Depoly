@@ -336,7 +336,7 @@ export default function EditAdminPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              권한조회 <span className="text-red-500">*</span>
+              권한 선택 <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <button
