@@ -45,13 +45,27 @@ const safeParseJson = async (res: Response): Promise<unknown | null> => {
 const normalizeRoleName = (role?: unknown): string | null => {
   if (typeof role !== 'string') return null;
   const upper = role.toUpperCase();
-  return upper.startsWith('ROLE_') ? upper.replace(/^ROLE_/i, '') : upper;
+  const normalized = upper.startsWith('ROLE_') ? upper.replace(/^ROLE_/i, '') : upper;
+  // 한글 role 이름을 영문으로 매핑
+  if (normalized.includes('총관리자') || normalized.includes('총관리') || normalized.includes('SUPER')) {
+    return 'SUPER_ADMIN';
+  }
+  if (normalized.includes('입금관리자') || normalized.includes('입금 관리자') || normalized.includes('DEPOSIT')) {
+    return 'DEPOSIT_ADMIN';
+  }
+  if (normalized.includes('대회관리자') || normalized.includes('대회 관리자') || normalized.includes('EVENT')) {
+    return 'EVENT_ADMIN';
+  }
+  if (normalized.includes('게시판관리자') || normalized.includes('게시판 관리자') || normalized.includes('BOARD')) {
+    return 'BOARD_ADMIN';
+  }
+  return normalized;
 };
 
 /** 디코드된 토큰에서 역할 배열 추출 */
 const extractRolesFromDecoded = (
   decoded: {
-    role?: Array<{ authority?: string } | string>;
+    role?: Array<{ authority?: string } | string> | string;
     roles?: Array<string>;
   } | null
 ): string[] => {
@@ -64,6 +78,10 @@ const extractRolesFromDecoded = (
           : normalizeRoleName((r as { authority?: string })?.authority);
       if (n) extracted.push(n);
     }
+  } else if (typeof decoded?.role === 'string') {
+    // role이 배열이 아닌 단일 문자열일 수도 있음
+    const n = normalizeRoleName(decoded.role);
+    if (n) extracted.push(n);
   }
   if (Array.isArray(decoded?.roles)) {
     for (const r of decoded!.roles) {
@@ -493,8 +511,75 @@ export const authService = {
         localStorage.setItem('kmaAdminRefreshToken', refreshToken);
     }
 
-    // 본문 폴백
+    // 본문 파싱
     const body = await safeParseJson(response);
+    
+    // 본문에서 토큰 추출 (mustChangePassword 확인 전에)
+    if ((!accessToken || !refreshToken) && body && isRecord(body)) {
+      const b = body as Record<string, unknown>;
+      accessToken =
+        (getString(b['accessToken']) ??
+          getString(
+            (b['data'] as Record<string, unknown> | undefined)?.[
+              'accessToken'
+            ]
+          )) ||
+        accessToken;
+      refreshToken =
+        (getString(b['refreshToken']) ??
+          getString(
+            (b['data'] as Record<string, unknown> | undefined)?.[
+              'refreshToken'
+            ]
+          )) ||
+        refreshToken;
+      if (typeof window !== 'undefined') {
+        if (accessToken)
+          localStorage.setItem('kmaAdminAccessToken', accessToken);
+        if (refreshToken)
+          localStorage.setItem('kmaAdminRefreshToken', refreshToken);
+      }
+    }
+    
+    // mustChangePassword 확인
+    if (isRecord(body)) {
+      const b = body as Record<string, unknown>;
+      const mustChangePassword = b['mustChangePassword'];
+      if (mustChangePassword === true) {
+        // 토큰은 이미 저장됨, 스토어도 업데이트
+        try {
+          const token = accessToken;
+          if (typeof window !== 'undefined' && token) {
+            const decoded = decodeToken(token) as {
+              sub?: string;
+              name?: string;
+              role?: Array<{ authority?: string } | string>;
+              roles?: Array<string>;
+              admin_id?: string;
+            } | null;
+            const roles = extractRolesFromDecoded(decoded);
+
+            useAdminAuthStore.getState().login(
+              { accessToken: token, refreshToken },
+              {
+                id: decoded?.sub || decoded?.admin_id || 'admin',
+                account: decoded?.name || credentials.account,
+                role: roles[0] || 'ADMIN',
+                roles,
+              }
+            );
+          }
+        } catch (_e) {}
+        
+        // mustChangePassword 에러 던지기 (특별한 에러 타입)
+        const error = new Error('MUST_CHANGE_PASSWORD');
+        (error as { code?: string; mustChangePassword?: boolean }).code = 'MUST_CHANGE_PASSWORD';
+        (error as { code?: string; mustChangePassword?: boolean }).mustChangePassword = true;
+        throw error;
+      }
+    }
+    
+    // 본문 폴백
     if ((!accessToken || !refreshToken) && body) {
       if (isRecord(body)) {
         const b = body as Record<string, unknown>;

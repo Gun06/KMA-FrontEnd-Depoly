@@ -5,8 +5,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import OrganizationUsersTable from '@/components/admin/Users/organization/OrganizationUsersTable';
 import { listOrganizations, type OrganizationRow, transformOrganizationApiToRow } from '@/data/users/organization';
 import { useOrganizationUsersList } from '@/services/admin/users';
-import { downloadOrganizationListExcel } from './api/excel';
-import { toast } from 'react-toastify';
 
 type SortBy = 'id' | 'joinCount' | 'memberCount' | 'createdAt'; // ✅ createdAt 추가
 type SearchField = 'org' | 'owner' | 'ownerId' | 'eventTitle';
@@ -145,24 +143,7 @@ export default function Client() {
       }}
 
       // 액션
-      onClickExcel={async () => {
-        const toastId = toast.loading('Excel 다운로드 중...');
-        try {
-          await downloadOrganizationListExcel();
-          toast.update(toastId, {
-            render: 'Excel 다운로드가 완료되었습니다.',
-            type: 'success',
-            isLoading: false,
-            autoClose: 3000,
-          });
-        } catch (error) {
-          toast.update(toastId, {
-            render: 'Excel 다운로드에 실패했습니다.',
-            type: 'error',
-            isLoading: false,
-            autoClose: 3000,
-          });
-        }
+      onClickExcel={() => {
       }}
       onResetFilters={() => {
         setQuery('');

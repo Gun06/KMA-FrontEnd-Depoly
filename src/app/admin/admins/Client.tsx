@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Users, Shield, UserPlus, HelpCircle, Info, AlertCircle } from 'lucide-react';
+import { Plus, Users, Shield, UserPlus, HelpCircle, Info, AlertCircle, ChevronDown } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import clsx from 'clsx';
 import { useAdminEventList } from '@/services/admin';
 import AdminTableShell from '@/components/admin/Table/AdminTableShell';
 import Pagination from '@/components/common/Pagination/Pagination';
 import { useAdminList } from './hooks/useAdminList';
 import { useCreateAdmin } from './hooks/useCreateAdmin';
 import { useAdminRoles } from './hooks/useAdminRoles';
-import { useAdminDepartments } from './hooks/useAdminDepartments';
+import { request } from '@/hooks/useFetch';
 import { validateAdminForm } from './utils/validation';
 import { resetFormData } from './utils/formHelpers';
 import { ADMIN_TABLE_COLUMNS, DEFAULT_PAGE_SIZE } from './utils/constants';
@@ -17,7 +19,8 @@ import { useAdminAuthStore } from '@/stores';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/common/Toast/ToastContainer';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
-import type { AdminFormData, RoleType, DepartmentItem, RoleItem } from './types';
+import PasswordModal from '@/components/common/Modal/PasswordModal';
+import type { AdminFormData, RoleType, AdminItem, RoleItem } from './types';
 
 export default function Client() {
   const router = useRouter();
@@ -30,12 +33,17 @@ export default function Client() {
     account: '',
     name: '',
     roleId: '',
-    departmentId: '',
   });
   const [selectedRole, setSelectedRole] = useState<RoleType>('');
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<AdminItem | null>(null);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const roleBtnRef = useRef<HTMLButtonElement | null>(null);
+  const rolePortalRef = useRef<HTMLDivElement | null>(null);
+  const [roleMenuStyle, setRoleMenuStyle] = useState<React.CSSProperties | null>(null);
   const [permissionTab, setPermissionTab] = useState<'super_admin' | 'no_deposit' | 'no_deposit_event' | 'event_specific'>('super_admin');
   const [selectedPermissions, setSelectedPermissions] = useState<{
     deposit: boolean;
@@ -58,7 +66,23 @@ export default function Client() {
   const primaryRole = user?.role || '';
   const allRoles = Array.from(
     new Set([primaryRole, ...roles].filter(Boolean))
-  ).map(r => r.toUpperCase().replace(/^ROLE_/i, ''));
+  ).map(r => {
+    const upper = r.toUpperCase().replace(/^ROLE_/i, '');
+    // 한글 role 이름을 영문으로 매핑
+    if (upper.includes('총관리자') || upper.includes('총관리') || upper.includes('SUPER')) {
+      return 'SUPER_ADMIN';
+    }
+    if (upper.includes('입금관리자') || upper.includes('입금 관리자') || upper.includes('DEPOSIT')) {
+      return 'DEPOSIT_ADMIN';
+    }
+    if (upper.includes('대회관리자') || upper.includes('대회 관리자') || upper.includes('EVENT')) {
+      return 'EVENT_ADMIN';
+    }
+    if (upper.includes('게시판관리자') || upper.includes('게시판 관리자') || upper.includes('BOARD')) {
+      return 'BOARD_ADMIN';
+    }
+    return upper;
+  });
   const isSuperAdmin = allRoles.includes('SUPER_ADMIN');
 
   // 관리자 목록 조회 (Hooks는 항상 같은 순서로 호출되어야 하므로 early return 전에 호출)
@@ -75,12 +99,61 @@ export default function Client() {
     error: rolesError,
   } = useAdminRoles(true);
 
-  // 부서 목록 조회
-  const {
-    data: departmentsData,
-    isLoading: isLoadingDepartments,
-    error: departmentsError,
-  } = useAdminDepartments(true);
+  // 권한 드롭다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        roleBtnRef.current &&
+        !roleBtnRef.current.contains(e.target as Node) &&
+        rolePortalRef.current &&
+        !rolePortalRef.current.contains(e.target as Node)
+      ) {
+        setRoleDropdownOpen(false);
+      }
+    };
+    if (roleDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [roleDropdownOpen]);
+
+  // 권한 드롭다운 위치 계산
+  const recalcRoleMenuPosition = useCallback(() => {
+    const el = roleBtnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const width = r.width;
+    setRoleMenuStyle({
+      position: 'fixed',
+      top: r.bottom + 4,
+      left: Math.min(r.left, window.innerWidth - width - 8),
+      width,
+      maxHeight: 280,
+      overflowY: 'auto',
+      zIndex: 9999,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (roleDropdownOpen) recalcRoleMenuPosition();
+  }, [roleDropdownOpen, recalcRoleMenuPosition]);
+
+  useEffect(() => {
+    if (!roleDropdownOpen) return;
+    const onScroll = () => recalcRoleMenuPosition();
+    const onResize = () => recalcRoleMenuPosition();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [roleDropdownOpen, recalcRoleMenuPosition]);
+
+  const selectedRoleData = rolesData?.find((r) => r.id === formData.roleId);
+  const roleLabel = selectedRoleData ? selectedRoleData.name : (isLoadingRoles ? '권한 목록 로딩 중...' : rolesError ? '권한 목록을 불러올 수 없습니다' : '권한을 선택하세요');
+
+  // 부서 목록 조회 제거됨
 
   // 대회 목록 조회 (특정 대회 선택용)
   const { data: eventsData } = useAdminEventList({ page: 1, size: 100 });
@@ -99,6 +172,40 @@ export default function Client() {
       showErrorToast(`관리자 생성에 실패했습니다: ${error.message}`);
     },
   });
+
+  // 비밀번호 초기화 상태
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // 비밀번호 초기화 핸들러
+  const handleResetPassword = (admin: AdminItem) => {
+    setSelectedAdmin(admin);
+    setShowPasswordResetModal(true);
+  };
+
+  const handlePasswordResetConfirm = async (password: string) => {
+    if (!selectedAdmin) return;
+    
+    setIsResettingPassword(true);
+    try {
+      await request<string>(
+        'admin',
+        `/api/v1/admin/${selectedAdmin.id}/password`,
+        'PATCH',
+        { password },
+        true
+      );
+      
+      showSuccessToast(`${selectedAdmin.name || '관리자'}의 비밀번호가 성공적으로 초기화되었습니다.`);
+      setShowPasswordResetModal(false);
+      setSelectedAdmin(null);
+      refetchAdminList();
+    } catch (error) {
+      const err = error as Error;
+      showErrorToast(`비밀번호 초기화에 실패했습니다: ${err.message || '알 수 없는 오류가 발생했습니다.'}`);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   // 권한 확인 후 Toast 표시 (한 번만 실행)
   useEffect(() => {
@@ -258,18 +365,22 @@ export default function Client() {
         // 슈퍼: 총관리자
         if (roleName.includes('총관리자') || roleName.includes('총 관리자') || roleName.includes('super')) {
           setSelectedRole('super_admin');
+          setPermissionTab('super_admin');
         } 
         // Deposit: 입금관리자
         else if (roleName.includes('입금관리자') || roleName.includes('입금 관리자') || roleName.includes('deposit')) {
           setSelectedRole('no_deposit');
-        } 
-        // Board: 게시판관리자
-        else if (roleName.includes('게시판관리자') || roleName.includes('게시판 관리자') || roleName.includes('board')) {
-          setSelectedRole('no_deposit_event');
+          setPermissionTab('no_deposit');
         } 
         // Event: 대회관리자
         else if (roleName.includes('대회관리자') || roleName.includes('대회 관리자') || roleName.includes('event')) {
           setSelectedRole('event_specific');
+          setPermissionTab('event_specific');
+        } 
+        // Board: 게시판관리자
+        else if (roleName.includes('게시판관리자') || roleName.includes('게시판 관리자') || roleName.includes('board')) {
+          setSelectedRole('no_deposit_event');
+          setPermissionTab('no_deposit_event');
         } 
         else {
           setSelectedRole('');
@@ -307,13 +418,22 @@ export default function Client() {
             관리자 계정을 생성하고 권한을 설정할 수 있습니다.
           </p>
         </div>
-        <button
-          onClick={() => setActiveTab('create')}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <UserPlus className="w-5 h-5" />
-          관리자 생성
-        </button>
+        {activeTab === 'create' ? (
+          <button
+            onClick={() => setActiveTab('list')}
+            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            목록으로
+          </button>
+        ) : (
+          <button
+            onClick={() => setActiveTab('create')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <UserPlus className="w-5 h-5" />
+            관리자 생성
+          </button>
+        )}
       </div>
 
       {/* 콘텐츠 */}
@@ -361,6 +481,9 @@ export default function Client() {
                               {col.header}
                             </th>
                           ))}
+                          <th className="h-12 px-4 font-medium text-center border-b border-gray-300">
+                            관리
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -377,6 +500,14 @@ export default function Client() {
                                 {col.render ? col.render(row, idx) : String(row[col.key as keyof typeof row] || '')}
                               </td>
                             ))}
+                            <td className="px-4 py-4 text-sm text-center">
+                              <button
+                                onClick={() => handleResetPassword(row)}
+                                className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
+                              >
+                                비밀번호 초기화
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -386,7 +517,7 @@ export default function Client() {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <div className="text-sm text-gray-600">
-                      총 {adminListData?.totalElements || 0}개의 게시물
+                      총 {adminListData?.totalElements || 0}개의 계정
                     </div>
                     <div className="text-sm text-gray-600">
                       페이지 {page}/{Math.max(1, Math.ceil((adminListData?.totalElements || 0) / DEFAULT_PAGE_SIZE))}
@@ -407,6 +538,18 @@ export default function Client() {
         ) : (
           <div>
             <h2 className="text-lg font-semibold text-gray-900 mb-6">새 관리자 생성</h2>
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">관리자 생성 안내</p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700">
+                    <li>최초 생성 시 아이디와 비밀번호가 동일하게 설정됩니다.</li>
+                    <li>로그인 후 반드시 비밀번호를 변경해주세요.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -433,231 +576,165 @@ export default function Client() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="이름을 입력하세요"
+                    placeholder="이름을 입력하세요 (부서명도 여기에 입력 가능)"
                     required
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    부서명이 필요한 경우 이름 필드에 함께 입력하세요.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     권한조회 <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="roleId"
-                    value={formData.roleId}
-                    onChange={(e) => handleRoleIdChange(e.target.value)}
-                    disabled={isLoadingRoles}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    required
-                  >
-                    <option value="">
-                      {isLoadingRoles
-                        ? '권한 목록 로딩 중...'
-                        : rolesError
-                          ? '권한 목록을 불러올 수 없습니다'
-                          : '권한을 선택하세요'}
-                    </option>
-                    {rolesData?.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <button
+                      ref={roleBtnRef}
+                      type="button"
+                      onClick={() => !isLoadingRoles && !rolesError && setRoleDropdownOpen((v) => !v)}
+                      disabled={isLoadingRoles || !!rolesError}
+                      className={clsx(
+                        'flex items-center gap-2 px-3 py-2 h-10 w-full text-sm rounded-md transition-colors border',
+                        isLoadingRoles || rolesError
+                          ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                          : 'font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-gray-200'
+                      )}
+                      aria-haspopup="listbox"
+                      aria-expanded={roleDropdownOpen}
+                      title={roleLabel}
+                    >
+                      <span className="flex-1 text-left max-w-[520px] truncate">{roleLabel}</span>
+                      <ChevronDown className={clsx('w-4 h-4 ml-auto transition-transform flex-shrink-0', roleDropdownOpen && 'rotate-180', (isLoadingRoles || rolesError) && 'opacity-40')} />
+                    </button>
+
+                    {roleDropdownOpen && rolesData && createPortal(
+                      <div
+                        ref={rolePortalRef}
+                        style={roleMenuStyle ?? undefined}
+                        className="bg-white rounded-md shadow-lg border border-gray-200"
+                      >
+                        <div role="listbox" className="py-1">
+                          {rolesData.map((role) => {
+                            const active = role.id === formData.roleId;
+                            return (
+                              <button
+                                key={role.id}
+                                type="button"
+                                onClick={() => {
+                                  handleRoleIdChange(role.id);
+                                  setRoleDropdownOpen(false);
+                                }}
+                                className={clsx(
+                                  'w-full text-left px-4 py-2 text-sm transition-colors truncate',
+                                  active
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                )}
+                                title={role.name}
+                              >
+                                {role.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>,
+                      document.body
+                    )}
+                  </div>
                   {rolesError && (
                     <p className="mt-1 text-xs text-red-500">
                       권한 목록을 불러오는 중 오류가 발생했습니다.
                     </p>
                   )}
-                  <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                    <Info className="w-3 h-3" />
-                    권한 설정에서 선택하면 자동으로 설정됩니다.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    부서
-                  </label>
-                  <select
-                    name="departmentId"
-                    value={formData.departmentId}
-                    onChange={(e) => setFormData({ ...formData, departmentId: e.target.value })}
-                    disabled={isLoadingDepartments}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">
-                      {isLoadingDepartments
-                        ? '부서 목록 로딩 중...'
-                        : departmentsError
-                          ? '부서 목록을 불러올 수 없습니다'
-                          : '부서를 선택하세요 (선택사항)'}
-                    </option>
-                    {departmentsData?.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                  {departmentsError && (
-                    <p className="mt-1 text-xs text-red-500">
-                      부서 목록을 불러오는 중 오류가 발생했습니다.
-                    </p>
-                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  권한 설정 <span className="text-red-500">*</span>
-                </label>
-                
-                {/* 권한 탭 */}
-                <div className="border-b border-gray-200 mb-4">
+              {/* 권한 탭 */}
+              <div className="border-b border-gray-200 mb-4">
                   <nav className="flex space-x-1" aria-label="권한 탭">
                     {[
                       { id: 'super_admin', label: '총 관리자', description: '모든 관리 기능 사용 가능' },
-                      { id: 'no_deposit', label: '일반 관리자', description: '입금처리 기능만 제외' },
-                      { id: 'no_deposit_event', label: '제한 관리자', description: '입금처리와 대회관리 기능 제외' },
-                      { id: 'event_specific', label: '대회별 관리자', description: '특정 대회의 참가자 데이터만 조회' },
+                      { id: 'no_deposit', label: '입금 관리자', description: '신청, 입금 관련 기능 사용 가능' },
+                      { id: 'event_specific', label: '대회 관리자', description: '대회 관련 기능 사용 가능' },
+                      { id: 'no_deposit_event', label: '게시판 관리자', description: '공지사항, 문의사항, FAQ 관리 가능' },
                     ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => handlePermissionTabChange(tab.id as typeof permissionTab)}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                          permissionTab === tab.id
-                            ? 'border-blue-500 text-blue-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-left">
-                          <div className="font-semibold">{tab.label}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{tab.description}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </nav>
-                </div>
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handlePermissionTabChange(tab.id as typeof permissionTab)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                        permissionTab === tab.id
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-left">
+                        <div className="font-semibold">{tab.label}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{tab.description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </nav>
+              </div>
 
-                {/* 권한 설명 및 체크박스 */}
-                <div className="border border-gray-200 rounded-lg p-6 bg-white">
-                  {/* 권한 설명 */}
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    {permissionTab === 'super_admin' && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">총 관리자</h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          모든 관리 기능 사용 가능합니다. 입금 처리, 대회 관리, 회원 관리 등 전체 권한을 가지며, 관리자 계정 생성 및 관리도 가능합니다.
-                        </p>
-                        <ul className="text-xs text-gray-500 space-y-1">
-                          <li>• 입금 처리, 대회 관리, 회원 관리 등 전체 권한</li>
-                          <li>• 관리자 계정 생성 및 관리 접근 가능</li>
-                          <li>• 최고 수준의 관리 권한</li>
-                        </ul>
-                      </div>
-                    )}
-                    {permissionTab === 'no_deposit' && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">일반 관리자</h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          입금 처리 기능을 제외한 모든 기능 사용 가능합니다. 대회 관리, 회원 관리, 게시판 관리, 배너 관리, 갤러리 관리가 가능합니다.
-                        </p>
-                        <ul className="text-xs text-gray-500 space-y-1">
-                          <li>• 대회 관리, 회원 관리, 게시판 관리 가능</li>
-                          <li>• 배너 관리, 갤러리 관리 가능</li>
-                          <li>• 입금 내역 확인 및 수정은 불가능</li>
-                        </ul>
-                      </div>
-                    )}
-                    {permissionTab === 'no_deposit_event' && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">제한 관리자</h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          입금 처리 및 대회 관리 기능을 제외한 기능 사용 가능합니다. 회원 관리, 게시판 관리, 배너 관리, 갤러리 관리가 가능합니다.
-                        </p>
-                        <ul className="text-xs text-gray-500 space-y-1">
-                          <li>• 회원 관리, 게시판 관리 가능</li>
-                          <li>• 배너 관리, 갤러리 관리 가능</li>
-                          <li>• 입금 처리 및 대회 등록/수정은 불가능</li>
-                        </ul>
-                      </div>
-                    )}
-                    {permissionTab === 'event_specific' && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">대회별 관리자</h4>
-                        <p className="text-sm text-gray-600 mb-2">
-                          선택한 특정 대회의 참가자 정보만 확인 가능합니다. 시군 관계자와 공유 용도로 적합하며, 다른 관리 기능은 사용할 수 없습니다.
-                        </p>
-                        <ul className="text-xs text-gray-500 space-y-1">
-                          <li>• 선택한 대회의 참가자 정보만 확인</li>
-                          <li>• 시군 관계자와 공유 용도로 적합</li>
-                          <li>• 다른 관리 기능은 사용 불가</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 권한 체크박스 */}
-                  {permissionTab !== 'event_specific' ? (
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-medium text-gray-700 mb-3">사용 가능한 권한</h5>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { key: 'deposit', label: '입금 처리', description: '입금 내역 확인 및 수정' },
-                          { key: 'event', label: '대회 관리', description: '대회 등록, 수정, 통계 확인' },
-                          { key: 'user', label: '회원 관리', description: '개인/단체 회원 관리' },
-                          { key: 'board', label: '게시판 관리', description: '공지사항, 문의사항, FAQ' },
-                          { key: 'banner', label: '배너 관리', description: '메인/스폰서 배너, 팝업 관리' },
-                          { key: 'gallery', label: '갤러리 관리', description: '갤러리 등록 및 관리' },
-                        ].map((permission) => (
-                          <label
-                            key={permission.key}
-                            className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                              selectedPermissions[permission.key as keyof typeof selectedPermissions]
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedPermissions[permission.key as keyof typeof selectedPermissions]}
-                              onChange={() => handlePermissionChange(permission.key as keyof typeof selectedPermissions)}
-                              className="w-4 h-4 text-blue-600 mt-0.5 rounded focus:ring-blue-500"
-                            />
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">{permission.label}</div>
-                              <div className="text-xs text-gray-500 mt-0.5">{permission.description}</div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        대회 선택 <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={selectedEventId}
-                        onChange={(e) => setSelectedEventId(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
-                        required
-                      >
-                        <option value="">대회를 선택하세요</option>
-                        {eventsData?.content?.map((event) => (
-                          <option key={event.id} value={event.id}>
-                            {event.nameKr}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        선택한 대회의 참가자 정보만 조회할 수 있습니다.
+              {/* 권한 설명 */}
+              <div className="border border-gray-200 rounded-lg p-6 bg-white">
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  {permissionTab === 'super_admin' && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">총 관리자</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        모든 관리 기능 사용 가능합니다. 입금 처리, 대회 관리, 회원 관리 등 전체 권한을 가지며, 관리자 계정 생성 및 관리도 가능합니다.
                       </p>
+                      <ul className="text-xs text-gray-500 space-y-1">
+                        <li>• 입금 처리, 대회 관리, 회원 관리 등 전체 권한</li>
+                        <li>• 관리자 계정 생성 및 관리 접근 가능</li>
+                        <li>• 최고 수준의 관리 권한</li>
+                      </ul>
+                    </div>
+                  )}
+                  {permissionTab === 'no_deposit' && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">입금 관리자</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        신청, 입금 관련 기능을 중심으로 사용 가능합니다.
+                      </p>
+                      <ul className="text-xs text-gray-500 space-y-1">
+                        <li>• 신청 및 입금 관련 기능 사용 가능</li>
+                        <li>• 입금 내역 확인 및 수정 가능</li>
+                      </ul>
+                    </div>
+                  )}
+                  {permissionTab === 'no_deposit_event' && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">게시판 관리자</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        게시판 관련 기능(공지사항, 문의사항, FAQ 등)을 관리할 수 있는 권한입니다.
+                      </p>
+                      <ul className="text-xs text-gray-500 space-y-1">
+                        <li>• 공지사항, 문의사항, FAQ 게시판 관리</li>
+                        <li>• 게시글 작성, 수정, 삭제 권한</li>
+                        <li>• 다른 관리 기능에는 접근 불가</li>
+                      </ul>
+                    </div>
+                  )}
+                  {permissionTab === 'event_specific' && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">대회 관리자</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        대회 관련 기능만 사용할 수 있습니다. 시군 관계자 등 외부 대회 담당자에게 부여하는 권한입니다.
+                      </p>
+                      <ul className="text-xs text-gray-500 space-y-1">
+                        <li>• 대회 관련 기능 사용 가능</li>
+                        <li>• 시군 관계자와 공유 용도로 적합</li>
+                        <li>• 다른 관리 기능에는 접근 불가</li>
+                      </ul>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-3 pt-6 border-t border-gray-200">
+              <div className="flex items-center justify-center gap-3 pt-6 pb-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setActiveTab('list')}
@@ -683,6 +760,17 @@ export default function Client() {
         onClose={() => setIsSuccessModalOpen(false)}
         title="관리자 생성 완료"
         message={successMessage}
+      />
+      <PasswordModal
+        isOpen={showPasswordResetModal}
+        onClose={() => {
+          setShowPasswordResetModal(false);
+          setSelectedAdmin(null);
+        }}
+        onConfirm={handlePasswordResetConfirm}
+        title="비밀번호 초기화"
+        message={`${selectedAdmin?.name || '관리자'}의 비밀번호를 초기화합니다.\n새 비밀번호를 입력해주세요.`}
+        isLoading={isResettingPassword}
       />
     </div>
   );

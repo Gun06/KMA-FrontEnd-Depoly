@@ -65,7 +65,7 @@ export default function PasswordModal({
       {/* 모달 컨테이너 */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="relative flex items-center justify-center p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
               <Lock className="w-5 h-5 text-pink-600" />
@@ -76,7 +76,7 @@ export default function PasswordModal({
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-6 text-gray-400 hover:text-gray-600 transition-colors"
             disabled={isLoading}
           >
             <X className="w-6 h-6" />
@@ -85,9 +85,13 @@ export default function PasswordModal({
 
         {/* 내용 */}
         <div className="p-6">
-          <p className="text-gray-600 mb-6">
-            {message}
-          </p>
+          <div className="text-gray-600 mb-6 text-center">
+            {message.split('\n').map((line, index) => (
+              <p key={index} className={index > 0 ? 'mt-2' : ''}>
+                {line}
+              </p>
+            ))}
+          </div>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">

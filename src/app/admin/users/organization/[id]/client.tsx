@@ -372,7 +372,6 @@ export default function Client({ orgId }: { orgId: string }) {
           setMemberFilter('');
           setPage(1);
         }}
-        onClickBack={() => router.push('/admin/users/organization')}
         title={<span className="text-gray-700">단체 구성원 목록</span>}
         onRowClick={handleRowClick}
       />

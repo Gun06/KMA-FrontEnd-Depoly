@@ -5,8 +5,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import IndividualUsersTable from '@/components/admin/Users/individual/IndividualUsersTable';
 import { transformApiDataToTableRow } from '@/data/users/individual';
 import { useIndividualUsersList } from '@/services/admin/users';
-import { downloadIndividualUserListExcel } from './api/excel';
-import { toast } from 'react-toastify';
 
 type SortKey = 'id' | 'name' | 'birth' | 'member' | 'createdAt';
 type MemberFilter = '' | 'member' | 'nonMember';
@@ -140,24 +138,8 @@ export default function Client() {
         if (checked) setSelectedIds(getAllFilteredIds());
         else setSelectedIds([]);
       }}
-      onClickExcel={async () => {
-        const toastId = toast.loading('Excel 다운로드 중...');
-        try {
-          await downloadIndividualUserListExcel();
-          toast.update(toastId, {
-            render: 'Excel 다운로드가 완료되었습니다.',
-            type: 'success',
-            isLoading: false,
-            autoClose: 3000,
-          });
-        } catch (error) {
-          toast.update(toastId, {
-            render: 'Excel 다운로드에 실패했습니다.',
-            type: 'error',
-            isLoading: false,
-            autoClose: 3000,
-          });
-        }
+      onClickExcel={() => {
+        const _ids = selectedIds.length ? selectedIds : getAllFilteredIds();
       }}
       onResetFilters={() => {
         setQuery('');

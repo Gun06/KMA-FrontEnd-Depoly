@@ -14,7 +14,6 @@ import { listIndividualUsers } from '@/data/users/individual';
 // API 훅들
 import { useEventList } from '@/hooks/useNotices';
 import type { EventListResponse } from '@/types/eventList';
-import { useOrganizationDetail } from '@/services/admin/users';
 
 // 공지(기존) 소스 - 유지
 import { fetchEventNotices } from '@/components/common/Notice/event';
@@ -157,21 +156,25 @@ export default function AdminNavigation() {
   );
 
   // B) 단체 상세
-  const isOrgDetail = /^\/admin\/users\/organization\/[^/]+$/.test(pathname);
+  const isOrgDetail = /^\/admin\/users\/organization\/\d+/.test(pathname);
   const orgIdFromPath = (() => {
-    const m = pathname.match(/^\/admin\/users\/organization\/([^/]+)$/);
-    return m ? m[1] : null;
+    const m = pathname.match(/^\/admin\/users\/organization\/(\d+)/);
+    return m ? Number(m[1]) : null;
   })();
   const orgTab = (searchParams.get('tab') ?? 'members') as 'members' | 'apps' | 'settings';
 
-  const { data: orgDetailData } = useOrganizationDetail({ 
-    organizationId: orgIdFromPath || '' 
-  });
-
+  const allOrgs = useMemo(() => {
+    const { rows } = listOrganizations({ page: 1, pageSize: 500, sortBy: 'id', order: 'desc' } as Parameters<typeof listOrganizations>[0]);
+    return rows || [];
+  }, []);
+  const currentOrg = useMemo(
+    () => (orgIdFromPath ? getOrganizationById(orgIdFromPath) : null),
+    [orgIdFromPath]
+  );
   const orgThirdLabel = useMemo(() => {
-    if (!orgDetailData) return null;
-    return orgDetailData.groupName;
-  }, [orgDetailData]);
+    if (!currentOrg) return null;
+    return orgTab === 'apps' ? `${currentOrg.org} 신청리스트` : currentOrg.org;
+  }, [currentOrg, orgTab]);
 
   // C) 개인 상세
   const isIndivDetail = /^\/admin\/users\/individual\/\d+\/detail$/.test(pathname);
@@ -359,6 +362,8 @@ export default function AdminNavigation() {
   const thirdList =
     (isApplicationsMgmt || isApplicationsList)
       ? eventList.map((e) => ({ key: String(e.id), label: e.nameKr, href: `/admin/applications/management/${e.id}` }))
+      : isOrgDetail && currentOrg
+      ? allOrgs.map((o) => ({ key: String(o.id), label: o.org, href: `/admin/users/organization/${o.id}?tab=${orgTab}` }))
       : isIndivDetail
       ? allIndividuals.map((u) => ({ key: String(u.id), label: u.name, href: `/admin/users/individual/${u.id}/detail` }))
       : // 공지(기존)
@@ -405,7 +410,7 @@ export default function AdminNavigation() {
   const showThird =
     isApplicationsMgmt ||
     isApplicationsList ||
-    (isOrgDetail && !!orgIdFromPath) ||
+    (isOrgDetail && !!(orgIdFromPath || currentOrg)) ||
     (isIndivDetail && !!(indivIdFromPath || currentIndiv)) ||
     (matchEventNotice && !!boardsEventId_notice) ||
     (matchEventInquiry && !!boardsEventId_inq) ||
