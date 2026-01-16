@@ -9,6 +9,7 @@ import RegistrationStatusBadge, {
 import { cn } from '@/utils/cn';
 import { PREVIEW_BG } from '@/app/admin/events/register/components/parts/theme';
 import type { EventTheme } from '@/types/event';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
 
 export type EventDetailData = {
   id: string;
@@ -80,6 +81,8 @@ export default function EventDetailView({
 }: Props) {
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // 결제정보(은행/계좌) - eventData에서 직접 가져오기
   const bankName = eventData.bank || '';
@@ -101,14 +104,22 @@ export default function EventDetailView({
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm('정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')
-    ) {
-      return;
-    }
-    if (onDelete) {
-      await onDelete();
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setShowDeleteConfirm(false);
+    setIsDeleting(true);
+    try {
+      if (onDelete) {
+        await onDelete();
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('삭제 중 오류가 발생했습니다.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -167,10 +178,11 @@ export default function EventDetailView({
             <Button
               variant="outline"
               size="md"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="text-red-600 border-red-600 hover:bg-red-50 font-pretendard"
+              disabled={isDeleting}
             >
-              삭제
+              {isDeleting ? '삭제 중...' : '삭제'}
             </Button>
             <Button
               variant="solid"
@@ -940,6 +952,21 @@ export default function EventDetailView({
           </div>
         </div>
       )}
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteConfirm}
+        title="대회 삭제"
+        message="정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제하기"
+        cancelText="취소"
+        isLoading={isDeleting}
+        variant="danger"
+        centerAlign={true}
+        multiline={true}
+      />
     </div>
   );
 }

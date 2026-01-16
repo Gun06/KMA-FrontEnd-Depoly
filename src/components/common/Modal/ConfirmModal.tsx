@@ -12,6 +12,8 @@ interface ConfirmModalProps {
   cancelText?: string;
   isLoading?: boolean;
   variant?: 'default' | 'danger'; // 삭제 등 위험한 작업용
+  centerAlign?: boolean; // 제목과 메시지 가운데 정렬 (기본값: false)
+  multiline?: boolean; // 메시지 줄바꿈 처리 (기본값: false)
 }
 
 export default function ConfirmModal({
@@ -23,7 +25,9 @@ export default function ConfirmModal({
   confirmText = '확인',
   cancelText = '취소',
   isLoading = false,
-  variant = 'default'
+  variant = 'default',
+  centerAlign = false,
+  multiline = false
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -39,7 +43,7 @@ export default function ConfirmModal({
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
+          <div className={`flex items-center gap-3 ${centerAlign ? 'flex-1 justify-center' : ''}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
               variant === 'danger' ? 'bg-red-100' : 'bg-blue-100'
             }`}>
@@ -47,7 +51,7 @@ export default function ConfirmModal({
                 variant === 'danger' ? 'text-red-600' : 'text-blue-600'
               }`} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className={`text-lg font-semibold text-gray-900 ${centerAlign ? 'text-center' : ''}`}>
               {title}
             </h3>
           </div>
@@ -62,9 +66,15 @@ export default function ConfirmModal({
 
         {/* 내용 */}
         <div className="p-6">
-          <p className="text-gray-600 mb-6">
-            {message}
-          </p>
+          {multiline ? (
+            <div className={`text-gray-600 mb-6 whitespace-pre-line ${centerAlign ? 'text-center' : ''}`}>
+              {message}
+            </div>
+          ) : (
+            <p className={`text-gray-600 mb-6 ${centerAlign ? 'text-center' : ''}`}>
+              {message}
+            </p>
+          )}
 
           {/* 버튼들 */}
           <div className="flex gap-3">

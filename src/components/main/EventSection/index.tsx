@@ -291,6 +291,7 @@ export default function EventSection() {
                         eventDate={event.eventDate.split('T')[0]}
                         eventStartDate={event.eventStartDate ? event.eventStartDate.split('T')[0] : undefined}
                         eventDeadLine={event.eventDeadLine ? event.eventDeadLine.split('T')[0] : undefined}
+                        eventUrl={event.eventUrl} // 로컬대회의 경우 외부 URL
                         isDragging={isDragging}
                         dragDistance={dragDistance}
                       />

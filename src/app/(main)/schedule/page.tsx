@@ -28,10 +28,18 @@ export default function SchedulePage() {
   // 각 월별로 API 호출하여 전체 연도 데이터 수집
   const year = currentDate.getFullYear();
   
+  // viewMode를 API type 파라미터로 변환
+  const apiType = useMemo(() => {
+    if (viewMode === 'all') return 'ALL';
+    if (viewMode === 'marathon') return 'KMA';
+    if (viewMode === 'national') return 'LOCAL';
+    return 'ALL';
+  }, [viewMode]);
+  
   const scheduleQueries = useQueries({
     queries: Array.from({ length: 12 }, (_, i) => ({
-      queryKey: ['schedule', year, i + 1],
-      queryFn: () => fetchScheduleEvents(year, i + 1),
+      queryKey: ['schedule', year, i + 1, apiType],
+      queryFn: () => fetchScheduleEvents(year, i + 1, apiType),
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
     })),
@@ -485,7 +493,8 @@ export default function SchedulePage() {
                             price: `₩${event.lowerPrice.toLocaleString()}`,
                             status: isPast ? '접수마감' : getStatusText(event.status),
                             eventDate: event.eventDate,
-                            eventId: event.eventId
+                            eventId: event.eventId,
+                            eventUrl: event.eventUrl // 로컬대회의 경우 외부 URL
                           };
                           
                           return (

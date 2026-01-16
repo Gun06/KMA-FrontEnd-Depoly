@@ -16,6 +16,7 @@ interface EventCardProps {
   eventStartDate?: string; // 대회 시작일 (YYYY-MM-DD 형식) - 접수 마감 판단 기준
   eventDeadLine?: string; // 접수 마감일 (YYYY-MM-DD 형식) - 하위 호환성 유지
   eventId?: string; // API에서 받은 이벤트 ID
+  eventUrl?: string; // 로컬대회의 경우 외부 URL (eventUrl이 있으면 이걸 우선 사용)
   className?: string;
   size?: 'small' | 'medium' | 'large' | 'test'; // 추가: 사이즈 설정용
   isDragging?: boolean; // 드래그 중인지 여부
@@ -33,6 +34,7 @@ export default function EventCard({
   eventStartDate,
   eventDeadLine,
   eventId,
+  eventUrl,
   className,
   size = 'large',
   isDragging = false,
@@ -102,14 +104,20 @@ export default function EventCard({
     )} style={{ filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.05))' }}>
       {/* 이미지 영역 */}
       <div className={clsx("relative w-full overflow-hidden", imageHeightClasses[size])}>
-        <Image
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          className="object-cover select-none pointer-events-none"
-          priority={false}
-          style={{ position: 'absolute' }}
-        />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            className="object-cover select-none pointer-events-none"
+            priority={false}
+            style={{ position: 'absolute' }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-xs">이미지 없음</span>
+          </div>
+        )}
         {/* 접수 상태 배지 */}
         <div className="absolute top-1.5 md:top-3 left-1.5 md:left-3 bg-white/40 text-blue-600 text-xs md:text-sm px-1.5 md:px-3 py-0.5 md:py-1.5 rounded-full z-10 backdrop-blur-sm">
           {displayStatus}
@@ -147,15 +155,27 @@ export default function EventCard({
             <div className="w-px h-2.5 md:h-4 bg-blue-600 opacity-60"></div>
             <span className="whitespace-nowrap">{dDay}</span>
           </div>
-          {eventId && (
+          {(eventId || eventUrl) && (
             <Link
-              href={`/event/${eventId}`}
+              href={eventUrl || `/event/${eventId}`}
               onClick={(e) => {
                 // 버튼 클릭 시 드래그 이벤트 전파 방지
                 e.stopPropagation();
+                // eventUrl이 있으면 (로컬 대회) 해당 URL로 이동
+                if (eventUrl) {
+                  e.preventDefault();
+                  // 외부 URL인 경우 새 탭에서 열기
+                  if (!eventUrl.startsWith('/')) {
+                    window.open(eventUrl, '_blank', 'noopener,noreferrer');
+                  } else {
+                    // 내부 URL인 경우 같은 탭에서 이동
+                    window.location.href = eventUrl;
+                  }
+                }
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 lg:px-4 py-1 md:py-1.5 lg:py-2 rounded-md md:rounded-lg text-xs md:text-sm font-medium transition-colors duration-200 flex items-center gap-1 md:gap-1.5"
               title="바로가기"
+              {...(eventUrl && !eventUrl.startsWith('/') ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             >
               <span className="whitespace-nowrap">바로가기</span>
             </Link>

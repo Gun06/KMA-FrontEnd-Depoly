@@ -14,6 +14,8 @@ import { listIndividualUsers } from '@/data/users/individual';
 // API 훅들
 import { useEventList } from '@/hooks/useNotices';
 import type { EventListResponse } from '@/types/eventList';
+import { useInquiryDetail } from '@/hooks/useInquiries';
+import { useLocalEventDetail } from '@/app/admin/local-events/[eventId]/api';
 import { useOrganizationDetail } from '@/services/admin/users';
 
 // 공지(기존) 소스 - 유지
@@ -38,6 +40,8 @@ const NAV_ITEMS: Item[] = [
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
     { name: '대회관리', href: '/admin/events/management' },
     { name: '대회등록', href: '/admin/events/register' },
+    { name: '지역대회 관리', href: '/admin/local-events/management' },
+    { name: '지역대회 등록', href: '/admin/local-events/register' },
     { name: '통계확인', href: '/admin/events/statistics' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
@@ -72,7 +76,13 @@ export default function AdminNavigation() {
 
   // 1단계
   const currentMenu = useMemo(
-    () => NAV_ITEMS.find((i) => pathname.startsWith(i.base)) || null,
+    () => NAV_ITEMS.find((i) => {
+      // base로 시작하거나 children 중 하나로 시작하는지 확인
+      if (pathname.startsWith(i.base)) return true;
+      // 지역대회 관련 경로는 /admin/events base를 가진 메뉴에 포함되므로 특별 처리
+      if (i.base === '/admin/events' && pathname.startsWith('/admin/local-events')) return true;
+      return i.children.some((c) => pathname.startsWith(c.href));
+    }) || null,
     [pathname]
   );
   const showNav = !!currentMenu;
@@ -83,7 +93,13 @@ export default function AdminNavigation() {
     safeMenu.children
       .slice()
       .sort((a, b) => b.href.length - a.href.length)
-      .find((c) => pathname.startsWith(c.href)) ?? safeMenu.children[0];
+      .find((c) => {
+        // 지역대회 관련 경로는 /admin/local-events/로 시작하는 모든 경로를 "지역대회 관리"로 매칭
+        if (c.href === '/admin/local-events/management') {
+          return pathname.startsWith('/admin/local-events/');
+        }
+        return pathname.startsWith(c.href);
+      }) ?? safeMenu.children[0];
 
   // 드롭다운 제어
   const [openSub, setOpenSub] = useState(false);
@@ -257,14 +273,14 @@ export default function AdminNavigation() {
   const isBoardsInquiry = pathname.startsWith('/admin/boards/inquiry');
 
   // 이벤트 문의: /admin/boards/inquiry/events/[eventId] (/[inquiryId]?)
-  const matchEventInquiry = pathname.match(/^\/admin\/boards\/inquiry\/events\/(\d+)(?:\/(\d+))?$/);
+  const matchEventInquiry = pathname.match(/^\/admin\/boards\/inquiry\/events\/(\d+)(?:\/([^/?]+))?$/);
   const boardsEventId_inq = matchEventInquiry ? Number(matchEventInquiry[1]) : null;
-  const boardsEventInquiryId = matchEventInquiry && matchEventInquiry[2] ? Number(matchEventInquiry[2]) : null;
+  const boardsEventInquiryId = matchEventInquiry && matchEventInquiry[2] ? matchEventInquiry[2] : null;
 
   // 메인 문의: /admin/boards/inquiry/main (/ [inquiryId]?)
   const isBoardsMainRoot_inq = /^\/admin\/boards\/inquiry\/main$/.test(pathname);
-  const matchMainInquiry = pathname.match(/^\/admin\/boards\/inquiry\/main\/(\d+)$/);
-  const boardsMainInquiryId = matchMainInquiry ? Number(matchMainInquiry[1]) : null;
+  const matchMainInquiry = pathname.match(/^\/admin\/boards\/inquiry\/main\/([^/?]+)/);
+  const boardsMainInquiryId = matchMainInquiry ? matchMainInquiry[1] : null;
 
   // 이벤트 리스트 (3단계 라벨/드롭다운용)
   const boardsEventList_inq = useMemo(
@@ -304,8 +320,26 @@ export default function AdminNavigation() {
     }
   }, [isBoardsInquiry]);
 
+  // 상세 페이지에서 eventName 가져오기 (메인 문의 상세)
+  const { data: mainInquiryDetail } = useInquiryDetail(boardsMainInquiryId || '');
+  const mainInquiryEventName = (mainInquiryDetail as { questionDetail?: { eventName?: string } } | undefined)?.questionDetail?.eventName;
+
+  // 상세 페이지에서 eventName 가져오기 (이벤트 문의 상세)
+  const { data: eventInquiryDetail } = useInquiryDetail(boardsEventInquiryId || '');
+  const eventInquiryEventName = (eventInquiryDetail as { questionDetail?: { eventName?: string } } | undefined)?.questionDetail?.eventName;
+
   // ===== 🔹 게시판관리 > FAQ =====
   const isBoardsFaq = pathname.startsWith('/admin/boards/faq');
+
+  // ===== 🔹 지역대회 관리 =====
+  const isLocalEvents = pathname.startsWith('/admin/local-events');
+  const matchLocalEventDetail = pathname.match(/^\/admin\/local-events\/([^/]+)$/);
+  const matchLocalEventEdit = pathname.match(/^\/admin\/local-events\/([^/]+)\/edit$/);
+  const localEventId = matchLocalEventDetail ? matchLocalEventDetail[1] : (matchLocalEventEdit ? matchLocalEventEdit[1] : null);
+  
+  // 지역대회 상세 정보 가져오기
+  const { data: localEventDetail } = useLocalEventDetail(localEventId || '');
+  const localEventName = (localEventDetail as { eventName?: string } | undefined)?.eventName;
 
   // ===== 🔹 배너관리 > 팝업 =====
   const isBannersPopup = pathname.startsWith('/admin/banners/popups');
@@ -408,7 +442,7 @@ export default function AdminNavigation() {
     (isOrgDetail && !!orgIdFromPath) ||
     (isIndivDetail && !!(indivIdFromPath || currentIndiv)) ||
     (matchEventNotice && !!boardsEventId_notice) ||
-    (matchEventInquiry && !!boardsEventId_inq) ||
+    (matchEventInquiry && (!!boardsEventId_inq || !!boardsEventInquiryId)) ||
     (matchEventFaq && !!boardsEventId_faq) ||
     isBoardsMainRoot_inq || !!boardsMainInquiryId ||
     isBoardsMainRoot_faq || !!boardsMainFaqId ||
@@ -506,8 +540,20 @@ export default function AdminNavigation() {
     if (isBoardsMainRoot_notice || !!boardsMainNoticeId) return '전마협 공지사항';
 
     // 문의
-    if (matchEventInquiry) return boardsCurrentEvent_inq?.nameKr || '대회 선택';
-    if (isBoardsMainRoot_inq || !!boardsMainInquiryId) return '전마협 문의사항';
+    if (matchEventInquiry) {
+      // 이벤트 문의 상세 페이지에서 eventName이 있으면 표시
+      if (boardsEventInquiryId && eventInquiryEventName) {
+        return eventInquiryEventName;
+      }
+      return boardsCurrentEvent_inq?.nameKr || '대회 선택';
+    }
+    if (isBoardsMainRoot_inq || !!boardsMainInquiryId) {
+      // 메인 문의 상세 페이지에서 eventName이 있으면 표시
+      if (boardsMainInquiryId && mainInquiryEventName) {
+        return mainInquiryEventName;
+      }
+      return '전마협 문의사항';
+    }
 
     // ✅ FAQ
     if (matchEventFaq) return boardsCurrentEvent_faq?.nameKr || '대회 선택';

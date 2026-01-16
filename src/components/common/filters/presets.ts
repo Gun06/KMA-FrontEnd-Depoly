@@ -141,6 +141,37 @@ export const PRESETS: Record<string, FilterBarPreset> = {
     },
   },
 
+  "관리자 / 지역대회관리": {
+    props: {
+      buttonTextMode: "current",
+      fields: [
+        {
+          label: "년도",
+          options: yearOptions,
+        },
+        {
+          label: "신청여부",
+          options: [
+            { label: "접수중", value: "ing" },
+            { label: "비접수", value: "none" },
+            { label: "접수마감", value: "done" },
+          ],
+        },
+        {
+          label: "공개여부",
+          options: [
+            { label: "공개", value: "open" },
+            { label: "테스트", value: "test" },
+            { label: "비공개", value: "closed" },
+          ],
+        },
+      ],
+      searchPlaceholder: "검색어를 입력해주세요.",
+      buttons: [{ label: "지역대회등록", tone: "primary", iconRight: true }],
+      showReset: true,
+    },
+  },
+
   "관리자 / 공지사항(기본)": {
     props: {
       buttonTextMode: "current",

@@ -2,10 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchScheduleEvents, fetchCalendarEvents } from '@/services/schedule';
 import { ScheduleEvent, CalendarEvent } from '@/types/event';
 
-export const useSchedule = (year: number, month: number) => {
+export const useSchedule = (
+  year: number, 
+  month: number, 
+  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL'
+) => {
   return useQuery({
-    queryKey: ['schedule', year, month],
-    queryFn: () => fetchScheduleEvents(year, month),
+    queryKey: ['schedule', year, month, type],
+    queryFn: () => fetchScheduleEvents(year, month, type),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
     enabled: !!year && !!month,

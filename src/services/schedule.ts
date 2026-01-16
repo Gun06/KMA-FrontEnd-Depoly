@@ -2,9 +2,19 @@ import { ScheduleApiResponse, CalendarApiResponse } from '@/types/event';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
-export const fetchScheduleEvents = async (year: number, month: number): Promise<ScheduleApiResponse> => {
+export const fetchScheduleEvents = async (
+  year: number, 
+  month: number, 
+  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL'
+): Promise<ScheduleApiResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/public/main-page/block-list?year=${year}&month=${month}`, {
+    const queryParams = new URLSearchParams({
+      year: String(year),
+      month: String(month),
+      type: type,
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/public/main-page/block-list?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

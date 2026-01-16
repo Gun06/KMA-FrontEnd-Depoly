@@ -41,6 +41,7 @@ export interface InquiryDetail {
     attachmentUrls: string[];
     secret: boolean;
     answered: boolean;
+    eventName?: string; // 대회 이름 (전체 문의사항에서 특정 대회 문의인 경우)
   };
   answerDetail?: {
     id: string;

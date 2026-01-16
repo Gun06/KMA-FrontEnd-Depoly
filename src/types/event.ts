@@ -185,6 +185,7 @@ export interface BlockEventItem {
   status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   eventDeadLine: string; // ISO 8601 형식
   lowerPrice: number;
+  eventUrl?: string; // 로컬대회의 경우 외부 URL (선택사항)
 }
 
 export interface BlockEventResponse {
@@ -299,6 +300,7 @@ export interface ScheduleEvent {
   status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   eventDeadLine: string;
   lowerPrice: number;
+  eventUrl?: string; // 로컬대회의 경우 외부 URL (선택사항)
 }
 
 export interface ScheduleApiResponse {
