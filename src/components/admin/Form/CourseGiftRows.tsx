@@ -75,7 +75,7 @@ export default function CourseGiftRows({
                   size="sm"
                   className="w-full !text-white placeholder:text-white/50 !bg-white/10 rounded border border-white/20 outline-none focus:ring-1 focus:ring-white/40 focus:border-white/40 shadow-none"
                   readOnly={readOnly}
-                  placeholder="코스를 입력하세요. 예) 하프 22km"
+                  placeholder="참가부문을 입력하세요. 예) 22km|짝궁마라톤"
                 />
                 <span className="text-sm font-medium whitespace-nowrap shrink-0">참가비</span>
                 <TextField

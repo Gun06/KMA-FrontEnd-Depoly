@@ -103,7 +103,7 @@ export default function CoursesSection({
                       </div>
                       <div className="flex-1 bg-[#4D4D4D] px-4 py-2">
                   <TextField
-                    placeholder="코스를 입력하세요. 예) 하프 22km"
+                    placeholder="참가부문을 입력하세요. 예) 22km|짝궁마라톤"
                     value={course.name}
                     onChange={(e) =>
                       readOnly

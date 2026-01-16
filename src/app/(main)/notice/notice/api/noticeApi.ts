@@ -83,6 +83,35 @@ export const fetchHomepageNotices = async (page: number = 1, size: number = 20):
 };
 
 /**
+ * 카테고리 목록 조회 API
+ */
+export interface CategoryItem {
+  id: string;
+  name: string;
+}
+
+export const fetchCategories = async (): Promise<CategoryItem[]> => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+  const CATEGORY_ENDPOINT = `${API_BASE_URL}/api/v1/public/notice/category`;
+
+  const response = await fetch(CATEGORY_ENDPOINT, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`API 요청 실패 (${response.status}): ${errorText}`);
+  }
+
+  const data: CategoryItem[] = await response.json();
+  return data;
+};
+
+/**
  * 공지사항 상세 조회 API
  */
 export const fetchNoticeDetail = async (noticeId: string): Promise<NoticeDetailResponse> => {

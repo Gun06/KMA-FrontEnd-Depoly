@@ -81,7 +81,7 @@ export default function NoticePage() {
           data={noticeData}
           onRowClick={handleRowClick}
           pageSize={pageSize}
-          pinLimit={3}
+          pinLimit={15}
           numberDesc={true}
           showPinnedBadgeInNo={true}
           pinnedClickable={true}
