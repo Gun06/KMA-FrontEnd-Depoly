@@ -22,6 +22,10 @@ export function validateAdminForm(
     return { isValid: false, error: '권한을 선택해주세요.' };
   }
 
+  if (selectedRole === 'event_specific' && !selectedEventId) {
+    return { isValid: false, error: '특정 대회를 선택해주세요.' };
+  }
+
   if (!formData.roleId || !formData.roleId.trim()) {
     return { isValid: false, error: '권한 번호를 입력해주세요.' };
   }

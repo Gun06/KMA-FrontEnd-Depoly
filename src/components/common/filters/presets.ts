@@ -264,7 +264,13 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [
         { label: "검색", tone: "dark" },
-        { label: "Excel", tone: "primary", iconRight: true },
+        {
+          label: "Excel",
+          tone: "primary",
+          menu: [
+            { label: "유저 목록 다운로드", value: "downloadIndividualUserList" },
+          ],
+        },
       ],
       showReset: true,
     },
@@ -327,7 +333,13 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       searchPlaceholder: "검색어를 입력해주세요.",
       buttons: [
         { label: "검색", tone: "dark" },
-        { label: "Excel", tone: "primary", iconRight: true },
+        {
+          label: "Excel",
+          tone: "primary",
+          menu: [
+            { label: "단체 목록 다운로드", value: "downloadOrganizationList" },
+          ],
+        },
       ],
       showReset: true,
     },
@@ -359,7 +371,6 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttons: [
         { label: "검색", tone: "dark" },
         { label: "뒤로가기", tone: "dark" },
-        { label: "Excel", tone: "primary", iconRight: true },
       ],
       showReset: true,
     },

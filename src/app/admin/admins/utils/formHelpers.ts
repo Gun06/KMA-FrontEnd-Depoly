@@ -5,6 +5,7 @@ export function createEmptyFormData(): AdminFormData {
     account: '',
     name: '',
     roleId: '',
+    departmentId: '',
   };
 }
 

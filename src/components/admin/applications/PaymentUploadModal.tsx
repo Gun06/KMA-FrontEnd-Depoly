@@ -33,6 +33,7 @@ export default function PaymentUploadModal({
   const [selectedRegistrationItem, setSelectedRegistrationItem] = useState<RegistrationItem | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [showCoachmark, setShowCoachmark] = useState(false);
+  const [isUploadComplete, setIsUploadComplete] = useState(false);
 
   // 코치마크 단계 정의
   const coachmarkSteps: CoachmarkStep[] = [
@@ -76,6 +77,7 @@ export default function PaymentUploadModal({
     }
     setFile(selectedFile);
     setCheckResult(null); // 새 파일 선택 시 이전 결과 초기화
+    setIsUploadComplete(false); // 새 파일 선택 시 업로드 완료 상태 초기화
   };
 
   // 체크 API 호출
@@ -116,8 +118,8 @@ export default function PaymentUploadModal({
     try {
       await finalizePaymentUpload(eventId, checkResult);
       toast.success('입금 내역이 성공적으로 업로드되었습니다.');
+      setIsUploadComplete(true);
       onSuccess?.();
-      handleClose();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '업로드에 실패했습니다.');
     } finally {
@@ -131,6 +133,7 @@ export default function PaymentUploadModal({
     setCheckResult(null);
     setIsChecking(false);
     setIsSubmitting(false);
+    setIsUploadComplete(false);
     setSelectedRegistrationId(null);
     setSelectedRegistrationItem(null);
     onClose();
@@ -187,18 +190,18 @@ export default function PaymentUploadModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-end">
       {/* 배경 오버레이 - 클릭해도 닫히지 않음 */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50"
       />
 
-      {/* 모달 컨테이너 */}
-      <div className="relative bg-white rounded-lg shadow-xl w-[85vw] max-w-[1400px] h-[85vh] max-h-[875px] flex flex-col mx-4">
+      {/* 모달 컨테이너 - 사이드 패널처럼 오른쪽에 고정 */}
+      <div className="relative bg-white shadow-xl w-[90vw] max-w-[1600px] h-full flex flex-col">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">입금 내역 업로드</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900">입금 내역 업로드</h2>
             <button
               onClick={() => setShowCoachmark(true)}
               className="text-gray-400 hover:text-blue-600 transition-colors"
@@ -206,70 +209,87 @@ export default function PaymentUploadModal({
             >
               <HelpCircle className="w-5 h-5" />
             </button>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
           </div>
         </div>
 
         {/* 본문 */}
         <div className="flex-1 overflow-hidden flex flex-col">
           {/* 상단: 파일 업로드 및 전송 버튼 */}
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-4 bg-gray-50">
-            <div className="flex-1 bg-white rounded-lg p-4 border border-gray-200" data-coachmark="upload-button">
-              <UploadButton
-                label="파일 업로드"
-                accept=".xlsx,.xls"
-                multiple={false}
-                onFilesSelected={(files) => handleFileSelect(files)}
-                className="w-full"
-              />
+          <div className="px-6 py-3 border-b border-gray-200 flex items-center gap-4 bg-gray-50">
+            <div className="flex-1 bg-white rounded-lg p-3 border border-gray-200 flex items-center gap-4" data-coachmark="upload-button">
+              <div className="flex-shrink-0">
+                <UploadButton
+                  label="파일 업로드"
+                  accept=".xlsx,.xls"
+                  multiple={false}
+                  onFilesSelected={(files) => handleFileSelect(files)}
+                />
+              </div>
               {file && (
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="text-sm text-gray-600 whitespace-nowrap">
                   선택된 파일: {file.name}
                 </p>
               )}
             </div>
-            <button
-              data-coachmark="check-button"
-              onClick={handleCheck}
-              disabled={!file || isChecking || isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {isChecking ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  체크 중...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  체크
-                </>
-              )}
-            </button>
+            {!checkResult && (
+              <>
+                <button
+                  data-coachmark="check-button"
+                  onClick={handleCheck}
+                  disabled={!file || isChecking || isSubmitting}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {isChecking ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      체크 중...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      체크
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  disabled={isChecking || isSubmitting}
+                >
+                  <X className="w-4 h-4" />
+                  닫기
+                </button>
+              </>
+            )}
             {checkResult && (
-              <button
-                data-coachmark="send-button"
-                onClick={handleFinalize}
-                disabled={isSubmitting || isChecking}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    전송 중...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    전송
-                  </>
-                )}
-              </button>
+              <>
+                <button
+                  data-coachmark="send-button"
+                  onClick={handleFinalize}
+                  disabled={isSubmitting || isChecking}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      전송 중...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      전송
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 bg-white rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  disabled={isSubmitting || isChecking}
+                >
+                  <X className="w-4 h-4" />
+                  화면 닫기
+                </button>
+              </>
             )}
           </div>
 
@@ -277,15 +297,15 @@ export default function PaymentUploadModal({
           {checkResult && (() => {
             // 전체 거래 건수
             const totalDeals = checkResult.length;
-            
+
             // 매칭된 신청자의 checked 상태 기준으로 계산
             const allRegistrations = checkResult.flatMap(deal => deal.registrationList);
             const checkedCount = allRegistrations.filter(reg => reg.checked).length;
             const uncheckedCount = allRegistrations.filter(reg => !reg.checked).length;
-            
+
             // 매칭되지 않은 거래 건수 (registrationList가 비어있는 거래)
             const unmatchedDeals = checkResult.filter(deal => deal.registrationList.length === 0).length;
-            
+
             return (
               <div className="px-6 py-2 border-b border-gray-200">
                 <div className="flex items-start justify-between gap-4">
@@ -347,7 +367,7 @@ export default function PaymentUploadModal({
                     // 매칭 상태 판단
                     const isUnmatched = deal.registrationList.length === 0; // 매칭안됨
                     const isMismatched = deal.registrationList.length > 0 && deal.registrationList.every(reg => !reg.checked); // 불일치 (매칭되었지만 모두 체크 해제)
-                    
+
                     // 배경색 결정
                     let bgColor = '';
                     if (isUnmatched) {
@@ -355,141 +375,142 @@ export default function PaymentUploadModal({
                     } else if (isMismatched) {
                       bgColor = 'bg-red-50'; // 불일치: 연한 빨간색
                     }
-                    
+
                     return (
-                    <div 
-                      key={dealIndex} 
-                      className={`grid grid-cols-12 gap-4 px-4 py-4 ${bgColor} hover:opacity-90 transition-opacity`}
-                      data-coachmark={dealIndex === 0 ? 'first-deal-row' : undefined}
-                    >
-                      {/* 첫 번째 컬럼: 입금 내역 정보 + 매칭 로그 */}
-                      <div className="col-span-4 space-y-3">
-                        {/* 입금 내역 정보 */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-500 min-w-[60px]">입금일:</span>
-                            <span className="text-sm text-gray-900">{deal.dealDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-500 min-w-[60px]">입금자명:</span>
+                      <div
+                        key={dealIndex}
+                        className={`grid grid-cols-12 gap-4 px-4 py-4 ${bgColor} hover:opacity-90 transition-opacity`}
+                        data-coachmark={dealIndex === 0 ? 'first-deal-row' : undefined}
+                      >
+                        {/* 첫 번째 컬럼: 입금 내역 정보 + 매칭 로그 */}
+                        <div className="col-span-4 space-y-3">
+                          {/* 입금 내역 정보 */}
+                          <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-900 font-medium">{deal.description}</span>
-                              {deal.organization ? (
-                                <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                                  단체
-                                </span>
-                              ) : (
-                                <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
-                                  개인
-                                </span>
-                              )}
+                              <span className="text-xs font-semibold text-gray-500 min-w-[60px]">입금일:</span>
+                              <span className="text-sm text-gray-900">{deal.dealDate}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-gray-500 min-w-[60px]">입금자명:</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-900 font-medium">{deal.description}</span>
+                                {deal.organization ? (
+                                  <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                    단체
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                                    개인
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-gray-500 min-w-[60px]">금액:</span>
+                              <span className="text-sm font-bold text-blue-600">
+                                {deal.depositAmt.toLocaleString()}원
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-gray-500 min-w-[60px]">타입:</span>
+                              <span className="text-sm text-gray-900">{deal.type}</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-500 min-w-[60px]">금액:</span>
-                            <span className="text-sm font-bold text-blue-600">
-                              {deal.depositAmt.toLocaleString()}원
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-gray-500 min-w-[60px]">타입:</span>
-                            <span className="text-sm text-gray-900">{deal.type}</span>
+
+                          {/* 매칭 로그 (수정 가능) */}
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1">
+                              매칭 로그 (수정 가능)
+                            </label>
+                            <textarea
+                              value={deal.matchingLog}
+                              onChange={(e) => handleMatchingLogChange(dealIndex, e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
+                              rows={3}
+                              placeholder="매칭 로그를 입력하세요..."
+                            />
                           </div>
                         </div>
 
-                        {/* 매칭 로그 (수정 가능) */}
-                        <div>
-                          <label className="block text-xs font-semibold text-gray-500 mb-1">
-                            매칭 로그 (수정 가능)
-                          </label>
-                          <textarea
-                            value={deal.matchingLog}
-                            onChange={(e) => handleMatchingLogChange(dealIndex, e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
-                            rows={3}
-                            placeholder="매칭 로그를 입력하세요..."
-                          />
-                        </div>
-                      </div>
-
-                      {/* 두 번째 컬럼: 신청 목록 */}
-                      <div className="col-span-8 pl-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-xs font-semibold text-gray-500">
-                            매칭된 신청 목록 ({deal.registrationList.length}건)
-                          </label>
-                          {deal.registrationList.length > 0 && (
-                            <span className="text-xs font-semibold text-blue-600">
-                              총 금액: {deal.registrationList
-                                .reduce((sum, reg) => sum + reg.amount, 0)
-                                .toLocaleString()}원
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto bg-gray-50 p-3 rounded-md border border-gray-200">
-                          {deal.registrationList.length === 0 ? (
-                            <p className="text-sm text-gray-400 py-2 text-center">매칭된 신청이 없습니다.</p>
-                          ) : (
-                            deal.registrationList.map((reg, regIndex) => (
-                              <div
-                                key={regIndex}
-                                className="bg-white border border-gray-200 rounded-md p-3 text-sm hover:border-blue-500 hover:shadow-md transition-all"
-                              >
-                                <div className="flex items-start gap-3">
-                                  {/* 체크박스 */}
-                                  <input
-                                    type="checkbox"
-                                    checked={reg.checked ?? false}
-                                    onChange={() => handleToggleRegistrationChecked(dealIndex, regIndex)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer mt-1 flex-shrink-0"
-                                  />
-                                  {/* 신청자 정보 */}
-                                  <div
-                                    onClick={() => handleRegistrationClick(reg.registrationId)}
-                                    className="flex-1 cursor-pointer"
-                                  >
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div>
-                                        <span className="text-gray-500">이름:</span>{' '}
-                                        <span className="font-medium">{reg.name}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">입금자명:</span>{' '}
-                                        <span className="font-medium">{reg.paymenterName || '-'}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">단체명:</span>{' '}
-                                        <span className="font-medium">
-                                          {reg.organizationName || '-'}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">종목:</span>{' '}
-                                        <span className="font-medium">{reg.eventCategoryName}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">금액:</span>{' '}
-                                        <span className="font-medium text-blue-600">
-                                          {reg.amount.toLocaleString()}원
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <span className="text-gray-500">등록일:</span>{' '}
-                                        <span className="font-medium">
-                                          {new Date(reg.registrationDate).toLocaleDateString('ko-KR')}
-                                        </span>
+                        {/* 두 번째 컬럼: 신청 목록 */}
+                        <div className="col-span-8 pl-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-xs font-semibold text-gray-500">
+                              매칭된 신청 목록 ({deal.registrationList.length}건)
+                            </label>
+                            {deal.registrationList.length > 0 && (
+                              <span className="text-xs font-semibold text-blue-600">
+                                총 금액: {deal.registrationList
+                                  .filter(reg => reg.checked)
+                                  .reduce((sum, reg) => sum + reg.amount, 0)
+                                  .toLocaleString()}원
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-2 max-h-64 overflow-y-auto bg-gray-50 p-3 rounded-md border border-gray-200">
+                            {deal.registrationList.length === 0 ? (
+                              <p className="text-sm text-gray-400 py-2 text-center">매칭된 신청이 없습니다.</p>
+                            ) : (
+                              deal.registrationList.map((reg, regIndex) => (
+                                <div
+                                  key={regIndex}
+                                  className="bg-white border border-gray-200 rounded-md p-3 text-sm hover:border-blue-500 hover:shadow-md transition-all"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    {/* 체크박스 */}
+                                    <input
+                                      type="checkbox"
+                                      checked={reg.checked ?? false}
+                                      onChange={() => handleToggleRegistrationChecked(dealIndex, regIndex)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer mt-1 flex-shrink-0"
+                                    />
+                                    {/* 신청자 정보 */}
+                                    <div
+                                      onClick={() => handleRegistrationClick(reg.registrationId)}
+                                      className="flex-1 cursor-pointer"
+                                    >
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <span className="text-gray-500">이름:</span>{' '}
+                                          <span className="font-medium">{reg.name}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">입금자명:</span>{' '}
+                                          <span className="font-medium">{reg.paymenterName || '-'}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">단체명:</span>{' '}
+                                          <span className="font-medium">
+                                            {reg.organizationName || '-'}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">종목:</span>{' '}
+                                          <span className="font-medium">{reg.eventCategoryName}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">금액:</span>{' '}
+                                          <span className="font-medium text-blue-600">
+                                            {reg.amount.toLocaleString()}원
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">등록일:</span>{' '}
+                                          <span className="font-medium">
+                                            {new Date(reg.registrationDate).toLocaleDateString('ko-KR')}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))
-                          )}
+                              ))
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
+                    );
                   })}
                 </div>
               </div>

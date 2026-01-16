@@ -2,6 +2,7 @@ export interface AdminFormData {
   account: string;
   name: string;
   roleId: string;
+  departmentId: string;
 }
 
 export type RoleType = 'super_admin' | 'no_deposit' | 'no_deposit_event' | 'event_specific' | '';
@@ -12,7 +13,7 @@ export interface AdminItem {
   account: string;
   name: string;
   roleName: string;
-  deptName?: string; // optional로 변경
+  deptName: string;
 }
 
 export interface AdminListResponse {
