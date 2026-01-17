@@ -53,9 +53,16 @@ export function transformApiResponseToFormPrefill(
   };
 
   // 시간 문자열에서 시간과 분 분리 (HH:mm -> {hh: "HH", mm: "mm"})
+  // 분은 5분 단위로 반올림
   const parseTimeString = (timeString: string): { hh: string; mm: string } => {
     const [hh, mm] = timeString.split(':');
-    return { hh: hh || '00', mm: mm || '00' };
+    const minutes = parseInt(mm || '0', 10);
+    // 분을 5분 단위로 반올림 (0~55 범위)
+    const roundedMm = Math.min(Math.round(minutes / 5) * 5, 55);
+    return { 
+      hh: hh || '00', 
+      mm: String(roundedMm).padStart(2, '0')
+    };
   };
 
   const { date, time } = formatDateForForm(eventInfo.startDate);

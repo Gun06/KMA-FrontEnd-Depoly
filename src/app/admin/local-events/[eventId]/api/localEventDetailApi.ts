@@ -14,6 +14,7 @@ export function useLocalEventDetail(eventId: string) {
     `/api/v1/local-event/${eventId}`,
     'admin',
     {
+      enabled: !!eventId && eventId.trim() !== '', // eventId가 있을 때만 API 호출
       staleTime: 30 * 1000, // 30초간 캐시 유지 (중복 요청 방지)
       gcTime: 5 * 60 * 1000, // 5분 후 가비지 컬렉션
       refetchOnWindowFocus: false,

@@ -7,7 +7,7 @@ import FormRow from '@/components/admin/Form/FormRow';
 import TextField from '@/components/common/TextField/TextField';
 import { RadioGroup } from '@/components/common/Radio/RadioGroup';
 import BirthDateInput from '@/components/common/FormField/BirthDateInput';
-import Select from '@/components/common/Select/Select';
+import { TimeSelect } from '@/components/common/Dropdown/TimeSelect';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 
 // useCompetitionForm의 반환 타입을 정의
@@ -140,43 +140,25 @@ export default function BasicInfoSection({
             readOnly={true}
           />
 
-          <Select
+          <TimeSelect
             value={f.registStartHh}
-            onChange={
-              readOnly ? undefined : e => f.setRegistStartHh(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.hours}
+            onChange={f.setRegistStartHh}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.hours.map((h: string) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             시
           </span>
 
-          <Select
+          <TimeSelect
             value={f.registStartMm}
-            onChange={
-              readOnly ? undefined : e => f.setRegistStartMm(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.minutes}
+            onChange={f.setRegistStartMm}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.minutes.map((m: string) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             분
@@ -201,43 +183,25 @@ export default function BasicInfoSection({
             readOnly={true}
           />
 
-          <Select
+          <TimeSelect
             value={f.deadlineHh}
-            onChange={
-              readOnly ? undefined : e => f.setDeadlineHh(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.hours}
+            onChange={f.setDeadlineHh}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.hours.map((h: string) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             시
           </span>
 
-          <Select
+          <TimeSelect
             value={f.deadlineMm}
-            onChange={
-              readOnly ? undefined : e => f.setDeadlineMm(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.minutes}
+            onChange={f.setDeadlineMm}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.minutes.map((m: string) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             분
@@ -262,47 +226,25 @@ export default function BasicInfoSection({
             readOnly={true}
           />
 
-          <Select
+          <TimeSelect
             value={f.paymentDeadlineHh}
-            onChange={
-              readOnly
-                ? undefined
-                : e => f.setPaymentDeadlineHh(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.hours}
+            onChange={f.setPaymentDeadlineHh}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.hours.map((h: string) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             시
           </span>
 
-          <Select
+          <TimeSelect
             value={f.paymentDeadlineMm}
-            onChange={
-              readOnly
-                ? undefined
-                : e => f.setPaymentDeadlineMm(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.minutes}
+            onChange={f.setPaymentDeadlineMm}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.minutes.map((m: string) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             분
@@ -327,43 +269,25 @@ export default function BasicInfoSection({
             readOnly={true}
           />
 
-          <Select
+          <TimeSelect
             value={f.hh}
-            onChange={
-              readOnly ? undefined : e => f.setHh(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.hours}
+            onChange={f.setHh}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.hours.map((h: string) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             시
           </span>
 
-          <Select
+          <TimeSelect
             value={f.mm}
-            onChange={
-              readOnly ? undefined : e => f.setMm(e.currentTarget.value)
-            }
-            size="md"
-            variant="flat"
-            className={cn('text-center', dimCls)}
+            options={f.minutes}
+            onChange={f.setMm}
+            className={cn(dimCls)}
             disabled={readOnly}
-          >
-            {f.minutes.map((m: string) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </Select>
+          />
 
           <span className={cn('text-center', readOnly && 'text-[#646464]')}>
             분

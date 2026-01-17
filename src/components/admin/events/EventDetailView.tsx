@@ -125,11 +125,14 @@ export default function EventDetailView({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', {
+    const datePart = date.toLocaleDateString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     });
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${datePart} ${hours}시 ${minutes}분`;
   };
 
   // 서버 이벤트 상태값 → 신청상태(RegStatus) 매핑

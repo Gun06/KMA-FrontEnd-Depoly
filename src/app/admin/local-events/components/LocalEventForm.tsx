@@ -11,7 +11,7 @@ import FormRow from '@/components/admin/Form/FormRow';
 import TextField from '@/components/common/TextField/TextField';
 import { RadioGroup } from '@/components/common/Radio/RadioGroup';
 import BirthDateInput from '@/components/common/FormField/BirthDateInput';
-import Select from '@/components/common/Select/Select';
+import { TimeSelect } from '@/components/common/Dropdown/TimeSelect';
 import FileUploader from '@/components/common/Upload/FileUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 
@@ -206,43 +206,25 @@ export default function LocalEventForm({
                 readOnly={true}
               />
 
-              <Select
+              <TimeSelect
                 value={f.eventStartHh}
-                onChange={
-                  readOnly ? undefined : e => f.setEventStartHh(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.hours}
+                onChange={f.setEventStartHh}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.hours.map((h: string) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
-              <Select
+              <TimeSelect
                 value={f.eventStartMm}
-                onChange={
-                  readOnly ? undefined : e => f.setEventStartMm(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.minutes}
+                onChange={f.setEventStartMm}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.minutes.map((m: string) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 분
@@ -267,43 +249,25 @@ export default function LocalEventForm({
                 readOnly={true}
               />
 
-              <Select
+              <TimeSelect
                 value={f.registStartHh}
-                onChange={
-                  readOnly ? undefined : e => f.setRegistStartHh(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.hours}
+                onChange={f.setRegistStartHh}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.hours.map((h: string) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
-              <Select
+              <TimeSelect
                 value={f.registStartMm}
-                onChange={
-                  readOnly ? undefined : e => f.setRegistStartMm(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.minutes}
+                onChange={f.setRegistStartMm}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.minutes.map((m: string) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 분
@@ -328,43 +292,25 @@ export default function LocalEventForm({
                 readOnly={true}
               />
 
-              <Select
+              <TimeSelect
                 value={f.registDeadlineHh}
-                onChange={
-                  readOnly ? undefined : e => f.setRegistDeadlineHh(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.hours}
+                onChange={f.setRegistDeadlineHh}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.hours.map((h: string) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
-              <Select
+              <TimeSelect
                 value={f.registDeadlineMm}
-                onChange={
-                  readOnly ? undefined : e => f.setRegistDeadlineMm(e.currentTarget.value)
-                }
-                size="md"
-                variant="flat"
-                className={cn('text-center', dimCls)}
+                options={f.minutes}
+                onChange={f.setRegistDeadlineMm}
+                className={cn(dimCls)}
                 disabled={readOnly}
-              >
-                {f.minutes.map((m: string) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </Select>
+              />
 
               <span className={cn('text-center', readOnly && 'text-[#646464]')}>
                 분

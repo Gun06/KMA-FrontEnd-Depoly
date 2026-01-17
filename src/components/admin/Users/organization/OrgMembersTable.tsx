@@ -1,18 +1,16 @@
 // components/admin/Users/organization/OrgMembersTable.tsx
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import type { Column } from '@/components/common/Table/BaseTable';
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
-import MemberBadge from '@/components/common/Badge/MemberBadge';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import type { OrgMemberRow } from '@/data/users/orgMembers';
 
-type SortKey = 'id' | 'name' | 'birth';
-type SortDir = 'asc' | 'desc';
-type MemberFilter = '' | 'member' | 'nonMember';
+type SearchKey = 'ALL' | 'NAME' | 'PAYMENTER_NAME' | 'ORGANIZATION' | 'MEMO' | 'DETAIL_MEMO' | 'NOTE' | 'MATCHING_LOG' | 'BIRTH' | 'PH_NUM';
+type PaymentStatus = '' | 'UNPAID' | 'COMPLETED' | 'MUST_CHECK' | 'NEED_PARTITIAL_REFUND' | 'NEED_REFUND' | 'REFUNDED';
 
 type Props = {
   rows: OrgMemberRow[];
@@ -22,9 +20,8 @@ type Props = {
   onPageChange: (p: number) => void;
 
   onSearch?: (q: string) => void;
-  onSortKeyChange?: (k: SortKey) => void;
-  onSortDirChange?: (d: SortDir) => void;
-  onMemberFilterChange?: (f: MemberFilter) => void;
+  onSearchKeyChange?: (k: SearchKey) => void;
+  onPaymentStatusChange?: (s: PaymentStatus) => void;
 
   onClickExcel?: () => void;
   onResetFilters?: () => void;
@@ -46,9 +43,8 @@ export default function OrgMembersTable({
   pageSize,
   onPageChange,
   onSearch,
-  onSortKeyChange,
-  onSortDirChange,
-  onMemberFilterChange,
+  onSearchKeyChange,
+  onPaymentStatusChange,
   onClickExcel,
   onResetFilters,
   onClickBack,
@@ -58,61 +54,29 @@ export default function OrgMembersTable({
   title,
   onRowClick,
 }: Props) {
-  /** 현재 페이지 id 목록 + 헤더 체크박스 상태 */
-  const idsOnPage = useMemo(() => rows.map(r => r.id), [rows]);
-  const allChecked  = idsOnPage.length > 0 && idsOnPage.every(id => selectedIds.includes(id));
-  const someChecked = !allChecked && idsOnPage.some(id => selectedIds.includes(id));
-  const headerRef   = useRef<HTMLInputElement>(null);
-  useEffect(() => { if (headerRef.current) headerRef.current.indeterminate = someChecked; }, [someChecked]);
-
-  /** 선택 칼럼(번호 앞) */
-  const selectColumn: Column<OrgMemberRow> = {
-    key: '_select',
-    header: (
-      <input
-        ref={headerRef}
-        type="checkbox"
-        checked={allChecked}
-        onChange={(e) => onToggleSelectAll?.(e.target.checked, idsOnPage)}
-        onClick={(e) => e.stopPropagation()}
-        className="cursor-pointer"
-        aria-label="현재 페이지 전체 선택"
-      />
-    ) as unknown as string,
-    width: 56,
-    align: 'center',
-    headerAlign: 'center',
-    className: 'whitespace-nowrap',
-    render: (r) => (
-      <input
-        type="checkbox"
-        checked={selectedIds.includes(r.id)}
-        onChange={(e) => onToggleSelectOne?.(r.id, e.target.checked)}
-        onClick={(e) => e.stopPropagation()}
-        className="cursor-pointer"
-        aria-label={`${r.name} 선택`}
-      />
-    ),
-  };
-
-  // 구성원 화면 기본 컬럼
+  // 구성원 화면 기본 컬럼 (신청자관리 스타일)
   const baseCols: Column<OrgMemberRow>[] = [
-    { key: 'id', header: '번호', width: 70, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    {
-      key: 'isMember',
-      header: '회원여부',
-      width: 100,
-      align: 'center',
-      render: (r) => <MemberBadge isMember={r.isMember} />,
-    },
-    { key: 'userId', header: '아이디', width: 140, align: 'center', className: 'whitespace-nowrap' },
-    { key: 'name', header: '이름', width: 110, align: 'center' },
+    { key: 'id', header: '번호', width: 90, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'name', header: '성명', width: 100, align: 'center' },
+    { key: 'course', header: '코스', width: 170, align: 'center', className: 'whitespace-nowrap text-sm' },
+    { key: 'gender', header: '성별', width: 70, align: 'center' },
     { key: 'birth', header: '생년월일', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    { key: 'phone', header: '전화번호', width: 135, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    {
+      key: 'eventName',
+      header: '대회명',
+      width: 250,
+      align: 'center',
+      className: 'break-words text-sm leading-tight py-2',
+      render: (r) => (
+        <div className="max-w-[250px] break-words whitespace-normal leading-tight">
+          {r.eventName || '-'}
+        </div>
+      ),
+    },
     {
       key: 'regDate',
       header: '신청일시',
-      width: 160,
+      width: 130,
       align: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => r.regDate || r.createdAt || '-',
@@ -129,9 +93,20 @@ export default function OrgMembersTable({
           : '-',
     },
     {
+      key: 'memo',
+      header: '메모',
+      width: 110,
+      align: 'center',
+      className: 'whitespace-nowrap',
+      render: (r) => {
+        const text = (r.memo ?? '').trim();
+        return text.length > 6 ? `${text.slice(0, 6)}…` : text || '-';
+      },
+    },
+    {
       key: 'account',
       header: '입금자명',
-      width: 115,
+      width: 130,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => {
@@ -142,19 +117,18 @@ export default function OrgMembersTable({
     {
       key: 'payStatus',
       header: '입금여부',
-      width: 115,
+      width: 130,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => <PaymentBadgeApplicants payStatus={r.payStatus} paid={r.paid} />,
     },
   ];
 
-  /** 선택 칼럼 주입 */
+  /** 선택 칼럼 제거 - 기본 컬럼만 사용 */
   const cols: Column<OrgMemberRow>[] = useMemo(
-    () => [selectColumn, ...baseCols],
-    // deps: 선택 상태가 바뀌면 헤더/행 체크박스 다시 그림
+    () => baseCols,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [allChecked, someChecked, selectedIds, rows]
+    [rows]
   );
 
   // 필터 프리셋
@@ -168,9 +142,8 @@ export default function OrgMembersTable({
       showReset
       onFieldChange={(label, value) => {
         const L = norm(label);
-        if (L === '번호') onSortKeyChange?.(value as SortKey);
-        else if (L === '오름차순') onSortDirChange?.(value as SortDir);
-        else if (L === '회원여부') onMemberFilterChange?.(value as MemberFilter);
+        if (L === '검색필드') onSearchKeyChange?.(value as SearchKey);
+        else if (L === '입금여부') onPaymentStatusChange?.(value as PaymentStatus);
       }}
       onSearch={(q) => onSearch?.(q)}
       onActionClick={(label) => {

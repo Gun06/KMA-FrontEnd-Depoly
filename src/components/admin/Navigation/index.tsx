@@ -335,9 +335,13 @@ export default function AdminNavigation() {
   const isLocalEvents = pathname.startsWith('/admin/local-events');
   const matchLocalEventDetail = pathname.match(/^\/admin\/local-events\/([^/]+)$/);
   const matchLocalEventEdit = pathname.match(/^\/admin\/local-events\/([^/]+)\/edit$/);
-  const localEventId = matchLocalEventDetail ? matchLocalEventDetail[1] : (matchLocalEventEdit ? matchLocalEventEdit[1] : null);
   
-  // 지역대회 상세 정보 가져오기
+  // management, register 같은 특수 경로 제외
+  const excludedPaths = ['management', 'register'];
+  const potentialId = matchLocalEventDetail ? matchLocalEventDetail[1] : (matchLocalEventEdit ? matchLocalEventEdit[1] : null);
+  const localEventId = potentialId && !excludedPaths.includes(potentialId) ? potentialId : null;
+  
+  // 지역대회 상세 정보 가져오기 (localEventId가 있을 때만 호출)
   const { data: localEventDetail } = useLocalEventDetail(localEventId || '');
   const localEventName = (localEventDetail as { eventName?: string } | undefined)?.eventName;
 

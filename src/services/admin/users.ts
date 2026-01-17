@@ -133,7 +133,7 @@ export function useOrganizationDetail(params: { organizationId: string }) {
   );
 }
 
-// 단체 구성원 목록 조회 API
+// 단체 구성원 목록 조회 API (기본)
 export function useOrganizationMembersList(params: {
   orgId: number | string;
   page?: number;
@@ -152,6 +152,47 @@ export function useOrganizationMembersList(params: {
       refetchOnMount: 'always',
       refetchOnWindowFocus: false,
       refetchOnReconnect: 'always',
+    },
+    true
+  );
+}
+
+// 단체 구성원 검색 API
+export function useOrganizationMembersSearch(params: {
+  orgId: number | string;
+  page?: number;
+  size?: number;
+  registrationSearchKey?: 'ALL' | 'NAME' | 'PAYMENTER_NAME' | 'ORGANIZATION' | 'MEMO' | 'DETAIL_MEMO' | 'NOTE' | 'MATCHING_LOG' | 'BIRTH' | 'PH_NUM';
+  paymentStatus?: 'UNPAID' | 'COMPLETED' | 'MUST_CHECK' | 'NEED_PARTITIAL_REFUND' | 'NEED_REFUND' | 'REFUNDED';
+  keyword?: string;
+}) {
+  const { orgId, page = 1, size = 20, registrationSearchKey, paymentStatus, keyword } = params;
+  const isValidOrgId = !!orgId && (typeof orgId === 'number' ? orgId > 0 : String(orgId).trim() !== '');
+  
+  // URL 파라미터 구성
+  const searchParams = new URLSearchParams();
+  searchParams.set('page', String(page));
+  searchParams.set('size', String(size));
+  if (registrationSearchKey) {
+    searchParams.set('registrationSearchKey', registrationSearchKey);
+  }
+  if (paymentStatus) {
+    searchParams.set('paymentStatus', paymentStatus);
+  }
+  if (keyword && keyword.trim()) {
+    searchParams.set('keyword', keyword.trim());
+  }
+  
+  return useGetQuery<OrganizationMemberListResponse>(
+    ['admin', 'users', 'organization', 'members', 'search', orgId, page, size, registrationSearchKey, paymentStatus, keyword],
+    `/api/v1/organization/${orgId}/user?${searchParams.toString()}`,
+    'admin',
+    {
+      enabled: isValidOrgId,
+      staleTime: 0,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: false,
+      placeholderData: (previousData) => previousData,
     },
     true
   );

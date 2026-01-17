@@ -245,26 +245,36 @@ export interface OrganizationDetailResponse {
   leaderBirth: string;
   leaderPhNum: string;
   email: string;
+  address?: string;
+  addressDetail?: string;
   eventName: string;
   createdAt: string; // ISO 8601 형식
   paymentStatus: string;
+  totalAmount?: number;
 }
 
 // ───────────── 단체 구성원 API 타입 ─────────────
 // GET /api/v1/organization/{organizationId}/user 응답 스키마 기반
 export interface OrganizationMemberApiData {
   no: number;
-  registrationId?: string;
+  id?: string;           // registration ID (신청 상세 조회용)
+  registrationId?: string; // 호환성
   userType?: string;    // 'USER' 등
   account?: string;      // 사용자 계정
   userName?: string;     // 사용자 이름
   name?: string;         // 호환성: 일부 응답에서 name 필드 사용
   birth?: string;        // YYYY-MM-DD 형식
+  gender?: string;       // 성별
   phNum?: string;        // 전화번호
   registrationDate?: string; // ISO 8601 형식
   amount?: number;        // 신청 금액
   paymenterName?: string; // 입금자명
   paymentStatus?: string; // 결제 상태 코드
+  categoryName?: string;  // 코스명
+  eventName?: string;     // 대회명
+  organizationName?: string; // 단체명
+  memo?: string;          // 메모
+  note?: string;          // 비고
 }
 
 export interface OrganizationMemberListResponse {

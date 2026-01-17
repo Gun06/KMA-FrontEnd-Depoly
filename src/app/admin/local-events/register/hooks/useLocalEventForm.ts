@@ -32,7 +32,7 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
   }, []);
 
   const minutes = useMemo(() => {
-    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+    return Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
   }, []);
 
   // 폼 상태

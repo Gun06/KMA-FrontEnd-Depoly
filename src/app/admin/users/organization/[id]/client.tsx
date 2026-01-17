@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import OrgMembersTable from '@/components/admin/Users/organization/OrgMembersTable';
-import { useOrganizationMembersList, useOrganizationDetail } from '@/services/admin/users';
+import { useOrganizationMembersSearch, useOrganizationDetail, useOrganizationMembersList } from '@/services/admin/users';
 import { transformOrgMemberApiToRow, type OrgMemberRow } from '@/data/users/orgMembers';
 import { getRegistrationDetail, resetOrganizationPassword } from '@/services/registration';
 import { toast } from 'react-toastify';
@@ -11,9 +11,8 @@ import RegistrationDetailDrawer from '@/components/admin/applications/Registrati
 import type { RegistrationItem } from '@/types/registration';
 import { getSimpleEventList } from '@/services/event';
 
-type SortKey = 'id' | 'name' | 'birth';
-type SortDir = 'asc' | 'desc';
-type MemberFilter = '' | 'member' | 'nonMember';
+type SearchKey = 'ALL' | 'NAME' | 'PAYMENTER_NAME' | 'ORGANIZATION' | 'MEMO' | 'DETAIL_MEMO' | 'NOTE' | 'MATCHING_LOG' | 'BIRTH' | 'PH_NUM';
+type PaymentStatus = '' | 'UNPAID' | 'COMPLETED' | 'MUST_CHECK' | 'NEED_PARTITIAL_REFUND' | 'NEED_REFUND' | 'REFUNDED';
 
 // 문자열 orgId (백엔드 조직 ID)를 그대로 사용
 export default function Client({ orgId }: { orgId: string }) {
@@ -38,6 +37,8 @@ export default function Client({ orgId }: { orgId: string }) {
       owner: orgDetailData.leaderName,
       ownerId: orgDetailData.account,
       ownerPhone: orgDetailData.leaderPhNum,
+      address: orgDetailData.address,
+      addressDetail: orgDetailData.addressDetail,
       eventTitle: orgDetailData.eventName,
       createdAt: orgDetailData.createdAt,
     };
@@ -49,11 +50,16 @@ export default function Client({ orgId }: { orgId: string }) {
 
   const [rows, setRows] = useState<OrgMemberRow[]>([]);
   const [total, setTotal] = useState(0);
+  
+  // 전체 통계 저장 (고정용)
+  const [totalMembers, setTotalMembers] = useState(0);
+  const [fixedDepositorName, setFixedDepositorName] = useState('-');
+  const [fixedPayStatus, setFixedPayStatus] = useState('-');
+  const [fixedApplicationDate, setFixedApplicationDate] = useState('-');
 
   const [query, setQuery] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('id');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
-  const [memberFilter, setMemberFilter] = useState<MemberFilter>('');
+  const [searchKey, setSearchKey] = useState<SearchKey>('ALL');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('');
 
   // 비밀번호 초기화 모달 상태
   const [showPwdModal, setShowPwdModal] = useState(false);
@@ -67,12 +73,85 @@ export default function Client({ orgId }: { orgId: string }) {
   const [eventListFetched, setEventListFetched] = useState(false);
   const [orgEventId, setOrgEventId] = useState<string | undefined>(undefined);
 
-  // 서버 데이터 조회 (members 탭에서만 요청, 유효한 orgId일 때만)
-  const { data: apiData, isLoading, error } = useOrganizationMembersList({ 
+  // 전체 데이터 조회 (통계용 - 한 번만 호출)
+  const { data: allMembersData, refetch: refetchAllMembers } = useOrganizationMembersList({
+    orgId: isValidOrgId ? orgId : '',
+    page: 1,
+    size: 1000, // 전체 데이터 가져오기 (통계 계산용)
+  });
+
+  // 서버 데이터 조회 (검색 API 사용)
+  const { data: apiData, isLoading, error, refetch } = useOrganizationMembersSearch({ 
     orgId: isValidOrgId ? orgId : '', 
     page, 
-    size: pageSize 
+    size: pageSize,
+    registrationSearchKey: searchKey,
+    paymentStatus: paymentStatus || undefined,
+    keyword: query.trim() || undefined,
   });
+
+  // 전체 통계 저장 (초기 1회)
+  useEffect(() => {
+    if (allMembersData) {
+      setTotalMembers(allMembersData.totalElements);
+      
+      // 입금자명 (첫 번째 유효한 입금자명)
+      const depositor = allMembersData.content.find(item => 
+        typeof item.paymenterName === 'string' && item.paymenterName.trim()
+      )?.paymenterName?.trim() || '-';
+      setFixedDepositorName(depositor);
+      
+      // 입금 여부 (모든 상태 확인)
+      const statuses = allMembersData.content
+        .map(item => item.paymentStatus)
+        .filter((status): status is string => !!status);
+      if (statuses.length === 0) {
+        setFixedPayStatus('-');
+      } else {
+        const first = statuses[0];
+        const allSame = statuses.every(status => status === first);
+        // paymentStatus를 한국어로 변환
+        const paymentStatusMap: Record<string, string> = {
+          'UNPAID': '미결제',
+          'COMPLETED': '결제완료',
+          'MUST_CHECK': '확인필요',
+          'NEED_PARTITIAL_REFUND': '차액환불요청',
+          'NEED_REFUND': '전액환불요청',
+          'REFUNDED': '전액환불완료',
+        };
+        setFixedPayStatus(allSame ? (paymentStatusMap[first] || first) : '혼합');
+      }
+      
+      // 최신 신청일시 계산 (전체 데이터 기반)
+      const rawDates = allMembersData.content
+        .map(item => item.registrationDate)
+        .filter((date): date is string => !!date);
+      if (rawDates.length === 0) {
+        setFixedApplicationDate('-');
+      } else {
+        const parsed = rawDates
+          .map(raw => {
+            const d = new Date(raw);
+            if (!Number.isNaN(d.getTime())) return d;
+            return null;
+          })
+          .filter((d): d is Date => !!d);
+        if (parsed.length === 0) {
+          setFixedApplicationDate('-');
+        } else {
+          const latest = parsed.reduce((acc, cur) => (acc > cur ? acc : cur));
+          setFixedApplicationDate(latest.toLocaleString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }));
+        }
+      }
+    }
+  }, [allMembersData]);
 
   // API → 화면 행 변환 (페이지 기반 시퀀스)
   useEffect(() => {
@@ -130,75 +209,19 @@ export default function Client({ orgId }: { orgId: string }) {
     setOrgEventId(matched?.id);
   }, [org?.eventTitle, simpleEvents]);
 
-  // 클라이언트 필터/정렬/검색 적용된 뷰
-  const viewRows = useMemo(() => {
-    let arr = rows.slice();
-    const q = query.trim();
-    if (q) {
-      arr = arr.filter(r => r.name.includes(q) || r.userId.includes(q) || r.phone.includes(q));
-    }
-    if (memberFilter) {
-      const flag = memberFilter === 'member';
-      arr = arr.filter(r => r.isMember === flag);
-    }
-    arr.sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      const A = a[sortKey];
-      const B = b[sortKey];
-      if (typeof A === 'number' && typeof B === 'number') return (A - B) * dir;
-      return String(A).localeCompare(String(B), 'ko') * dir;
-    });
-    return arr;
-  }, [rows, query, memberFilter, sortKey, sortDir]);
+  // 서버에서 검색/필터링/정렬된 데이터를 그대로 사용
+  const viewRows = rows;
 
-  const latestRegDate = useMemo(() => {
-    const rawDates = rows
-      .map((r) => r.regDateRaw)
-      .filter((raw): raw is string => !!raw);
-    if (!rawDates.length) return '-';
-    const parsed = rawDates
-      .map((raw) => {
-        const d = new Date(raw);
-        if (!Number.isNaN(d.getTime())) return d;
-        return null;
-      })
-      .filter((d): d is Date => !!d);
-    if (!parsed.length) return '-';
-    const latest = parsed.reduce((acc, cur) => (acc > cur ? acc : cur));
-    return latest.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  }, [rows]);
-
-  const memberCountDisplay = total;
-  const applicationDate = latestRegDate;
-  const totalAmountFromRows = useMemo(() => {
-    return rows.reduce((sum, row) => {
-      if (typeof row.fee === 'number' && Number.isFinite(row.fee)) {
-        return sum + row.fee;
-      }
-      return sum;
-    }, 0);
-  }, [rows]);
-  const totalAmountDisplay = totalAmountFromRows > 0 ? `${totalAmountFromRows.toLocaleString()}원` : '-';
-  const depositorName =
-    rows.find((row) => typeof row.account === 'string' && row.account.trim())?.account?.trim() ||
-    '-';
-  const totalParticipants = rows.length;
-  const payStatusDisplay = useMemo(() => {
-    const statuses = rows
-      .map((row) => row.payStatus)
-      .filter((status): status is NonNullable<OrgMemberRow['payStatus']> => !!status);
-    if (statuses.length === 0) return '-';
-    const first = statuses[0];
-    const allSame = statuses.every((status) => status === first);
-    return allSame ? first : '혼합';
-  }, [rows]);
+  // 상단 카드용 - 전체 통계 (고정)
+  const memberCountDisplay = totalMembers;
+  const applicationDate = fixedApplicationDate;
+  
+  // 결제 정보 - 전체 데이터 기반 (고정)
+  const totalAmountDisplay = orgDetailData?.totalAmount !== undefined && orgDetailData?.totalAmount !== null
+    ? `${orgDetailData.totalAmount.toLocaleString()}원`
+    : '-';
+  const depositorName = fixedDepositorName;
+  const payStatusDisplay = fixedPayStatus;
 
   const handleDetailClose = () => {
     setDetailOpen(false);
@@ -215,7 +238,7 @@ export default function Client({ orgId }: { orgId: string }) {
     try {
       const item = await getRegistrationDetail(row.registrationId);
       setDetailItem(item);
-    } catch (error) {
+    } catch (_error) {
       toast.error('상세 정보를 불러오지 못했습니다.');
       setDetailOpen(false);
       setDetailItem(null);
@@ -225,17 +248,24 @@ export default function Client({ orgId }: { orgId: string }) {
   };
   const effectiveEventId = detailItem?.eventId || orgEventId;
 
-  const infoSections = useMemo(() => ([
-    {
-      title: '기본 정보',
-      items: [
-        // { label: '단체 ID', value: orgId },
-        { label: '단체명', value: org?.org ?? '-' },
-        { label: '대표자명', value: org?.owner ?? '-' },
-        { label: '대표 아이디', value: org?.ownerId ?? '-' },
-        { label: '대표 연락처', value: org?.ownerPhone ?? '-' },
-      ],
-    },
+  const infoSections = useMemo(() => {
+    // 주소 조합 (주소 + 상세주소)
+    const fullAddress = [org?.address, org?.addressDetail]
+      .filter(Boolean)
+      .join(' ') || '-';
+
+    return [
+      {
+        title: '기본 정보',
+        items: [
+          // { label: '단체 ID', value: orgId },
+          { label: '단체명', value: org?.org ?? '-' },
+          { label: '대표자명', value: org?.owner ?? '-' },
+          { label: '대표 아이디', value: org?.ownerId ?? '-' },
+          { label: '대표 연락처', value: org?.ownerPhone ?? '-' },
+          { label: '주소', value: fullAddress },
+        ],
+      },
     {
       title: '신청 정보',
       items: [
@@ -255,11 +285,14 @@ export default function Client({ orgId }: { orgId: string }) {
         { label: '입금 여부', value: payStatusDisplay },
       ],
     },
-  ]), [
+  ];
+  }, [
     org?.org,
     org?.owner,
     org?.ownerId,
     org?.ownerPhone,
+    org?.address,
+    org?.addressDetail,
     applicationDate,
     org?.eventTitle,
     memberCountDisplay,
@@ -352,6 +385,7 @@ export default function Client({ orgId }: { orgId: string }) {
         </div>
       </div>
 
+
       <OrgMembersTable
         rows={viewRows}
         total={total}
@@ -360,16 +394,14 @@ export default function Client({ orgId }: { orgId: string }) {
         onPageChange={setPage}
 
         onSearch={(q) => { setQuery(q); setPage(1); }}
-        onSortKeyChange={(k) => { setSortKey(k); }}
-        onSortDirChange={(d) => { setSortDir(d); }}
-        onMemberFilterChange={(f) => { setMemberFilter(f); setPage(1); }}
+        onSearchKeyChange={(k) => { setSearchKey(k); setPage(1); }}
+        onPaymentStatusChange={(s) => { setPaymentStatus(s); setPage(1); }}
 
         onClickExcel={() => {}}
         onResetFilters={() => {
           setQuery('');
-          setSortKey('id');
-          setSortDir('asc');
-          setMemberFilter('');
+          setSearchKey('ALL');
+          setPaymentStatus('');
           setPage(1);
         }}
         onClickBack={() => router.push('/admin/users/organization')}
@@ -454,10 +486,13 @@ export default function Client({ orgId }: { orgId: string }) {
             try {
               const refreshed = await getRegistrationDetail(detailItem.id);
               setDetailItem(refreshed);
-            } catch (error) {
+            } catch (_error) {
               // 에러 무시 (이미 상세 정보가 있으므로)
             }
           }
+          // 목록 및 전체 통계 다시 불러오기
+          refetch();
+          refetchAllMembers();
         }}
       />
     </div>

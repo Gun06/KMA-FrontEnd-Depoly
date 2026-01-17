@@ -36,15 +36,19 @@ export default function Client({ eventId }: { eventId: string }) {
       return isoString.split('T')[0];
     };
 
-    // ISO 날짜에서 시간 추출 (백엔드 데이터 그대로 사용)
+    // ISO 날짜에서 시간 추출 (백엔드 데이터를 5분 단위로 반올림)
     const extractTime = (isoString: string) => {
       // ISO 형식: "2026-01-21T00:00:00" 또는 "2026-01-21T00:00:00Z"
       // T 이후의 시간 부분을 직접 추출
       const timeMatch = isoString.match(/T(\d{2}):(\d{2}):/);
       if (timeMatch) {
+        const hh = parseInt(timeMatch[1], 10);
+        const mm = parseInt(timeMatch[2], 10);
+        // 분을 5분 단위로 반올림 (0~55 범위)
+        const roundedMm = Math.min(Math.round(mm / 5) * 5, 55);
         return {
-          hh: timeMatch[1], // 시간
-          mm: timeMatch[2], // 분
+          hh: String(hh).padStart(2, '0'), // 시간
+          mm: String(roundedMm).padStart(2, '0'), // 분 (5분 단위)
         };
       }
       // 매칭 실패 시 기본값

@@ -9,6 +9,7 @@ import { formatBirthInput, formatPhoneInput, normalizeBirthDate, normalizePhoneN
 import { toast } from 'react-toastify';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
+import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -203,10 +204,29 @@ export default function RegistrationDetailDrawer({
   const [isOrganizationDropdownOpen, setIsOrganizationDropdownOpen] = React.useState(false);
   const [isOrganizationSearching, setIsOrganizationSearching] = React.useState(false);
   const organizationSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const organizationDropdownRef = React.useRef<HTMLDivElement>(null);
+
 
   // item.id를 추적하여 다른 항목을 선택했을 때만 메모 초기화
   const prevItemIdRef = React.useRef<string | null>(null);
   const isInitialLoadRef = React.useRef(true);
+
+  // 단체 드롭다운 외부 클릭 감지
+  React.useEffect(() => {
+    if (!isOrganizationDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (organizationDropdownRef.current && !organizationDropdownRef.current.contains(event.target as Node)) {
+        setIsOrganizationDropdownOpen(false);
+        setOrganizationSearchKeyword('');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOrganizationDropdownOpen]);
   
   React.useEffect(() => {
     if (open && item) {
@@ -422,11 +442,6 @@ export default function RegistrationDetailDrawer({
     if (!form.eventCategoryId || !categoriesForDisplay?.length) return;
     if (!isEditing) return; // 수정 모드일 때만 적용
     
-    // canEditFields 계산 (item이 있을 때만)
-    const isUnpaid = item?.paymentStatus === 'UNPAID';
-    const canEditFields = isEditing && isUnpaid;
-    if (!canEditFields) return; // 기본 정보 필드 수정 불가능한 경우 건너뛰기
-    
     const selectedCategory = categoriesForDisplay.find(c => c.id === form.eventCategoryId);
     if (!selectedCategory?.souvenirs?.length) return;
 
@@ -469,11 +484,8 @@ export default function RegistrationDetailDrawer({
 
   if (!open || !item) return null;
 
-  // 미결제가 아닌 경우: 기본 정보(성명, 코스, 기념품, 주소 등)는 수정 불가
-  // - 미결제(UNPAID): 수정하기 클릭 시 모든 필드 수정 가능
-  // - 그 외 상태   : 수정하기 클릭 시 '입금여부', 메모, 상세메모만 수정 가능
-  const isUnpaid = item.paymentStatus === 'UNPAID';
-  const canEditFields = isEditing && isUnpaid; // 기본 정보 필드
+  // 모든 결제 상태에서 수정 가능하도록 변경
+  const canEditFields = isEditing; // 기본 정보 필드 (모든 상태에서 수정 가능)
   const canEditMemo = isEditing; // 메모와 상세메모는 항상 수정 가능
 
   const genderLabel = (() => {
@@ -564,7 +576,7 @@ export default function RegistrationDetailDrawer({
           ) : (
             <>
               {/* 버튼들 - 스크롤 시 상단 고정 */}
-              <div className="sticky top-0 z-10 bg-white left-0 right-0 px-5 pt-4 pb-3 mb-4 flex items-center justify-end gap-2 border-b shadow-sm">
+              <div className="sticky top-0 z-[80] bg-white left-0 right-0 px-5 pt-4 pb-3 mb-4 flex items-center justify-end gap-2 border-b shadow-sm">
                 <div className="flex items-center gap-2">
                   <button
                     className="px-3 py-1.5 rounded border border-red-600 text-red-600 text-sm hover:bg-red-50 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
@@ -716,11 +728,11 @@ export default function RegistrationDetailDrawer({
                 <input className="w-full rounded border px-2 py-1" value={form.name} onChange={e => setForm(v => ({ ...v, name: e.target.value }))} />
               ))}
               {!canEditFields ? line('단체명', organizationNameDisplay) : editLine('단체명', (
-                <div className="relative">
+                <div ref={organizationDropdownRef} className="relative">
                   {/* 선택된 단체명 표시 버튼 */}
                   <button
                     type="button"
-                    className="w-full rounded border px-2 py-1 pr-8 text-left bg-white hover:bg-gray-50 flex items-center justify-between"
+                    className="w-full rounded border px-2 py-1 text-left bg-white hover:bg-gray-50 relative"
                     onClick={() => {
                       if (!effectiveEventId) {
                         alert('대회 정보가 없어 단체 목록을 불러올 수 없습니다.');
@@ -746,11 +758,11 @@ export default function RegistrationDetailDrawer({
                       }
                     }}
                   >
-                    <span className={form.organizationName ? 'text-gray-900' : 'text-gray-400'}>
+                    <span className={`block pr-8 ${form.organizationName ? 'text-gray-900' : 'text-gray-400'}`}>
                       {form.organizationName || '단체를 선택하세요'}
                     </span>
                     <svg 
-                      className={`w-4 h-4 text-gray-400 transition-transform ${isOrganizationDropdownOpen ? 'rotate-180' : ''}`} 
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-transform pointer-events-none ${isOrganizationDropdownOpen ? 'rotate-180' : ''}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -761,15 +773,7 @@ export default function RegistrationDetailDrawer({
                   
                   {/* 드롭다운 메뉴 */}
                   {isOrganizationDropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-[70]"
-                        onClick={() => {
-                          setIsOrganizationDropdownOpen(false);
-                          setOrganizationSearchKeyword('');
-                        }}
-                      />
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] max-h-60 flex flex-col">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] max-h-60 flex flex-col">
                         {/* 드롭다운 내부 검색 입력 필드 (리스트 위에 위치) */}
                         <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
                           <input
@@ -861,7 +865,6 @@ export default function RegistrationDetailDrawer({
                           )}
                         </div>
                       </div>
-                    </>
                   )}
                 </div>
               ))}
@@ -876,39 +879,37 @@ export default function RegistrationDetailDrawer({
                       코스 정보를 불러오는 중...
                     </div>
                   ) : (
-                <select
-                  className="w-full rounded border px-2 py-1"
-                  value={form.eventCategoryId}
-                  onChange={e => {
-                    const nextId = e.target.value;
-                    const selectedCategory = categoriesForDisplay?.find(c => c.id === nextId);
-                    // 코스 변경 시 모든 기념품을 자동으로 추가 (사이즈는 첫 번째 옵션)
-                    const newSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
-                    if (selectedCategory?.souvenirs?.length) {
-                      selectedCategory.souvenirs.forEach(souvenir => {
-                        const sizesString = souvenir.sizes || '';
-                        const availableSizes = sizesString
-                          .split(/[|,]/)
-                          .map(s => s.trim().replace(/^✓\s*/, '').trim())
-                          .filter(s => s.length > 0);
-                        const defaultSize = availableSizes[0] || '';
-                        newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: defaultSize });
-                      });
-                    }
-                    setForm(v => ({
-                      ...v,
-                      eventCategoryId: nextId,
-                      souvenirJsonList: newSouvenirList,
-                    }));
-                  }}
-                >
-                  <option value="">코스를 선택하세요</option>
-                      {categoriesForDisplay.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                    <SearchableSelect
+                      value={form.eventCategoryId}
+                      options={categoriesForDisplay.map(category => ({
+                        value: category.id,
+                        label: category.name,
+                      }))}
+                      onChange={(categoryId) => {
+                        const selectedCategory = categoriesForDisplay?.find(c => c.id === categoryId);
+                        // 코스 변경 시 모든 기념품을 자동으로 추가
+                        const newSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
+                        if (selectedCategory?.souvenirs?.length) {
+                          selectedCategory.souvenirs.forEach(souvenir => {
+                            const sizesString = souvenir.sizes || '';
+                            const availableSizes = sizesString
+                              .split(/[|,]/)
+                              .map(s => s.trim().replace(/^✓\s*/, '').trim())
+                              .filter(s => s.length > 0);
+                            const defaultSize = availableSizes[0] || '';
+                            newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: defaultSize });
+                          });
+                        }
+                        setForm(v => ({
+                          ...v,
+                          eventCategoryId: categoryId,
+                          souvenirJsonList: newSouvenirList,
+                        }));
+                      }}
+                      placeholder="코스를 선택하세요"
+                      searchable
+                      searchPlaceholder="코스 검색..."
+                    />
                   )}
                 </>
               ))}
@@ -951,34 +952,37 @@ export default function RegistrationDetailDrawer({
                           <span className="text-sm text-gray-700 min-w-[100px]">
                             {souvenir.name}:
                           </span>
-                          <select
-                            className="flex-1 rounded border px-2 py-1 text-sm"
-                            value={selectedSouvenir?.selectedSize || availableSizes[0]}
-                            onChange={(e) => {
-                              setForm(v => {
-                                const existingIndex = v.souvenirJsonList.findIndex(s => s.souvenirId === souvenir.id);
-                                if (existingIndex >= 0) {
-                                  // 기존 항목 업데이트
-                                  return {
-                                    ...v,
-                                    souvenirJsonList: v.souvenirJsonList.map((s, i) => 
-                                      i === existingIndex ? { ...s, selectedSize: e.target.value } : s
-                                    )
-                                  };
-                                } else {
-                                  // 새 항목 추가
-                                  return {
-                                    ...v,
-                                    souvenirJsonList: [...v.souvenirJsonList, { souvenirId: souvenir.id, selectedSize: e.target.value }]
-                                  };
-                                }
-                              });
-                            }}
-                          >
-                            {availableSizes.map(size => (
-                              <option key={size} value={size}>{size}</option>
-                            ))}
-                          </select>
+                          <div className="flex-1">
+                            <SearchableSelect
+                              value={selectedSouvenir?.selectedSize || availableSizes[0]}
+                              options={availableSizes.map(size => ({
+                                value: size,
+                                label: size,
+                              }))}
+                              onChange={(size) => {
+                                setForm(v => {
+                                  const existingIndex = v.souvenirJsonList.findIndex(s => s.souvenirId === souvenir.id);
+                                  if (existingIndex >= 0) {
+                                    // 기존 항목 업데이트
+                                    return {
+                                      ...v,
+                                      souvenirJsonList: v.souvenirJsonList.map((s, i) => 
+                                        i === existingIndex ? { ...s, selectedSize: size } : s
+                                      )
+                                    };
+                                  } else {
+                                    // 새 항목 추가
+                                    return {
+                                      ...v,
+                                      souvenirJsonList: [...v.souvenirJsonList, { souvenirId: souvenir.id, selectedSize: size }]
+                                    };
+                                  }
+                                });
+                              }}
+                              placeholder="사이즈 선택"
+                              showPlaceholderColor={false}
+                            />
+                          </div>
                         </div>
                       );
                     })
@@ -988,11 +992,16 @@ export default function RegistrationDetailDrawer({
                 </div>
               ))}
               {!canEditFields ? line('성별', genderLabel) : editLine('성별', (
-                <select className="w-full rounded border px-2 py-1" value={form.gender} onChange={e => setForm(v => ({ ...v, gender: e.target.value as 'M' | 'F' | '' }))}>
-                  <option value="">선택</option>
-                  <option value="M">남</option>
-                  <option value="F">여</option>
-                </select>
+                <SearchableSelect
+                  value={form.gender}
+                  options={[
+                    { value: '', label: '선택 안 함' },
+                    { value: 'M', label: '남' },
+                    { value: 'F', label: '여' },
+                  ]}
+                  onChange={(value) => setForm(v => ({ ...v, gender: value as 'M' | 'F' | '' }))}
+                  placeholder="성별을 선택하세요"
+                />
               ))}
               {!canEditFields ? line('생년월일', (String(item.birth || '').replace(/\D+/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))) : editLine('생년월일', (
                 <input className="w-full rounded border px-2 py-1" value={form.birth} onChange={e => setForm(v => ({ ...v, birth: formatBirthInput(e.target.value) }))} placeholder="YYYY-MM-DD" />
@@ -1003,18 +1012,19 @@ export default function RegistrationDetailDrawer({
               {line('신청일시', formatDateTime(item.registrationDate))}
               {line('금액', formatAmount(item.amount))}
               {!isEditing ? line('입금여부', paymentStatusLabel) : editLine('입금여부', (
-                <select 
-                  className="w-full rounded border px-2 py-1" 
-                  value={form.paymentStatus} 
-                  onChange={e => setForm(v => ({ ...v, paymentStatus: e.target.value as typeof form.paymentStatus }))}
-                >
-                  <option value="UNPAID">미결제</option>
-                  <option value="COMPLETED">결제완료</option>
-                  <option value="MUST_CHECK">확인필요</option>
-                  <option value="NEED_PARTITIAL_REFUND">차액환불요청</option>
-                  <option value="NEED_REFUND">전액환불요청</option>
-                  <option value="REFUNDED">전액환불완료</option>
-                </select>
+                <SearchableSelect
+                  value={form.paymentStatus}
+                  options={[
+                    { value: 'UNPAID', label: '미결제' },
+                    { value: 'COMPLETED', label: '결제완료' },
+                    { value: 'MUST_CHECK', label: '확인필요' },
+                    { value: 'NEED_PARTITIAL_REFUND', label: '차액환불요청' },
+                    { value: 'NEED_REFUND', label: '전액환불요청' },
+                    { value: 'REFUNDED', label: '전액환불완료' },
+                  ]}
+                  onChange={(value) => setForm(v => ({ ...v, paymentStatus: value as typeof form.paymentStatus }))}
+                  placeholder="입금여부를 선택하세요"
+                />
               ))}
               {!canEditFields ? line('입금자명', item.paymenterName || '-') : editLine('입금자명', (
                 <input className="w-full rounded border px-2 py-1" value={form.paymenterName} onChange={e => setForm(v => ({ ...v, paymenterName: e.target.value }))} />

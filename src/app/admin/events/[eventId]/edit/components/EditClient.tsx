@@ -567,7 +567,13 @@ export default function EditClient({
       {/* 커스텀 정보 모달 */}
       <InfoModal
         isOpen={infoModalOpen}
-        onClose={() => setInfoModalOpen(false)}
+        onClose={() => {
+          setInfoModalOpen(false);
+          // 성공 시에만 상세 페이지로 이동
+          if (infoModalType === 'success') {
+            goDetail();
+          }
+        }}
         type={infoModalType}
         message={infoModalMessage}
       />

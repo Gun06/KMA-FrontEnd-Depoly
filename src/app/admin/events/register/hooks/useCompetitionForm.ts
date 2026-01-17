@@ -370,7 +370,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     () => Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')),
     []
   );
-  const minutes = React.useMemo(() => ['00', '10', '20', '30', '40', '50'], []);
+  const minutes = React.useMemo(
+    () => Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')),
+    []
+  );
 
   /** ===== 프리필 주입 ===== */
   // prefill이 변경될 때마다 적용 (편집 모드에서 데이터 갱신 시 반영)
