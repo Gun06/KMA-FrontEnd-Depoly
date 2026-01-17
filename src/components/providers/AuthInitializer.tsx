@@ -44,6 +44,79 @@ export default function AuthInitializer() {
             await navigationGuard.safeNavigate(() => {
               router.replace('/admin/login');
             });
+          } else {
+            // 토큰은 있는데 스토어 user가 비어 있을 수 있으므로 보정
+            const adminState = useAdminAuthStore.getState();
+            if (!adminState.user && adminToken) {
+              try {
+                const decoded = decodeToken(adminToken) as {
+                  sub?: string;
+                  name?: string;
+                  role?: Array<{ authority?: string } | string>;
+                  roles?: Array<string>;
+                  admin_id?: string;
+                } | null;
+
+                const normalizeRoleName = (role?: unknown): string | null => {
+                  if (typeof role !== 'string') return null;
+                  const upper = role.toUpperCase();
+                  const normalized = upper.startsWith('ROLE_')
+                    ? upper.replace(/^ROLE_/i, '')
+                    : upper;
+                  // 한글 role 이름을 영문으로 매핑
+                  if (normalized.includes('총관리자') || normalized.includes('총관리') || normalized.includes('SUPER')) {
+                    return 'SUPER_ADMIN';
+                  }
+                  if (normalized.includes('입금관리자') || normalized.includes('입금 관리자') || normalized.includes('DEPOSIT')) {
+                    return 'DEPOSIT_ADMIN';
+                  }
+                  if (normalized.includes('대회관리자') || normalized.includes('대회 관리자') || normalized.includes('EVENT')) {
+                    return 'EVENT_ADMIN';
+                  }
+                  if (normalized.includes('게시판관리자') || normalized.includes('게시판 관리자') || normalized.includes('BOARD')) {
+                    return 'BOARD_ADMIN';
+                  }
+                  return normalized;
+                };
+
+                const extractedRoles: string[] = [];
+                if (Array.isArray(decoded?.role)) {
+                  for (const r of decoded!.role) {
+                    const n =
+                      typeof r === 'string'
+                        ? normalizeRoleName(r)
+                        : normalizeRoleName(
+                            (r as { authority?: string })?.authority
+                          );
+                    if (n) extractedRoles.push(n);
+                  }
+                }
+                if (Array.isArray(decoded?.roles)) {
+                  for (const r of decoded!.roles) {
+                    const n = normalizeRoleName(r);
+                    if (n) extractedRoles.push(n);
+                  }
+                }
+                // role 필드가 배열이 아닌 단일 문자열일 수도 있음
+                if (typeof decoded?.role === 'string') {
+                  const n = normalizeRoleName(decoded.role);
+                  if (n) extractedRoles.push(n);
+                }
+                const roles = Array.from(new Set(extractedRoles));
+
+                useAdminAuthStore.setState({
+                  user: {
+                    id: decoded?.sub || decoded?.admin_id || 'admin',
+                    account: decoded?.name || 'admin',
+                    role: roles[0] || 'ADMIN',
+                    roles,
+                  },
+                  isLoggedIn: true,
+                });
+              } catch {
+                // ignore decode errors
+              }
+            }
           }
         } else if (!isLoginPath && !isAdminPath) {
           // 일반 페이지인 경우 사용자 인증 확인

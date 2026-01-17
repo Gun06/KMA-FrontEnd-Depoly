@@ -47,9 +47,18 @@ export default function AdminLoginPage() {
       router.replace('/admin');
     } catch (error) {
       const anyErr = error as unknown as {
-        response?: { message?: string };
+        code?: string;
+        mustChangePassword?: boolean;
         message?: string;
+        response?: { message?: string };
       };
+      
+      // mustChangePassword 에러인 경우 비밀번호 변경 페이지로 리다이렉트
+      if (anyErr?.code === 'MUST_CHANGE_PASSWORD' || anyErr?.mustChangePassword) {
+        router.replace('/admin/admins/change-password');
+        return;
+      }
+      
       const msg =
         anyErr?.response?.message ||
         anyErr?.message ||

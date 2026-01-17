@@ -31,12 +31,26 @@ export const ADMIN_TABLE_COLUMNS: Column<AdminItem>[] = [
     render: (row) => <div className="text-center text-gray-900">{row.roleName}</div>,
   },
   {
-    key: 'deptName',
-    header: '부서',
+    key: 'edit',
+    header: '수정',
     headerAlign: 'center',
     align: 'center',
-    render: (row) => <div className="text-center text-gray-900">{row.deptName || '-'}</div>,
+    render: (row) => (
+      <div className="text-center">
+        <button
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = `/admin/admins/${row.id}/edit`;
+            }
+          }}
+          className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+        >
+          수정
+        </button>
+      </div>
+    ),
   },
+  // 부서 컬럼 제거됨
 ];
 
 export const DEFAULT_PAGE_SIZE = 20;
