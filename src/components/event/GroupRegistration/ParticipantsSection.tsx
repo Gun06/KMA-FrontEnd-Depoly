@@ -264,10 +264,15 @@ const ParticipantsSection = memo(function ParticipantsSection({
 
   // 현재 선택된 카테고리의 거리와 이름 추출 (모달용)
   const getCurrentCategoryInfo = useCallback((participant: ParticipantData) => {
-    if (!participant.category) {
+    if (!participant || !participant.category) {
       return { distance: '', categoryName: '' };
     }
-    return parseCategoryWithDistance(participant.category);
+    // category가 "거리|세부종목" 형식인지 확인
+    const categoryStr = String(participant.category || '').trim();
+    if (!categoryStr || !categoryStr.includes('|')) {
+      return { distance: '', categoryName: categoryStr };
+    }
+    return parseCategoryWithDistance(categoryStr);
   }, []);
 
   return (
@@ -823,12 +828,24 @@ const ParticipantsSection = memo(function ParticipantsSection({
         onClose={closeCategoryModal}
         onConfirm={handleConfirmCategorySelection}
         eventInfo={eventInfo}
-        currentDistance={categoryModalState.participantIndex >= 0 
-          ? getCurrentCategoryInfo(participants[categoryModalState.participantIndex]).distance 
-          : ''}
-        currentCategory={categoryModalState.participantIndex >= 0
-          ? getCurrentCategoryInfo(participants[categoryModalState.participantIndex]).categoryName
-          : ''}
+        currentDistance={(() => {
+          if (categoryModalState.participantIndex >= 0 && participants[categoryModalState.participantIndex]) {
+            const participant = participants[categoryModalState.participantIndex];
+            const info = getCurrentCategoryInfo(participant);
+            // "TEST|테스트1 마라톤" -> distance: "TEST"
+            return String(info.distance || '').trim();
+          }
+          return '';
+        })()}
+        currentCategory={(() => {
+          if (categoryModalState.participantIndex >= 0 && participants[categoryModalState.participantIndex]) {
+            const participant = participants[categoryModalState.participantIndex];
+            const info = getCurrentCategoryInfo(participant);
+            // "TEST|테스트1 마라톤" -> categoryName: "테스트1 마라톤"
+            return String(info.categoryName || '').trim();
+          }
+          return '';
+        })()}
       />
 
       {/* 기념품 선택 모달 */}

@@ -4,15 +4,16 @@ import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { getAgreementData } from "../agreement/data";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { RegStatus } from "@/components/common/Badge/RegistrationStatusBadge";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
+import { checkStatusToRequest } from "./shared/api/event";
 
 export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
   const agreementData = getAgreementData(params.eventId);
   const [isAgreed, setIsAgreed] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [applyStatus, setApplyStatus] = useState<RegStatus | null>(null);
+  const [possibleToRequest, setPossibleToRequest] = useState<boolean | null>(null);
+  const [requestReason, setRequestReason] = useState<string | null>(null);
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -26,32 +27,14 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // 대회 신청 상태 조회 (공개 이벤트 상세 API 사용)
+  // 대회 신청 가능 여부 조회 (새로운 API 사용)
   useEffect(() => {
     const fetchStatus = async () => {
       try {
         setIsStatusLoading(true);
-        const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-        if (!base) {
-          setIsStatusLoading(false);
-          return;
-        }
-        const res = await fetch(
-          `${base}/api/v1/public/event/${params.eventId}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" }
-        );
-        if (!res.ok) {
-          setIsStatusLoading(false);
-          return;
-        }
-        const data = await res.json();
-        const status: string | undefined = data?.eventInfo?.eventStatus;
-        if (status) {
-          const s = status.toUpperCase();
-          if (s === "OPEN" || s === "ONGOING") setApplyStatus("접수중");
-          else if (s === "PENDING") setApplyStatus("비접수");
-          else setApplyStatus("접수마감");
-        }
+        const statusResponse = await checkStatusToRequest(params.eventId);
+        setPossibleToRequest(statusResponse.possibleToRequest);
+        setRequestReason(statusResponse.reason || null);
       } catch {
         // 무시: 상태를 못 불러와도 기본 동작은 유지
       } finally {
@@ -73,25 +56,22 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
       return;
     }
 
-    // 상태를 아직 못 불러온 경우에는 기존 방식 그대로 진행
-    if (!applyStatus || isStatusLoading) {
+    // 상태를 아직 못 불러온 경우에는 기본적으로 진행 허용
+    if (possibleToRequest === null && isStatusLoading) {
       router.push(
         `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
       );
       return;
     }
 
-    if (applyStatus === "비접수") {
-      showAlert("현재는 접수 기간이 아닙니다. 접수 시작 후 다시 시도해주세요.");
+    // 신청 불가능한 경우
+    if (possibleToRequest === false) {
+      const reason = requestReason || "현재 신청이 불가능합니다.";
+      showAlert(reason);
       return;
     }
 
-    if (applyStatus === "접수마감") {
-      showAlert("해당 대회의 접수가 마감되었습니다.");
-      return;
-    }
-
-    // 접수중인 경우에만 실제 신청 페이지로 이동
+    // 신청 가능한 경우 신청 페이지로 이동
     router.push(
       `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
     );
@@ -100,7 +80,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   // 로딩 중일 때 로딩 스피너 표시
   if (isPageLoading) {
     return (
-      <SubmenuLayout 
+      <SubmenuLayout
         eventId={params.eventId}
         breadcrumb={{
           mainMenu: "참가신청",
@@ -155,36 +135,36 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                 참가자 유의사항
               </h1>
             </div>
-            
+
             <hr className="border-black mb-6" style={{ borderWidth: '1.7px' }} />
-            
+
             {/* 상세 내용 */}
             <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상상태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품 배송)</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">고혈압, 심근검색, 심장병, 당뇨, 기타질병으로 인하여 대회 사망시 주최측에서 책임을 지지 않으며, 보험혜택을 받을 수 없습니다.</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">종목별 제한시간이 초과 된 경우 시상에서 제외됩니다.</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">애완동물 동반 참가불가</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">택배배송 : 주최측 부담일 경우 기념품, 책자, 배번호, 칩 일괄배송(대회 사정상 변경될 수 있습니다.)</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">수신자 부담일 경우 대회당일 현장 배부 (대회 미참가 시 수신자 부담으로 기념품 배송)</span>
@@ -199,14 +179,14 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">약관</h2>
               <hr className="border-black mb-3" style={{ borderWidth: '1.7px' }} />
             </div>
-            
+
             <p className="text-sm sm:text-base text-gray-900">※ 마라톤대회 신청 약관(필독)</p>
             {/* 약관 내용 */}
             <div className="bg-gray-100 rounded-lg p-4 mb-4 min-h-[250px]">
               <p className="font-bold text-gray-800 mb-4">
                 안전한 레이스를 위한 안내 사항 (필독)!!!
               </p>
-              
+
               <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
                 <p>
                   뛰는 동안 자신의 몸 상태를 확인하고 이상이 있는 경우 뛰는 것을 바로 멈춰야 합니다.<br />
@@ -230,18 +210,18 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                   <div className="pl-5">
                     <div className="flex items-start space-x-2 mb-2">
                       <span className="text-gray-700 flex-shrink-0"><strong>1.</strong></span>
-                      <span className="text-gray-700"><strong>참가자의 건강 상태 및 책임본인</strong> 참가자의 건강 상태 및 책임본인은 마라톤 대회 참가와 관련하여, 대회 참가 중 발생할 수 있는 건강상의 문제에 대한 충분한 고려와 준비를 하였으며, 대회 도중 발생하는 모든 건강상의 문제는 전적으로 본인의 책임임을 인정합니다. <br/>
-                      이에 따라, 본인은 다음과 같은 사항을 이해하고 동의합니다.<br/>
-                      <div className="pl-5">
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-red-500 flex-shrink-0">※</span>
-                          <span className="text-red-500">고혈압, 심근경색, 심장질환, 당뇨 등 질병으로 인해 발생하는 사고나 사망에 대해서는 주최측이 어떠한 책임도 지지 않으며, 참가자는 이에 대해 보험 혜택을 받을 수 없습니다.</span>
+                      <span className="text-gray-700"><strong>참가자의 건강 상태 및 책임본인</strong> 참가자의 건강 상태 및 책임본인은 마라톤 대회 참가와 관련하여, 대회 참가 중 발생할 수 있는 건강상의 문제에 대한 충분한 고려와 준비를 하였으며, 대회 도중 발생하는 모든 건강상의 문제는 전적으로 본인의 책임임을 인정합니다. <br />
+                        이에 따라, 본인은 다음과 같은 사항을 이해하고 동의합니다.<br />
+                        <div className="pl-5">
+                          <div className="flex items-start space-x-2 mb-1">
+                            <span className="text-red-500 flex-shrink-0">※</span>
+                            <span className="text-red-500">고혈압, 심근경색, 심장질환, 당뇨 등 질병으로 인해 발생하는 사고나 사망에 대해서는 주최측이 어떠한 책임도 지지 않으며, 참가자는 이에 대해 보험 혜택을 받을 수 없습니다.</span>
+                          </div>
+                          <div className="flex items-start space-x-2 mb-1">
+                            <span className="text-red-500 flex-shrink-0">※</span>
+                            <span className="text-red-500">대회 도중 발생하는 부상, 사망, 기타 사고에 대해서는 주최측이 응급조치 외에는 어떠한 법적, 책임도 지지 않습니다.</span>
+                          </div>
                         </div>
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-red-500 flex-shrink-0">※</span>
-                          <span className="text-red-500">대회 도중 발생하는 부상, 사망, 기타 사고에 대해서는 주최측이 응급조치 외에는 어떠한 법적, 책임도 지지 않습니다.</span>
-                        </div>
-                      </div>
                       </span>
                     </div>
                     <div className="flex items-start space-x-2 mb-1">
@@ -257,7 +237,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                     <div className="flex items-start space-x-2 mb-2">
                       <span className="text-gray-700 flex-shrink-0"><strong>1.</strong></span>
                       <span className="text-gray-700"><strong>대회 중단 및 긴급 안전 조치에 대한 이해</strong> 대회 중단 및 긴급 안전 조치에 대한 이해대회 도중 예기치 못한 상황(예: 기상 악화, 긴급 사고 등) 발생 시, 주최측은 지자체 및 소방 당국과 협력하여 긴급 안전 대책 회의를 거쳐 대회를 중단할 수 있습니다.<br />
-                      이와 같은 경우에도 주최측은 대회 중단에 따른 참가자의 피해에 대해 어떠한 책임도 지지 않음을 동의합니다.</span>
+                        이와 같은 경우에도 주최측은 대회 중단에 따른 참가자의 피해에 대해 어떠한 책임도 지지 않음을 동의합니다.</span>
                     </div>
                     <div className="flex items-start space-x-2 mb-2">
                       <span className="text-gray-700 flex-shrink-0"><strong>2.</strong></span>
@@ -324,9 +304,9 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                         <span className="text-gray-700">참가신청한후에는 대회안내 홍보문자가 발송을 수락한다.</span>
                       </div>
                     </div>
-                    
+
                     <p className="mb-1">
-                      <strong>▣ 개인정보활용동의 ▣</strong> 
+                      <strong>▣ 개인정보활용동의 ▣</strong>
                     </p>
                     <div className="pl-5">
                       <p className="mb-2">개인정보보호법 제22조 및 정보통신망 이용촉진 및 정보보호 등에 관한 법률 제22조에 따라 타인에게 제공 활용 시 개인정보 제공자(정보주체)의 동의를 얻어야 하는 정보입니다. <br />
@@ -351,7 +331,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                       </div>
                       <p className="mb-1">(단, 다음과 같은 이유로 명시한 기간 동안 보존합니다.)</p>
                       <p className="mb-2"><strong>사용목적</strong> : 대회기록조회 ┃ 5년 ┃ 성명, 생년월일, 성별, 휴대폰번호, 주소</p>
-                    </div>                    
+                    </div>
 
                     <p className="mb-2">
                       <strong>▣ 제공 대상자 및 제공 이용목적 ▣</strong>
@@ -365,14 +345,14 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                         <div className="flex items-start space-x-2 mb-1">
                           <span className="text-gray-700 flex-shrink-0">-</span>
                           <span className="text-gray-700">귀사의 서비스 지원 업무 외 추후 귀사 및 관계사의 신규 사업 홍보및 상품 안내, 통신사업 등에 필요한 경우 본인에게 다양한 신상품 서비스 제공 및 귀사에서 판매하는 상품, 서비스 이용 및 홍보 본인에 대한 사은행사 및 판촉행사, 부가서비스 제공, 귀사 내부 시장조사 및 상품 개발연구, 추가 서비스 이용 권유, SMS서비스 제공 등 업무처리 위탁을 위해 위탁업체에 제공됩니다.<br />
-                          (우편물 · E-mail 발송업무, 배송업무, 회원유치, 신규 상품 판매 권유업무, 관계사 서비스 이용, 상담 및 예약업무 전화상담업무, 상품 및 서비스 관련 텔레마케팅, 고객만족도조사, 인터넷관련 서비스 업무, SMS 서비스제공 등)</span>
+                            (우편물 · E-mail 발송업무, 배송업무, 회원유치, 신규 상품 판매 권유업무, 관계사 서비스 이용, 상담 및 예약업무 전화상담업무, 상품 및 서비스 관련 텔레마케팅, 고객만족도조사, 인터넷관련 서비스 업무, SMS 서비스제공 등)</span>
                         </div>
                         <div className="flex items-start space-x-2 mb-1">
                           <span className="text-gray-700 flex-shrink-0">-</span>
                           <span className="text-gray-700">관계사 및 부가서비스 제공기관에 제공 귀사나 귀사의 관계사 또는 귀사의 제휴업체와 &quot;서비스&quot;의 효율적 제공을 위해 업무 제휴 및 관계된 업체가 위 기입란에 기재된 사항을 상호 공유 또는 활용</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start space-x-2 mb-2">
                         <span className="text-gray-700 flex-shrink-0">2.</span>
                         <span className="text-gray-700">고객 관심사에 부합되는 서비스 및 이벤트 기획, 정기간행물 발송, 이용회원 서비스 이용에 따른 본인 확인, 기념일 축하메세지 전달</span>
@@ -381,7 +361,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                         <p className="mb-1">웹페이지 접속 결과 분석에 따른 서비스 개선, 고객설문조사, 서비스 이용에 대한 통계 목적, 불량회원의 부정이용 방지 및 비인가 사용 방지</p>
                         <p className="mb-1">이벤트와 경품 당첨결과 안내 및 상품배송 · 발송 및 결제 추심, 고객상담 및 분쟁조정을 위한 기록보존, 공지사항 전달</p>
                       </div>
-                      
+
                       <div className="flex items-start space-x-2 mb-2">
                         <span className="text-gray-700 flex-shrink-0">3.</span>
                         <span className="text-gray-700">개인정보 보유, 이용기간 및 열람, 증명, 정정</span>
@@ -448,8 +428,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             {/* 동의 체크박스 */}
             <div className="flex items-center justify-center mb-6">
               <div className="flex items-center space-x-3">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="agreement-checkbox"
                   checked={isAgreed}
                   onChange={(e) => setIsAgreed(e.target.checked)}
@@ -465,24 +445,24 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <div className="flex flex-row gap-3 justify-center">
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${
-                  isAgreed
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed && (possibleToRequest !== false)
                     ? "bg-black text-white hover:bg-gray-800"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-                disabled={!isAgreed}
+                  }`}
+                disabled={!isAgreed || possibleToRequest === false}
+                title={possibleToRequest === false ? requestReason || undefined : undefined}
                 onClick={() => handleApplyClick("individual")}
               >
                 개인신청
               </button>
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${
-                  isAgreed
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed && (possibleToRequest !== false)
                     ? "bg-black text-white hover:bg-gray-800"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-                disabled={!isAgreed}
+                  }`}
+                disabled={!isAgreed || possibleToRequest === false}
+                title={possibleToRequest === false ? requestReason || undefined : undefined}
                 onClick={() => handleApplyClick("group")}
               >
                 단체신청

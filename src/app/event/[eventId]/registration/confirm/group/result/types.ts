@@ -16,6 +16,7 @@ export interface InnerUserRegistration {
   birth: string;
   phNum: string;
   email?: string; // 새로운 스키마에서 추가된 필드
+  eventCategoryId?: string;
   eventCategoryName: string;
   souvenir: SouvenirInfo[];
   amount: number;

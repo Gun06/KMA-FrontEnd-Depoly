@@ -235,7 +235,7 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
 };
 
 // 이벤트 상태 (대회등록에서 사용)
-export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED';
+export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
 
 // ===== 기념품 API 타입 =====
 

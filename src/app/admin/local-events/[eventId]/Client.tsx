@@ -138,7 +138,8 @@ export default function Client({ eventId }: { eventId: string }) {
   const toRegStatus = (status: LocalEventDetailResponse['eventStatus']): RegStatus => {
     if (status === 'OPEN') return '접수중';
     if (status === 'PENDING') return '비접수';
-    // CLOSED, FINAL_CLOSED는 모두 접수마감으로 처리
+    if (status === 'FINAL_CLOSED') return '내부마감';
+    // CLOSED는 접수마감으로 처리
     return '접수마감';
   };
 

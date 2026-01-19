@@ -211,7 +211,7 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
 // ===== 관리자 이벤트 목록 조회 API 타입 =====
 
 // 이벤트 상태
-export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED';
+export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
 
 // 관리자 이벤트 목록 조회 API 응답의 개별 이벤트
 export interface AdminEventItem {

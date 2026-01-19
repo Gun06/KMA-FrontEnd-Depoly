@@ -110,12 +110,14 @@ export function transformApiResponseToFormPrefill(
   // 신청 상태 변환 (eventStatus -> applyStatus)
   const eventStatusToApplyStatus = (
     status: string
-  ): '접수중' | '접수마감' | '비접수' => {
+  ): '접수중' | '접수마감' | '비접수' | '내부마감' => {
     switch (status) {
       case 'OPEN':
         return '접수중';
       case 'CLOSED':
         return '접수마감';
+      case 'FINAL_CLOSED':
+        return '내부마감';
       case 'PENDING':
       default:
         return '비접수';

@@ -481,6 +481,7 @@ export default function SchedulePage() {
                             if (status === 'OPEN') return '접수중';
                             if (status === 'PENDING') return '비접수';
                             if (status === 'CLOSED') return '접수마감';
+                            if (status === 'FINAL_CLOSED') return '내부마감';
                             return '상태불명'; // 예상치 못한 상태 값의 경우
                           };
                           

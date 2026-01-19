@@ -69,6 +69,7 @@ export default function EventsClient({
     const normalized = urlStatus.toLowerCase();
     if (['ing', 'open', 'opening'].includes(normalized)) return '접수중';
     if (['done', 'closed'].includes(normalized)) return '접수마감';
+    if (['final_closed', 'finalclosed'].includes(normalized)) return '내부마감';
     if (['none', 'pending'].includes(normalized)) return '비접수';
     return '';
   };
@@ -174,7 +175,9 @@ export default function EventsClient({
           ? 'ing'
           : s === '접수마감'
             ? 'done'
-            : 'none'
+            : s === '내부마감'
+              ? 'final_closed'
+              : 'none'
         : '',
     });
   };

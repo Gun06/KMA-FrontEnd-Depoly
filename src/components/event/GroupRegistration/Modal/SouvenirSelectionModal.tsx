@@ -25,91 +25,80 @@ export default function SouvenirSelectionModal({
   const [selectedSouvenirs, setSelectedSouvenirs] = useState<Array<{souvenirId: string, souvenirName: string, size: string}>>(currentSelection);
 
   useEffect(() => {
-    // 모달이 열릴 때, 실제 기념품이 1개 이상 있으면 모두 자동 선택
-    if (isOpen && eventInfo) {
-      // 거리와 세부종목 이름을 함께 고려해서 찾기
-      let selectedCategory = eventInfo.categorySouvenirList.find(c => {
-        if (distance) {
-          return c.categoryName === categoryName && c.distance === distance;
-        }
-        return c.categoryName === categoryName;
-      });
+    // 모달이 열릴 때 currentSelection을 우선 사용
+    if (isOpen) {
+      // currentSelection이 있으면 그것을 사용 (수정 모드에서 기존 선택 유지)
+      if (currentSelection && currentSelection.length > 0) {
+        setSelectedSouvenirs(currentSelection);
+        return;
+      }
+      
+      // currentSelection이 없고 eventInfo가 있으면 자동 선택
+      if (eventInfo) {
+        // 거리와 세부종목 이름을 함께 고려해서 찾기
+        let selectedCategory = eventInfo.categorySouvenirList.find(c => {
+          if (distance) {
+            return c.categoryName === categoryName && c.distance === distance;
+          }
+          return c.categoryName === categoryName;
+        });
 
-      // 매칭이 안 된 경우, categoryName에 "|"가 포함되어 있으면 파싱해서 다시 시도
-      if (!selectedCategory && categoryName.includes('|')) {
-        const parts = categoryName.split('|').map((p: string) => p.trim());
-        if (parts.length >= 2) {
-          const possibleDistance = parts[0];
-          const possibleCategoryName = parts.slice(1).join(' | ').trim();
-          
-          // 거리와 세부종목으로 다시 매칭 시도
-          selectedCategory = eventInfo.categorySouvenirList.find(c => {
-            return c.categoryName === possibleCategoryName && c.distance === possibleDistance;
+        // 매칭이 안 된 경우, categoryName에 "|"가 포함되어 있으면 파싱해서 다시 시도
+        if (!selectedCategory && categoryName.includes('|')) {
+          const parts = categoryName.split('|').map((p: string) => p.trim());
+          if (parts.length >= 2) {
+            const possibleDistance = parts[0];
+            const possibleCategoryName = parts.slice(1).join(' | ').trim();
+            
+            // 거리와 세부종목으로 다시 매칭 시도
+            selectedCategory = eventInfo.categorySouvenirList.find(c => {
+              return c.categoryName === possibleCategoryName && c.distance === possibleDistance;
+            });
+            
+            // 여전히 안 되면 거리만으로 시도
+            if (!selectedCategory) {
+              selectedCategory = eventInfo.categorySouvenirList.find(c => {
+                return c.distance === possibleDistance;
+              });
+            }
+          }
+        }
+
+        const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
+        
+        // "기념품 없음"을 제외한 실제 기념품 목록
+        const actualSouvenirs = availableSouvenirs.filter(souvenir => {
+          const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
+                              souvenir.souvenirId === '0' || 
+                              souvenir.souvenirId === '1' || 
+                              souvenir.souvenirId === '2';
+          return !isNoSouvenir;
+        });
+
+        // 실제 기념품이 1개 이상 있는 경우, 모두 필수 선택
+        if (actualSouvenirs.length >= 1) {
+          // 모든 실제 기념품을 자동으로 선택
+          const autoSelected = actualSouvenirs.map(souvenir => {
+            // 첫 번째 사이즈를 자동으로 선택
+            const defaultSize = souvenir.souvenirSize?.[0] || '';
+            return { 
+              souvenirId: souvenir.souvenirId, 
+              souvenirName: souvenir.souvenirName, 
+              size: defaultSize 
+            };
           });
           
-          // 여전히 안 되면 거리만으로 시도
-          if (!selectedCategory) {
-            selectedCategory = eventInfo.categorySouvenirList.find(c => {
-              return c.distance === possibleDistance;
-            });
-          }
+          setSelectedSouvenirs(autoSelected);
+        } else {
+          // 기념품이 없는 경우 빈 배열
+          setSelectedSouvenirs([]);
         }
       }
-
-      const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
-      
-      // "기념품 없음"을 제외한 실제 기념품 목록
-      const actualSouvenirs = availableSouvenirs.filter(souvenir => {
-        const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
-                            souvenir.souvenirId === '0' || 
-                            souvenir.souvenirId === '1' || 
-                            souvenir.souvenirId === '2';
-        return !isNoSouvenir;
-      });
-
-      // 실제 기념품이 1개 이상 있는 경우, 모두 필수 선택
-      if (actualSouvenirs.length >= 1) {
-        // 모든 실제 기념품을 자동으로 선택 (이미 선택된 것은 유지, 없는 것은 추가)
-        const autoSelected = actualSouvenirs.map(souvenir => {
-          const existing = currentSelection.find(s => s.souvenirId === souvenir.souvenirId);
-          if (existing) {
-            // 이미 선택된 경우, 사이즈가 없으면 기본 사이즈 설정
-            if (!existing.size && souvenir.souvenirSize && souvenir.souvenirSize.length > 0) {
-              return {
-                ...existing,
-                size: souvenir.souvenirSize[0]
-              };
-            }
-            return existing;
-          }
-          // 첫 번째 사이즈를 자동으로 선택
-          const defaultSize = souvenir.souvenirSize?.[0] || '';
-          return { 
-            souvenirId: souvenir.souvenirId, 
-            souvenirName: souvenir.souvenirName, 
-            size: defaultSize 
-          };
-        });
-        
-        // 기존 선택에 "기념품 없음"이 있으면 유지
-        const noSouvenirItems = currentSelection.filter(s => {
-          const souvenir = availableSouvenirs.find(a => a.souvenirId === s.souvenirId);
-          if (!souvenir) return false;
-          return souvenir.souvenirName === '기념품 없음' || 
-                 souvenir.souvenirId === '0' || 
-                 souvenir.souvenirId === '1' || 
-                 souvenir.souvenirId === '2';
-        });
-        
-        setSelectedSouvenirs([...autoSelected, ...noSouvenirItems]);
-      } else {
-        // 기념품이 없는 경우 기존 선택 유지
-        setSelectedSouvenirs(currentSelection);
-      }
     } else {
-      setSelectedSouvenirs(currentSelection);
+      // 모달이 닫히면 초기화
+      setSelectedSouvenirs([]);
     }
-  }, [currentSelection, isOpen, eventInfo, categoryName, distance]);
+  }, [isOpen, currentSelection, eventInfo, categoryName, distance]);
 
   if (!isOpen) return null;
 

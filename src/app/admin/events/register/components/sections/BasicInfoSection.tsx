@@ -118,6 +118,7 @@ export default function BasicInfoSection({
               { value: '접수중', label: '접수중' },
               { value: '비접수', label: '비접수' },
               { value: '접수마감', label: '접수마감' },
+              { value: '내부마감', label: '내부 마감' },
             ]}
           />
         </div>

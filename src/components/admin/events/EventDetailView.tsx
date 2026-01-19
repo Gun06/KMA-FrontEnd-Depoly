@@ -139,6 +139,7 @@ export default function EventDetailView({
   const toRegStatus = (status: string): RegStatus => {
     if (status === 'OPEN' || status === 'ONGOING') return '접수중';
     if (status === 'PENDING') return '비접수';
+    if (status === 'FINAL_CLOSED') return '내부마감';
     // CLOSED, COMPLETED, 그 외는 모두 접수마감으로 처리
     return '접수마감';
   };

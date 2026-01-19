@@ -43,13 +43,15 @@ export class EventDataTransformer {
    * 대회 기본 정보 생성
    */
   private static createEventInfo(data: EventCreatePayload): EventInfo {
-    // applyStatus(접수중/비접수/접수마감)를 서버 eventStatus로 매핑
-    const eventStatus: 'OPEN' | 'PENDING' | 'CLOSED' =
+    // applyStatus(접수중/비접수/접수마감/내부마감)를 서버 eventStatus로 매핑
+    const eventStatus: 'OPEN' | 'PENDING' | 'CLOSED' | 'FINAL_CLOSED' =
       data.applyStatus === '접수중'
         ? 'OPEN'
         : data.applyStatus === '접수마감'
           ? 'CLOSED'
-          : 'PENDING';
+          : data.applyStatus === '내부마감'
+            ? 'FINAL_CLOSED'
+            : 'PENDING';
 
     return {
       registMaximum: data.maxParticipants || 0,

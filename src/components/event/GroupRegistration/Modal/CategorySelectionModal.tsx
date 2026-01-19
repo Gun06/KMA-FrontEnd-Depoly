@@ -20,25 +20,39 @@ export default function CategorySelectionModal({
   currentDistance = '',
   currentCategory = ''
 }: CategorySelectionModalProps) {
-  const [selectedDistance, setSelectedDistance] = useState<string>(currentDistance);
-  const [selectedCategory, setSelectedCategory] = useState<string>(currentCategory);
+  const [selectedDistance, setSelectedDistance] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   // 모달이 열릴 때 현재 선택값으로 초기화
   useEffect(() => {
     if (isOpen) {
-      setSelectedDistance(currentDistance);
-      setSelectedCategory(currentCategory);
+      // 모달이 열릴 때마다 currentDistance와 currentCategory로 강제 초기화
+      const distance = String(currentDistance || '').trim();
+      const category = String(currentCategory || '').trim();
+      // 상태 업데이트를 강제로 실행
+      setSelectedDistance(prev => {
+        if (prev !== distance) return distance;
+        return prev;
+      });
+      setSelectedCategory(prev => {
+        if (prev !== category) return category;
+        return prev;
+      });
+    } else {
+      // 모달이 닫히면 초기화
+      setSelectedDistance('');
+      setSelectedCategory('');
     }
   }, [isOpen, currentDistance, currentCategory]);
 
   // 거리 목록 추출
   const distances = useMemo(() => {
     if (!eventInfo) return [];
-    
+
     if (eventInfo.distances && eventInfo.distances.length > 0) {
       return eventInfo.distances;
     }
-    
+
     const distanceSet = new Set<string>();
     eventInfo.categorySouvenirList.forEach(category => {
       if (category.distance) {
@@ -51,7 +65,7 @@ export default function CategorySelectionModal({
   // 선택된 거리의 세부종목 목록
   const categoriesByDistance = useMemo(() => {
     if (!selectedDistance || !eventInfo) return [];
-    
+
     return eventInfo.categorySouvenirList.filter(
       category => category.distance === selectedDistance
     );
@@ -60,7 +74,15 @@ export default function CategorySelectionModal({
   // 거리 선택 핸들러
   const handleDistanceSelect = (distance: string) => {
     setSelectedDistance(distance);
-    setSelectedCategory(''); // 거리 변경 시 세부종목 초기화
+    // 거리 변경 시 세부종목 초기화 (사용자가 직접 클릭한 경우)
+    // 단, 현재 선택된 세부종목이 새로운 거리에도 존재하면 유지
+    const newCategories = eventInfo?.categorySouvenirList.filter(
+      c => c.distance === distance
+    ) || [];
+    const categoryExists = newCategories.some(c => c.categoryName === selectedCategory);
+    if (!categoryExists) {
+      setSelectedCategory('');
+    }
   };
 
   // 세부종목 선택 핸들러
@@ -102,7 +124,7 @@ export default function CategorySelectionModal({
               <div className="px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                 <div className="text-sm font-medium text-gray-900">거리</div>
               </div>
-              <div 
+              <div
                 className="p-2 h-[150px] overflow-y-auto bg-white"
                 style={{
                   scrollbarWidth: 'thin',
@@ -120,11 +142,10 @@ export default function CategorySelectionModal({
                         key={distance}
                         type="button"
                         onClick={() => handleDistanceSelect(distance)}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          selectedDistance === distance
-                            ? 'bg-blue-500 text-white font-medium'
-                            : 'bg-white text-gray-900 hover:bg-gray-50'
-                        }`}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${selectedDistance === distance
+                          ? 'bg-blue-500 text-white font-medium'
+                          : 'bg-white text-gray-900 hover:bg-gray-50'
+                          }`}
                       >
                         {distance}
                       </button>
@@ -139,7 +160,7 @@ export default function CategorySelectionModal({
               <div className="px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                 <div className="text-sm font-medium text-gray-900">세부종목</div>
               </div>
-              <div 
+              <div
                 className="p-2 h-[150px] overflow-y-auto bg-white"
                 style={{
                   scrollbarWidth: 'thin',
@@ -159,11 +180,10 @@ export default function CategorySelectionModal({
                         key={category.categoryId}
                         type="button"
                         onClick={() => handleCategorySelect(category.categoryName)}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          selectedCategory === category.categoryName
-                            ? 'bg-blue-500 text-white font-medium'
-                            : 'bg-white text-gray-900 hover:bg-gray-50'
-                        }`}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${selectedCategory === category.categoryName
+                          ? 'bg-blue-500 text-white font-medium'
+                          : 'bg-white text-gray-900 hover:bg-gray-50'
+                          }`}
                       >
                         {category.categoryName}
                       </button>
@@ -186,11 +206,10 @@ export default function CategorySelectionModal({
           <button
             onClick={handleConfirm}
             disabled={!selectedDistance || !selectedCategory}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
-              selectedDistance && selectedCategory
-                ? 'bg-blue-500 hover:bg-blue-600'
-                : 'bg-gray-300 cursor-not-allowed'
-            }`}
+            className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors ${selectedDistance && selectedCategory
+              ? 'bg-blue-500 hover:bg-blue-600'
+              : 'bg-gray-300 cursor-not-allowed'
+              }`}
           >
             확인
           </button>

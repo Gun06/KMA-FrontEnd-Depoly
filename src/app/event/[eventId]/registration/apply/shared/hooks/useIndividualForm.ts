@@ -132,38 +132,23 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           }
           
           // category가 있으면 해당 category의 distance 찾기
-          // eventCategoryName이 "10km | 너양야아아아" 형식일 수 있으므로 분리 필요
+          // eventCategoryName이 "TEST|테스트1 마라톤" 형식일 수 있으므로 분리 필요
+          // 항상 | 기준으로 앞부분은 거리, 뒷부분은 세부종목
           const fullCategoryName = editData.eventCategoryName || '';
           let categoryName = fullCategoryName;
           let selectedDistance = '';
           
-          // eventCategoryName에서 | 기준으로 분리 (예: "10km | 너양야아아아")
+          // eventCategoryName에서 | 기준으로 분리 (예: "TEST|테스트1 마라톤", "10km|테스트1 마라톤")
           if (fullCategoryName.includes('|')) {
             const parts = fullCategoryName.split('|').map((p: string) => p.trim());
-            if (parts.length > 0) {
-              // 첫 번째 부분이 거리 형식인지 확인 (예: "10km", "3km" 등)
-              const firstPart = parts[0];
-              if (firstPart.match(/^\d+km$/i)) {
-                selectedDistance = firstPart;
-                // 나머지 부분을 세부종목 이름으로 사용
-                categoryName = parts.slice(1).join(' | ').trim();
-              } else {
-                // 첫 번째 부분이 거리가 아니면 전체를 categoryName으로 사용
-                categoryName = fullCategoryName;
-              }
-            }
-          }
-          
-          // selectedDistance가 아직 없고 eventCategoryName에서 추출하지 못한 경우에만 찾기
-          // 하지만 같은 이름의 세부종목이 여러 거리에 있을 수 있으므로, 이 방법은 최후의 수단
-          // 가능하면 eventCategoryName에서 거리 정보를 포함하도록 API 응답을 수정하는 것이 좋음
-          // 단, 이미 추출한 selectedDistance가 있으면 그대로 사용 (덮어쓰지 않음)
-          if (!selectedDistance && categoryName && eventInfo) {
-            const categoryInfo = eventInfo.categorySouvenirList.find(
-              c => c.categoryName === categoryName
-            );
-            if (categoryInfo && categoryInfo.distance) {
-              selectedDistance = categoryInfo.distance;
+            if (parts.length >= 2) {
+              // 항상 첫 번째 부분은 거리, 나머지는 세부종목
+              selectedDistance = parts[0];
+              categoryName = parts.slice(1).join(' | ').trim();
+            } else if (parts.length === 1) {
+              // |가 있지만 분리 결과가 1개인 경우 (예: "TEST|")
+              selectedDistance = parts[0];
+              categoryName = '';
             }
           }
           
@@ -190,35 +175,25 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             size: finalSouvenirSize,
             // 수정 모드에서 기존 기념품들을 selectedSouvenirs 배열로 변환
             selectedSouvenirs: (() => {
-              const result = editData.souvenir && editData.souvenir.length > 0 ? editData.souvenir.map((item: any) => {
-                // 이벤트 정보에서 실제 기념품 이름 찾기 (거리와 세부종목 이름을 함께 고려)
-                let souvenirName = item.souvenirName || '기념품';
-                if (eventInfo && categoryName) {
-                  const category = eventInfo.categorySouvenirList.find(c => {
-                    if (selectedDistance) {
-                      return c.categoryName === categoryName && c.distance === selectedDistance;
-                    }
-                    return c.categoryName === categoryName;
-                  });
-                  if (category) {
-                    const souvenir = category.categorySouvenirPair.find(s => s.souvenirId === item.souvenirId);
-                    if (souvenir) {
-                      souvenirName = souvenir.souvenirName;
-                    }
-                  }
-                }
-                return {
-                  souvenirId: item.souvenirId || finalSouvenirId,
-                  souvenirName: souvenirName,
-                  size: item.souvenirSize || finalSouvenirSize
-                };
-              }) : (finalSouvenirId ? [{
-                souvenirId: finalSouvenirId,
-                souvenirName: '기념품',
-                size: finalSouvenirSize
-              }] : []);
+              // editData.souvenir 배열이 있으면 그대로 사용 (API 응답 그대로)
+              if (editData.souvenir && Array.isArray(editData.souvenir) && editData.souvenir.length > 0) {
+                return editData.souvenir.map((item: any) => ({
+                  souvenirId: item.souvenirId || '',
+                  souvenirName: item.souvenirName || '기념품',
+                  size: item.souvenirSize || ''
+                }));
+              }
               
-              return result;
+              // editData.souvenir 배열이 없으면 첫 번째 기념품으로 변환 (하위 호환성)
+              if (finalSouvenirId) {
+                return [{
+                  souvenirId: finalSouvenirId,
+                  souvenirName: '기념품',
+                  size: finalSouvenirSize
+                }];
+              }
+              
+              return [];
             })(),
             paymentMethod: editData.paymentType === 'ACCOUNT_TRANSFER' ? 'bank_transfer' : 'card',
             depositorName: editData.paymenterName || '',
