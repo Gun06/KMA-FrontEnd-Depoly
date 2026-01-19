@@ -28,6 +28,7 @@ const mapStatus = (v: string): RegStatus | '' => {
   if (v === '접수중') return '접수중';
   if (v === '접수마감') return '접수마감';
   if (v === '비접수') return '비접수';
+  if (v === '내부마감') return '내부마감';
   return '';
 };
 
@@ -64,9 +65,9 @@ export const BoardEventList = ({
   const router = useRouter();
 
   const [q, setQ] = React.useState('');
-  const [status, setStatus] = React.useState<'접수중' | '접수마감' | '비접수' | ''>('');
+  const [status, setStatus] = React.useState<RegStatus | ''>('');
   const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>('');
-  const [year, setYear] = React.useState<string>('');        
+  const [year, setYear] = React.useState<string>('');
   const [page, setPage] = React.useState(1);
   const pageSize = 16;
 
@@ -123,7 +124,7 @@ export const BoardEventList = ({
   const listResult = useEventList(page, pageSize, Boolean(!hasSearchConditions));
 
   // 조건에 따라 결과 선택
-  const { data: eventListData, isLoading, error } = hasSearchConditions 
+  const { data: eventListData, isLoading, error } = hasSearchConditions
     ? searchResult as { data: EventListResponse | undefined; isLoading: boolean; error: Error | null; }
     : listResult as { data: EventListResponse | undefined; isLoading: boolean; error: Error | null; };
 
@@ -230,10 +231,10 @@ export const BoardEventList = ({
   // 대회 데이터에서 실제 있는 년도만 추출
   const allEventsQuery = useEventList(1, 1000, true);
   const allEventsData = allEventsQuery.data as EventListResponse | undefined;
-  
+
   const availableYears = React.useMemo(() => {
     if (!allEventsData?.content) return [];
-    
+
     const years = new Set<number>();
     allEventsData.content.forEach((event: EventListItem) => {
       if (event.startDate) {
@@ -241,12 +242,12 @@ export const BoardEventList = ({
         years.add(year);
       }
     });
-    
+
     const currentYear = new Date().getFullYear();
     const yearList = Array.from(years)
       .filter(y => y <= currentYear + 1) // 올해 +1까지
       .sort((a, b) => b - a); // 내림차순
-    
+
     return [
       { label: "전체", value: "" },
       ...yearList.map(y => ({ label: String(y), value: String(y) }))
@@ -256,21 +257,21 @@ export const BoardEventList = ({
   const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
   const presetKey = (filterPresetKey ?? ('참가신청 / 기본' as keyof typeof PRESETS));
   const originalPreset = PRESETS[presetKey]?.props;
-  
+
   // 년도 필드만 동적으로 수정
   const preset = React.useMemo(() => {
     if (!originalPreset) return undefined;
     return {
       ...originalPreset,
-      fields: originalPreset.fields?.map(field => 
-        field.label === '년도' 
+      fields: originalPreset.fields?.map(field =>
+        field.label === '년도'
           ? { ...field, options: availableYears }
           : field
       ),
     };
   }, [originalPreset, availableYears]);
 
-const filterControls = (preset || tableCtaLabel) && (
+  const filterControls = (preset || tableCtaLabel) && (
     <div className="flex flex-wrap items-center gap-2">
       {preset && (
         <FilterBar
