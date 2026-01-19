@@ -390,7 +390,7 @@ export default function GroupApplicationConfirmResultPage() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const statusResponse = await checkStatusToRequest(eventId);
+        const statusResponse = await checkStatusToRequest(eventId, 'UPDATE');
         setPossibleToRequest(statusResponse.possibleToRequest);
         setRequestReason(statusResponse.reason || null);
       } catch {

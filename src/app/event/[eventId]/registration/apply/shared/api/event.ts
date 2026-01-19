@@ -27,10 +27,16 @@ export interface EventStatusResponse {
   reason?: string;
 }
 
+// Registration Feature 타입
+export type RegistrationFeature = 'CREATE' | 'UPDATE' | 'REFUND';
+
 // 대회 신청 가능 여부 확인
-export const checkStatusToRequest = async (eventId: string): Promise<EventStatusResponse> => {
+export const checkStatusToRequest = async (
+  eventId: string, 
+  feature: RegistrationFeature = 'CREATE'
+): Promise<EventStatusResponse> => {
   try {
-    const url = `${API_BASE_URL}/api/v1/public/check-status-to-request/${eventId}`;
+    const url = `${API_BASE_URL}/api/v1/public/check-status-to-request/${eventId}?feature=${feature}`;
 
     const response = await fetch(url, {
       headers: { Accept: "application/json" },

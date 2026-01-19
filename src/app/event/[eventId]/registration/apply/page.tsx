@@ -17,6 +17,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [eventStatus, setEventStatus] = useState<string | null>(null);
 
   useEffect(() => {
     // 페이지 로딩 완료 시 로딩 상태 해제
@@ -32,7 +33,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     const fetchStatus = async () => {
       try {
         setIsStatusLoading(true);
-        const statusResponse = await checkStatusToRequest(params.eventId);
+        const statusResponse = await checkStatusToRequest(params.eventId, 'CREATE');
         setPossibleToRequest(statusResponse.possibleToRequest);
         setRequestReason(statusResponse.reason || null);
       } catch {
@@ -43,6 +44,33 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     };
 
     fetchStatus();
+  }, [params.eventId]);
+
+  // 이벤트 상태 명시적으로 로드 (접수마감/내부마감 구분용)
+  useEffect(() => {
+    const loadEventStatus = async () => {
+      const eventId = params.eventId;
+      if (!eventId) return;
+      const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+      try {
+        const eventRes = await fetch(`${base}/api/v1/public/event/${eventId}`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+        if (!eventRes.ok) return;
+        const eventData = await eventRes.json();
+        // 이벤트 상태 추출
+        if (eventData?.eventInfo?.eventStatus) {
+          setEventStatus(eventData.eventInfo.eventStatus);
+        } else if (eventData?.eventStatus) {
+          setEventStatus(eventData.eventStatus);
+        }
+      } catch (error) {
+        // 실패 시 무시
+      }
+    };
+
+    loadEventStatus();
   }, [params.eventId]);
 
   const showAlert = (message: string) => {
@@ -56,18 +84,30 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
       return;
     }
 
+    // 내부마감 체크 (최우선)
+    if (eventStatus === 'FINAL_CLOSED') {
+      showAlert("현재 대회 신청 및 수정 일정이 마감되어 신청할 수 없습니다.");
+      return;
+    }
+
+    // 접수마감 체크
+    if (eventStatus === 'CLOSED') {
+      showAlert("현재 접수가 마감되어 신청할 수 없습니다.");
+      return;
+    }
+
+    // possibleToRequest API 체크
+    if (possibleToRequest === false) {
+      const reason = requestReason || "현재 신청이 불가능합니다.";
+      showAlert(reason);
+      return;
+    }
+
     // 상태를 아직 못 불러온 경우에는 기본적으로 진행 허용
     if (possibleToRequest === null && isStatusLoading) {
       router.push(
         `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
       );
-      return;
-    }
-
-    // 신청 불가능한 경우
-    if (possibleToRequest === false) {
-      const reason = requestReason || "현재 신청이 불가능합니다.";
-      showAlert(reason);
       return;
     }
 
@@ -445,24 +485,26 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <div className="flex flex-row gap-3 justify-center">
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed && (possibleToRequest !== false)
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed &&
+                    possibleToRequest !== false &&
+                    eventStatus !== 'CLOSED' &&
+                    eventStatus !== 'FINAL_CLOSED'
                     ? "bg-black text-white hover:bg-gray-800"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-300 text-gray-500 cursor-pointer"
                   }`}
-                disabled={!isAgreed || possibleToRequest === false}
-                title={possibleToRequest === false ? requestReason || undefined : undefined}
                 onClick={() => handleApplyClick("individual")}
               >
                 개인신청
               </button>
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed && (possibleToRequest !== false)
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed &&
+                    possibleToRequest !== false &&
+                    eventStatus !== 'CLOSED' &&
+                    eventStatus !== 'FINAL_CLOSED'
                     ? "bg-black text-white hover:bg-gray-800"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-300 text-gray-500 cursor-pointer"
                   }`}
-                disabled={!isAgreed || possibleToRequest === false}
-                title={possibleToRequest === false ? requestReason || undefined : undefined}
                 onClick={() => handleApplyClick("group")}
               >
                 단체신청

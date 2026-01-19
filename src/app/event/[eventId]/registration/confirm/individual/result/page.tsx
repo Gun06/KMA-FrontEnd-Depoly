@@ -153,7 +153,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const statusResponse = await checkStatusToRequest(params.eventId);
+        const statusResponse = await checkStatusToRequest(params.eventId, 'UPDATE');
         setPossibleToRequest(statusResponse.possibleToRequest);
         setRequestReason(statusResponse.reason || null);
       } catch {
