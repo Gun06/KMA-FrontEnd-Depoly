@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/common/Button/Button';
 import TextEditor from '@/components/common/TextEditor/TextEditor';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 import type { Editor } from '@tiptap/react';
 import { useCreateHomepageFaq, faqKeys } from '@/hooks/useFaqs';
 
@@ -15,6 +17,10 @@ export default function Page() {
   const [questionContent, setQuestionContent] = useState('');
   const [answerContent, setAnswerContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [createdFaqId, setCreatedFaqId] = useState<string>('');
   
   const questionEditorRef = useRef<Editor | null>(null);
   const answerEditorRef = useRef<Editor | null>(null);
@@ -51,11 +57,13 @@ export default function Page() {
     const answerText = tempDiv.textContent || tempDiv.innerText || '';
     
     if (!questionText.trim()) {
-      alert('질문을 입력해주세요.');
+      setErrorMessage('질문을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
     if (!answerText.trim()) {
-      alert('답변을 입력해주세요.');
+      setErrorMessage('답변을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
     
@@ -77,15 +85,14 @@ export default function Page() {
       // 캐시 무효화
       await queryClient.invalidateQueries({ queryKey: faqKeys.homepage() });
       
-      // 즉시 상세 페이지로 이동
-      router.replace(`/admin/boards/faq/main/${result.id}`);
+      // 생성된 FAQ ID 저장
+      setCreatedFaqId(result.id);
       
-      // 이동 후 성공 메시지 표시
-      setTimeout(() => {
-        alert('FAQ가 성공적으로 저장되었습니다!');
-      }, 100);
-    } catch (error) {
-      alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      // 성공 모달 표시
+      setShowSuccessModal(true);
+    } catch (_error) {
+      setErrorMessage('저장 중 오류가 발생했습니다.\n다시 시도해주세요.');
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +162,29 @@ export default function Page() {
           <div className="h-px mb-4 bg-gray-200 w-full" />
         </div>
       </div>
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          if (createdFaqId) {
+            router.replace(`/admin/boards/faq/main/${createdFaqId}`);
+          } else {
+            router.replace('/admin/boards/faq/main');
+          }
+        }}
+        title="등록 완료!"
+        message="FAQ가 성공적으로 저장되었습니다."
+      />
+
+      {/* 에러 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="오류"
+        message={errorMessage}
+      />
     </div>
   );
 }

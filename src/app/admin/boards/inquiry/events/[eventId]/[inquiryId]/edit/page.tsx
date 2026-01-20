@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { useInquiryDetail, useCreateAnswer } from "@/hooks/useInquiries";
 import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
@@ -20,12 +22,18 @@ export default function Page() {
   // 답변 작성 API 훅
   const createAnswerMutation = useCreateAnswer(inquiryId);
   
+  // ✅ initialContent는 한 번만 설정 (리렌더링 방지)
+  const [initialAnswer] = React.useState("<p>답변을 작성해주세요...</p>");
   const [answer, setAnswer] = React.useState("<p>답변을 작성해주세요...</p>");
   const [isSaving, setIsSaving] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const save = async () => {
     if (!answer || answer.trim() === "<p>답변을 작성해주세요...</p>") {
-      alert("답변 내용을 입력해주세요.");
+      setErrorMessage("답변 내용을 입력해주세요.");
+      setShowErrorModal(true);
       return;
     }
 
@@ -45,10 +53,11 @@ export default function Page() {
       queryClient.invalidateQueries({ queryKey: inquiryKeys.detail(inquiryId) });
       queryClient.invalidateQueries({ queryKey: inquiryKeys.event(eventId) });
 
-      alert("답변이 성공적으로 등록되었습니다.");
-      router.replace(`/admin/boards/inquiry/events/${eventId}/${inquiryId}`);
+      // 성공 모달 표시
+      setShowSuccessModal(true);
     } catch (_error) {
-      alert("답변 저장에 실패했습니다. 다시 시도해주세요.");
+      setErrorMessage("답변 저장에 실패했습니다.\n다시 시도해주세요.");
+      setShowErrorModal(true);
     } finally {
       setIsSaving(false);
     }
@@ -75,8 +84,9 @@ export default function Page() {
   }
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-      <div className="flex justify-end gap-2">
+    <>
+      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
+        <div className="flex justify-end gap-2">
         <Button 
           tone="white" 
           variant="outline" 
@@ -96,8 +106,33 @@ export default function Page() {
 
       <section className="rounded-xl border bg-white p-6 space-y-3">
         <h1 className="text-lg font-semibold">{(inquiryDetail as { title?: string })?.title || "문의사항"}</h1>
-        <TextEditor initialContent={answer} onChange={setAnswer} height="420px" imageDomainType="QUESTION" />
+        <TextEditor 
+          initialContent={initialAnswer} 
+          onChange={setAnswer} 
+          height="420px" 
+          imageDomainType="ANSWER" 
+        />
       </section>
     </main>
+
+    {/* 성공 모달 */}
+    <SuccessModal
+      isOpen={showSuccessModal}
+      onClose={() => {
+        setShowSuccessModal(false);
+        router.replace(`/admin/boards/inquiry/events/${eventId}/${inquiryId}`);
+      }}
+      title="답변 등록 완료!"
+      message="답변이 성공적으로 등록되었습니다."
+    />
+
+    {/* 실패 모달 */}
+    <ErrorModal
+      isOpen={showErrorModal}
+      onClose={() => setShowErrorModal(false)}
+      title="오류"
+      message={errorMessage}
+    />
+    </>
   );
 }

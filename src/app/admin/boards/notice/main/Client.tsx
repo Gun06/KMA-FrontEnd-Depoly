@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/common/Button/Button";
 import FilterBar from "@/components/common/filters/FilterBar";
 import NoticeEventTable from "@/components/admin/boards/notice/NoticeEventTable";
+import ConfirmModal from "@/components/common/Modal/ConfirmModal";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { useHomepageNotices, useNoticeCategories } from "@/hooks/useNotices";
 import { deleteNotice, searchHomepageNotices, NoticeSearchParams } from "@/services/admin/notices";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,8 +46,8 @@ function formatDateOnly(dateString: string): string {
 type Sort = "new" | "hit";
 const PAGE_SIZE = 20;
 
-// 변환된 행 타입 정의
-type TransformedRow = {
+// 변환된 행 타입 정의 (미사용)
+type _TransformedRow = {
   id: number | string; // UUID 문자열 또는 숫자 ID 지원
   type: NoticeType;
   title: string;
@@ -66,6 +69,14 @@ export default function Client() {
   const [rev, setRev] = React.useState(0);
   const [searchData, setSearchData] = React.useState<NoticeListResponse | null>(null);
   const [_isSearching, setIsSearching] = React.useState(false);
+
+  // 모달 상태
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [deleteTargetId, setDeleteTargetId] = React.useState<string | number | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   // 카테고리 목록 조회
   const { data: categories } = useNoticeCategories() as {
@@ -114,7 +125,7 @@ export default function Client() {
       try {
         const result = await searchHomepageNotices(searchParams);
         setSearchData(result);
-      } catch (error) {
+      } catch (_error) {
         setSearchData(null);
       } finally {
         setIsSearching(false);
@@ -169,15 +180,21 @@ export default function Client() {
 
     // 서버에서 이미 필터링 및 정렬된 결과를 반환
     return { rows: transformedRows, total: dataSource.totalElements || 0 };
-  }, [searchData, noticeListData, args]);
+  }, [searchData, noticeListData]);
 
   const norm = (s?: string) => (s ?? "").replace(/\s/g, "");
 
-  const handleDelete = async (id: number | string) => {
-    if (!confirm("이 공지를 삭제할까요?")) return;
+  const handleDelete = (id: number | string) => {
+    setDeleteTargetId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     
+    setIsDeleting(true);
     try {
-      await deleteNotice(String(id));
+      await deleteNotice(String(deleteTargetId));
       
       // 캐시 무효화로 즉시 UI 업데이트
       queryClient.invalidateQueries({ queryKey: ['notice', 'homepage'] });
@@ -188,8 +205,17 @@ export default function Client() {
       const lastPage = Math.max(1, Math.ceil(newTotal / PAGE_SIZE));
       if (page > lastPage) setPage(lastPage);
       setRev((v) => v + 1);
-    } catch (error) {
-      alert('공지사항 삭제에 실패했습니다.');
+      
+      // 성공 처리
+      setShowDeleteConfirm(false);
+      setDeleteTargetId(null);
+      setShowSuccessModal(true);
+    } catch (_error) {
+      console.error("Failed to delete notice:", _error);
+      setErrorMessage("공지사항 삭제에 실패했습니다.\n다시 시도해주세요.");
+      setShowErrorModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -284,6 +310,38 @@ export default function Client() {
         linkForRow={(r) => `/admin/boards/notice/main/${r.id}`}
         pagination={{ page, pageSize: PAGE_SIZE, total, onChange: setPage }}
         onDelete={handleDelete}
+      />
+
+      {/* 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteTargetId(null);
+        }}
+        onConfirm={confirmDelete}
+        title="공지사항 삭제"
+        message="이 공지사항을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="삭제 완료!"
+        message="공지사항이 성공적으로 삭제되었습니다."
+      />
+
+      {/* 실패 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="삭제 실패"
+        message={errorMessage}
       />
     </div>
   );

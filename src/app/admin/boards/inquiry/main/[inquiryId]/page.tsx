@@ -4,6 +4,8 @@
 import React from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import InquiryDetailPanel from "@/components/admin/boards/inquiry/InquiryDetailPanel";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { useInquiryDetail, useCreateAnswer, useUpdateAnswer } from "@/hooks/useInquiries";
 import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
@@ -23,6 +25,11 @@ export default function Page() {
   const createAnswerMutation = useCreateAnswer(inquiryId);
   const answerId = (inquiryDetail as InquiryDetail)?.answerDetail?.id;
   const updateAnswerMutation = useUpdateAnswer(answerId || '');
+
+  // 모달 상태
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   // API 데이터를 기존 Inquiry 형식으로 변환
   const detail = React.useMemo(() => {
@@ -179,10 +186,35 @@ export default function Page() {
         queryClient.refetchQueries({ queryKey: inquiryKeys.all })
       ]);
       
+      // 성공 모달 표시
+      setShowSuccessModal(true);
+      
     } catch (error) {
-      throw error; // 에러를 다시 던져서 상위에서 처리하도록 함
+      setErrorMessage("답변 저장에 실패했습니다.\n다시 시도해주세요.");
+      setShowErrorModal(true);
+      throw error; // 에러를 다시 던져서 InquiryDetailPanel에서도 처리하도록 함
     }
   };
 
-  return <InquiryDetailPanel detail={detail} onBack={onBack} onSave={onSave} />;
+  return (
+    <>
+      <InquiryDetailPanel detail={detail} onBack={onBack} onSave={onSave} />
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="저장 완료!"
+        message="답변이 성공적으로 저장되었습니다."
+      />
+
+      {/* 실패 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="저장 실패"
+        message={errorMessage}
+      />
+    </>
+  );
 }

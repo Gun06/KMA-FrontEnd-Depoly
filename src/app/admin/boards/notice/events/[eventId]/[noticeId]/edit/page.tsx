@@ -7,6 +7,7 @@ import SelectMenu from "@/components/common/filters/SelectMenu";
 import TextField from "@/components/common/TextField/TextField";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
 import type { Editor } from "@tiptap/react";
 
 import type { NoticeFile } from "@/types/notice";
@@ -38,6 +39,7 @@ export default function Page() {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [files, setFiles] = React.useState<NoticeFile[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const editorRef = React.useRef<Editor | null>(null);
 
   // 에디터 준비 완료 시 호출
@@ -133,7 +135,9 @@ export default function Page() {
           queryClient.invalidateQueries({ queryKey: ['notice', 'detail', noticeId] });
           queryClient.invalidateQueries({ queryKey: ['notice', 'event', eventId] });
           queryClient.invalidateQueries({ queryKey: ['notice'] });
-          router.replace(`/admin/boards/notice/events/${eventId}/${noticeId}?_r=${Date.now()}`);
+          
+          // 성공 모달 표시
+          setShowSuccessModal(true);
         },
         onError: (error) => {
           alert('공지사항 수정에 실패했습니다.');
@@ -168,8 +172,9 @@ export default function Page() {
   }
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-      <div className="flex items-center gap-2 text-sm">
+    <>
+      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
+        <div className="flex items-center gap-2 text-sm">
         <div className="ml-auto flex gap-2">
           <Button 
             size="sm" 
@@ -247,5 +252,17 @@ export default function Page() {
         </section>
       )}
     </main>
+
+    {/* 성공 모달 */}
+    <SuccessModal
+      isOpen={showSuccessModal}
+      onClose={() => {
+        setShowSuccessModal(false);
+        router.replace(`/admin/boards/notice/events/${eventId}/${noticeId}`);
+      }}
+      title="수정 완료!"
+      message="공지사항이 성공적으로 수정되었습니다."
+    />
+    </>
   );
 }

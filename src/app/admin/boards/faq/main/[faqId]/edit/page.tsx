@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor/TextEditor";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import type { Editor } from "@tiptap/react";
 import { useFaqDetail, useUpdateFaq, faqKeys } from "@/hooks/useFaqs";
 
@@ -16,6 +18,9 @@ export default function Page() {
   const [questionContent, setQuestionContent] = useState("");
   const [answerContent, setAnswerContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   
   const questionEditorRef = useRef<Editor | null>(null);
   const answerEditorRef = useRef<Editor | null>(null);
@@ -70,11 +75,13 @@ export default function Page() {
     const answerText = tempDiv.textContent || tempDiv.innerText || '';
     
     if (!questionText.trim()) {
-      alert("질문을 입력해주세요.");
+      setErrorMessage("질문을 입력해주세요.");
+      setShowErrorModal(true);
       return;
     }
     if (!answerText.trim()) {
-      alert("답변을 입력해주세요.");
+      setErrorMessage("답변을 입력해주세요.");
+      setShowErrorModal(true);
       return;
     }
     
@@ -100,10 +107,11 @@ export default function Page() {
       // 캐시 무효화
       await queryClient.invalidateQueries({ queryKey: faqKeys.homepage() });
 
-      alert("수정되었습니다.");
-      router.replace(`/admin/boards/faq/main/${faqId}`);
-    } catch (error) {
-      alert('FAQ 수정에 실패했습니다.');
+      // 성공 모달 표시
+      setShowSuccessModal(true);
+    } catch (_error) {
+      setErrorMessage("FAQ 수정에 실패했습니다.\n다시 시도해주세요.");
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -189,6 +197,25 @@ export default function Page() {
           <div className="h-px mb-4 bg-gray-200 w-full" />
         </div>
       </div>
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          router.replace(`/admin/boards/faq/main/${faqId}`);
+        }}
+        title="수정 완료!"
+        message="FAQ가 성공적으로 수정되었습니다."
+      />
+
+      {/* 에러 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="오류"
+        message={errorMessage}
+      />
     </div>
   );
 }

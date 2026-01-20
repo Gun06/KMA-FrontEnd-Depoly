@@ -5,6 +5,7 @@ import { sanitizeHtml } from "@/utils/sanitize";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import type { Inquiry, InquiryFile } from "@/types/inquiry";
 import { Lock } from "lucide-react";
 
@@ -14,6 +15,41 @@ type Props = {
   onSave: (title: string, content: string, files: InquiryFile[], deletedFiles?: InquiryFile[]) => void;  // 저장 콜백 (메인/대회별로 다름)
 };
 
+// ✅ 질문 본문 영역을 별도 컴포넌트로 분리 (리렌더링 방지)
+const QuestionSection = React.memo(({ detail }: { detail: Inquiry }) => {
+  return (
+    <article className="rounded-xl border bg-white">
+      <header className="px-6 pt-6 pb-2">
+        <h1 className="text-xl font-semibold flex items-center">
+          {detail.secret && <Lock className="w-5 h-5 text-gray-500 mr-2" />}
+          {detail.title}
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          작성자 {detail.author} · 작성일 {detail.date}
+        </p>
+      </header>
+      <div className="h-px bg-gray-100" />
+      <div 
+        className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
+        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
+      >
+        {detail.content ? (
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.content) }} />
+        ) : (
+          <p className="text-gray-600">내용이 없습니다.</p>
+        )}
+      </div>
+      {detail.files && detail.files.length > 0 && (
+        <div className="px-6 pb-6">
+          <BoardFileBox variant="view" title="첨부파일" files={detail.files} />
+        </div>
+      )}
+    </article>
+  );
+});
+
+QuestionSection.displayName = 'QuestionSection';
+
 function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
   const [editing, setEditing] = React.useState(false);
   const [answerTitle, setAnswerTitle] = React.useState("");
@@ -21,12 +57,17 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
   const [answerFiles, setAnswerFiles] = React.useState<InquiryFile[]>([]);
   const [deletedFiles, setDeletedFiles] = React.useState<InquiryFile[]>([]);
   const [originalFiles, setOriginalFiles] = React.useState<InquiryFile[]>([]);
+  
+  // ✅ initialContent는 편집 시작 시 한 번만 설정 (리렌더링 방지)
+  const [initialAnswerHtml, setInitialAnswerHtml] = React.useState("");
 
   // ✅ detail의 id/answer가 바뀔 때만 초기화 (lint 경고 해소)
   React.useEffect(() => {
     if (detail?.answer) {
+      const content = detail.answer.content || "";
       setAnswerTitle(detail.answer.title || "");
-      setAnswerHtml(detail.answer.content || "");
+      setAnswerHtml(content);
+      setInitialAnswerHtml(content); // ✅ 초기값 저장
       const files = detail.answer.files ?? [];
       setAnswerFiles(files);
       setOriginalFiles(files); // 원본 파일 목록 저장
@@ -34,6 +75,7 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
     } else {
       setAnswerTitle("");
       setAnswerHtml("");
+      setInitialAnswerHtml(""); // ✅ 초기값도 리셋
       setAnswerFiles([]);
       setOriginalFiles([]);
       setDeletedFiles([]);
@@ -44,6 +86,10 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
     // 답변이 없을 때만 문의글 제목으로 자동 채우기
     if (!detail.answer && detail.title) {
       setAnswerTitle(detail.title);
+      setInitialAnswerHtml(""); // ✅ 새 답변 작성 시 빈 내용으로 시작
+    } else if (detail.answer) {
+      // ✅ 기존 답변 수정 시 현재 내용으로 시작
+      setInitialAnswerHtml(detail.answer.content || "");
     }
     setEditing(true);
     requestAnimationFrame(() => {
@@ -63,13 +109,16 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
   };
 
   const [isSaving, setIsSaving] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const handleSave = async () => {
     if (isSaving) return; // 중복 저장 방지
     
     // 답변 제목 검증
     if (!answerTitle || answerTitle.trim() === '') {
-      alert('답변 제목을 입력해주세요.');
+      setErrorMessage('답변 제목을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
     
@@ -104,34 +153,8 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
         </div>
       </div>
 
-      {/* 질문 본문 */}
-      <article className="rounded-xl border bg-white">
-        <header className="px-6 pt-6 pb-2">
-          <h1 className="text-xl font-semibold flex items-center">
-            {detail.secret && <Lock className="w-5 h-5 text-gray-500 mr-2" />}
-            {detail.title}
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            작성자 {detail.author} · 작성일 {detail.date}
-          </p>
-        </header>
-        <div className="h-px bg-gray-100" />
-        <div 
-          className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-          style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-        >
-          {detail.content ? (
-            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.content) }} />
-          ) : (
-            <p className="text-gray-600">내용이 없습니다.</p>
-          )}
-        </div>
-        {detail.files && detail.files.length > 0 && (
-          <div className="px-6 pb-6">
-            <BoardFileBox variant="view" title="첨부파일" files={detail.files} />
-          </div>
-        )}
-      </article>
+      {/* 질문 본문 - memo로 최적화 */}
+      <QuestionSection detail={detail} />
 
       {/* 답변 보기 */}
       {detail.answer && !editing && (
@@ -170,7 +193,8 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">답변 내용</label>
             <TextEditor 
-              initialContent={answerHtml} 
+              key={`editor-${editing}`}
+              initialContent={initialAnswerHtml} 
               onChange={setAnswerHtml} 
               height="360px" 
               imageDomainType="ANSWER"
@@ -212,6 +236,14 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
           </div>
         </section>
       )}
+
+      {/* 에러 모달 */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="입력 오류"
+        message={errorMessage}
+      />
     </main>
   );
 }

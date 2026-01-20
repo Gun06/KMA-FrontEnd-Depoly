@@ -4,6 +4,9 @@ import React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import FaqListPage from "@/components/admin/boards/faq/FaqListPage";
+import ConfirmModal from "@/components/common/Modal/ConfirmModal";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { useEventFaqs, faqKeys } from "@/hooks/useFaqs";
 import { deleteFaq } from "@/services/admin/faqs";
 import type { FaqSearchParams, FaqListResponse } from "@/types/faq";
@@ -20,6 +23,14 @@ export default function Page() {
     // FAQ는 정렬 파라미터를 지원하지 않음
   });
 
+  // 모달 상태
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [showErrorModal, setShowErrorModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
   // 대회별 FAQ 목록 조회
   const { data: faqData, isLoading, error } = useEventFaqs(eventId!, searchParams);
   const typedFaqData = faqData as { faqList: FaqListResponse; eventName: string } | undefined;
@@ -28,11 +39,17 @@ export default function Page() {
   const eventTitle = typedFaqData?.eventName ?? `#${eventId}`;
 
   // FAQ 삭제 핸들러
-  const handleDelete = async (id: string) => {
-    if (!confirm("삭제하시겠습니까?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     
+    setIsDeleting(true);
     try {
-      await deleteFaq(id);
+      await deleteFaq(deleteTargetId);
       
       // 캐시 무효화
       await queryClient.invalidateQueries({ queryKey: faqKeys.event(eventId!) });
@@ -44,8 +61,17 @@ export default function Page() {
           page: Math.max(1, prev.page! - 1)
         }));
       }
+      
+      // 성공 처리
+      setShowDeleteConfirm(false);
+      setDeleteTargetId(null);
+      setShowSuccessModal(true);
     } catch (_error) {
-      alert('FAQ 삭제에 실패했습니다.');
+      console.error("Failed to delete FAQ:", _error);
+      setErrorMessage("FAQ 삭제에 실패했습니다.\n다시 시도해주세요.");
+      setShowErrorModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -113,27 +139,61 @@ export default function Page() {
   }
 
   return (
-    <FaqListPage
-      title={
-        <span>
-          선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> FAQ
-        </span>
-      }
-      headerButton={{
-        label: "공통 FAQ 관리하기 >",
-        size: "sm",
-        tone: "primary",
-        onClick: () => router.push("/admin/boards/faq/main"),
+    <>
+      <FaqListPage
+        title={
+          <span>
+            선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> FAQ
+          </span>
+        }
+        headerButton={{
+          label: "공통 FAQ 관리하기 >",
+          size: "sm",
+          tone: "primary",
+          onClick: () => router.push("/admin/boards/faq/main"),
+        }}
+        provider={provider}
+        linkForRow={(r) => `/admin/boards/faq/events/${eventId}/${r.id}`}
+        onDelete={handleDelete}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        onPageChange={handlePageChange}
+        currentPage={searchParams.page}
+        createHref={`/admin/boards/faq/events/${eventId}/write`}
+        isLoading={isLoading}
+      />
+
+      {/* 삭제 확인 모달 */}
+    <ConfirmModal
+      isOpen={showDeleteConfirm}
+      onClose={() => {
+        setShowDeleteConfirm(false);
+        setDeleteTargetId(null);
       }}
-      provider={provider}
-      linkForRow={(r) => `/admin/boards/faq/events/${eventId}/${r.id}`}
-      onDelete={handleDelete}
-      onSearch={handleSearch}
-      onReset={handleReset}
-      onPageChange={handlePageChange}
-      currentPage={searchParams.page}
-      createHref={`/admin/boards/faq/events/${eventId}/write`}
-      isLoading={isLoading}
+      onConfirm={confirmDelete}
+      title="FAQ 삭제"
+      message="이 FAQ를 삭제하시겠습니까?"
+      confirmText="삭제"
+      cancelText="취소"
+      variant="danger"
+      isLoading={isDeleting}
     />
+
+    {/* 성공 모달 */}
+    <SuccessModal
+      isOpen={showSuccessModal}
+      onClose={() => setShowSuccessModal(false)}
+      title="삭제 완료!"
+      message="FAQ가 성공적으로 삭제되었습니다."
+    />
+
+    {/* 실패 모달 */}
+    <ErrorModal
+      isOpen={showErrorModal}
+      onClose={() => setShowErrorModal(false)}
+      title="삭제 실패"
+      message={errorMessage}
+    />
+    </>
   );
 }

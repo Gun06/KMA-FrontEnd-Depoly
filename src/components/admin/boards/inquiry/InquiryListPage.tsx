@@ -101,6 +101,17 @@ export default function InquiryListPage({
   const [isResettingPassword, setIsResettingPassword] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
 
+  // 삭제 관련 모달 상태
+  const [showDeleteInquiryConfirm, setShowDeleteInquiryConfirm] = React.useState(false);
+  const [showDeleteAnswerConfirm, setShowDeleteAnswerConfirm] = React.useState(false);
+  const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null);
+  const [deleteTargetAnswerId, setDeleteTargetAnswerId] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteSuccessModal, setShowDeleteSuccessModal] = React.useState(false);
+  const [showDeleteErrorModal, setShowDeleteErrorModal] = React.useState(false);
+  const [deleteErrorMessage, setDeleteErrorMessage] = React.useState("");
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = React.useState("");
+
   React.useEffect(() => {
     if (normalizedCurrentPage && normalizedCurrentPage !== page) {
       setPage(normalizedCurrentPage);
@@ -278,11 +289,17 @@ export default function InquiryListPage({
     </div>
   );
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("문의사항을 삭제하시겠습니까?")) return;
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+    setShowDeleteInquiryConfirm(true);
+  };
+
+  const confirmDeleteInquiry = async () => {
+    if (!deleteTargetId) return;
     
+    setIsDeleting(true);
     try {
-      await deleteInquiry(id);
+      await deleteInquiry(deleteTargetId);
       
       // 캐시 무효화
       if (apiType === 'homepage' || !apiType) {
@@ -301,17 +318,31 @@ export default function InquiryListPage({
       if (page > lastPage) setPage(lastPage);
       setRev((v) => v + 1);
       
-      alert('문의사항이 삭제되었습니다.');
+      // 성공 처리
+      setShowDeleteInquiryConfirm(false);
+      setDeleteTargetId(null);
+      setDeleteSuccessMessage('문의사항이 성공적으로 삭제되었습니다.');
+      setShowDeleteSuccessModal(true);
     } catch (_error) {
-      alert('문의사항 삭제에 실패했습니다.');
+      console.error("Failed to delete inquiry:", _error);
+      setDeleteErrorMessage('문의사항 삭제에 실패했습니다.\n다시 시도해주세요.');
+      setShowDeleteErrorModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const handleDeleteAnswer = async (answerId: string) => {
-    if (!confirm("답변을 삭제하시겠습니까?")) return;
+  const handleDeleteAnswer = (answerId: string) => {
+    setDeleteTargetAnswerId(answerId);
+    setShowDeleteAnswerConfirm(true);
+  };
+
+  const confirmDeleteAnswer = async () => {
+    if (!deleteTargetAnswerId) return;
     
+    setIsDeleting(true);
     try {
-      await deleteAnswer(answerId);
+      await deleteAnswer(deleteTargetAnswerId);
       
       // 백엔드에서 답변 삭제 시 해당 문의사항의 answered를 false로 자동 업데이트
       // 캐시 무효화를 통해 업데이트된 데이터를 다시 가져옴
@@ -326,9 +357,18 @@ export default function InquiryListPage({
       }
       
       setRev((v) => v + 1);
-      alert('답변이 삭제되었습니다.');
+      
+      // 성공 처리
+      setShowDeleteAnswerConfirm(false);
+      setDeleteTargetAnswerId(null);
+      setDeleteSuccessMessage('답변이 성공적으로 삭제되었습니다.');
+      setShowDeleteSuccessModal(true);
     } catch (_error) {
-      alert('답변 삭제에 실패했습니다.');
+      console.error("Failed to delete answer:", _error);
+      setDeleteErrorMessage('답변 삭제에 실패했습니다.\n다시 시도해주세요.');
+      setShowDeleteErrorModal(true);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -483,6 +523,54 @@ export default function InquiryListPage({
         title="초기화 실패"
         message={errorMessage || "비밀번호 초기화에 실패했습니다."}
         confirmText="확인"
+      />
+
+      {/* 문의사항 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteInquiryConfirm}
+        onClose={() => {
+          setShowDeleteInquiryConfirm(false);
+          setDeleteTargetId(null);
+        }}
+        onConfirm={confirmDeleteInquiry}
+        title="문의사항 삭제"
+        message="이 문의사항을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* 답변 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteAnswerConfirm}
+        onClose={() => {
+          setShowDeleteAnswerConfirm(false);
+          setDeleteTargetAnswerId(null);
+        }}
+        onConfirm={confirmDeleteAnswer}
+        title="답변 삭제"
+        message="이 답변을 삭제하시겠습니까?"
+        confirmText="삭제"
+        cancelText="취소"
+        variant="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* 삭제 성공 모달 */}
+      <SuccessModal
+        isOpen={showDeleteSuccessModal}
+        onClose={() => setShowDeleteSuccessModal(false)}
+        title="삭제 완료!"
+        message={deleteSuccessMessage}
+      />
+
+      {/* 삭제 실패 모달 */}
+      <ErrorModal
+        isOpen={showDeleteErrorModal}
+        onClose={() => setShowDeleteErrorModal(false)}
+        title="삭제 실패"
+        message={deleteErrorMessage}
       />
     </div>
   );

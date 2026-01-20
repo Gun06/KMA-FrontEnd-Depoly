@@ -15,6 +15,7 @@ export const useTextEditor = (props: TextEditorProps) => {
     onChange,
     onEditorReady,
     imageDomainType = 'NOTICE',
+    imageServerType = 'admin',
   } = props;
 
   const [isMounted, setIsMounted] = useState(false);
@@ -163,10 +164,15 @@ export const useTextEditor = (props: TextEditorProps) => {
             // 새로운 이미지 업로드 API 사용
             const { uploadImage } = await import('@/services/imageUpload');
             
-            const result = await uploadImage(processedFile, imageDomainType as 'QUESTION');
+            const result = await uploadImage(
+              processedFile, 
+              imageDomainType as 'QUESTION',
+              imageServerType
+            );
             
             // 업로드된 이미지 URL로 에디터에 삽입
-            const imageUrl: string = result.imgSrc;
+            // 서버 타입에 따라 다른 필드명 사용 (admin: url, user: imgSrc)
+            const imageUrl: string = result.url || result.imgSrc || '';
             if (imageUrl) {
               return {
                 src: imageUrl,
@@ -177,20 +183,21 @@ export const useTextEditor = (props: TextEditorProps) => {
             }
             
           } catch (error) {
-            // API 실패 시 Base64 방식으로 폴백
-            return new Promise<{src: string, alt: string}>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const src = e.target?.result as string;
-                if (src) {
-                  resolve({
-                    src: src,
-                    alt: file.name || '이미지'
-                  });
-                }
-              };
-              reader.readAsDataURL(file);
+            // API 실패 시 에러 표시 (base64 폴백 제거)
+            console.error('❌ 이미지 업로드 실패:', {
+              fileName: file.name,
+              fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+              fileType: file.type,
+              serverType: imageServerType,
+              error: error
             });
+            
+            alert(`이미지 업로드에 실패했습니다: ${file.name}\n\n` +
+                  `서버: ${imageServerType}\n` +
+                  `크기: ${(file.size / 1024 / 1024).toFixed(2)}MB\n\n` +
+                  `다시 시도하거나 관리자에게 문의하세요.`);
+            
+            return null;
           }
         });
         
@@ -208,7 +215,7 @@ export const useTextEditor = (props: TextEditorProps) => {
         event.target.value = "";
       }
     },
-    [editor, imageDomainType],
+    [editor, imageDomainType, imageServerType],
   );
 
   const setFontSizeHandler = useCallback(
@@ -270,7 +277,7 @@ export const useTextEditor = (props: TextEditorProps) => {
         onChange?.(compressedHtml);
       }, 200);
     },
-    [editor],
+    [editor, onChange],
   );
 
   return {

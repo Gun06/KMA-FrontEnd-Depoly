@@ -8,6 +8,7 @@ import SelectMenu from "@/components/common/filters/SelectMenu";
 import TextField from "@/components/common/TextField/TextField";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import SuccessModal from "@/components/common/Modal/SuccessModal";
 import type { Editor } from "@tiptap/react";
 
 import type { NoticeFile } from "@/types/notice";
@@ -34,6 +35,8 @@ export default function Page() {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [files, setFiles] = React.useState<NoticeFile[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [createdNoticeId, setCreatedNoticeId] = React.useState<string>("");
   const editorRef = React.useRef<Editor | null>(null);
 
   // 카테고리 변경 시 처리
@@ -121,13 +124,11 @@ export default function Page() {
         queryKey: ['notice'] 
       });
       
-      // 즉시 상세 페이지로 이동
-      router.replace(`/admin/boards/notice/events/${eventId}/${data.id}`);
+      // 생성된 공지사항 ID 저장
+      setCreatedNoticeId(data.id);
       
-      // 이동 후 성공 메시지 표시
-      setTimeout(() => {
-        alert('공지사항이 성공적으로 등록되었습니다.');
-      }, 100);
+      // 성공 모달 표시
+      setShowSuccessModal(true);
     } catch (_error) {
       alert('공지사항 생성에 실패했습니다.');
     }
@@ -144,9 +145,10 @@ export default function Page() {
 
 
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-      {/* 상단 액션 */}
-      <div className="flex justify-end gap-2">
+    <>
+      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
+        {/* 상단 액션 */}
+        <div className="flex justify-end gap-2">
         <Button 
           size="sm" 
           tone="outlineDark" 
@@ -220,5 +222,22 @@ export default function Page() {
         </div>
       </div>
     </main>
+
+    {/* 성공 모달 */}
+    <SuccessModal
+      isOpen={showSuccessModal}
+      onClose={() => {
+        setShowSuccessModal(false);
+        // 등록된 공지사항 상세 페이지로 바로 이동
+        if (createdNoticeId) {
+          router.replace(`/admin/boards/notice/events/${eventId}/${createdNoticeId}`);
+        } else {
+          router.replace(`/admin/boards/notice/events/${eventId}`);
+        }
+      }}
+      title="등록 완료!"
+      message="공지사항이 성공적으로 등록되었습니다."
+    />
+    </>
   );
 }
