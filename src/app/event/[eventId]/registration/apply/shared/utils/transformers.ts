@@ -467,12 +467,9 @@ export const transformGroupFormDataToUpdateApi = (
 
 
   // 단체신청 수정용 API 스키마에 맞춰 데이터 변환
-  // 결제 정보는 미결제 인원이 있을 때만 포함 (테이블 규칙: COMPLETE 상태에서는 결제 정보 수정 불가/미동작)
-  const hasUnpaidParticipants = formData.participants.some(participant => {
-    const paymentStatus = participant.paymentStatus?.toUpperCase();
-    return paymentStatus === 'UNPAID';
-  });
-
+  // PaymentDefaultInfo는 백엔드 @NotNull 검증으로 인해 항상 필수로 전송해야 함
+  // (변경점이 없어도 전송 필요, 백엔드에서 기존값과 비교하여 적용 여부 결정)
+  // 적용 대상: 미결제 인원 및 신규 추가 인원만 (결제완료/환불 상태 인원에게는 미적용)
   const apiData: any = {
     organizationPatchRequest: {
       organizationPatchAccount: {
@@ -490,18 +487,15 @@ export const transformGroupFormDataToUpdateApi = (
         phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
         email: formatEmail(formData.email1, formData.emailDomain, ''),
         leaderName: formData.leaderName
+      },
+      // PaymentDefaultInfo는 결제 상태와 관계없이 항상 전송 (백엔드 @NotNull 요구사항)
+      paymentDefaultInfo: {
+        paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
+        paymenterName: formData.depositorName
       }
     },
     registrationInfoPerUserList: registrationInfoPerUserList
   };
-
-  // 미결제 인원이 있을 때만 결제 정보 포함 (테이블 규칙: COMPLETE 상태에서는 결제 정보 수정 불가/미동작)
-  if (hasUnpaidParticipants) {
-    apiData.organizationPatchRequest.paymentDefaultInfo = {
-      paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
-      paymenterName: formData.depositorName
-    };
-  }
 
   return apiData;
 };

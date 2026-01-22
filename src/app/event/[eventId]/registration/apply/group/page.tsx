@@ -80,6 +80,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
                 onGroupIdCheck={handlers.handleGroupIdCheck}
                 groupNameCheckResult={groupNameCheckResult}
                 groupIdCheckResult={groupIdCheckResult}
+                isEditMode={isEditMode}
               />
 
               {/* 연락처 정보 섹션 */}

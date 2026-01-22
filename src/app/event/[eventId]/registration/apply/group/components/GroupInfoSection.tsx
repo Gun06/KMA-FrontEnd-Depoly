@@ -14,6 +14,7 @@ interface GroupInfoSectionProps {
   onGroupIdCheck: () => void;
   groupNameCheckResult: 'none' | 'available' | 'unavailable' | 'error';
   groupIdCheckResult: 'none' | 'available' | 'unavailable' | 'error';
+  isEditMode?: boolean;
 }
 
 export default function GroupInfoSection({
@@ -23,7 +24,8 @@ export default function GroupInfoSection({
   onGroupNameCheck,
   onGroupIdCheck,
   groupNameCheckResult,
-  groupIdCheckResult
+  groupIdCheckResult,
+  isEditMode = false
 }: GroupInfoSectionProps) {
   return (
     <div className="space-y-6 sm:space-y-8">

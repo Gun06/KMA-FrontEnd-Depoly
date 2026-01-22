@@ -65,11 +65,13 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
           subMenu: "대회요강"
         }}
       >
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-center mb-6">
-            <div className="text-center">
-              <div className="text-gray-500 mb-2">오류가 발생했습니다</div>
-              <div className="text-sm text-gray-400">{error}</div>
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
+            <div className="flex justify-center mb-6">
+              <div className="text-center">
+                <div className="text-gray-500 mb-2">오류가 발생했습니다</div>
+                <div className="text-sm text-gray-400">{error}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -85,7 +87,8 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
         subMenu: "대회요강"
       }}
     >
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
           {isLoading ? (
             // 스켈레톤 UI
             <div className="flex justify-center mb-6">
@@ -94,7 +97,7 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
           ) : images.length > 0 ? (
             <div>
               {images.map((image, index) => (
-                <div key={`${image.orderNumber}-${index}`} className="flex justify-center mb-6">
+                <div key={`${image.orderNumber}-${index}`} className="flex justify-center">
                   <Image
                     src={image.imageUrl}
                     alt={`대회 개요 이미지 ${index + 1}`}
@@ -108,6 +111,7 @@ export default function GuideOverviewPage({ params }: { params: { eventId: strin
               ))}
             </div>
           ) : null}
+        </div>
       </div>
     </SubmenuLayout>
   );

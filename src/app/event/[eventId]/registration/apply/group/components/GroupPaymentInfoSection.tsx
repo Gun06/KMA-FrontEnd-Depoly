@@ -40,7 +40,7 @@ export default function GroupPaymentInfoSection({
             }
             return; // 성공하면 종료
           }
-        } catch (e) {
+        } catch (_e) {
           // 결제 정보 API 실패 시 무시하고 fallback으로 진행
         }
         
@@ -55,7 +55,7 @@ export default function GroupPaymentInfoSection({
           setBankName(String(data.eventInfo.bank || ''));
           setVirtualAccount(String(data.eventInfo.virtualAccount || ''));
         }
-      } catch (error) {
+      } catch (_error) {
         // 결제 정보 로드 실패 시 무시
       }
     };
@@ -84,7 +84,7 @@ export default function GroupPaymentInfoSection({
             {/* 수정 모드일 때만 표시되는 설명문 */}
             {isEditMode && (
               <p className="text-gray-600">
-                ※ 결제 정보를 수정할 경우, 현재 미결제 상태인 인원에 한해 적용됩니다.
+                ※ 결제 정보를 수정할 경우, 현재 미결제 상태인 인원 및 수정 시 추가된 인원에게만 적용됩니다. 결제 완료, 환불 진행 중, 환불 완료 상태의 인원에게는 미적용됩니다.
               </p>
             )}
           </div>

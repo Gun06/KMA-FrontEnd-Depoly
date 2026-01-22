@@ -421,7 +421,7 @@ export default function GroupApplicationConfirmResultPage() {
         } else if (eventData?.eventStatus) {
           setEventStatus(eventData.eventStatus);
         }
-      } catch (error) {
+      } catch (_error) {
         // 실패 시 무시
       }
     };
@@ -851,7 +851,7 @@ export default function GroupApplicationConfirmResultPage() {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-orange-700">
-                          <span className="font-medium">부분 진행 중입니다.</span> 참가자별로 결제 상태가 다릅니다. 모든 참가자의 결제가 완료되면 신청 정보 수정이 불가능합니다.
+                          <span className="font-medium">부분 진행 중입니다.</span> 참가자별로 결제 상태가 다릅니다. 결제 완료 상태의 참가자도 같은 금액 내에서 기념품 변경이 가능합니다.
                         </p>
                       </div>
                     </div>
