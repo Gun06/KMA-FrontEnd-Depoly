@@ -23,7 +23,7 @@ export class LocalEventUpdateTransformer {
       registStartDate: payload.registStartDate,
       registDeadline: payload.registDeadline,
       visibleStatus: payload.visibleStatus,
-      lowestAmount: payload.lowestAmount,
+      eventCategoryCsv: payload.eventCategoryCsv,
       // 기존 이미지 URL이 있고 새 파일이 없으면 기존 URL 유지
       promotionBanner: payload.promotionBanner 
         ? undefined 

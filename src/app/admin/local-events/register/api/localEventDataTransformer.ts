@@ -23,7 +23,7 @@ export class LocalEventDataTransformer {
       registStartDate: payload.registStartDate,
       registDeadline: payload.registDeadline,
       visibleStatus: payload.visibleStatus,
-      lowestAmount: payload.lowestAmount,
+      eventCategoryCsv: payload.eventCategoryCsv,
     };
 
     return {

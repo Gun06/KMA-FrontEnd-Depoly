@@ -71,7 +71,7 @@ export default function Client({ eventId }: { eventId: string }) {
       eventUrl: apiData.eventUrl,
       eventStatus: normalizedEventStatus,
       visibleStatus: apiData.visibleStatus,
-      lowestAmount: String(apiData.lowestAmount), // number를 string으로 변환
+      eventCategoryCsv: apiData.eventCategoryCsv ?? '',
       eventStartDate: formatDate(apiData.eventStartDate),
       eventStartHh: eventStartTime.hh,
       eventStartMm: eventStartTime.mm,

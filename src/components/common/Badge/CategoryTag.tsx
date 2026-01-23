@@ -2,13 +2,15 @@ import React from 'react';
 import { cn } from '@/utils/cn';
 
 interface CategoryTagProps {
-  category: '대회' | '이벤트' | '안내' | '공지';
+  category: '대회' | '이벤트' | '안내' | '공지' | '필독';
   className?: string;
 }
 
 export default function CategoryTag({ category, className }: CategoryTagProps) {
   const getCategoryStyle = (category: string) => {
     switch (category) {
+      case '필독':
+        return 'bg-red-600 text-white';
       case '대회':
         return 'bg-red-500 text-white';
       case '이벤트':

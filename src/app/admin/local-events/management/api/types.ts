@@ -15,7 +15,8 @@ export interface LocalEventItem {
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv?: string;
   promotionBannerUrl?: string;
 }
 

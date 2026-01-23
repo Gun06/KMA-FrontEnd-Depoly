@@ -19,7 +19,8 @@ export type UseLocalEventFormPrefill = {
   registDeadline?: string;
   registDeadlineHh?: string;
   registDeadlineMm?: string;
-  lowestAmount?: string;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv?: string;
   promotionBanner?: File;
 };
 
@@ -53,7 +54,7 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
   const [registDeadline, setRegistDeadline] = useState(prefill?.registDeadline || '');
   const [registDeadlineHh, setRegistDeadlineHh] = useState(prefill?.registDeadlineHh || '00');
   const [registDeadlineMm, setRegistDeadlineMm] = useState(prefill?.registDeadlineMm || '00');
-  const [lowestAmount, setLowestAmount] = useState(prefill?.lowestAmount || '');
+  const [eventCategoryCsv, setEventCategoryCsv] = useState(prefill?.eventCategoryCsv || '');
   const [promotionBanner, setPromotionBanner] = useState<File | undefined>(
     prefill?.promotionBanner
   );
@@ -75,12 +76,6 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
     
     // ISO 8601 형식으로 변환 (YYYY-MM-DDTHH:mm:ss)
     return `${year}-${month}-${day}T${String(hhNum).padStart(2, '0')}:${String(mmNum).padStart(2, '0')}:00`;
-  };
-
-  // 숫자 문자열을 숫자로 변환 (콤마 제거)
-  const parseAmount = (amount: string): number => {
-    const cleaned = amount.replace(/,/g, '');
-    return cleaned ? parseInt(cleaned, 10) : 0;
   };
 
   // 유효성 검사
@@ -136,8 +131,8 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
       }
     }
 
-    if (!lowestAmount || parseAmount(lowestAmount) <= 0) {
-      errors.push('최소 금액을 입력해주세요.');
+    if (!eventCategoryCsv.trim()) {
+      errors.push('거리/코스를 입력해주세요.');
     }
 
     return {
@@ -156,7 +151,7 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
       eventStartDate: formatDateTime(eventStartDate, eventStartHh, eventStartMm),
       registStartDate: formatDateTime(registStartDate, registStartHh, registStartMm),
       registDeadline: formatDateTime(registDeadline, registDeadlineHh, registDeadlineMm),
-      lowestAmount: parseAmount(lowestAmount),
+      eventCategoryCsv: eventCategoryCsv.trim(),
       promotionBanner,
     };
   };
@@ -191,8 +186,8 @@ export function useLocalEventForm(prefill?: UseLocalEventFormPrefill) {
     setRegistDeadlineHh,
     registDeadlineMm,
     setRegistDeadlineMm,
-    lowestAmount,
-    setLowestAmount,
+    eventCategoryCsv,
+    setEventCategoryCsv,
     promotionBanner,
     setPromotionBanner,
     validate,

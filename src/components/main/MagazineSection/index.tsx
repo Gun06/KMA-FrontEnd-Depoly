@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { inquiries } from './data';
 import InquiryItem from './MagazineItem';
 import { InquiryResponse, InquiryItem as ApiInquiryItem } from '@/types/event';
 import { useAuth } from '@/hooks/useAuth';
@@ -98,24 +97,22 @@ export default function InquirySection() {
     router.push(`/notice/inquiry/particular?id=${item.questionHeader.id}`);
   };
 
-  // 표시할 데이터 결정 (API 데이터가 있으면 사용, 없으면 기본 데이터)
+  // 표시할 데이터 결정 (API 데이터만 사용)
   const displayData = React.useMemo(() => {
-    return inquiryData.length > 0 
-      ? inquiryData.map(item => ({
-          id: item.questionHeader.id,
-          date: new Date(item.questionHeader.createdAt).toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          }).replace(/\./g, '.').replace(/\s/g, ''),
-          title: item.questionHeader.secret && !isAuthenticated ? '비밀글입니다' : item.questionHeader.title,
-          description: item.questionHeader.title,
-          link: `/notice/inquiry/particular?id=${item.questionHeader.id}`,
-          secret: item.questionHeader.secret,
-          canAccess: checkSecretAccess(item)
-        }))
-      : inquiries;
-  }, [inquiryData, checkSecretAccess]);
+    return inquiryData.map(item => ({
+      id: item.questionHeader.id,
+      date: new Date(item.questionHeader.createdAt).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\./g, '.').replace(/\s/g, ''),
+      title: item.questionHeader.secret && !isAuthenticated ? '비밀글입니다' : item.questionHeader.title,
+      description: item.questionHeader.title,
+      link: `/notice/inquiry/particular?id=${item.questionHeader.id}`,
+      secret: item.questionHeader.secret,
+      canAccess: checkSecretAccess(item)
+    }));
+  }, [inquiryData, checkSecretAccess, isAuthenticated]);
 
   return (
     <div className="bg-white rounded-lg shadow-none border border-white p-4 md:p-5 lg:p-6">
@@ -140,12 +137,12 @@ export default function InquirySection() {
             <div key={`skeleton-${idx}`} className="py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div className="flex items-start gap-3">
                 {/* 날짜 스켈레톤 */}
-                <div className="min-w-[80px]">
-                  <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="text-sm whitespace-nowrap min-w-[80px]">
+                  <div className="h-[14px] w-16 bg-gray-200 rounded animate-pulse" />
                 </div>
                 {/* 제목 스켈레톤 */}
                 <div className="flex-1 min-w-0">
-                  <div className="h-4 flex-1 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-[14px] flex-1 bg-gray-200 rounded animate-pulse" style={{ lineHeight: '1.625' }} />
                 </div>
               </div>
             </div>
@@ -155,19 +152,47 @@ export default function InquirySection() {
             <InquiryItem 
               key={item.id} 
               item={item} 
-              onClick={inquiryData.length > 0 ? () => {
+              onClick={() => {
                 const apiItem = inquiryData.find(apiItem => apiItem.questionHeader.id === item.id);
                 if (apiItem) {
                   handleInquiryClick(apiItem);
                 } else {
                   router.push(item.link || '#');
                 }
-              } : undefined}
+              }}
             />
           ))
         ) : (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-gray-500">문의사항이 없습니다.</div>
+          // 데이터가 없을 때 스켈레톤 UI처럼 영역 유지하고 블러 처리
+          <div className="relative">
+            {/* 스켈레톤 배경 */}
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div 
+                key={`skeleton-${idx}`}
+                className="py-3" 
+                style={{ borderBottom: '1px solid #E5E7EB' }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-sm whitespace-nowrap min-w-[80px]">
+                    <div className="h-[14px] w-16 bg-gray-200 rounded opacity-60" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-[14px] bg-gray-200 rounded opacity-60" style={{ lineHeight: '1.625' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* 블러 처리된 오버레이와 메시지 */}
+            <div className="absolute inset-0 backdrop-blur-[2px] bg-white/40 flex flex-col items-center justify-center">
+              <p className="text-gray-500 text-sm mb-4">아직 글이 없습니다</p>
+              <button
+                onClick={() => router.push('/notice/inquiry')}
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+              >
+                문의사항 작성하기
+              </button>
+            </div>
           </div>
         )}
       </div>

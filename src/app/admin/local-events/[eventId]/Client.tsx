@@ -123,8 +123,10 @@ export default function Client({ eventId }: { eventId: string }) {
   }
 
   // 날짜 포맷팅
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = (dateString: string | undefined) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
     return date.toLocaleString('ko-KR', {
       year: 'numeric',
       month: '2-digit',
@@ -224,14 +226,16 @@ export default function Client({ eventId }: { eventId: string }) {
             </div>
           </div>
 
-          {/* 2. 최소 금액 | 대회 페이지 URL */}
+          {/* 2. 거리/코스 | 대회 페이지 URL */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1 px-2">
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
-                최소 금액
+                거리/코스
               </span>
               <p className="text-lg text-gray-900 font-pretendard">
-                {apiData.lowestAmount.toLocaleString('ko-KR')}원
+                {apiData.eventCategoryCsv?.trim()
+                  ? apiData.eventCategoryCsv
+                  : '거리/코스 정보가 없습니다'}
               </p>
             </div>
             <div className="space-y-1 px-2">

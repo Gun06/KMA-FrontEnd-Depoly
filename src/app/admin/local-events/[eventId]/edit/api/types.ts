@@ -18,7 +18,8 @@ export interface LocalEventUpdateRequest {
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: LocalEventVisibleStatus;
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv: string;
   promotionBanner?: string; // 기존 이미지 URL (수정 시 선택사항)
 }
 
@@ -31,7 +32,8 @@ export interface LocalEventUpdatePayload {
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: LocalEventVisibleStatus;
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv: string;
   promotionBanner?: File; // 새로 업로드할 홍보 배너 (선택)
   existingPromotionBanner?: string; // 기존 홍보 배너 URL
 }

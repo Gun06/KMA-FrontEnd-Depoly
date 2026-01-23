@@ -277,20 +277,10 @@ export default function EventSection() {
                           month: 'long',
                           day: 'numeric'
                         })}
-                        price={`${event.lowerPrice.toLocaleString()}원`}
-                        status={event.status === 'PENDING' ? '접수중' : 
-                               event.status === 'ONGOING' ? '진행중' : 
-                               event.status === 'COMPLETED' ? '완료' : 
-                               event.status === 'CANCELLED' ? '취소' :
-                               event.status === 'FINAL_CLOSED' ? '내부마감' :
-                               event.status === 'CLOSED' ? '접수마감' :
-                               event.status === 'REGISTRATION' ? '접수중' :
-                               event.status === 'ACTIVE' ? '진행중' :
-                               event.status === 'FINISHED' ? '완료' :
-                               event.status === 'CANCELED' ? '취소' :
-                               '접수중'} // 기본값을 '접수중'으로 변경
+                        categoryNames={event.categoryNames}
+                        status={event.status}
                         eventDate={event.eventDate.split('T')[0]}
-                        eventStartDate={event.eventStartDate ? event.eventStartDate.split('T')[0] : undefined}
+                        eventStartDate={undefined}
                         eventDeadLine={event.eventDeadLine ? event.eventDeadLine.split('T')[0] : undefined}
                         eventUrl={event.eventUrl} // 로컬대회의 경우 외부 URL
                         isDragging={isDragging}

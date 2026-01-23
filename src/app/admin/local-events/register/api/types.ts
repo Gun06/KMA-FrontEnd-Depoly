@@ -18,7 +18,8 @@ export interface LocalEventCreateRequest {
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: LocalEventVisibleStatus;
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv: string;
 }
 
 // 지역대회 생성 페이로드 (폼에서 사용)
@@ -30,7 +31,8 @@ export interface LocalEventCreatePayload {
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: LocalEventVisibleStatus;
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv: string;
   promotionBanner?: File; // 홍보 배너 (선택)
 }
 

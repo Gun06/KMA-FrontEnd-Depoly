@@ -181,10 +181,10 @@ export interface BlockEventItem {
   eventNameKr: string;
   eventNameEn: string;
   eventDate: string; // ISO 8601 형식
-  eventStartDate?: string; // 대회 시작일 (ISO 8601 형식) - 접수 마감 판단 기준
   status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   eventDeadLine: string; // ISO 8601 형식
-  lowerPrice: number;
+  categoryNames: string;
+  eventType: string; // "ALL" 등
   eventUrl?: string; // 로컬대회의 경우 외부 URL (선택사항)
 }
 
@@ -296,11 +296,11 @@ export interface ScheduleEvent {
   eventNameKr: string;
   eventNameEn: string;
   eventDate: string;
-  eventType: "KMA" | "LOCAL";
+  eventType: "KMA" | "LOCAL" | "ALL";
   status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
   eventDeadLine: string;
-  lowerPrice: number;
-  eventUrl?: string; // 로컬대회의 경우 외부 URL (선택사항)
+  categoryNames?: string;
+  eventUrl?: string | null; // 로컬대회의 경우 외부 URL (선택사항)
 }
 
 export interface ScheduleApiResponse {

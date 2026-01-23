@@ -27,7 +27,7 @@ export default function AssociationPage() {
       <NoticeMagazineSection />
 
       {/* CTA 섹션*/}
-      <CtaCards />
+      {/* <CtaCards /> */}
 
       {/* 기능 소개 섹션 */}
       <div className="h-[30px] md:h-[60px]" />

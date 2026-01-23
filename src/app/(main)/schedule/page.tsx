@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 import { useQueries } from '@tanstack/react-query';
@@ -24,6 +24,8 @@ export default function SchedulePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [isStickyFixed, setIsStickyFixed] = useState(false);
+  const bannerRef = useRef<HTMLDivElement | null>(null);
   
   // 각 월별로 API 호출하여 전체 연도 데이터 수집
   const year = currentDate.getFullYear();
@@ -210,8 +212,29 @@ export default function SchedulePage() {
     '7월', '8월', '9월', '10월', '11월', '12월'
   ];
 
+  // 스크롤 이벤트로 배너가 넘어가면 fixed로 전환
+  useEffect(() => {
+    const handleScroll = () => {
+      if (bannerRef.current) {
+        const bannerBottom = bannerRef.current.offsetTop + bannerRef.current.offsetHeight;
+        const scrollY = window.scrollY;
+        const headerHeight = 64; // 헤더 높이
+        
+        // 배너가 스크롤되면 fixed로 전환
+        setIsStickyFixed(scrollY + headerHeight >= bannerBottom);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // 초기 상태 확인
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="min-h-[50vh] sm:min-h-screen flex flex-col">
+    <div className="min-h-[50vh] sm:min-h-screen">
       {/* 헤더 */}
       <MainHeader />
       
@@ -221,7 +244,7 @@ export default function SchedulePage() {
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
-        <div className="relative w-full">
+        <div ref={bannerRef} className="relative w-full">
           <div className="sm:hidden" style={{ paddingBottom: '20%' }}></div>
           <div className="hidden sm:block md:hidden" style={{ height: '150px' }}></div>
           <div className="hidden md:block lg:hidden" style={{ height: '150px' }}></div>
@@ -264,12 +287,97 @@ export default function SchedulePage() {
           </div>
         </div>
         
-        {/* 페이지 콘텐츠 - 데스크탑에서는 최대 너비 제한 */}
-        <div className="w-full px-4 py-4 sm:py-6 lg:py-8">
-          <div className="flex flex-col mx-auto max-w-7xl">
+        {/* 탭 버튼 + 날짜 선택 컨트롤 - 모바일 전용, 하나로 묶어서 상단 고정 */}
+        {/* 배너가 스크롤되면 헤더 바로 아래에 고정되도록 스크롤 이벤트로 fixed 전환 */}
+        <div className={clsx(
+          "sm:hidden z-[100] bg-white shadow-sm",
+          isStickyFixed ? "fixed top-16 left-0 right-0" : "relative"
+        )}>
+          {/* 탭 버튼들 */}
+          <div className="px-2 pt-2 pb-2">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => handleViewModeChange('all')}
+                className={clsx(
+                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  viewMode === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                전체일정
+              </button>
+              <button
+                onClick={() => handleViewModeChange('marathon')}
+                className={clsx(
+                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  viewMode === 'marathon'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                전마협 대회일정
+              </button>
+              <button
+                onClick={() => handleViewModeChange('national')}
+                className={clsx(
+                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  viewMode === 'national'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                전국대회 일정
+              </button>
+            </div>
+          </div>
+
+          {/* 날짜 선택 컨트롤 */}
+          <div className="px-2 py-2 border-t border-b border-l-0 border-r-0 border-[0.5px] border-gray-800">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                  setCurrentDate(newDate);
+                  scrollToMonth(newDate.getMonth());
+                }}
+                className="p-4 rounded-lg hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
+                aria-label="이전 달"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              <div className="text-center">
+                <div className="text-[10px] font-semibold text-gray-700">{currentDate.getFullYear()}년</div>
+                <div className="text-lg font-extrabold text-gray-900">{currentDate.getMonth() + 1}월</div>
+              </div>
+              <button
+                onClick={() => {
+                  const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                  setCurrentDate(newDate);
+                  scrollToMonth(newDate.getMonth());
+                }}
+                className="p-4 rounded-lg hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
+                aria-label="다음 달"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-700" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 페이지 콘텐츠 - 헤더와 동일한 너비로 맞춤 */}
+        {/* 배너와 일정 사이 간격 줄이기 */}
+        {/* 데스크탑에서 fixed로 전환될 때 컨텐츠가 겹치지 않도록 padding-top 추가 */}
+        <div className="w-full py-2 sm:py-4 lg:py-6" style={{ paddingTop: isStickyFixed ? 'calc(1rem + 64px)' : undefined }}>
+          <div className="flex flex-col mx-auto w-full max-w-[1920px]">
 
         {/* 날짜 선택 컨트롤 - 데스크탑/태블릿 */}
-        <div className="hidden sm:block mb-6 p-4 border-t border-b border-black sticky top-16 bg-white z-10">
+        {/* 배너가 스크롤되면 헤더 바로 아래에 고정되도록 스크롤 이벤트로 fixed 전환 */}
+        {/* 헤더와 정확히 맞추기 위해 헤더와 동일한 패딩 적용, 639px~1299px: px-12, 1299px 이상: px-20 */}
+        <div className={clsx(
+          "hidden sm:block mb-6 py-2 px-4 sm:px-12 min-[1299px]:px-20 border-t border-b border-l-0 border-r-0 border-[0.5px] border-gray-800 bg-white z-20",
+          isStickyFixed ? "fixed top-16 left-0 right-0" : "relative"
+        )}>
           <div className="flex flex-row gap-4 items-center justify-between">
           {/* 연도 선택 */}
           <div className="flex items-center gap-3">
@@ -309,26 +417,43 @@ export default function SchedulePage() {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeave}
               >
-                <div className="flex gap-0.5 flex-nowrap min-w-max">
+                <div className="flex gap-3 min-[1400px]:gap-5 min-[1600px]:gap-8 min-[1900px]:gap-12 flex-nowrap min-w-max">
               {monthNames.map((month, index) => {
                 const hasEvents = eventsByMonth[index] && eventsByMonth[index].length > 0;
+                const isCurrentMonth = currentDate.getMonth() === index;
                 return (
-                  <Button
-                    key={index}
-                    onClick={() => handleDateChange(new Date(currentDate.getFullYear(), index, 1))}
-                    size="lg"
-                    tone="white"
-                    widthType="default"
-                    className={clsx('!font-semibold !text-lg flex-shrink-0 whitespace-nowrap',
-                      currentDate.getMonth() === index
-                        ? '!bg-blue-600 text-white'
-                        : hasEvents
-                        ? 'bg-white text-black hover:bg-gray-100'
-                        : 'bg-white text-gray-400 hover:bg-gray-100'
+                  <div key={index} className="flex items-center gap-3 min-[1400px]:gap-5 min-[1600px]:gap-8 min-[1900px]:gap-12 flex-shrink-0">
+                    <Button
+                      onClick={() => handleDateChange(new Date(currentDate.getFullYear(), index, 1))}
+                      size="lg"
+                      tone="white"
+                      widthType="default"
+                      className={clsx('!font-semibold !text-lg flex-shrink-0 whitespace-nowrap !rounded-full !px-3 !py-3 flex items-center justify-center !w-12 !h-12 transition-colors duration-200',
+                        isCurrentMonth
+                          ? '!bg-[#ECF2FE] text-blue-600'
+                          : hasEvents
+                          ? 'bg-white text-black hover:!bg-gray-50'
+                          : 'bg-white text-gray-400 hover:!bg-gray-50'
+                      )}
+                    >
+                      {month}
+                    </Button>
+                    {/* 현재 선택된 월에서만 다음 달로 이동하는 > 버튼 표시 */}
+                    {isCurrentMonth && index < 11 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextMonth = index + 1;
+                          handleDateChange(new Date(currentDate.getFullYear(), nextMonth, 1));
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors flex-shrink-0"
+                        aria-label="다음 달"
+                        title="다음 달"
+                      >
+                        <ChevronRight className="w-4 h-4 text-gray-600" />
+                      </button>
                     )}
-                  >
-                    {month}
-                  </Button>
+                  </div>
                 );
               })}
             </div>
@@ -368,72 +493,10 @@ export default function SchedulePage() {
           </div>
         </div>
 
-        {/* 탭 버튼들 - 모바일 전용 */}
-        <div className="sm:hidden mb-4 px-2">
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => handleViewModeChange('all')}
-              className={clsx(
-                'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
-                viewMode === 'all'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              )}
-            >
-              전체일정
-            </button>
-            <button
-              onClick={() => handleViewModeChange('marathon')}
-              className={clsx(
-                'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
-                viewMode === 'marathon'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              )}
-            >
-              전마협 대회일정
-            </button>
-            <button
-              onClick={() => handleViewModeChange('national')}
-              className={clsx(
-                'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
-                viewMode === 'national'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              )}
-            >
-              전국대회 일정
-            </button>
-          </div>
-        </div>
-
-        {/* 날짜 선택 컨트롤 - 모바일 전용 */}
-        <div className="sm:hidden mb-6 px-2 py-4 border-t border-b border-black">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
-              className="p-4 rounded-lg hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
-              aria-label="이전 달"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-700" />
-            </button>
-            <div className="text-center">
-              <div className="text-[10px] font-semibold text-gray-700">{currentDate.getFullYear()}년</div>
-              <div className="text-lg font-extrabold text-gray-900">{currentDate.getMonth() + 1}월</div>
-            </div>
-            <button
-              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
-              className="p-4 rounded-lg hover:bg-gray-100 active:bg-gray-200 touch-manipulation"
-              aria-label="다음 달"
-            >
-              <ChevronRight className="w-6 h-6 text-gray-700" />
-            </button>
-          </div>
-        </div>
-
         {/* 전체일정 / 전마협 / 전국일정 탭 - 월별로 그룹화된 이벤트 표시 */}
+        {/* 헤더와 정확히 맞추기 위해 헤더와 동일한 패딩 적용, 639px~1299px: px-12, 1299px 이상: px-20 */}
         {(viewMode === 'all' || viewMode === 'marathon' || viewMode === 'national') && (
-          <div className="w-full">
+          <div className="w-full px-4 sm:px-12 min-[1299px]:px-20">
             {isLoading ? (
               <div className="text-center py-16">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -447,12 +510,55 @@ export default function SchedulePage() {
               </div>
             ) : (
               <div className="space-y-12">
-                {monthNames.map((monthName, monthIndex) => {
-                  const monthEvents = eventsByMonth[monthIndex] || [];
+                {(() => {
+                  // 전체 빈 상태 확인 (현재 년도만 확인)
+                  const currentYear = currentDate.getFullYear();
+                  const hasAnyEventsInCurrentYear = Object.keys(eventsByMonth).some(key => {
+                    const monthEvents = eventsByMonth[parseInt(key)] || [];
+                    return monthEvents.some(event => {
+                      const eventDate = new Date(event.eventDate);
+                      return eventDate.getFullYear() === currentYear;
+                    });
+                  });
                   
-                  if (monthEvents.length === 0) {
-                    return null;
+                  // 전체 빈 상태면 전체 메시지만 표시
+                  if (!hasAnyEventsInCurrentYear) {
+                    return (
+                      <div className="text-center py-16 text-gray-500">
+                        <div className="text-4xl sm:text-6xl mb-4">📅</div>
+                        <p className="text-base sm:text-xl font-medium mb-2">
+                          {viewMode === 'all' 
+                            ? '예정된 대회가 없습니다' 
+                            : viewMode === 'marathon'
+                            ? '예정된 전마협 대회가 없습니다'
+                            : '예정된 전국 대회가 없습니다'}
+                        </p>
+                        <p className="text-sm sm:text-base text-gray-500">다른 연도를 선택해보세요</p>
+                      </div>
+                    );
                   }
+                  
+                  // 전체 빈 상태가 아니면 월별로 표시
+                  return monthNames.map((monthName, monthIndex) => {
+                    const monthEvents = eventsByMonth[monthIndex] || [];
+                    
+                    // 현재 선택된 년도와 일치하는 이벤트만 필터링
+                    const filteredMonthEvents = monthEvents.filter(event => {
+                      const eventDate = new Date(event.eventDate);
+                      return eventDate.getFullYear() === currentYear;
+                    });
+                    
+                    // 해당 년도에 다른 달에 데이터가 있는지 확인 (현재 년도만 확인)
+                    const hasEventsInOtherMonths = Object.keys(eventsByMonth).some(key => {
+                      const monthKey = parseInt(key);
+                      if (monthKey === monthIndex) return false;
+                      const otherMonthEvents = eventsByMonth[monthKey] || [];
+                      // 현재 년도와 일치하는 이벤트가 있는지 확인
+                      return otherMonthEvents.some(event => {
+                        const eventDate = new Date(event.eventDate);
+                        return eventDate.getFullYear() === currentYear;
+                      });
+                    });
 
                   return (
                     <div
@@ -464,65 +570,68 @@ export default function SchedulePage() {
                       className="scroll-mt-32"
                     >
                       {/* 월 헤더 */}
-                      <h2 className="text-2xl font-bold text-gray-900 mb-6 sticky top-32 bg-white py-2 z-10">
+                      <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 sticky top-32 bg-white py-2 z-[5]">
                         {monthName}
                       </h2>
                       
-                      {/* 이벤트 카드 그리드 */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
-                        {monthEvents.map(event => {
-                          const eventDate = new Date(event.eventDate);
-                          const today = new Date();
-                          const isPast = eventDate < today;
-                          
-                          // EventCard에 필요한 props 매핑
-                          // API 상태 값을 한글로 변환
-                          const getStatusText = (status: string) => {
-                            if (status === 'OPEN') return '접수중';
-                            if (status === 'PENDING') return '비접수';
-                            if (status === 'CLOSED') return '접수마감';
-                            if (status === 'FINAL_CLOSED') return '내부마감';
-                            return '상태불명'; // 예상치 못한 상태 값의 경우
-                          };
-                          
-                          const eventCardProps = {
-                            imageSrc: event.eventImgSrc,
-                            imageAlt: event.eventNameKr,
-                            title: event.eventNameKr,
-                            subtitle: event.eventNameEn,
-                            date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
-                            price: `₩${event.lowerPrice.toLocaleString()}`,
-                            status: isPast ? '접수마감' : getStatusText(event.status),
-                            eventDate: event.eventDate,
-                            eventId: event.eventId,
-                            eventUrl: event.eventUrl // 로컬대회의 경우 외부 URL
-                          };
-                          
-                          return (
-                            <div key={event.eventId} className={clsx(isPast && 'opacity-60')}>
-                              <EventCard {...eventCardProps} size="test" className="w-full" />
-                            </div>
-                          );
-                        })}
-                      </div>
+                      {filteredMonthEvents.length === 0 ? (
+                        // 해당 달에 대회가 없을 때
+                        <div className="text-center py-16 text-gray-500">
+                          <div className="text-4xl sm:text-6xl mb-4">📅</div>
+                          <p className="text-sm sm:text-lg font-medium mb-2">
+                            {monthName}에는 예정된 대회가 없습니다
+                          </p>
+                          {hasEventsInOtherMonths && (
+                            <p className="text-xs sm:text-sm text-gray-400">
+                              다른 월을 선택해보세요
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        /* 이벤트 카드 그리드 */
+                        /* 915px~1260px 구간에서는 4열, 1260px~1560px: 5열, 1560px 이상: 6열 */
+                        <div className="grid grid-cols-2 sm:grid-cols-3 min-[915px]:grid-cols-4 min-[1260px]:grid-cols-5 min-[1560px]:grid-cols-6 gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
+                          {filteredMonthEvents.map(event => {
+                            const eventDate = new Date(event.eventDate);
+                            const today = new Date();
+                            const isPast = eventDate < today;
+                            
+                            // EventCard에 필요한 props 매핑
+                            // API 상태 값을 한글로 변환 (메인 페이지와 동일하게)
+                            const getStatusText = (status: string) => {
+                              if (status === 'OPEN') return '접수중';
+                              if (status === 'PENDING') return '접수예정';
+                              if (status === 'CLOSED') return '접수마감';
+                              if (status === 'FINAL_CLOSED') return '접수마감';
+                              return '상태불명'; // 예상치 못한 상태 값의 경우
+                            };
+                            
+                            const eventCardProps = {
+                              imageSrc: event.eventImgSrc,
+                              imageAlt: event.eventNameKr,
+                              title: event.eventNameKr,
+                              subtitle: event.eventNameEn,
+                              date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
+                              categoryNames: event.categoryNames,
+                              status: isPast ? '접수마감' : getStatusText(event.status),
+                              eventDate: event.eventDate,
+                              eventId: event.eventId,
+                              // null이 올 수 있으므로 undefined로 정규화
+                              eventUrl: event.eventUrl ?? undefined // 로컬대회의 경우 외부 URL
+                            };
+                            
+                            return (
+                              <div key={event.eventId} className={clsx(isPast && 'opacity-60')}>
+                                <EventCard {...eventCardProps} size="test" className="w-full" />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
-                })}
-                
-                {/* 모든 월에 대회가 없을 때 */}
-                {Object.keys(eventsByMonth).length === 0 && (
-                  <div className="text-center py-16 text-gray-500">
-                    <div className="text-6xl mb-4">📅</div>
-                    <p className="text-xl font-medium mb-2">
-                      {viewMode === 'all' 
-                        ? '예정된 대회가 없습니다' 
-                        : viewMode === 'marathon'
-                        ? '예정된 전마협 대회가 없습니다'
-                        : '예정된 전국 대회가 없습니다'}
-                    </p>
-                    <p className="text-gray-500">다른 연도를 선택해보세요</p>
-                  </div>
-                )}
+                  });
+                })()}
               </div>
             )}
           </div>
@@ -738,3 +847,4 @@ export default function SchedulePage() {
     </div>
   );
 }
+  

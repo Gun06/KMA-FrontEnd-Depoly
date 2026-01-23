@@ -15,7 +15,8 @@ export interface LocalEventDetailResponse {
   eventStatus: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
-  lowestAmount: number;
+  /** 예: "5km | 10km" */
+  eventCategoryCsv?: string;
   promotionBanner?: string;
 }
 

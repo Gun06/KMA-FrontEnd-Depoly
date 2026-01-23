@@ -318,15 +318,13 @@ export default function LocalEventForm({
             </div>
           </FormRow>
 
-          {/* 최소 금액 */}
-          <FormRow label="최소 금액" contentClassName="items-center">
+          {/* 거리/코스 (CSV 단일 문자열) */}
+          <FormRow label="거리/코스" contentClassName="items-center">
             <TextField
-              placeholder="최소 금액을 입력하세요."
-              value={f.lowestAmount}
+              placeholder='예) 5km | 10km | Half'
+              value={f.eventCategoryCsv}
               onChange={e => {
-                const value = e.currentTarget.value.replace(/[^\d]/g, '');
-                const formatted = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                f.setLowestAmount(formatted);
+                f.setEventCategoryCsv(e.currentTarget.value);
               }}
               className={cn(fieldCls, inputColorCls)}
               readOnly={readOnly}

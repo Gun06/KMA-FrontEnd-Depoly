@@ -46,7 +46,8 @@ export default function FormTable({
       )}
 
       <FormLayoutProvider labelWidth={labelWidth} tightRows={tightRows}>
-        <div className="w-full border border-neutral-300 rounded-sm overflow-hidden">
+        {/* overflow-hidden 제거: 드롭다운/팝오버가 테이블 밖으로 자연스럽게 보이도록 */}
+        <div className="w-full border border-neutral-300 rounded-sm">
           <div className="w-full divide-y divide-neutral-300 bg-white">{children}</div>
         </div>
       </FormLayoutProvider>
