@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { SponsorBanner } from '@/types/event'
 
@@ -8,7 +8,9 @@ export default function SponsorSection() {
   // API 데이터 상태
   const [sponsorData, setSponsorData] = useState<SponsorBanner[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [_error, setError] = useState<string | null>(null)
+  const marqueeRef = useRef<HTMLDivElement | null>(null)
+  const listRef = useRef<HTMLUListElement | null>(null)
 
   // API에서 스폰서 배너 데이터 가져오기
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function SponsorSection() {
           const errorText = await response.text()
           throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
         }
-      } catch (error) {
+      } catch (_error) {
         // 서버 에러 시 기본 데이터 사용
         setSponsorData([])
         setError(null) // 에러 상태를 null로 설정하여 기본 데이터 표시
@@ -76,6 +78,45 @@ export default function SponsorSection() {
   // 로딩 중이거나 데이터가 없을 때도 스켈레톤 표시 (기본값: true)
   const showSkeleton = isLoading || banners.length === 0;
 
+  useEffect(() => {
+    if (!marqueeRef.current || !listRef.current || banners.length === 0) return
+
+    let animationFrameId: number
+    let offset = 0
+    let listWidth = listRef.current.scrollWidth
+    const speed = 1.6
+
+    const updateWidth = () => {
+      if (!listRef.current) return
+      listWidth = listRef.current.scrollWidth
+    }
+
+    const resizeObserver = new ResizeObserver(updateWidth)
+    resizeObserver.observe(listRef.current)
+
+    const animate = () => {
+      if (!marqueeRef.current || listWidth === 0) {
+        animationFrameId = requestAnimationFrame(animate)
+        return
+      }
+
+      offset -= speed
+      if (Math.abs(offset) >= listWidth) {
+        offset += listWidth
+      }
+
+      marqueeRef.current.style.transform = `translate3d(${offset}px, 0, 0)`
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+      resizeObserver.disconnect()
+    }
+  }, [banners.length])
+
   return (
     <section 
       className="relative bg-white sponsor-section" 
@@ -84,15 +125,6 @@ export default function SponsorSection() {
         minHeight: 'var(--sectionH, 140px)' // 최소 높이 보장 + fallback
       }}
     >
-      {/* 타이틀: SectionPanel과 동일 래퍼/패딩으로 정렬 */}
-      <div className="absolute inset-0 pointer-events-none z-30">
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 h-full">
-          <div className="h-full flex items-center pl-6 md:pl-20">
-            <h2 className="font-giants text-[clamp(12px,2.8vw,22px)] md:text-[clamp(14px,2.2vw,26px)] text-gray-900">SPONSOR</h2>
-          </div>
-        </div>
-      </div>
-
       {/* 이미지 트랙 (12개 반복, 중앙 정렬, 무한 이동) */}
       <div
         className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden z-10"
@@ -103,7 +135,7 @@ export default function SponsorSection() {
       >
         {/* 로딩 스켈레톤 - 항상 먼저 렌더링하여 레이아웃 유지 (기본값: 보임) */}
         <div 
-          className="absolute top-0 right-0 bottom-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-4 md:px-6 lg:px-8 h-full overflow-hidden transition-opacity duration-300"
+          className="absolute top-0 right-0 bottom-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-0 h-full overflow-hidden transition-opacity duration-300"
           style={{ 
             height: '100%',
             minHeight: 'var(--imgH, 80px)',
@@ -111,9 +143,7 @@ export default function SponsorSection() {
             opacity: showSkeleton ? 1 : 0,
             zIndex: showSkeleton ? 20 : 0,
             pointerEvents: showSkeleton ? 'auto' : 'none',
-            background: 'transparent',
-            // 타이틀 영역 제외 (왼쪽에서 시작 위치 조정)
-            left: 'clamp(200px, 20vw, 320px)'
+            background: 'transparent'
           }}
         >
           {Array.from({ length: 8 }).map((_, idx) => (
@@ -141,8 +171,8 @@ export default function SponsorSection() {
             minHeight: 'var(--imgH, 80px)' // fallback 추가
           }}
         >
-          <div className="marquee flex w-max items-center h-full leading-[0]">
-            <ul className="flex items-center gap-0 px-0 h-full">
+          <div ref={marqueeRef} className="marquee-track flex w-max items-center h-full leading-[0]">
+            <ul ref={listRef} className="flex items-center gap-0 h-full px-0">
               {banners.map((banner, idx) => (
               <li key={`s-${idx}`} className="shrink-0 flex items-center justify-center h-full">
                 <a 
@@ -166,7 +196,7 @@ export default function SponsorSection() {
             ))}
           </ul>
           {/* 두 번째 트랙을 이어붙여 끊김 없는 루프 */}
-          <ul className="flex items-center gap-0 px-0 h-full">
+          <ul className="flex items-center gap-0 h-full px-0">
             {banners.map((banner, idx) => (
               <li key={`s2-${idx}`} className="shrink-0 flex items-center justify-center h-full">
                 <a 
@@ -215,8 +245,7 @@ export default function SponsorSection() {
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gray-200 z-[60]" />
 
       <style jsx>{`
-        .marquee { animation: marquee 60s linear infinite; will-change: transform; }
-        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .marquee-track { will-change: transform; }
         
         @keyframes shimmer {
           0% { background-position: -200% 0; }
@@ -238,18 +267,19 @@ export default function SponsorSection() {
         }
         /* Desktop default (>=1280px) */
         .sponsor-section {
-          --sectionH: 140px;  /* 기본 높이 증가 */
-          --imgH: 80px;       /* 이미지 트랙 높이 증가 */
-          --leftW: 320px;     /* 좌측 오버레이 폭 확장 */
-          --rightW: 220px;    /* 우측 오버레이 폭 확장 */
+          --sectionH: clamp(140px, 9vw, 160px); /* 자연스럽게 증가 */
+          --imgH: clamp(80px, 5.4vw, 96px);
+          --imgW: clamp(200px, 17vw, 300px);
+          --leftW: clamp(96px, 6.5vw, 120px);
+          --rightW: clamp(96px, 6.5vw, 120px);
         }
         /* 1024–1279px */
         @media (max-width: 1279px) and (min-width: 1024px) {
           .sponsor-section {
             --sectionH: 120px;
             --imgH: 70px;
-            --leftW: 280px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 200px;  /* 우측 오버레이 폭 확장 */
+            --leftW: 96px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 96px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* 768–1023px (Tablet) */
@@ -257,8 +287,8 @@ export default function SponsorSection() {
           .sponsor-section {
             --sectionH: 100px;
             --imgH: 60px;
-            --leftW: 260px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 180px;  /* 우측 오버레이 폭 확장 */
+            --leftW: 32px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 32px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* 480–767px (Phones) */
@@ -266,8 +296,8 @@ export default function SponsorSection() {
           .sponsor-section {
             --sectionH: 80px;
             --imgH: 50px;
-            --leftW: 200px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 140px;  /* 우측 오버레이 폭 줄임 */
+            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* <=479px (Small phones) */
@@ -275,8 +305,8 @@ export default function SponsorSection() {
           .sponsor-section {
             --sectionH: 70px;
             --imgH: 44px;
-            --leftW: 160px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 100px;  /* 우측 오버레이 폭 줄임 */
+            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
       `}</style>

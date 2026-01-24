@@ -18,7 +18,7 @@ import { ScheduleEvent, CalendarEvent } from '@/types/event';
 
 export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'all' | 'marathon' | 'national'>('all');
+  const [viewMode, setViewMode] = useState<'calendar' | 'all' | 'marathon' | 'national'>('marathon');
   const monthRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const monthScrollRef = useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -297,17 +297,6 @@ export default function SchedulePage() {
           <div className="px-2 pt-2 pb-2">
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
               <button
-                onClick={() => handleViewModeChange('all')}
-                className={clsx(
-                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
-                  viewMode === 'all'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                )}
-              >
-                전체일정
-              </button>
-              <button
                 onClick={() => handleViewModeChange('marathon')}
                 className={clsx(
                   'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
@@ -316,7 +305,7 @@ export default function SchedulePage() {
                     : 'text-gray-600 hover:text-gray-900'
                 )}
               >
-                전마협 대회일정
+                전마협
               </button>
               <button
                 onClick={() => handleViewModeChange('national')}
@@ -327,7 +316,18 @@ export default function SchedulePage() {
                     : 'text-gray-600 hover:text-gray-900'
                 )}
               >
-                전국대회 일정
+                전국일정
+              </button>
+              <button
+                onClick={() => handleViewModeChange('all')}
+                className={clsx(
+                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  viewMode === 'all'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                )}
+              >
+                전체일정
               </button>
             </div>
           </div>
@@ -462,15 +462,6 @@ export default function SchedulePage() {
             
              {/* 탭 버튼들 */}
              <div className="flex gap-2 flex-shrink-0">
-            <Button 
-              size="sm" 
-              tone={viewMode === 'all' ? 'dark' : 'outlineDark'} 
-              variant={viewMode === 'all' ? 'solid' : 'outline'}
-               className="!w-20"
-              onClick={() => handleViewModeChange('all')}
-            >
-               전체일정
-             </Button>
              <Button 
                size="sm" 
                tone={viewMode === 'marathon' ? 'dark' : 'outlineDark'} 
@@ -488,6 +479,15 @@ export default function SchedulePage() {
                onClick={() => handleViewModeChange('national')}
              >
                전국일정
+             </Button>
+             <Button 
+              size="sm" 
+              tone={viewMode === 'all' ? 'dark' : 'outlineDark'} 
+              variant={viewMode === 'all' ? 'solid' : 'outline'}
+               className="!w-20"
+              onClick={() => handleViewModeChange('all')}
+            >
+               전체일정
              </Button>
              </div>
           </div>

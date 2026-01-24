@@ -34,6 +34,8 @@ function extractFileObject(f: unknown): File | undefined {
 
 export default function SponsorsPreview({ rows }: Props) {
   const [items, setItems] = React.useState<Array<{ url: string; alt: string }>>([]);
+  const marqueeRef = React.useRef<HTMLDivElement | null>(null);
+  const listRef = React.useRef<HTMLUListElement | null>(null);
 
   React.useEffect(() => {
     let alive = true;
@@ -82,26 +84,61 @@ export default function SponsorsPreview({ rows }: Props) {
     };
   }, [rows]);
 
+  React.useEffect(() => {
+    if (!marqueeRef.current || !listRef.current || items.length === 0) return;
+
+    let animationFrameId: number;
+    let offset = 0;
+    let listWidth = listRef.current.scrollWidth;
+    const speed = 1.6;
+
+    const updateWidth = () => {
+      if (!listRef.current) return;
+      listWidth = listRef.current.scrollWidth;
+    };
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(listRef.current);
+
+    const animate = () => {
+      if (!marqueeRef.current || listWidth === 0) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
+      offset -= speed;
+      if (Math.abs(offset) >= listWidth) {
+        offset += listWidth;
+      }
+
+      marqueeRef.current.style.transform = `translate3d(${offset}px, 0, 0)`;
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+    };
+  }, [items.length]);
+
   return (
-    <section className="relative bg-white sponsor-section rounded-xl border mb-56 md:mb-72 lg:mb-80" style={{ height: 'var(--sectionH)' }}>
-      {/* 타이틀 */}
-      <div className="absolute inset-0 pointer-events-none z-30">
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 h-full">
-          <div className="h-full flex items-center pl-6 md:pl-20">
-            <h2 className="font-giants text-[clamp(12px,2.8vw,22px)] md:text-[clamp(14px,2.2vw,26px)] text-gray-900">
-              SPONSOR
-            </h2>
-          </div>
-        </div>
-      </div>
+    <section
+      className="relative bg-white sponsor-section rounded-xl border mb-56 md:mb-72 lg:mb-80 z-0"
+      style={{
+        height: 'var(--sectionH, 140px)',
+        minHeight: 'var(--sectionH, 140px)'
+      }}
+    >
 
       {/* 이미지 트랙 (12개 반복, 중앙 정렬, 무한 이동) */}
       <div
         className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden z-10"
-        style={{ height: 'var(--imgH)' }}
+        style={{ height: 'var(--imgH, 80px)', minHeight: 'var(--imgH, 80px)' }}
       >
-        <div className="marquee flex w-max items-center h-full leading-[0]">
-          <ul className="flex items-center gap-0 px-0 h-full">
+        <div ref={marqueeRef} className="marquee-track flex w-max items-center h-full leading-[0]">
+          <ul ref={listRef} className="flex items-center gap-0 h-full px-0">
             {items.map((item, idx) => (
               <li key={`s-${idx}`} className="shrink-0 flex items-center justify-center h-full">
                 <div className="block">
@@ -110,7 +147,7 @@ export default function SponsorsPreview({ rows }: Props) {
                     alt={item.alt} 
                     height={100} 
                     width={200}
-                    style={{ height: 'var(--imgH)' }} 
+                    style={{ height: 'var(--imgH, 80px)' }} 
                     className="w-auto object-contain hover:opacity-80 transition-opacity" 
                   />
                 </div>
@@ -127,7 +164,7 @@ export default function SponsorsPreview({ rows }: Props) {
                     alt={item.alt} 
                     height={100} 
                     width={200}
-                    style={{ height: 'var(--imgH)' }} 
+                    style={{ height: 'var(--imgH, 80px)' }} 
                     className="w-auto object-contain hover:opacity-80 transition-opacity" 
                   />
                 </div>
@@ -138,7 +175,7 @@ export default function SponsorsPreview({ rows }: Props) {
       </div>
 
       {/* 양쪽 파란 테두리 + 흰색 배경 영역 */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20" style={{ width: 'var(--leftW)' }}>
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10" style={{ width: 'var(--leftW)' }}>
         <div
           className="h-full w-full"
           style={{
@@ -146,7 +183,7 @@ export default function SponsorsPreview({ rows }: Props) {
           }}
         />
       </div>
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20" style={{ width: 'var(--rightW)' }}>
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10" style={{ width: 'var(--rightW)' }}>
         <div
           className="h-full w-full"
           style={{
@@ -156,25 +193,25 @@ export default function SponsorsPreview({ rows }: Props) {
       </div>
 
       {/* 아래 구분선(회색 계열) */}
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gray-200 z-[60]" />
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gray-200 z-10" />
 
       <style jsx>{`
-        .marquee { animation: marquee 45s linear infinite; will-change: transform; }
-        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .marquee-track { will-change: transform; }
         /* Desktop default (>=1280px) */
         .sponsor-section {
-          --sectionH: 140px;  /* 기본 높이 증가 */
-          --imgH: 80px;       /* 이미지 트랙 높이 증가 */
-          --leftW: 320px;     /* 좌측 오버레이 폭 확장 */
-          --rightW: 220px;    /* 우측 오버레이 폭 확장 */
+          --sectionH: clamp(140px, 9vw, 160px); /* 자연스럽게 증가 */
+          --imgH: clamp(80px, 5.4vw, 96px);
+          --imgW: clamp(200px, 17vw, 300px);
+          --leftW: clamp(96px, 6.5vw, 120px);
+          --rightW: clamp(96px, 6.5vw, 120px);
         }
         /* 1024–1279px */
         @media (max-width: 1279px) and (min-width: 1024px) {
           .sponsor-section {
             --sectionH: 120px;
             --imgH: 70px;
-            --leftW: 280px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 200px;  /* 우측 오버레이 폭 확장 */
+            --leftW: 96px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 96px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* 768–1023px (Tablet) */
@@ -182,8 +219,8 @@ export default function SponsorsPreview({ rows }: Props) {
           .sponsor-section {
             --sectionH: 100px;
             --imgH: 60px;
-            --leftW: 260px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 180px;  /* 우측 오버레이 폭 확장 */
+            --leftW: 32px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 32px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* 480–767px (Phones) */
@@ -191,8 +228,8 @@ export default function SponsorsPreview({ rows }: Props) {
           .sponsor-section {
             --sectionH: 80px;
             --imgH: 50px;
-            --leftW: 200px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 140px;  /* 우측 오버레이 폭 줄임 */
+            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
         /* <=479px (Small phones) */
@@ -200,8 +237,8 @@ export default function SponsorsPreview({ rows }: Props) {
           .sponsor-section {
             --sectionH: 70px;
             --imgH: 44px;
-            --leftW: 160px;   /* 좌측 오버레이 폭 확장 */
-            --rightW: 100px;  /* 우측 오버레이 폭 줄임 */
+            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
+            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
           }
         }
       `}</style>

@@ -26,8 +26,8 @@ const OFFICES: OfficeRowProps[] = [
   },
   {
     label: '영남지사',
-    address: '경북 상주시 낙양동 146-110번지',
-    phone: '054) 532 - 1080',
+    address: '경북 상주시 삼백로 60-9 향군회관 3층',
+    phone: '054) 535 - 1080',
     fax: '054) 532 - 1082',
   },
   {
