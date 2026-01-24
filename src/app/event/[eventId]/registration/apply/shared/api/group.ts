@@ -146,6 +146,7 @@ export interface BatchValidationErrorResponse {
 export const requestGroupRefund = async (
   eventId: string,
   organizationId: string,
+  rawPassword: string,
   bankName: string,
   accountNumber: string,
   accountHolderName: string,
@@ -161,12 +162,14 @@ export const requestGroupRefund = async (
         accountNumber: string;
         paymenterBank: string;
         accountHolderName: string;
+        rawPassword: string;
       };
     } = {
       refundInfoRequest: {
         accountNumber: accountNumber,
         paymenterBank: bankName,
-        accountHolderName: accountHolderName
+        accountHolderName: accountHolderName,
+        rawPassword
       }
     };
 

@@ -301,7 +301,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     router.push(`/event/${params.eventId}/registration/apply/individual?mode=edit&data=${encodedData}`);
   };
 
-  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+  const handleRefundSubmit = async (rawPassword: string, bankName: string, accountNumber: string, accountHolderName: string) => {
     if (!registrationData?.registrationId) {
       throw new Error('신청 정보를 찾을 수 없습니다.');
     }
@@ -311,6 +311,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
       await requestIndividualRefund(
         params.eventId,
         registrationData.registrationId,
+        rawPassword,
         bankName,
         accountNumber,
         accountHolderName

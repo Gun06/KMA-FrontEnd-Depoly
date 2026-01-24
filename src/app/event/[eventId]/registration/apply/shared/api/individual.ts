@@ -138,6 +138,7 @@ export const fetchUserDataByCredentials = async (accountId: string, accountPw: s
 export const requestIndividualRefund = async (
   eventId: string,
   registrationId: string,
+  rawPassword: string,
   bankName: string,
   accountNumber: string,
   accountHolderName: string
@@ -151,6 +152,7 @@ export const requestIndividualRefund = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        rawPassword,
         paymenterBank: bankName,
         accountNumber: accountNumber,
         accountHolderName: accountHolderName

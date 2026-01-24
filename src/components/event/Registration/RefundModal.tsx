@@ -6,7 +6,7 @@ import { X, ChevronDown } from 'lucide-react';
 interface RefundModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (bankName: string, accountNumber: string, accountHolderName: string) => Promise<void>;
+  onSubmit: (rawPassword: string, bankName: string, accountNumber: string, accountHolderName: string) => Promise<void>;
   isLoading?: boolean;
   onSuccess?: () => void; // 성공 후 확인 버튼 클릭 시 호출
 }
@@ -37,6 +37,7 @@ const BANK_LIST = [
 
 export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = false, onSuccess }: RefundModalProps) {
   const [formData, setFormData] = useState({
+    rawPassword: '',
     bankName: '',
     accountNumber: '',
     accountHolderName: ''
@@ -87,6 +88,11 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.rawPassword.trim()) {
+      setError('비밀번호를 입력해주세요.');
+      return;
+    }
+
     if (!formData.bankName.trim()) {
       setError('은행명을 선택해주세요.');
       return;
@@ -110,7 +116,12 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   // 확인 다이얼로그에서 최종 환불 신청 처리
   const handleFinalSubmit = async () => {
     try {
-      await onSubmit(formData.bankName.trim(), formData.accountNumber.trim(), formData.accountHolderName.trim());
+      await onSubmit(
+        formData.rawPassword.trim(),
+        formData.bankName.trim(),
+        formData.accountNumber.trim(),
+        formData.accountHolderName.trim()
+      );
       // 성공 시 성공 상태로 전환
       setShowConfirmDialog(false);
       setIsSuccess(true);
@@ -121,7 +132,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
   };
 
   const handleClose = () => {
-    setFormData({ bankName: '', accountNumber: '', accountHolderName: '' });
+    setFormData({ rawPassword: '', bankName: '', accountNumber: '', accountHolderName: '' });
     setError(null);
     setIsSuccess(false);
     setShowConfirmDialog(false);
@@ -131,7 +142,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
 
   const handleSuccessConfirm = () => {
     setIsSuccess(false);
-    setFormData({ bankName: '', accountNumber: '', accountHolderName: '' });
+    setFormData({ rawPassword: '', bankName: '', accountNumber: '', accountHolderName: '' });
     if (onSuccess) {
       onSuccess();
     } else {
@@ -216,6 +227,23 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
         ) : (
           /* 폼 */
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 비밀번호 입력 */}
+            <div>
+              <label htmlFor="rawPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                비밀번호 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="rawPassword"
+                name="rawPassword"
+                value={formData.rawPassword}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="비밀번호를 입력해주세요"
+                disabled={isLoading}
+              />
+            </div>
+
             {/* 은행명 입력 */}
             <div className="relative" ref={bankDropdownRef}>
               <label htmlFor="bankName" className="block text-sm font-medium text-gray-700 mb-2">

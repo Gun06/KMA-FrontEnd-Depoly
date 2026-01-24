@@ -490,7 +490,7 @@ export default function GroupApplicationConfirmResultPage() {
   };
 
   // 개별 환불 처리 (선택한 사용자들에 대해) - 단체 환불 API 사용
-  const handleIndividualRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+  const handleIndividualRefundSubmit = async (rawPassword: string, bankName: string, accountNumber: string, accountHolderName: string) => {
     if (selectedRegistrationIds.length === 0) {
       throw new Error('환불할 참가자를 선택해주세요.');
     }
@@ -505,6 +505,7 @@ export default function GroupApplicationConfirmResultPage() {
       await requestGroupRefund(
         eventId,
         groupApplicationData.organizationId,
+        rawPassword,
         bankName,
         accountNumber,
         accountHolderName,
@@ -558,7 +559,7 @@ export default function GroupApplicationConfirmResultPage() {
   };
 
   // 단체 전체 환불 처리 (기존 로직, 호환성을 위해 유지)
-  const handleRefundSubmit = async (bankName: string, accountNumber: string, accountHolderName: string) => {
+  const handleRefundSubmit = async (rawPassword: string, bankName: string, accountNumber: string, accountHolderName: string) => {
     if (!groupApplicationData?.organizationId) {
       throw new Error('단체 신청 정보를 찾을 수 없습니다. (organizationId가 없습니다)');
     }
@@ -592,6 +593,7 @@ export default function GroupApplicationConfirmResultPage() {
       await requestGroupRefund(
         eventId,
         groupApplicationData.organizationId, // DB PK 값 사용
+        rawPassword,
         bankName,
         accountNumber,
         accountHolderName,
