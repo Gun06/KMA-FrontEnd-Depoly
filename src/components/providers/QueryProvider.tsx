@@ -46,7 +46,14 @@ export default function QueryProvider({ children }: QueryProviderProps) {
               query.queryKey[1] === 'local-events' &&
               query.queryKey[2] === 'detail';
             
-            if (!isDeletedEventError && !isLocalEventDetailError) {
+            // 비공개 대회 스폰서 배너 조회 실패 에러는 무시 (404는 정상적인 응답)
+            const isEventSponsorBannerError = 
+              Array.isArray(query?.queryKey) &&
+              query.queryKey[0] === 'eventSponsorBanners' &&
+              ((error instanceof HttpError && error.status === 404) ||
+               message.includes('이벤트 스폰서 배너 조회 실패'));
+            
+            if (!isDeletedEventError && !isLocalEventDetailError && !isEventSponsorBannerError) {
               toast.error(message);
             }
           },
