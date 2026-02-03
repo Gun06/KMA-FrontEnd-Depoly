@@ -65,7 +65,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
         } else if (eventData?.eventStatus) {
           setEventStatus(eventData.eventStatus);
         }
-      } catch (error) {
+      } catch {
         // 실패 시 무시
       }
     };
@@ -246,217 +246,89 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <div className="bg-gray-100 rounded-lg p-4 h-[300px] overflow-y-auto">
               <div className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">
                 <div>
-                  <p className="font-bold text-gray-800 mb-2">◆ 건강상태</p>
+                  <p className="font-bold text-gray-800 mb-2">◆ 참가자 건강상태 확인</p>
                   <div className="pl-5">
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>1.</strong></span>
-                      <span className="text-gray-700"><strong>참가자의 건강 상태 및 책임본인</strong> 참가자의 건강 상태 및 책임본인은 마라톤 대회 참가와 관련하여, 대회 참가 중 발생할 수 있는 건강상의 문제에 대한 충분한 고려와 준비를 하였으며, 대회 도중 발생하는 모든 건강상의 문제는 전적으로 본인의 책임임을 인정합니다. <br />
-                        이에 따라, 본인은 다음과 같은 사항을 이해하고 동의합니다.<br />
-                        <div className="pl-5">
-                          <div className="flex items-start space-x-2 mb-1">
-                            <span className="text-red-500 flex-shrink-0">※</span>
-                            <span className="text-red-500">고혈압, 심근경색, 심장질환, 당뇨 등 질병으로 인해 발생하는 사고나 사망에 대해서는 주최측이 어떠한 책임도 지지 않으며, 참가자는 이에 대해 보험 혜택을 받을 수 없습니다.</span>
-                          </div>
-                          <div className="flex items-start space-x-2 mb-1">
-                            <span className="text-red-500 flex-shrink-0">※</span>
-                            <span className="text-red-500">대회 도중 발생하는 부상, 사망, 기타 사고에 대해서는 주최측이 응급조치 외에는 어떠한 법적, 책임도 지지 않습니다.</span>
-                          </div>
-                        </div>
-                      </span>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-1">
-                      <span className="text-gray-700 flex-shrink-0"><strong>2.</strong></span>
-                      <span className="text-gray-700"><strong>기상 변화 및 기타 위험 요소</strong> 기상 변화 및 기타 위험 요소에 대한 책임본인은 기상 변화로 인한 열사병 증세 또는 과도한 레이스로 인한 탈수증 등의 위험 요소를 충분히 인지하고 있으며, 이러한 상황 발생 시 주최측이 응급조치 외에는 어떠한 책임도 지지 않음을 이해합니다. 따라서 본인은 이러한 위험을 자발적으로 수용하며 참가합니다.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="font-bold text-gray-800 mb-2">◆ 대회규정 준수안내 ◆</p>
-                  <div className="pl-5">
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>1.</strong></span>
-                      <span className="text-gray-700"><strong>대회 중단 및 긴급 안전 조치에 대한 이해</strong> 대회 중단 및 긴급 안전 조치에 대한 이해대회 도중 예기치 못한 상황(예: 기상 악화, 긴급 사고 등) 발생 시, 주최측은 지자체 및 소방 당국과 협력하여 긴급 안전 대책 회의를 거쳐 대회를 중단할 수 있습니다.<br />
-                        이와 같은 경우에도 주최측은 대회 중단에 따른 참가자의 피해에 대해 어떠한 책임도 지지 않음을 동의합니다.</span>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>2.</strong></span>
-                      <span className="text-gray-700"><strong>참가 규정 준수</strong> 참가 규정 준수본인은 전마협 대회 규정(아래 세부사항 포함)을 준수할 것을 서약하며, 만약 규정을 위반하여 발생하는 모든 사항에 대해 본인이 책임을 질 것임을 동의합니다.</span>
-                    </div>
-                    <div className="pl-5">
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">①</span>
-                        <span className="text-gray-700">등록 시 가명 또는 차명을 사용하지 않으며, 참가권을 타인에게 양도하지 않습니다. 가명, 차명 사용 및 참가권 양도로 인해 발생하는 불이익은 본인이 감수합니다.</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">②</span>
-                        <span className="text-gray-700">대회 코스의 교통 혼잡으로 인해 각 구간별 제한 시간이 설정되어 있으며, 제한 시간 이후에는 교통 통제가 자동 해제됩니다. 제한 시간 내 완주하지 못한 참가자는 진행 요원의 지시에 따라 회수 차량에 탑승해야 합니다.</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">③</span>
-                        <span className="text-gray-700">기록 측정의 정확성을 위해 기록 측정용 칩은 정해진 방법으로 착용하고, 정해진 지점을 통과해야 합니다. (기타 세부 규정은 대회 요강을 참조하십시오.)</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>3.</strong></span>
-                      <span className="text-gray-700"><strong>참가 취소 및 환불 정책</strong> 참가 취소 및 환불 정책부상이나 출장 등 불가피한 사정으로 인해 참가가 불가능한 경우, 주최측은 이를 확인 후 참가 취소를 할 수 있습니다. 참가 취소에 따른 환불은 아래의 규정에 따릅니다.</span>
-                    </div>
-                    <div className="pl-5">
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">•</span>
-                        <span className="text-gray-700">대회 접수 마감일 이전까지: 참가비의 0% 공제 후 환불</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">•</span>
-                        <span className="text-gray-700">대회 접수 마감일 다음날부터: 참가비의 100% 공제 후 환불 불가</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">•</span>
-                        <span className="text-gray-700">대회 접수 마감일 이후에는 참가 취소 및 환불이 불가합니다. (참가비 전액 공제)</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">•</span>
-                        <span className="text-gray-700">대회 마감일 이후 10일 이내에 환불이 일괄적으로 처리됩니다</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>4.</strong></span>
-                      <span className="text-gray-700"><strong>천재지변 및 기타 불가항력 사유</strong> 에 따른 대회 취소천재지변(자연재해) 또는 전쟁 등의 불가항력적인 사유로 인해 대회가 취소될 경우, 참가비는 환불되지 않으며, 단 기념품은 배송됩니다. 또한 코로나19와 관련된 질병 또는 개인 사정으로 인한 마감일 이후의 환불 요청은 불가합니다.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="font-bold text-gray-800 mb-2">◆ 개인정보수집에 대한 동의 ◆</p>
-                  <div className="pl-5">
-                    <p className="mb-1">참가신청시 이용약관을 동의하는 절차를 마련하고 있으며 동의의 의사표시가 있으면 개인정보수집에 대해 동의한 것으로 봅니다</p>
-                    <div className="pl-5">
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">1.</span>
-                        <span className="text-gray-700">개인정보의 수집목적 및 이용목적 당사가 회원님들의 개인정보를 수집하는 목적은 회원님들의 신분을 확인하고 당사 서비스를 이용하고자 하는 의사를 확인하며 회원님에게 최적의 서비스를 제공하고자 하는 것입니다. 당사는 다양한 서비스를 회원님들의 특성, 기호에 맞추어 제공하고 회원님이 당사의 서비스를 이용함에 따라 일어나는 이행과정에서 일어나는 문제를 해결하기 위해 일부 한정된 범위내에서 개인정보를 이용하고 있습니다.</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">2.</span>
-                        <span className="text-gray-700">개인정보 취급정보방침은 홈페이지 메인하단&quot;개인정보취급방침&quot;에 따름을 이해한다.</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-2">
-                        <span className="text-gray-700 flex-shrink-0">3.</span>
-                        <span className="text-gray-700">참가신청한후에는 대회안내 홍보문자가 발송을 수락한다.</span>
-                      </div>
-                    </div>
-
-                    <p className="mb-1">
-                      <strong>▣ 개인정보활용동의 ▣</strong>
-                    </p>
-                    <div className="pl-5">
-                      <p className="mb-2">개인정보보호법 제22조 및 정보통신망 이용촉진 및 정보보호 등에 관한 법률 제22조에 따라 타인에게 제공 활용 시 개인정보 제공자(정보주체)의 동의를 얻어야 하는 정보입니다. <br />
-                        이에 정보주체(이하 &quot;본인&quot;으로 표기)인 본인은 귀사가 다음의 정보를 귀사 및 관계사의 서비스 제공 목적으로 활용 및 제공, 상호 공유하는데 동의한다.</p>
-                    </div>
-
-                    <p className="mb-1">
-                      <strong>▣ 본인이 제공할 개인 정보의 내용 ▣</strong>
-                    </p>
-                    <div className="pl-5">
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">1.</span>
-                        <span className="text-gray-700">필수제공사항 : 성명, 생년월일, 자택(회사)주소, 자택(회사)전화번호, 핸드폰번호, 이메일주소</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">※</span>
-                        <span className="text-gray-700">단, 정보통신망을 이용한 가입자의 경우 정보통신망 이용촉진 및 정보보호등에 관한 법률 제23조에 따라 주민등록번호를 대신하여 이용회원번호 및 생년월일등으로 이를 대체할 수 있습니다.</span>
-                      </div>
-                      <div className="flex items-start space-x-2 mb-1">
-                        <span className="text-gray-700 flex-shrink-0">※</span>
-                        <span className="text-gray-700">사무국은 원칙적으로 이용자의 개인정보의 수집 및 이용 목적이 달성되면 지체 없이 파기합니다.</span>
-                      </div>
-                      <p className="mb-1">(단, 다음과 같은 이유로 명시한 기간 동안 보존합니다.)</p>
-                      <p className="mb-2"><strong>사용목적</strong> : 대회기록조회 ┃ 5년 ┃ 성명, 생년월일, 성별, 휴대폰번호, 주소</p>
-                    </div>
-
                     <p className="mb-2">
-                      <strong>▣ 제공 대상자 및 제공 이용목적 ▣</strong>
+                      참가자는 본인이 신청한 종목을 무리 없이 달릴 수 있는지 건강상태를 반드시 확인해야 합니다. 행사 전날 과로, 과음을 자제해 주시기 바랍니다. 특히 심한 고혈압이나 심장질환이 있으신 분께서는 미리 의료기관에서 검진을 받으시길 바라며, 절대 무리한 레이스는 피하시기 바랍니다. 경우에 따라 대회본부는 건강진단서 제출을 요구할 수 있습니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 참가자의 자발적 책임</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      참가자는 대회 참가에 따른 모든 위험을 자발적으로 수락하며, 건강 상태와 관련된 어떠한 불편함이나 위험에 대해 스스로 책임져야 합니다. 본인의 건강관리에 충분히 주의하시고, 달리는 중 이상을 느꼈을 때에는 즉시 레이스를 중지하시기 바랍니다.
                     </p>
                     <div className="pl-5">
-                      <div className="flex items-start space-x-2 mb-2">
-                        <span className="text-gray-700 flex-shrink-0">1.</span>
-                        <span className="text-gray-700">개인정보는 제3자에게 제공 및 공개하지 않음이 원칙이지만 본인이 동의한 경우나 아래와 같은 경우는 예외로한다.</span>
-                      </div>
-                      <div className="pl-5">
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">귀사의 서비스 지원 업무 외 추후 귀사 및 관계사의 신규 사업 홍보및 상품 안내, 통신사업 등에 필요한 경우 본인에게 다양한 신상품 서비스 제공 및 귀사에서 판매하는 상품, 서비스 이용 및 홍보 본인에 대한 사은행사 및 판촉행사, 부가서비스 제공, 귀사 내부 시장조사 및 상품 개발연구, 추가 서비스 이용 권유, SMS서비스 제공 등 업무처리 위탁을 위해 위탁업체에 제공됩니다.<br />
-                            (우편물 · E-mail 발송업무, 배송업무, 회원유치, 신규 상품 판매 권유업무, 관계사 서비스 이용, 상담 및 예약업무 전화상담업무, 상품 및 서비스 관련 텔레마케팅, 고객만족도조사, 인터넷관련 서비스 업무, SMS 서비스제공 등)</span>
-                        </div>
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">관계사 및 부가서비스 제공기관에 제공 귀사나 귀사의 관계사 또는 귀사의 제휴업체와 &quot;서비스&quot;의 효율적 제공을 위해 업무 제휴 및 관계된 업체가 위 기입란에 기재된 사항을 상호 공유 또는 활용</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-2 mb-2">
-                        <span className="text-gray-700 flex-shrink-0">2.</span>
-                        <span className="text-gray-700">고객 관심사에 부합되는 서비스 및 이벤트 기획, 정기간행물 발송, 이용회원 서비스 이용에 따른 본인 확인, 기념일 축하메세지 전달</span>
-                      </div>
-                      <div className="pl-5">
-                        <p className="mb-1">웹페이지 접속 결과 분석에 따른 서비스 개선, 고객설문조사, 서비스 이용에 대한 통계 목적, 불량회원의 부정이용 방지 및 비인가 사용 방지</p>
-                        <p className="mb-1">이벤트와 경품 당첨결과 안내 및 상품배송 · 발송 및 결제 추심, 고객상담 및 분쟁조정을 위한 기록보존, 공지사항 전달</p>
-                      </div>
-
-                      <div className="flex items-start space-x-2 mb-2">
-                        <span className="text-gray-700 flex-shrink-0">3.</span>
-                        <span className="text-gray-700">개인정보 보유, 이용기간 및 열람, 증명, 정정</span>
-                      </div>
-                      <div className="pl-5">
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">개인정보의 이용 및 보유기간은 회원가입시를 기점으로 하여 탈퇴 후 즉시 파기하는 것을 원칙으로하되 아래와 같은 경우에는 예외로 한다</span>
-                        </div>
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">충분한 법률적 근거가 있을 경우 관계법령에 적시된 보존 기간 동안 보존한다.</span>
-                        </div>
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">개인정보를 변경 또는 열람하고자 할 때는 주민번호(생년월일), 전화번호, 주소 등의 이미 제공된 개인정보를 통해 본인 여부를 확인한 후에 변경 또는 열람할 수 있다.</span>
-                        </div>
-                        <div className="flex items-start space-x-2 mb-1">
-                          <span className="text-gray-700 flex-shrink-0">-</span>
-                          <span className="text-gray-700">회원의 개인정보에 대한 각종 증명 및 발급을 원할 경우에는 본인 확인 후 가능하다.</span>
-                        </div>
+                      <div className="flex items-start space-x-2 mb-1">
+                        <span className="text-red-500 flex-shrink-0">※</span>
+                        <span className="text-red-500">특히 열사병과 같은 날씨와 관련된 질환이 발생할 경우에도 책임은 본인에게 있음을 유의하시기 바랍니다.</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <p className="font-bold text-gray-800 mb-2">◆ 물품보관</p>
+                  <p className="font-bold text-gray-800 mb-2">◆ 응급 상황 대응 지침</p>
                   <div className="pl-5">
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>1.</strong></span>
-                      <span className="text-gray-700"><strong>행사장내에서 물품분실시 주최측에서 책임을 지지 않습니다.</strong></span>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-2">
-                      <span className="text-gray-700 flex-shrink-0"><strong>2.</strong></span>
-                      <span className="text-gray-700"><strong>물품보관소는 전자제품 및 고가의 장비 귀중품, 지갑, 고가의 악세사리 등을 사전에 확인할 수 없으므로 분실 및 파손시에는 주최측에서 일체 책임지지 않으며 보상하지 않습니다.</strong></span>
-                    </div>
+                    <p className="mb-2">
+                      대회 중 응급 상황이 발생할 경우, 가장 가까운 의료 지원팀이나 행사 요원에게 즉시 알리도록 안내합니다. 주최측은 응급 상황 시 신속한 의료 지원을 제공하기 위해 대기 중이지만, 참가자의 사전 건강 관리 소홀로 인한 사고에 대해서는 책임을 지지 않습니다.
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="font-bold text-gray-800 mb-2">◆ 추가 안내사항</p>
+                  <p className="font-bold text-gray-800 mb-2">◆ 개인 보험 권장</p>
                   <div className="pl-5">
-                    <div className="flex items-start space-x-2 mb-1">
-                      <span className="text-gray-700 flex-shrink-0">•</span>
-                      <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상사태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품 배송)</span>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-1">
-                      <span className="text-gray-700 flex-shrink-0">•</span>
-                      <span className="text-gray-700">대회물품 택배배송은 주최측에 사정에 따라서 대회요강과 다르게 변동 될수 있습니다.</span>
-                    </div>
-                    <div className="flex items-start space-x-2 mb-1">
-                      <span className="text-gray-700 flex-shrink-0">•</span>
-                      <span className="text-gray-700">상금 25만원 초과시 세액은 본인이 부담하며, 상금입금에 필요한 각종 서류 추후 제출 (개인, 단체시상)</span>
-                    </div>
+                    <p className="mb-2">
+                      대회 참가자는 행사보험에 가입되어 있습니다. 다만, 주최 측의 과실로 인한 사고 혹은 급격하고 외래적인 부상 외에는 주최 측에서 책임을 지지 않습니다. 참가자 본인은 추가적인 개인 스포츠 보험 가입을 권장하며, 특히 기존 건강에 문제가 있는 경우나 부상 위험이 높은 경우 개인 보험을 통해 보다 안전하게 대회에 참가할 수 있도록 합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 레이스 전 음식 및 음료 주의사항</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      행사 전날 및 레이스 당일에는 차가운 음식, 카페인 음료, 술은 절대 금지입니다. 이러한 음식과 음료는 신체에 부담을 주고 탈수나 소화 문제를 일으킬 수 있으므로, 참가자분들은 반드시 피하도록 합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 레이스 도중 컨디션 체크</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      참가자는 레이스 도중에도 자신의 신체 상태를 주기적으로 확인하고, 어지러움, 현기증, 호흡 곤란, 심장 두근거림 등의 이상 증상을 느낄 경우 즉시 레이스를 중지하고 의료 지원을 요청해야 합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 기후와 날씨 조건에 따른 유의사항</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      대회 당일 기후와 날씨 조건에 따라 참가자의 안전에 추가적인 영향을 미칠 수 있으므로, 날씨에 맞는 복장과 충분한 수분 섭취 등 대비책을 마련해 주시기 바랍니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 안전 장비 사용 권장</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      심장박동 측정기, GPS 추적기 등의 개인 안전 장비 사용을 권장하며, 이를 통해 자신의 상태를 실시간으로 모니터링할 수 있도록 합니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-gray-800 mb-2">◆ 참가 자격 제한</p>
+                  <div className="pl-5">
+                    <p className="mb-2">
+                      18세 미만 참가자의 경우 주최측은 부모나 법적 보호자의 동의서를 요구할 수 있으며, 건강 상태에 따라 일부 참가자에 대해 참가를 제한할 수 있는 권한을 가지고 있음을 명시합니다.
+                    </p>
                   </div>
                 </div>
               </div>
