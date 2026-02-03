@@ -18,25 +18,55 @@ export default function AdminHomePage() {
 
   // 통계 계산
   const totalEvents = (eventData as any)?.totalElements || 0;
-  const openEvents = ((eventData as any)?.content || []).filter(
+  const eventContent = React.useMemo(() => (eventData as any)?.content || [], [eventData]);
+  const openEvents = React.useMemo(() => eventContent.filter(
     (event: AdminEventItem) => event.eventStatus === 'OPEN'
-  ).length;
+  ).length, [eventContent]);
   const totalInquiries = (inquiryData as any)?.totalElements || 0;
   const unansweredInquiries = ((inquiryData as any)?.content || []).filter(
     (item: any) => !item?.answer || !item?.answered
   ).length;
 
+  // 신청자관리로 이동할 때 사용할 이벤트 ID 계산
+  const firstEventId = React.useMemo(() => eventContent.length > 0 ? eventContent[0].id : null, [eventContent]);
+  const firstOpenEventId = React.useMemo(() => eventContent.find((event: AdminEventItem) => event.eventStatus === 'OPEN')?.id || null, [eventContent]);
+
+  // 전체 대회 카드 href (신청자관리로 이동)
+  const allEventsHref = React.useMemo(() => firstEventId 
+    ? `/admin/applications/management/${firstEventId}?selection=all`
+    : '/admin/events/management', [firstEventId]);
+
+  // 접수중인 대회 카드 href (신청자관리로 이동)
+  const openEventsHref = React.useMemo(() => firstOpenEventId
+    ? `/admin/applications/management/${firstOpenEventId}?selection=open`
+    : '/admin/events/management?status=ing', [firstOpenEventId]);
+
   // 최근 대회 (최근 5개) - EventRow 형식으로 변환
   const recentEvents: EventRow[] = React.useMemo(() => {
-    const content = (eventData as any)?.content;
-    if (!content) return [];
-    return content
+    if (!eventContent.length) return [];
+    return eventContent
       .slice(0, 5)
       .map(transformAdminEventToEventRow);
-  }, [eventData]);
+  }, [eventContent]);
 
   // 최근 문의사항 (최근 5개)
   const recentInquiries = ((inquiryData as any)?.content || []).slice(0, 5);
+
+  // 문의사항 링크 생성 함수 (main 또는 events 경로 판단)
+  const getInquiryLink = React.useCallback((inquiry: any) => {
+    // eventName이 있으면 이벤트 문의, 없으면 메인 문의
+    if (inquiry.eventName && eventContent.length > 0) {
+      // eventName으로 대회 목록에서 eventId 찾기
+      const matchedEvent = eventContent.find((event: AdminEventItem) => 
+        event.nameKr === inquiry.eventName
+      );
+      if (matchedEvent) {
+        return `/admin/boards/inquiry/events/${matchedEvent.id}/${inquiry.id}`;
+      }
+    }
+    // 메인 문의 또는 매칭되는 대회가 없는 경우
+    return `/admin/boards/inquiry/main/${inquiry.id}`;
+  }, [eventContent]);
 
   // 날짜 포맷팅
   const formatDate = (dateString: string) => {
@@ -67,14 +97,14 @@ export default function AdminHomePage() {
           value={eventsLoading ? '...' : totalEvents.toLocaleString()}
           icon={Calendar}
           color="blue"
-          href="/admin/events/management"
+          href={allEventsHref}
         />
         <StatCard
           title="접수중인 대회"
           value={eventsLoading ? '...' : openEvents.toLocaleString()}
           icon={Calendar}
           color="green"
-          href="/admin/events/management?status=ing"
+          href={openEventsHref}
         />
         <StatCard
           title="전체 문의사항"
@@ -213,7 +243,7 @@ export default function AdminHomePage() {
               {recentInquiries.map((inquiry: any) => (
                 <Link
                   key={inquiry.id}
-                  href={`/admin/boards/inquiry/${inquiry.id}`}
+                  href={getInquiryLink(inquiry)}
                   className="block p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100"
                 >
                   <div className="flex items-start justify-between">
@@ -232,7 +262,11 @@ export default function AdminHomePage() {
                         </span>
                       </div>
                     </div>
-                    {(!inquiry.answer || !inquiry.answered) && (
+                    {inquiry.answer || inquiry.answered ? (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                        답변
+                      </span>
+                    ) : (
                       <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
                         미답변
                       </span>

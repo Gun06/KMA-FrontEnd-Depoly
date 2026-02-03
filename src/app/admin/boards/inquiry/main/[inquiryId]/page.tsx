@@ -18,6 +18,11 @@ export default function Page() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
+  // 페이지 로드 시 상단으로 스크롤
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [inquiryId]);
+
   // API로 문의사항 상세 정보 가져오기
   const { data: inquiryDetail, isLoading, error } = useInquiryDetail(inquiryId);
   

@@ -116,9 +116,34 @@ export default function Client({
 
   // 대회 정보 조회 (제목용 및 드롭다운용)
   const { data: eventListData } = useEventList(1, 100);
-  const eventList = (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string; startDate?: string }> })?.content || [];
-  const currentEvent = eventList.find((e) => e.id === eventId);
-  const selectedEvents = eventList.filter(e => selectedEventIds.includes(e.id));
+  const eventList = React.useMemo(() => 
+    (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string; startDate?: string; eventStatus?: string }> })?.content || [],
+    [eventListData]
+  );
+  const currentEvent = React.useMemo(() => eventList.find((e) => e.id === eventId), [eventList, eventId]);
+  const selectedEvents = React.useMemo(() => eventList.filter(e => selectedEventIds.includes(e.id)), [eventList, selectedEventIds]);
+  
+  // URL selection 쿼리에 따라 초기 선택 대회 설정
+  const selection = sp.get('selection');
+  const hasInitializedSelectionRef = React.useRef(false);
+  
+  React.useEffect(() => {
+    if (hasInitializedSelectionRef.current) return;
+    if (!eventList.length) return;
+
+    if (selection === 'all') {
+      setSelectedEventIds(eventList.map(e => e.id));
+      hasInitializedSelectionRef.current = true;
+    } else if (selection === 'open') {
+      const openIds = eventList
+        .filter(e => e.eventStatus === 'OPEN')
+        .map(e => e.id);
+      if (openIds.length > 0) {
+        setSelectedEventIds(openIds);
+        hasInitializedSelectionRef.current = true;
+      }
+    }
+  }, [selection, eventList]);
   
   // 대회 토글 핸들러 (다중 선택)
   const handleEventToggle = (selectedEventId: string) => {
