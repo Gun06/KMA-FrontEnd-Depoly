@@ -147,6 +147,8 @@ export const BoardEventList = ({
       router.push(`/admin/banners/popups/events/${row.id}`);
     } else if (basePath === 'applications') {
       router.push(`/admin/applications/management/${row.id}`);
+    } else if (basePath === 'notifications') {
+      router.push(`/admin/notifications/events/${row.id}`);
     } else {
       router.push(`/admin/boards/${basePath}/events/${row.id}`);
     }

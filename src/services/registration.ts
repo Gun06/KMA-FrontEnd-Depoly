@@ -284,6 +284,7 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
     accountNumber: data.accountNumber, // 환불 계좌번호
     accountHolderName: data.accountHolderName, // 예금주명
     refundRequestedAt: data.refundRequestedAt, // 환불요청시각
+    refundDate: data.refundDate, // 환불완료시각
     // 대회 ID 추출: 여러 가능한 필드 확인
     eventId: data.eventId 
       || data.event?.id 

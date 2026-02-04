@@ -1057,7 +1057,7 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
                 <input className="w-full rounded border px-2 py-1" value={form.addressDetail} onChange={e => setForm(v => ({ ...v, addressDetail: e.target.value }))} />
               ))}
-              {(item.paymenterBank || item.accountNumber || item.accountHolderName || item.refundRequestedAt) && (
+              {(item.paymenterBank || item.accountNumber || item.accountHolderName || item.refundRequestedAt || item.refundDate) && (
                 <div className="mt-4 mb-2 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-3">
                     <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1082,6 +1082,12 @@ export default function RegistrationDetailDrawer({
                       <div className="w-28 shrink-0 text-orange-700">환불요청시각</div>
                       <div className="flex-1 text-gray-900">{item.refundRequestedAt ? formatDateTime(item.refundRequestedAt) : '-'}</div>
                     </div>
+                    {item.refundDate && (
+                      <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                        <div className="w-28 shrink-0 text-orange-700">환불완료시각</div>
+                        <div className="flex-1 text-gray-900">{formatDateTime(item.refundDate)}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

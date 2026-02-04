@@ -8,6 +8,7 @@ import { ChevronDown } from 'lucide-react'
 
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
+import { useAuthStore } from '@/stores/authStore'
 
 interface ApplicationData {
   id: string
@@ -74,6 +75,7 @@ const statusConfig = {
 }
 
 function MyApplicationsPage() {
+  const { user } = useAuthStore()
   const [selectedPeriod, setSelectedPeriod] = useState('1주일')
   const [startDate, setStartDate] = useState('2025.04.26')
   const [endDate, setEndDate] = useState('2025.07.26')
@@ -106,7 +108,7 @@ function MyApplicationsPage() {
             <span className="text-blue-600">Run </span>
             Together, <span className="text-blue-600">Grow </span>Together!
           </h1>
-          <p className="text-xl font-bold text-black">홍길동님!</p>
+          <p className="text-xl font-bold text-black">{user?.account || '회원'}님!</p>
         </div>
 
         {/* 탭 네비게이션 */}

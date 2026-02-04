@@ -13,7 +13,8 @@ export default function MypageTabs({ className = '' }: MypageTabsProps) {
   const tabs = [
     { key: 'applications', label: '마라톤 신청내역', href: '/mypage/applications' },
     { key: 'certificates', label: '기록증', href: '/mypage/certificates' },
-    { key: 'points', label: '포인트 현황', href: '/mypage/points' }
+    // 포인트 탭을 알림 탭으로 변경
+    { key: 'notifications', label: '알림', href: '/mypage/notifications' }
   ]
 
   return (

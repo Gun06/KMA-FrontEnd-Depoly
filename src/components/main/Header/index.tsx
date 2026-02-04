@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import logoImage from '@/assets/images/main/logo.jpg';
 import searchIcon from '@/assets/icons/main/search.svg';
-import cartIcon from '@/assets/icons/main/cart.svg';
 import userIcon from '@/assets/icons/main/user.svg';
 import xIcon from '@/assets/icons/main/x.svg';
 import menuIcon from '@/assets/icons/main/menu.svg';
@@ -16,6 +15,7 @@ import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
+import { NotificationDropdown } from '@/app/(main)/mypage/notifications/components/NotificationDropdown';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -32,10 +32,11 @@ interface HeaderState {
   mobileOpen: boolean;
   hoveredMenu: string | null;
   expandedMobileMenu: string | null;
-  searchOpen: boolean;
   subMenuOpen: string | null;
-  searchQuery: string;
   isMobileMenu: boolean;
+  // 검색 모달 상태 (UI는 노출하지 않지만 타입 오류 방지를 위해 유지)
+  searchOpen: boolean;
+  searchQuery: string;
 }
 
 // 대메뉴 → 세부메뉴 매핑
@@ -71,7 +72,7 @@ const subMenus: Record<string, SubMenu> = {
     items: [
       { label: '신청내역', href: '/mypage/applications' },
       { label: '기록증 발급', href: '/mypage/certificates' },
-      { label: '포인트 현황', href: '/mypage/points' },
+      { label: '알림', href: '/mypage/notifications' },
     ],
   },
 };
@@ -90,10 +91,11 @@ const dropdownVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+
 export default function Header() {
   // useBreakpoints 훅을 사용하여 세밀한 반응형 감지
   const { isCustom } = useBreakpoints();
-  const { isLoggedIn, user, logout, accessToken, hasHydrated } = useAuthStore();
+  const { isLoggedIn, user, accessToken } = useAuthStore();
   const router = useRouter();
 
   // Hydration mismatch 방지: 클라이언트 마운트 후에만 토큰/스토어 기반 판별
@@ -117,10 +119,10 @@ export default function Header() {
     mobileOpen: false,
     hoveredMenu: null,
     expandedMobileMenu: null,
-    searchOpen: false,
     subMenuOpen: null,
-    searchQuery: '',
     isMobileMenu: false,
+    searchOpen: false,
+    searchQuery: '',
   });
 
   // 상태 업데이트 함수들을 useCallback으로 최적화
@@ -128,14 +130,6 @@ export default function Header() {
     setState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const toggleSearch = useCallback(() => {
-    // 검색창을 토글하면서 서브메뉴와 햄버거 메뉴가 열려있다면 닫기
-    updateState({
-      searchOpen: !state.searchOpen,
-      subMenuOpen: null, // 서브메뉴가 열려있다면 닫기
-      mobileOpen: false, // 햄버거 메뉴가 열려있다면 닫기
-    });
-  }, [state.searchOpen, updateState]);
 
   const toggleMobileSubMenu = useCallback(
     (key: string) => {
@@ -147,10 +141,8 @@ export default function Header() {
   );
 
   const toggleMobileMenu = useCallback(() => {
-    // 햄버거 메뉴를 토글하면서 검색창이 열려있다면 닫기
     updateState({
       mobileOpen: !state.mobileOpen,
-      searchOpen: false, // 검색창이 열려있다면 닫기
     });
   }, [state.mobileOpen, updateState]);
 
@@ -162,7 +154,6 @@ export default function Header() {
       } else {
         updateState({
           subMenuOpen: key,
-          searchOpen: false, // 검색창이 열려있다면 닫기
         });
       }
     },
@@ -214,7 +205,6 @@ export default function Header() {
       updateState({
         isMobileMenu: true,
         subMenuOpen: null,
-        searchOpen: false,
       });
     } else {
       updateState({
@@ -222,6 +212,7 @@ export default function Header() {
       });
     }
   }, [isCustom, updateState]);
+
 
   return (
     <header className="bg-white fixed top-0 left-0 w-full z-[150] shadow-sm">
@@ -289,19 +280,7 @@ export default function Header() {
           </nav>
 
           {/* 우측 아이콘 */}
-          <div className="hidden custom:flex items-center justify-center space-x-8 relative z-[110]">
-            <button
-              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-              onClick={toggleSearch}
-            >
-              <Image
-                src={searchIcon}
-                alt="검색"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-            </button>
+          <div className="hidden custom:flex items-center justify-center space-x-6 relative z-[110]">
             <a
               href="http://www.run1080.com/new/"
               target="_blank"
@@ -317,33 +296,28 @@ export default function Header() {
             </a>
             {actualIsLoggedIn ? (
               <div className="flex items-center space-x-3">
-                <Image
-                  src={userIcon}
-                  alt="사용자"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
                 <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
                   {user?.account || '회원'} 님
                 </span>
+
+                {/* 알림 드롭다운 */}
+                <NotificationDropdown 
+                  isLoggedIn={actualIsLoggedIn} 
+                  userAccount={user?.account}
+                />
+
                 <button
                   onClick={async () => {
                     const canNavigate = navigationGuard.startNavigation();
                     if (!canNavigate) return;
 
                     try {
-                      // 통합 로그아웃 처리
                       await authService.logout();
-
-                      // 브로드캐스트로 다른 탭에 로그아웃 알림
                       tokenService.broadcastLogout();
-
-                      // 홈으로 리다이렉트
                       await navigationGuard.safeNavigate(() => {
                         router.push('/');
                       }, 100);
-                    } catch (error) {
+                    } catch {
                       navigationGuard.endNavigation();
                     }
                   }}
@@ -376,21 +350,6 @@ export default function Header() {
 
           {/* 모바일 햄버거/닫기 버튼 */}
           <div className="custom:hidden fixed top-3 right-4 flex items-center space-x-2 z-[160]">
-            {/* 모바일 검색 버튼 */}
-            <button
-              className="p-2 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
-              onClick={toggleSearch}
-              aria-label="검색"
-            >
-              <Image
-                src={searchIcon}
-                alt="검색"
-                width={20}
-                height={20}
-                className="w-5 h-5"
-              />
-            </button>
-
             {/* 햄버거/닫기 버튼 */}
             <button
               className="p-2 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"

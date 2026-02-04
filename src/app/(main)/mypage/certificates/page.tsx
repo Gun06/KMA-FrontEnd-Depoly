@@ -5,6 +5,7 @@ import MypageTabs from '@/components/main/mypage/MypageTabs'
 import { useEffect, useState } from 'react'
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
+import { useAuthStore } from '@/stores/authStore'
 
 interface CertificateData {
   id: string
@@ -32,7 +33,8 @@ const statusClass: Record<CertificateData['status'], string> = {
   expired: 'bg-gray-400 text-white',
 }
 
-export default function MyCertificatesPage() {
+function MyCertificatesPage() {
+  const { user } = useAuthStore()
   const [selectedPeriod, setSelectedPeriod] = useState('1주일')
   const [startDate, setStartDate] = useState('2025.04.26')
   const [endDate, setEndDate] = useState('2025.07.26')
@@ -64,7 +66,7 @@ export default function MyCertificatesPage() {
             <span className="text-blue-600">Run </span>
             Together, <span className="text-blue-600">Grow </span>Together!
           </h1>
-          <p className="text-xl font-bold text-black">홍길동님!</p>
+          <p className="text-xl font-bold text-black">{user?.account || '회원'}님!</p>
         </div>
 
         {/* 탭 네비게이션 */}
@@ -190,5 +192,25 @@ export default function MyCertificatesPage() {
         </div>
       </div>
     </SubmenuLayout>
+  )
+}
+
+// 준비중 오버레이 (화면 상단 블러 + 안내)
+function Overlay() {
+  return (
+    <div className="fixed inset-0 z-[100] bg-white/60 backdrop-blur-sm flex items-center justify-center pointer-events-auto">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-md px-6 py-4 text-gray-800 font-semibold">
+        준비중인 페이지입니다.
+      </div>
+    </div>
+  )
+}
+
+export default function PageWithOverlay() {
+  return (
+    <>
+      <MyCertificatesPage />
+      <Overlay />
+    </>
   )
 }

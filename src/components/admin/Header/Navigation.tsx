@@ -43,7 +43,7 @@ const menuColumns = [
     items: [
           { name: '신청내역', href: '/mypage/applications' },
     { name: '기록증 발급', href: '/mypage/certificates' },
-    { name: '포인트 현황', href: '/mypage/points' },
+    { name: '알림', href: '/mypage/notifications' },
     ],
   },
 ]

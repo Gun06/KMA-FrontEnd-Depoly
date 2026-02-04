@@ -62,15 +62,19 @@ const subMenus: Record<string, SubMenu> = {
     ],
   },
 
-  배너관리: {
+  콘텐츠관리: {
     items: [
       { label: '메인 배너등록', href: '/admin/banners/main' },
       { label: '스폰서 배너등록', href: '/admin/banners/sponsors' },
       { label: '팝업 등록', href: '/admin/banners/popups' },
+      { label: '갤러리 등록', href: '/admin/galleries' },
     ],
   },
-  갤러리관리: {
-    items: [{ label: '갤러리 등록', href: '/admin/galleries' }],
+  알림관리: {
+    items: [
+      { label: '알림관리', href: '/admin/notifications' },
+      { label: '알림등록', href: '/admin/notifications/all/register' },
+    ],
   },
 };
 
@@ -79,8 +83,8 @@ const navItems = [
   { label: '대회관리', href: '/admin/events/management', key: '대회관리' },
   { label: '게시판관리', href: '/admin/boards/notice', key: '게시판관리' },
   { label: '회원관리', href: '/admin/users/individual', key: '회원관리' },
-  { label: '배너관리', href: '/admin/banners', key: '배너관리' },
-  { label: '갤러리관리', href: '/admin/galleries', key: '갤러리관리' },
+  { label: '콘텐츠관리', href: '/admin/banners', key: '콘텐츠관리' },
+  { label: '알림관리', href: '/admin/notifications', key: '알림관리' },
 ];
 
 const dropdownVariants = {

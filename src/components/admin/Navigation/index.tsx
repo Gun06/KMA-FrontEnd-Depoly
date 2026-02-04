@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Users, FileText, Calendar, Image, Database, ChevronDown, LucideIcon } from 'lucide-react';
+import { Users, FileText, Calendar, Image, Database, ChevronDown, LucideIcon, Bell } from 'lucide-react';
 import clsx from 'clsx';
 
 // 기존 데이터 소스
@@ -53,13 +53,15 @@ const NAV_ITEMS: Item[] = [
     { name: '개인 회원관리', href: '/admin/users/individual' },
     { name: '단체 회원관리', href: '/admin/users/organization' },
   ]},
-  { name: '배너관리', base: '/admin/banners', icon: Database, children: [
+  { name: '콘텐츠관리', base: '/admin/banners', icon: Database, children: [
     { name: '메인 배너등록',    href: '/admin/banners/main' },
     { name: '스폰서 배너등록',  href: '/admin/banners/sponsors' },
     { name: '팝업 등록',  href: '/admin/banners/popups' },
-    ]},
-  { name: '갤러리관리', base: '/admin/galleries', icon: Image, children: [
     { name: '갤러리 등록', href: '/admin/galleries' },
+    ]},
+  { name: '알림관리', base: '/admin/notifications', icon: Bell, children: [
+    { name: '알림관리', href: '/admin/notifications' },
+    { name: '알림등록', href: '/admin/notifications/all/register' },
   ]},
 ];
 
@@ -90,6 +92,9 @@ export default function AdminNavigation() {
   // 2단계
   const safeMenu = currentMenu ?? NAV_ITEMS[0];
   const currentSub =
+    // 먼저 정확히 일치하는 것을 찾음
+    safeMenu.children.find((c) => pathname === c.href) ??
+    // 없으면 더 긴 경로부터 startsWith로 확인
     safeMenu.children
       .slice()
       .sort((a, b) => b.href.length - a.href.length)
@@ -696,7 +701,8 @@ export default function AdminNavigation() {
                   <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                     <div className="py-1">
                       {safeMenu.children.map((child) => {
-                        const active = pathname.startsWith(child.href);
+                        // 정확히 일치하는 것을 우선 확인
+                        const active = child.href === currentSub.href;
                         return (
                           <Link
                             key={child.href}
@@ -736,7 +742,8 @@ export default function AdminNavigation() {
               <div role="menu" className="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <div className="py-1">
                   {safeMenu.children.map((child) => {
-                    const active = pathname.startsWith(child.href);
+                    // 정확히 일치하는 것을 우선 확인
+                    const active = child.href === currentSub.href;
                     return (
                       <Link
                         key={child.href}

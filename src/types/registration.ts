@@ -44,6 +44,7 @@ export interface RegistrationItem {
   accountNumber?: string;         // 환불 계좌번호
   accountHolderName?: string;     // 예금주명
   refundRequestedAt?: string;     // 환불요청시각 (ISO 8601 형식)
+  refundDate?: string | null;     // 환불완료시각 (ISO 8601 형식, null이면 아직 환불처리 안됨)
 }
 
 export interface RegistrationListResponse {

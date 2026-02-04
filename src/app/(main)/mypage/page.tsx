@@ -3,8 +3,10 @@
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import Link from 'next/link'
 import { Calendar, FileText, Award, CreditCard, User, Settings } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
 
 export default function MyPage() {
+  const { user } = useAuthStore()
   return (
     <SubmenuLayout
       breadcrumb={{
@@ -19,7 +21,7 @@ export default function MyPage() {
             <span className="text-blue-600">Run </span>
             Together, <span className="text-blue-600">Grow </span>Together!
           </h1>
-          <p className="text-xl font-bold text-black">홍길동님!</p>
+          <p className="text-xl font-bold text-black">{user?.account || '회원'}님!</p>
         </div>
 
         {/* 마이페이지 메뉴 그리드 */}
@@ -58,20 +60,20 @@ export default function MyPage() {
             </div>
           </Link>
 
-          {/* 포인트 현황 */}
+          {/* 알림 */}
           <Link 
-            href="/mypage/points"
+            href="/mypage/notifications"
             className="bg-white rounded-lg shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 group"
           >
             <div className="flex items-center mb-4">
               <div className="bg-yellow-100 p-2 sm:p-3 rounded-lg mr-3 sm:mr-4 group-hover:bg-yellow-200 transition-colors">
                 <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">포인트 현황</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">알림</h3>
             </div>
-            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">적립된 포인트를 확인하세요</p>
+            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">알림을 확인하세요</p>
             <div className="text-yellow-600 font-medium group-hover:text-yellow-800">
-              포인트 확인 →
+              알림 보기 →
             </div>
           </Link>
 
