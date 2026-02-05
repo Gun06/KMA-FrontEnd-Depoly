@@ -35,6 +35,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
           label: "공개여부",
           options: [
             { label: "공개", value: "open" },
+            { label: "테스트", value: "test" },
             { label: "비공개", value: "closed" },
           ],
         },

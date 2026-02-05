@@ -20,7 +20,7 @@ export function useHomepageNotices(page: number = 1, size: number = 20, enabled:
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('size', size.toString());
-  
+
   return useGetQuery(
     noticeKeys.homepageList(page, size),
     `/api/v1/homepage/notice?${queryParams.toString()}`,
@@ -38,7 +38,7 @@ export function useEventNotices(eventId: string, page: number = 1, size: number 
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('size', size.toString());
-  
+
   return useGetQuery(
     noticeKeys.eventList(eventId, page, size),
     `/api/v1/${eventId}/notice?${queryParams.toString()}`,
@@ -162,18 +162,18 @@ export function useEventSearch(params: {
   eventSortKey?: 'NO' | 'START_DATE' | 'NAME' | 'REGION' | 'HOST';
 }, enabled: boolean = true) {
   const { page = 1, size = 20, keyword, year, visibleStatus, eventStatus, eventSortKey } = params;
-  
+
   // 쿼리 파라미터 구성
   const queryParams = new URLSearchParams();
   queryParams.append('page', page.toString());
   queryParams.append('size', size.toString());
-  
+
   if (keyword) queryParams.append('keyword', keyword);
   if (year) queryParams.append('year', year.toString());
   if (visibleStatus !== undefined) queryParams.append('visibleStatus', visibleStatus.toString());
   if (eventStatus) queryParams.append('eventStatus', eventStatus);
   if (eventSortKey) queryParams.append('eventSortKey', eventSortKey);
-  
+
   // 검색 조건들을 정규화하여 쿼리 키 최적화
   const normalizedParams = {
     keyword: keyword || undefined,

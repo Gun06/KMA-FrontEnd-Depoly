@@ -24,18 +24,20 @@ type BoardEventRow = {
 
 type PublicFilter = '' | '공개' | '테스트' | '비공개';
 
+// 프리셋 value(none/ing/done) 및 한글 라벨 모두 지원
 const mapStatus = (v: string): RegStatus | '' => {
-  if (v === '접수중') return '접수중';
-  if (v === '접수마감') return '접수마감';
-  if (v === '비접수') return '비접수';
+  if (v === '접수중' || v === 'ing') return '접수중';
+  if (v === '접수마감' || v === 'done') return '접수마감';
+  if (v === '비접수' || v === 'none') return '비접수';
   if (v === '내부마감') return '내부마감';
   return '';
 };
 
+// 프리셋 value(open/closed/test) 및 한글 라벨 모두 지원 (VisibleStatus: OPEN, CLOSE, TEST)
 const mapPublic = (v: string): PublicFilter => {
-  if (v === '공개') return '공개';
-  if (v === '테스트') return '테스트';
-  if (v === '비공개') return '비공개';
+  if (v === '공개' || v === 'open') return '공개';
+  if (v === '테스트' || v === 'test') return '테스트';
+  if (v === '비공개' || v === 'closed') return '비공개';
   return '';
 };
 
