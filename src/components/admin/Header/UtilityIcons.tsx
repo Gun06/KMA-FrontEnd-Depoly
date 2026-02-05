@@ -8,12 +8,25 @@ import userIcon from '@/assets/icons/main/user.svg';
 import { useAdminAuthStore } from '@/stores';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
+import { tokenService } from '@/utils/tokenService';
 
 export default function UtilityIcons() {
-  const { isLoggedIn, user } = useAdminAuthStore();
+  const { isLoggedIn, user, accessToken, hasHydrated } = useAdminAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // 클라이언트에서만 마운트 확인 (hydration 에러 방지)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // accessToken이 있으면 로그인 상태로 간주 (isLoggedIn이 localStorage에 저장되지 않아서)
+  // mounted 후에만 tokenService를 확인하여 hydration 에러 방지
+  const actualIsLoggedIn = mounted 
+    ? (hasHydrated && (isLoggedIn || !!accessToken)) || !!tokenService.getAdminAccessToken()
+    : (hasHydrated && (isLoggedIn || !!accessToken));
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -48,7 +61,7 @@ export default function UtilityIcons() {
         router.replace('/admin/login');
       }, 100); // 100ms 지연
       
-    } catch (error) {
+    } catch {
       navigationGuard.endNavigation();
     }
   };
@@ -60,7 +73,7 @@ export default function UtilityIcons() {
   return (
     <>
       <div className="flex items-center space-x-8 text-white">
-        {isLoggedIn ? (
+        {actualIsLoggedIn ? (
           // 로그인된 상태 - 드롭다운 메뉴
           <div className="relative" ref={dropdownRef}>
             <button
@@ -156,7 +169,10 @@ export default function UtilityIcons() {
           </div>
         ) : (
           // 로그인되지 않은 상태
-          <button className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors">
+          <Link
+            href="/admin/login"
+            className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
+          >
             <Image
               src={userIcon}
               alt="사용자"
@@ -165,7 +181,7 @@ export default function UtilityIcons() {
               className="w-5 h-5 invert"
             />
             <span className="font-pretendard text-sm">로그인</span>
-          </button>
+          </Link>
         )}
       </div>
     </>

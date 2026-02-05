@@ -98,6 +98,7 @@ export default function Client() {
   const {
     data: adminListData,
     isLoading: isLoadingAdminList,
+    error: adminListError,
     refetch: refetchAdminList,
   } = useAdminList({ page, size: DEFAULT_PAGE_SIZE });
 
@@ -543,6 +544,20 @@ export default function Client() {
             {isLoadingAdminList ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-sm">로딩 중...</p>
+              </div>
+            ) : adminListError ? (
+              <div className="text-center py-12 text-red-500">
+                <AlertCircle className="w-12 h-12 mx-auto mb-3 text-red-400" />
+                <p className="text-sm font-medium mb-2">데이터를 불러오는데 실패했습니다.</p>
+                <p className="text-xs text-gray-500 mb-4">
+                  {adminListError instanceof Error ? adminListError.message : '알 수 없는 오류가 발생했습니다.'}
+                </p>
+                <button
+                  onClick={() => refetchAdminList()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  다시 시도
+                </button>
               </div>
             ) : adminListData?.empty || !adminListData?.content?.length ? (
               <div className="border-t border-gray-200 pt-4">
