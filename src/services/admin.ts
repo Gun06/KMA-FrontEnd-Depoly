@@ -64,6 +64,7 @@ export function transformAdminEventToEventRow(
 
   return {
     id: eventId, // EventRow의 id가 이제 string 타입이므로 타입 캐스팅 불필요
+    no: apiEvent.no, // API에서 제공하는 순번 그대로 사용
     date: apiEvent.startDate.split('T')[0], // ISO 8601에서 날짜 부분만 추출 (YYYY-MM-DD)
     title: apiEvent.nameKr,
     place: apiEvent.region,
@@ -75,22 +76,50 @@ export function transformAdminEventToEventRow(
 
 // 관리자 이벤트 목록 조회 훅
 export function useAdminEventList(params: AdminEventListParams = {}) {
-  const { page = 1, size = 20 } = params;
+  const { page = 1, size = 20, keyword, year, visibleStatus, eventStatus, eventSortKey } = params;
 
-  const queryParams = new URLSearchParams({
-    page: String(page),
-    size: String(size),
-  });
+  // 검색 조건이 있는지 확인
+  const hasSearchConditions = keyword || year !== undefined || visibleStatus !== undefined || eventStatus !== undefined || eventSortKey !== undefined;
+
+  // 쿼리 파라미터 구성
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', page.toString());
+  queryParams.append('size', size.toString());
+
+  if (keyword) queryParams.append('keyword', keyword);
+  if (year !== undefined) queryParams.append('year', year.toString());
+  if (visibleStatus !== undefined) queryParams.append('visibleStatus', visibleStatus.toString());
+  if (eventStatus) queryParams.append('eventStatus', eventStatus);
+  if (eventSortKey) queryParams.append('eventSortKey', eventSortKey);
+
+  // 검색 조건들을 정규화하여 쿼리 키 최적화
+  const normalizedParams = {
+    keyword: keyword || undefined,
+    year: year !== undefined ? year : undefined,
+    visibleStatus: visibleStatus !== undefined ? visibleStatus : undefined,
+    eventStatus: eventStatus || undefined,
+    eventSortKey: eventSortKey || undefined,
+  };
+
+  // 검색 조건이 있으면 검색 API 사용, 없으면 일반 목록 API 사용
+  const endpoint = hasSearchConditions 
+    ? `/api/v1/event/search?${queryParams.toString()}`
+    : `/api/v1/event?${queryParams.toString()}`;
+
+  const queryKey = hasSearchConditions
+    ? ['admin', 'events', 'list', page, size, 'search', normalizedParams]
+    : ['admin', 'events', 'list', page, size];
 
   return useGetQuery<AdminEventListResponse>(
-    ['admin', 'events', 'list', page, size],
-    `/api/v1/event?${queryParams.toString()}`,
+    queryKey,
+    endpoint,
     'admin',
     {
       staleTime: 0, // 캐시 즉시 만료 (항상 최신 데이터 가져오기)
       gcTime: 5 * 60 * 1000, // 5분 후 가비지 컬렉션
       refetchOnWindowFocus: true, // 윈도우 포커스 시 리페치
       refetchOnMount: true, // 컴포넌트 마운트 시 리페치
+      placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
     },
     true // withAuth = true
   );

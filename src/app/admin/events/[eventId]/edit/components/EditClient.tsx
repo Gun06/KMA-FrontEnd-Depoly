@@ -330,7 +330,8 @@ export default function EditClient({
         queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
         queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }), // 기념품/종목 드롭다운 무효화
         queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', String(eventId)] }), // 기념품 드롭다운 무효화
-        queryClient.invalidateQueries({ queryKey: ['adminEventList'] }), // 대회 목록도 무효화
+        queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'list'] }), // 대회 목록도 무효화 (prefix 매칭)
+        queryClient.invalidateQueries({ queryKey: ['notice', 'eventList'] }), // 신청자관리 페이지의 대회 목록 무효화
       ]);
 
       // 페이지 이미지 데이터도 즉시 재조회 (public API는 React Query를 사용하지 않으므로 refetch 호출)
@@ -383,6 +384,8 @@ export default function EditClient({
           queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
           queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }),
           queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'list'] }), // 대회 목록도 무효화 (prefix 매칭)
+          queryClient.invalidateQueries({ queryKey: ['notice', 'eventList'] }), // 신청자관리 페이지의 대회 목록 무효화
         ]);
         
         await refetch();

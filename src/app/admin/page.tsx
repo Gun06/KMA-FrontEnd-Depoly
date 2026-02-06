@@ -27,19 +27,11 @@ export default function AdminHomePage() {
     (item: any) => !item?.answer || !item?.answered
   ).length;
 
-  // 신청자관리로 이동할 때 사용할 이벤트 ID 계산
-  const firstEventId = React.useMemo(() => eventContent.length > 0 ? eventContent[0].id : null, [eventContent]);
-  const firstOpenEventId = React.useMemo(() => eventContent.find((event: AdminEventItem) => event.eventStatus === 'OPEN')?.id || null, [eventContent]);
+  // 전체 대회 카드 href (대회 목록 페이지로 이동, 필터 없음)
+  const allEventsHref = '/admin/applications/management';
 
-  // 전체 대회 카드 href (신청자관리로 이동)
-  const allEventsHref = React.useMemo(() => firstEventId 
-    ? `/admin/applications/management/${firstEventId}?selection=all`
-    : '/admin/events/management', [firstEventId]);
-
-  // 접수중인 대회 카드 href (신청자관리로 이동)
-  const openEventsHref = React.useMemo(() => firstOpenEventId
-    ? `/admin/applications/management/${firstOpenEventId}?selection=open`
-    : '/admin/events/management?status=ing', [firstOpenEventId]);
+  // 접수중인 대회 카드 href (대회 목록 페이지로 이동, 접수중 필터 적용)
+  const openEventsHref = '/admin/applications/management?status=ing';
 
   // 최근 대회 (최근 5개) - EventRow 형식으로 변환
   const recentEvents: EventRow[] = React.useMemo(() => {

@@ -2,20 +2,43 @@
 'use client';
 
 import React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import EventTable, {
-  type EventRow,
-} from '@/components/admin/events/EventTable';
-import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
-import { useAdminEventsState } from '@/components/providers/AdminEventsContext';
+import { useRouter } from 'next/navigation';
+import AdminTable from '@/components/admin/Table/AdminTableShell';
+import type { Column } from '@/components/common/Table/BaseTable';
+import RegistrationStatusBadge, {
+  type RegStatus,
+} from '@/components/common/Badge/RegistrationStatusBadge';
+import FilterBar from '@/components/common/filters/FilterBar';
+import { PRESETS } from '@/components/common/filters/presets';
 import {
   useAdminEventList,
   transformAdminEventToEventRow,
 } from '@/services/admin';
+import type { EventRow } from '@/components/admin/events/EventTable';
 
+type PublicFilter = '' | '공개' | '테스트' | '비공개';
+
+// 프리셋 value(none/ing/done) 및 한글 라벨 모두 지원
+const mapStatus = (v: string): RegStatus | '' => {
+  if (v === '접수중' || v === 'ing') return '접수중';
+  if (v === '접수마감' || v === 'done') return '접수마감';
+  if (v === '비접수' || v === 'none') return '비접수';
+  if (v === '내부마감' || v === 'final_closed') return '내부마감';
+  return '';
+};
+
+// 프리셋 value(open/closed/test) 및 한글 라벨 모두 지원 (VisibleStatus: OPEN, CLOSE, TEST)
+const mapPublic = (v: string): PublicFilter => {
+  if (v === '공개' || v === 'open') return '공개';
+  if (v === '테스트' || v === 'test') return '테스트';
+  if (v === '비공개' || v === 'closed') return '비공개';
+  return '';
+};
+
+const mapYear = (v: string) => v;
 
 export default function EventsClient({
-  initialRows,
+  initialRows: _initialRows,
   initialPage,
   pageSize,
 }: {
@@ -24,217 +47,274 @@ export default function EventsClient({
   pageSize: number;
 }) {
   const router = useRouter();
-  const search = useSearchParams();
-  const { rows: storeRows } = useAdminEventsState();
 
-  // 더미 데이터 제거됨 - API 데이터만 사용
+  // ---------- 초기 상태 (BoardEventList와 동일하게 빈 상태로 시작) ----------
+  const [q, setQ] = React.useState('');
+  const [status, setStatus] = React.useState<RegStatus | ''>('');
+  const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>('');
+  const [year, setYear] = React.useState<string>('');
+  const [page, setPage] = React.useState(initialPage);
 
-  // API에서 이벤트 목록 조회
+  // 상태값을 API 파라미터로 변환
+  const eventStatus = React.useMemo((): 'OPEN' | 'CLOSED' | 'PENDING' | 'FINAL_CLOSED' | undefined => {
+    switch (status) {
+      case '접수중': return 'OPEN';
+      case '접수마감': return 'CLOSED';
+      case '비접수': return 'PENDING';
+      case '내부마감': return 'FINAL_CLOSED';
+      default: return undefined;
+    }
+  }, [status]);
+
+  const visibleStatus = React.useMemo((): 'OPEN' | 'TEST' | 'CLOSE' | undefined => {
+    if (pub === '공개') return 'OPEN';
+    if (pub === '테스트') return 'TEST';
+    if (pub === '비공개') return 'CLOSE';
+    return undefined;
+  }, [pub]);
+
+  const yearNumber = React.useMemo(() => {
+    return year ? parseInt(year, 10) : undefined;
+  }, [year]);
+
+  // API에서 이벤트 목록 조회 (서버 사이드 필터링)
   const {
     data: apiData,
     isLoading,
     error,
   } = useAdminEventList({
-    page: initialPage,
+    page,
     size: pageSize,
+    keyword: q || undefined,
+    year: yearNumber,
+    visibleStatus,
+    eventStatus,
   });
 
-  // API 데이터를 EventRow로 변환
-  const apiRows: EventRow[] = React.useMemo(() => {
-    if (!apiData?.content) return [];
-    const transformed = apiData.content.map(transformAdminEventToEventRow);
+  // 모든 이벤트를 가져와서 년도 필터 옵션 생성 (BoardEventList와 동일)
+  const {
+    data: allEventsData,
+  } = useAdminEventList({
+    page: 1,
+    size: 1000,
+  });
 
-    return transformed;
+  // API 데이터를 EventRow로 변환 (API에서 받은 데이터만 사용)
+  const { rows, totalCount } = React.useMemo(() => {
+    if (!apiData?.content) {
+      return { rows: [], totalCount: 0 };
+    }
+    
+    // API에서 이미 필터링된 데이터를 받으므로 추가 필터링 불필요
+    const mappedRows = apiData.content.map(transformAdminEventToEventRow);
+    
+    return {
+      rows: mappedRows,
+      totalCount: apiData.totalElements || 0
+    };
   }, [apiData]);
 
-  // base: SSR 한 페이지 or API 데이터
-  const base: EventRow[] = React.useMemo(() => {
-    if (apiRows.length > 0) {
-      return [...apiRows];
+  // 모든 이벤트를 EventRow로 변환 (년도 필터 옵션용)
+  const allEvents = React.useMemo(() => {
+    if (!allEventsData?.content) {
+      return [];
     }
-    return [...initialRows];
-  }, [apiRows, initialRows]);
+    return allEventsData.content.map(transformAdminEventToEventRow);
+  }, [allEventsData]);
 
-  // base + 컨텍스트(로컬 변경분) 병합 (같은 id는 컨텍스트가 덮어씀)
-  const all = React.useMemo(() => {
-    const m = new Map<string, EventRow>();
-    base.forEach(r => m.set(String(r.id), r));
-    storeRows.forEach(r => m.set(String(r.id), r));
-    return Array.from(m.values());
-  }, [base, storeRows]);
+  // 대회 데이터에서 실제 있는 년도만 추출
+  const availableYears = React.useMemo(() => {
+    if (!allEvents.length) return [];
 
-  // URL status 파라미터를 RegStatus로 변환
-  const urlStatusToRegStatus = (urlStatus: string | null): RegStatus | '' => {
-    if (!urlStatus) return '';
-    const normalized = urlStatus.toLowerCase();
-    if (['ing', 'open', 'opening'].includes(normalized)) return '접수중';
-    if (['done', 'closed'].includes(normalized)) return '접수마감';
-    if (['final_closed', 'finalclosed'].includes(normalized)) return '내부마감';
-    if (['none', 'pending'].includes(normalized)) return '비접수';
-    return '';
-  };
-
-  // ---------- 초기 상태 (URL → 상태) ----------
-  const [q, setQ] = React.useState(search.get('q') ?? '');
-  const [year, setYear] = React.useState(search.get('year') ?? '');
-  const [status, setStatus] = React.useState<RegStatus | ''>(
-    urlStatusToRegStatus(search.get('status'))
-  );
-  const [pub, setPub] = React.useState<'' | '공개' | '비공개'>(
-    search.get('pub') === 'open'
-      ? '공개'
-      : search.get('pub') === 'closed'
-        ? '비공개'
-        : ''
-  );
-  const [page, setPage] = React.useState(
-    Number(search.get('page') ?? initialPage) || initialPage
-  );
-
-  // ---------- 필터/정렬/페이징 ----------
-  const { rows, totalCount } = React.useMemo(() => {
-    let list = [...all];
-
-    // 검색
-    if (q.trim()) {
-      const t = q.trim().toLowerCase();
-      list = list.filter(
-        r =>
-          r.title.toLowerCase().includes(t) ||
-          r.host.toLowerCase().includes(t) ||
-          r.place.toLowerCase().includes(t)
-      );
-    }
-
-    // 년도 필터
-    if (year) {
-      list = list.filter(r => {
-        const eventYear = r.date ? r.date.substring(0, 4) : '';
-        return eventYear === year;
-      });
-    }
-
-    // 신청상태
-    if (status) list = list.filter(r => r.applyStatus === status);
-
-    // 공개여부
-    if (pub)
-      list = list.filter(r => (pub === '공개' ? r.isPublic : !r.isPublic));
-
-    // 서버에서 정렬을 내려주므로 클라이언트 사이드 정렬 제거
-
-    // API 데이터의 총 개수 사용
-    const totalCount = apiData?.totalElements || 0;
-    const start = (page - 1) * pageSize;
-    const pageRows = list.slice(start, start + pageSize);
-
-    // 화면용 순번(no): 전체 건수 기준 내림차순
-    const withNo = pageRows.map((r, i) => ({
-      ...r,
-      no: totalCount - (start + i),
-    })) as EventRow[];
-
-    return { rows: withNo, totalCount };
-  }, [all, q, year, status, pub, page, pageSize, apiData]);
-
-  // ---------- URL 동기화 ----------
-  const replaceQuery = (next: Record<string, string | undefined>) => {
-    const sp = new URLSearchParams(search.toString());
-    Object.entries(next).forEach(([k, v]) => {
-      if (!v) sp.delete(k);
-      else sp.set(k, v);
+    const years = new Set<number>();
+    allEvents.forEach((event) => {
+      if (event.date) {
+        const year = new Date(event.date).getFullYear();
+        years.add(year);
+      }
     });
-    router.replace(`?${sp.toString()}`, { scroll: false });
-  };
 
-  // ---------- 핸들러 ----------
-  const onPageChange = (p: number) => {
-    setPage(p);
-    replaceQuery({ page: String(p) });
-  };
+    const currentYear = new Date().getFullYear();
+    const yearList = Array.from(years)
+      .filter(y => y <= currentYear + 1) // 올해 +1까지
+      .sort((a, b) => b - a); // 내림차순
 
-  const onSearch = (value: string) => {
-    setQ(value);
-    setPage(1);
-    replaceQuery({ page: '1', q: value });
-  };
+    return [
+      { label: "전체", value: "" },
+      ...yearList.map(y => ({ label: String(y), value: String(y) }))
+    ];
+  }, [allEvents]);
 
-  const onYearChange = (y: string) => {
-    setYear(y);
-    setPage(1);
-    replaceQuery({ page: '1', year: y });
-  };
+  const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
+  const presetKey = '관리자 / 대회관리' as keyof typeof PRESETS;
+  const originalPreset = PRESETS[presetKey]?.props;
 
-  const onFilterStatusChange = (s: RegStatus | '') => {
-    setStatus(s);
-    setPage(1);
-    replaceQuery({
-      page: '1',
-      status: s
-        ? s === '접수중'
-          ? 'ing'
-          : s === '접수마감'
-            ? 'done'
-            : s === '내부마감'
-              ? 'final_closed'
-              : 'none'
-        : '',
-    });
-  };
+  // 년도 필드만 동적으로 수정
+  const preset = React.useMemo(() => {
+    if (!originalPreset) return undefined;
+    return {
+      ...originalPreset,
+      fields: originalPreset.fields?.map(field =>
+        field.label === '년도'
+          ? { ...field, options: availableYears }
+          : field
+      ),
+    };
+  }, [originalPreset, availableYears]);
 
-  const onFilterPublicChange = (v: '' | '공개' | '비공개') => {
-    setPub(v);
-    setPage(1);
-    replaceQuery({
-      page: '1',
-      pub: v ? (v === '공개' ? 'open' : 'closed') : '',
-    });
-  };
+  const columns: Column<EventRow>[] = [
+    { key: 'no', header: '번호', width: 80, align: 'center' },
+    {
+      key: 'date',
+      header: '개최일',
+      width: 120,
+      align: 'center',
+      className: 'text-[#6B7280] whitespace-nowrap',
+    },
+    {
+      key: 'title',
+      header: '대회명',
+      align: 'left',
+      className: 'text-left',
+      render: (r) => (
+        <span
+          className="truncate hover:underline cursor-pointer"
+          title={r.title}
+          onClick={() => router.push(`/admin/events/${r.id}`)}
+        >
+          {r.title}
+        </span>
+      ),
+    },
+    { key: 'place', header: '개최지', width: 200, align: 'center' },
+    { key: 'host', header: '주최', width: 140, align: 'center' },
+    {
+      key: 'applyStatus',
+      header: '신청상태',
+      width: 110,
+      align: 'center',
+      render: (r) => (
+        <RegistrationStatusBadge status={r.applyStatus} size="smd" />
+      ),
+    },
+    {
+      key: 'isPublic',
+      header: '공개여부',
+      width: 100,
+      align: 'center',
+      render: (r) => {
+        // boolean 레거시 처리
+        if (typeof r.isPublic === 'boolean') {
+          return r.isPublic ? (
+            <span className="text-[#1E5EFF]">공개</span>
+          ) : (
+            <span className="text-[#D12D2D]">비공개</span>
+          );
+        }
+        // enum 처리
+        if (r.isPublic === 'OPEN') {
+          return <span className="text-[#1E5EFF]">공개</span>;
+        } else if (r.isPublic === 'TEST') {
+          return <span className="text-[#FFA500]">테스트</span>;
+        } else {
+          return <span className="text-[#D12D2D]">비공개</span>;
+        }
+      },
+    },
+  ];
 
-  const onResetFilters = () => {
-    setQ('');
-    setYear('');
-    setStatus('');
-    setPub('');
-    setPage(1);
-    replaceQuery({ page: '1', q: '', year: '', status: '', pub: '' });
-  };
+  const filterControls = preset && (
+    <div className="flex flex-wrap items-center gap-2">
+      <FilterBar
+        {...preset}
+        className="!gap-3"
+        buttons={[
+          { label: '검색', tone: 'dark' },
+          { label: '대회등록', tone: 'primary', iconRight: true },
+        ]}
+        showReset
+        onFieldChange={(label, value) => {
+          const L = norm(String(label));
+          if (L === '신청여부') {
+            setStatus(mapStatus(String(value)));
+          } else if (L === '공개여부') {
+            const mappedPub = mapPublic(String(value));
+            setPub(mappedPub);
+          } else if (L === '년도') {
+            setYear(mapYear(String(value)));
+          }
+          setPage(1);
+        }}
+        onSearch={(value) => {
+          setQ(value);
+          setPage(1);
+        }}
+        onActionClick={(label) => {
+          if (label === '대회등록') router.push('/admin/events/register');
+        }}
+        onReset={() => {
+          setQ('');
+          setStatus('');
+          setPub('');
+          setYear('');
+          setPage(1);
+        }}
+      />
+    </div>
+  );
 
-  // 로딩 상태 처리
-  if (isLoading) {
+  // 초기 로딩 상태 처리 (데이터가 없을 때만)
+  if (isLoading && rows.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-gray-500">로딩 중...</div>
+      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
+        {filterControls}
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-500">대회 목록을 불러오는 중...</div>
+        </div>
       </div>
     );
   }
 
-  // 에러 상태 처리
-  if (error) {
+  // 에러 상태 처리 (데이터가 없을 때만 에러 메시지 표시)
+  if (error && rows.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-red-500">
-          데이터를 불러오는 중 오류가 발생했습니다.
+      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
+        {filterControls}
+        <div className="flex items-center justify-center py-8">
+          <div className="text-red-500">대회 목록을 불러오는데 실패했습니다.</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 빈 상태 처리 (로딩 중이 아니고 데이터가 없을 때만)
+  if (rows.length === 0 && totalCount === 0 && !isLoading) {
+    return (
+      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
+        {filterControls}
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
+          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
+          <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
         </div>
       </div>
     );
   }
 
   return (
-    <EventTable
-      rows={rows}
-      total={totalCount}
-      page={page}
-      pageSize={pageSize}
-      onPageChange={onPageChange}
-      onSearch={onSearch}
-      onYearChange={onYearChange}
-      onFilterStatusChange={onFilterStatusChange}
-      onFilterPublicChange={onFilterPublicChange}
-      onClickRegister={() => router.push('/admin/events/register')}
-      onTitleClick={r => router.push(`/admin/events/${r.id}`)}
-      onResetFilters={onResetFilters}
-      allEvents={all}
-    />
+    <div className="mx-auto max-w-[1300px] px-4 space-y-4">
+      {filterControls}
+
+      <AdminTable<EventRow>
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.id}
+        renderFilters={null}
+        renderSearch={null}
+        renderActions={null}
+        pagination={{ page, pageSize, total: totalCount, onChange: setPage, align: 'right' }}
+        minWidth={1200}
+        contentMinHeight={rows.length >= pageSize ? '100vh' : 'auto'}
+      />
+    </div>
   );
 }

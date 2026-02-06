@@ -216,6 +216,7 @@ export type EventStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
 // 관리자 이벤트 목록 조회 API 응답의 개별 이벤트
 export interface AdminEventItem {
   id: string;
+  no?: number; // API에서 제공하는 순번
   startDate: string; // ISO 8601 형식
   nameKr: string;
   region: string;
@@ -262,4 +263,9 @@ export interface AdminEventListResponse {
 export interface AdminEventListParams {
   page?: number;
   size?: number;
+  keyword?: string;
+  year?: number;
+  visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
+  eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
+  eventSortKey?: 'NO' | 'START_DATE' | 'NAME' | 'REGION' | 'HOST';
 }

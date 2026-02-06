@@ -23,20 +23,24 @@ export type EventRow = {
   isPublic: 'OPEN' | 'TEST' | 'CLOSE' | boolean; // boolean은 레거시 지원
 };
 
-type PublicFilter = '' | '공개' | '비공개';
+type PublicFilter = '' | '공개' | '테스트' | '비공개';
 
-// 프리셋 값 → 도메인 값 매핑
-const mapStatus = (v: string): RegStatus | '' =>
-  v === 'ing'
-    ? '접수중'
-    : v === 'done'
-      ? '접수마감'
-      : v === 'none'
-        ? '비접수'
-        : '';
+// 프리셋 값 → 도메인 값 매핑 (프리셋 value와 한글 라벨 모두 지원)
+const mapStatus = (v: string): RegStatus | '' => {
+  if (v === '접수중' || v === 'ing') return '접수중';
+  if (v === '접수마감' || v === 'done') return '접수마감';
+  if (v === '비접수' || v === 'none') return '비접수';
+  if (v === '내부마감' || v === 'final_closed') return '내부마감';
+  return '';
+};
 
-const mapPublic = (v: string): PublicFilter =>
-  v === 'open' ? '공개' : v === 'closed' ? '비공개' : '';
+// 프리셋 value(open/closed/test) 및 한글 라벨 모두 지원 (VisibleStatus: OPEN, CLOSE, TEST)
+const mapPublic = (v: string): PublicFilter => {
+  if (v === '공개' || v === 'open') return '공개';
+  if (v === '테스트' || v === 'test') return '테스트';
+  if (v === '비공개' || v === 'closed') return '비공개';
+  return '';
+};
 
 type Props = {
   rows: EventRow[];
@@ -172,6 +176,9 @@ export default function EventTable({
     };
   }, [presetBase, availableYears]);
 
+  // BoardEventList와 동일하게 norm 함수 사용
+  const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
+
   // 버튼 순서: 검색 → 대회등록 → 초기화(쇼Reset)
   const RightControls = preset ? (
     <FilterBar
@@ -183,9 +190,10 @@ export default function EventTable({
       ]}
       showReset={true} // 3) 초기화
       onFieldChange={(label, value) => {
-        if (label === '년도') onYearChange?.(value);
-        else if (label === '신청여부') onFilterStatusChange?.(mapStatus(value));
-        else if (label === '공개여부') onFilterPublicChange?.(mapPublic(value));
+        const L = norm(String(label));
+        if (L === '년도') onYearChange?.(value);
+        else if (L === '신청여부') onFilterStatusChange?.(mapStatus(value));
+        else if (L === '공개여부') onFilterPublicChange?.(mapPublic(value));
       }}
       onSearch={q => onSearch?.(q)} // SearchBox 엔터 또는 '검색' 버튼(수정한 FilterBar)에서 호출
       onActionClick={label => {

@@ -26,9 +26,11 @@ export const PRESETS: Record<string, FilterBarPreset> = {
         {
           label: "신청상태",
           options: [
+            { label: "전체", value: "" },
             { label: "비접수", value: "none" },
             { label: "접수중", value: "ing" },
             { label: "접수마감", value: "done" },
+            { label: "내부마감", value: "final_closed" },
           ],
         },
         {
@@ -123,6 +125,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
         {
           label: "신청여부",
           options: [
+            { label: "전체", value: "" },
             { label: "접수중", value: "ing" },
             { label: "비접수", value: "none" },
             { label: "접수마감", value: "done" },
@@ -133,6 +136,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
           label: "공개여부",
           options: [
             { label: "공개", value: "open" },
+            { label: "테스트", value: "test" },
             { label: "비공개", value: "closed" },
           ],
         },

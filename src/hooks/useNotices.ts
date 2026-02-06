@@ -2,6 +2,7 @@
 // 공지사항 React Query 훅
 
 import { useGetQuery, useApiMutation, useAuthUpload } from '@/hooks/useFetch';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Query Keys
 export const noticeKeys = {
@@ -137,6 +138,8 @@ export function useDeleteNotice(noticeId: string) {
 
 // 9) 대회 목록 조회 (Admin boards 첫 화면 테이블용)
 export function useEventList(page: number = 1, size: number = 20, enabled: boolean = true) {
+  const queryClient = useQueryClient();
+  
   return useGetQuery(
     noticeKeys.eventListForTable(page, size),
     '/api/v1/event',
@@ -146,6 +149,38 @@ export function useEventList(page: number = 1, size: number = 20, enabled: boole
       staleTime: 5 * 60 * 1000, // 5분
       gcTime: 10 * 60 * 1000, // 10분 (캐시 유지 시간)
       refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 리페치 비활성화
+      placeholderData: (previousData) => {
+        // 같은 쿼리 키의 이전 데이터가 있으면 사용
+        if (previousData) return previousData;
+        
+        // 다른 쿼리 키의 캐시 데이터를 찾아서 사용 (필터 전환 시 깜빡임 방지)
+        // 같은 page, size를 가진 검색 조건의 데이터를 찾음
+        const cache = queryClient.getQueryCache();
+        const queries = cache.getAll();
+        
+        // 같은 page, size를 가진 검색 쿼리 찾기
+        const similarQuery = queries.find((q) => {
+          const key = q.queryKey;
+          if (
+            Array.isArray(key) &&
+            key[0] === 'notice' &&
+            key[1] === 'eventList' &&
+            key[2] === page &&
+            key[3] === size &&
+            key[4] === 'search' &&
+            q.state.data
+          ) {
+            return true;
+          }
+          return false;
+        });
+
+        if (similarQuery?.state.data) {
+          return similarQuery.state.data;
+        }
+
+        return previousData;
+      },
     },
     true // withAuth
   );
@@ -158,10 +193,11 @@ export function useEventSearch(params: {
   keyword?: string;
   year?: number;
   visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
-  eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED';
+  eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
   eventSortKey?: 'NO' | 'START_DATE' | 'NAME' | 'REGION' | 'HOST';
 }, enabled: boolean = true) {
   const { page = 1, size = 20, keyword, year, visibleStatus, eventStatus, eventSortKey } = params;
+  const queryClient = useQueryClient();
 
   // 쿼리 파라미터 구성
   const queryParams = new URLSearchParams();
@@ -192,6 +228,37 @@ export function useEventSearch(params: {
       staleTime: 5 * 60 * 1000, // 5분
       gcTime: 10 * 60 * 1000, // 10분 (캐시 유지 시간)
       refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 리페치 비활성화
+      placeholderData: (previousData) => {
+        // 같은 쿼리 키의 이전 데이터가 있으면 사용
+        if (previousData) return previousData;
+        
+        // 다른 쿼리 키의 캐시 데이터를 찾아서 사용 (필터 전환 시 깜빡임 방지)
+        // 같은 page, size를 가진 다른 필터 조건의 데이터를 찾음
+        const cache = queryClient.getQueryCache();
+        const queries = cache.getAll();
+        
+        // 같은 page, size를 가진 다른 쿼리 찾기 (일반 목록 또는 다른 검색 조건)
+        const similarQuery = queries.find((q) => {
+          const key = q.queryKey;
+          if (
+            Array.isArray(key) &&
+            key[0] === 'notice' &&
+            key[1] === 'eventList' &&
+            key[2] === page &&
+            key[3] === size &&
+            q.state.data
+          ) {
+            return true;
+          }
+          return false;
+        });
+
+        if (similarQuery?.state.data) {
+          return similarQuery.state.data;
+        }
+
+        return previousData;
+      },
     },
     true // withAuth
   );

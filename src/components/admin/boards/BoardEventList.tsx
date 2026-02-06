@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Button from '@/components/common/Button/Button';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import type { Column } from '@/components/common/Table/BaseTable';
@@ -29,7 +29,7 @@ const mapStatus = (v: string): RegStatus | '' => {
   if (v === '접수중' || v === 'ing') return '접수중';
   if (v === '접수마감' || v === 'done') return '접수마감';
   if (v === '비접수' || v === 'none') return '비접수';
-  if (v === '내부마감') return '내부마감';
+  if (v === '내부마감' || v === 'final_closed') return '내부마감';
   return '';
 };
 
@@ -65,13 +65,64 @@ export const BoardEventList = ({
   titleAddon,
 }: BoardEventListProps) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [q, setQ] = React.useState('');
-  const [status, setStatus] = React.useState<RegStatus | ''>('');
-  const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>('');
-  const [year, setYear] = React.useState<string>('');
-  const [page, setPage] = React.useState(1);
+  // URL 쿼리 파라미터에서 초기 필터 상태 읽기
+  const urlStatus = searchParams?.get('status') || '';
+  const urlPub = searchParams?.get('pub') || '';
+  const urlYear = searchParams?.get('year') || '';
+  const urlQ = searchParams?.get('q') || '';
+  const urlPage = searchParams?.get('page') || '1';
+
+  // URL 파라미터를 상태 값으로 변환
+  const initialStatus = React.useMemo(() => mapStatus(urlStatus), [urlStatus]);
+  const initialPub = React.useMemo(() => mapPublic(urlPub), [urlPub]);
+  const initialPage = React.useMemo(() => {
+    const pageNum = parseInt(urlPage, 10);
+    return isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+  }, [urlPage]);
+
+  const [q, setQ] = React.useState(urlQ);
+  const [status, setStatus] = React.useState<RegStatus | ''>(initialStatus);
+  const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>(initialPub);
+  const [year, setYear] = React.useState<string>(urlYear);
+  const [page, setPage] = React.useState(initialPage);
   const pageSize = 16;
+
+  // 상태를 URL로 동기화하는 함수
+  const syncURL = React.useCallback(() => {
+    const params = new URLSearchParams();
+    
+    // status를 URL 파라미터로 변환 (ing, done, none, final_closed)
+    if (status === '접수중') params.set('status', 'ing');
+    else if (status === '접수마감') params.set('status', 'done');
+    else if (status === '비접수') params.set('status', 'none');
+    else if (status === '내부마감') params.set('status', 'final_closed');
+    
+    // pub을 URL 파라미터로 변환 (open, test, closed)
+    if (pub === '공개') params.set('pub', 'open');
+    else if (pub === '테스트') params.set('pub', 'test');
+    else if (pub === '비공개') params.set('pub', 'closed');
+    
+    if (year) params.set('year', year);
+    if (q.trim()) params.set('q', q.trim());
+    if (page !== 1) params.set('page', String(page));
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [router, pathname, status, pub, year, q, page]);
+
+  // 상태 변경 시 URL 동기화 (초기 마운트 제외)
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    syncURL();
+  }, [status, pub, year, q, page, syncURL]);
 
   // 검색 조건이 있는지 확인
   const hasSearchConditions = q || status || pub || year;
@@ -91,11 +142,12 @@ export const BoardEventList = ({
 
 
   // 상태값을 API 파라미터로 변환
-  const eventStatus = React.useMemo((): 'OPEN' | 'CLOSED' | 'PENDING' | undefined => {
+  const eventStatus = React.useMemo((): 'OPEN' | 'CLOSED' | 'PENDING' | 'FINAL_CLOSED' | undefined => {
     switch (status) {
       case '접수중': return 'OPEN';
       case '접수마감': return 'CLOSED';
       case '비접수': return 'PENDING';
+      case '내부마감': return 'FINAL_CLOSED';
       default: return undefined;
     }
   }, [status]);
@@ -112,7 +164,7 @@ export const BoardEventList = ({
   }, [year]);
 
   // 검색 API 또는 일반 API 선택 - 조건에 따라 하나의 훅만 호출
-  const searchParams = {
+  const eventSearchParams: Parameters<typeof useEventSearch>[0] = {
     page,
     size: pageSize,
     keyword: q || undefined,
@@ -122,7 +174,7 @@ export const BoardEventList = ({
   };
 
   // 조건에 따라 하나의 훅만 호출하여 중복 요청 방지
-  const searchResult = useEventSearch(searchParams, Boolean(hasSearchConditions));
+  const searchResult = useEventSearch(eventSearchParams, Boolean(hasSearchConditions));
   const listResult = useEventList(page, pageSize, Boolean(!hasSearchConditions));
 
   // 조건에 따라 결과 선택
@@ -325,8 +377,8 @@ export const BoardEventList = ({
     );
   };
 
-  // 로딩 상태 처리
-  if (isLoading) {
+  // 초기 로딩 상태 처리 (데이터가 없을 때만)
+  if (isLoading && rows.length === 0) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
         {renderHeader()}
@@ -338,8 +390,8 @@ export const BoardEventList = ({
     );
   }
 
-  // 에러 상태 처리
-  if (error) {
+  // 에러 상태 처리 (데이터가 없을 때만 에러 메시지 표시)
+  if (error && rows.length === 0) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
         {renderHeader()}
@@ -351,7 +403,7 @@ export const BoardEventList = ({
     );
   }
 
-  // 빈 상태 처리
+  // 빈 상태 처리 (로딩 중이 아니고 데이터가 없을 때만)
   if (rows.length === 0 && totalCount === 0 && !isLoading) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
