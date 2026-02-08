@@ -12,6 +12,13 @@ import GroupRefundUserSelectModal from "@/components/event/Registration/GroupRef
 import { requestGroupRefund, BatchValidationErrorResponse, BatchValidationError } from "@/app/event/[eventId]/registration/apply/shared/api/group";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
+import PasswordResetRequestModal from "@/components/event/Registration/PasswordResetRequestModal";
+import PasswordResetOtpModal from "@/components/event/Registration/PasswordResetOtpModal";
+import { 
+  requestGroupPasswordReset, 
+  reissueGroupOtp, 
+  changeGroupPassword 
+} from "@/app/event/[eventId]/registration/apply/shared/api/passwordReset";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -38,6 +45,12 @@ export default function GroupApplicationConfirmResultPage() {
   const [requestReason, setRequestReason] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [isFinalClosedAlertOpen, setIsFinalClosedAlertOpen] = useState(false);
+  const [isPasswordResetRequestModalOpen, setIsPasswordResetRequestModalOpen] = useState(false);
+  const [isPasswordResetOtpModalOpen, setIsPasswordResetOtpModalOpen] = useState(false);
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
+  const [passwordResetOrganizationAccount, setPasswordResetOrganizationAccount] = useState<string | null>(null);
+  const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
 
   // 참가자 상세 정보 로드 함수
   const loadParticipantDetails = useCallback(async (participants: InnerUserRegistration[], startIndex: number, count: number): Promise<Map<string, InnerUserRegistration>> => {
@@ -486,6 +499,73 @@ export default function GroupApplicationConfirmResultPage() {
   }, [eventId]);
 
   const handleBackToList = () => {
+    router.push(`/event/${eventId}/registration/confirm`);
+  };
+
+  // 비밀번호 초기화 요청 핸들러
+  const handlePasswordResetRequest = async (data: { name?: string; phNum?: string; birth?: string; organizationAccount?: string }) => {
+    setIsPasswordResetLoading(true);
+    try {
+      // 단체 신청은 organizationAccount만 필요
+      const result = await requestGroupPasswordReset(eventId, {
+        organizationAccount: data.organizationAccount!
+      });
+      
+      if (result.token) {
+        // 이전 타이머 정보 초기화 (새로운 요청이므로)
+        sessionStorage.removeItem('passwordResetTimer');
+        sessionStorage.removeItem('passwordResetTimerStart');
+        sessionStorage.removeItem('passwordResetReissueCount');
+        
+        setPasswordResetToken(result.token);
+        setPasswordResetOrganizationAccount(data.organizationAccount!); // organizationAccount 저장
+        setIsPasswordResetRequestModalOpen(false);
+        setIsPasswordResetOtpModalOpen(true);
+      } else {
+        throw new Error('토큰을 받지 못했습니다.');
+      }
+    } catch (error: unknown) {
+      throw error;
+    } finally {
+      setIsPasswordResetLoading(false);
+    }
+  };
+
+  // OTP 재발급 핸들러
+  const handleOtpReissue = async () => {
+    if (!passwordResetToken || !passwordResetOrganizationAccount) {
+      throw new Error('토큰 또는 단체 아이디가 없습니다.');
+    }
+    setIsOtpReissuing(true);
+    try {
+      await reissueGroupOtp(eventId, { 
+        token: passwordResetToken,
+        uniqueInfo: {
+          organizationAccount: passwordResetOrganizationAccount
+        }
+      });
+    } finally {
+      setIsOtpReissuing(false);
+    }
+  };
+
+  // 비밀번호 변경 핸들러
+  const handlePasswordChange = async (otp: string, newPassword: string) => {
+    if (!passwordResetToken) {
+      throw new Error('토큰이 없습니다.');
+    }
+    await changeGroupPassword(eventId, {
+      token: passwordResetToken,
+      otp,
+      newPassword
+    });
+  };
+
+  // 비밀번호 변경 성공 핸들러
+  const handlePasswordResetSuccess = () => {
+    setPasswordResetToken(null);
+    setPasswordResetOrganizationAccount(null);
+    // 신청 확인 페이지로 이동
     router.push(`/event/${eventId}/registration/confirm`);
   };
 
@@ -1081,22 +1161,15 @@ export default function GroupApplicationConfirmResultPage() {
                     ? (loadedParticipantsMap.get(registrationId) || participant)
                     : participant;
 
-                  const isLeader = detailedParticipant.checkLeader === true;
-
                   return (
-                    <div key={detailedParticipant.registrationId || index} className={`${isLeader ? 'bg-blue-50 border-2 border-blue-300' : 'bg-white border-2 border-gray-200'} rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow`}>
+                    <div key={detailedParticipant.registrationId || index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
                       {/* 참가자 헤더 */}
                       <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-blue-100">
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 ${isLeader ? 'bg-blue-600' : 'bg-blue-500'} text-white rounded-full flex items-center justify-center text-sm font-bold`}>
+                          <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
                             {index + 1}
                           </div>
                           <h4 className="text-lg font-bold text-black">{detailedParticipant.name}</h4>
-                          {isLeader && (
-                            <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">
-                              참가 대표자
-                            </span>
-                          )}
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                             {getGenderLabel(detailedParticipant.gender)}
                           </span>
@@ -1280,7 +1353,7 @@ export default function GroupApplicationConfirmResultPage() {
           </div>
 
           {/* 버튼 그룹 */}
-          <div className="flex justify-center gap-4 mt-8">
+          <div className="flex flex-row justify-center gap-2 sm:gap-4 mt-8">
             <button
               onClick={async (e) => {
                 // 이벤트 전파 차단
@@ -1410,7 +1483,7 @@ export default function GroupApplicationConfirmResultPage() {
                 if (isFinalClosed) return '현재 대회 신청 및 수정 일정이 마감되어 수정할 수 없습니다.';
                 return possibleToRequest === false && requestReason ? requestReason : undefined;
               })()}
-              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${(() => {
+              className={`min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors ${(() => {
                 const isFinalClosed = eventStatus === 'FINAL_CLOSED';
                 return possibleToRequest === false || isFinalClosed || eventStatus === null;
               })()
@@ -1516,7 +1589,7 @@ export default function GroupApplicationConfirmResultPage() {
                 if (isFinalClosed) return '현재 대회 신청 및 수정 일정이 마감되어 환불할 수 없습니다.';
                 return possibleToRequest === false && requestReason ? requestReason : undefined;
               })()}
-              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${(() => {
+              className={`min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors ${(() => {
                 const isFinalClosed = eventStatus === 'FINAL_CLOSED';
                 return possibleToRequest === false || isFinalClosed || eventStatus === null;
               })()
@@ -1526,14 +1599,25 @@ export default function GroupApplicationConfirmResultPage() {
             >
               환불하기
             </button>
+            {/* 비밀번호 초기화 버튼 */}
             <button
-              onClick={handleBackToList}
-              disabled={possibleToRequest === false}
-              title={possibleToRequest === false && requestReason ? requestReason : undefined}
-              className={`min-w-[120px] md:min-w-[140px] px-6 md:px-8 py-3 md:py-4 rounded-lg font-medium text-sm md:text-base transition-colors ${possibleToRequest === false
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
-                : 'bg-black text-white hover:bg-gray-800'
-                }`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsPasswordResetRequestModalOpen(true);
+              }}
+              className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-[#D9D9D9] text-black hover:bg-[#C0C0C0]"
+            >
+              비밀번호 초기화
+            </button>
+            {/* 확인 버튼 */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/event/${eventId}/registration/confirm`);
+              }}
+              className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-black text-white hover:bg-gray-800"
             >
               확인
             </button>
@@ -1611,6 +1695,46 @@ export default function GroupApplicationConfirmResultPage() {
         title="신청 및 수정 불가"
         message="현재 대회 신청 및 수정 일정이 마감되어 수정 및 환불할 수 없습니다."
         confirmText="확인"
+      />
+
+      {/* 비밀번호 초기화 요청 모달 */}
+      <PasswordResetRequestModal
+        isOpen={isPasswordResetRequestModalOpen}
+        onClose={() => {
+          setIsPasswordResetRequestModalOpen(false);
+          setPasswordResetToken(null);
+          setPasswordResetOrganizationAccount(null);
+        }}
+        onSubmit={handlePasswordResetRequest}
+        isLoading={isPasswordResetLoading}
+        type="group"
+        initialOrganizationAccount={groupApplicationData?.organizationAccount || ''}
+        initialName={(groupApplicationData as GroupRegistrationConfirmData & { leaderName?: string }).leaderName || groupApplicationData?.innerUserRegistrationList[0]?.name || ''}
+        initialPhNum={(groupApplicationData as GroupRegistrationConfirmData & { leaderPhNum?: string }).leaderPhNum || groupApplicationData?.phNum || ''}
+        initialBirth={(groupApplicationData as GroupRegistrationConfirmData & { leaderBirth?: string }).leaderBirth || groupApplicationData?.birth || ''}
+      />
+
+      {/* 비밀번호 초기화 OTP 모달 */}
+      <PasswordResetOtpModal
+        isOpen={isPasswordResetOtpModalOpen}
+        onClose={() => {
+          setIsPasswordResetOtpModalOpen(false);
+          setPasswordResetToken(null);
+          setPasswordResetOrganizationAccount(null);
+          sessionStorage.removeItem('passwordResetTimer');
+          sessionStorage.removeItem('passwordResetTimerStart');
+          sessionStorage.removeItem('passwordResetReissueCount');
+        }}
+        onBack={() => {
+          setIsPasswordResetOtpModalOpen(false);
+          setIsPasswordResetRequestModalOpen(true);
+        }}
+        onSubmit={handlePasswordChange}
+        onReissue={handleOtpReissue}
+        isLoading={isPasswordResetLoading}
+        isReissuing={isOtpReissuing}
+        onSuccess={handlePasswordResetSuccess}
+        phoneNumber={groupApplicationData?.phNum}
       />
     </SubmenuLayout>
   );

@@ -20,7 +20,7 @@ export default function Client() {
         tableCtaHref="/admin/notifications/all"
         basePath="notifications"
       />
-      <Overlay />
+      {/* <Overlay /> */}
     </>
   );
 }

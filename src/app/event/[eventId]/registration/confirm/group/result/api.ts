@@ -92,7 +92,6 @@ export const createEditData = (data: GroupRegistrationConfirmData) => {
         phone3: participant.phNum.split('-')[2],
         paymentStatus: participant.paymentStatus || 'UNPAID',
         registrationId: participant.registrationId,
-        isLeader: participant.checkLeader || false,
         note: (participant as any).note || '',
         originalAmount: participant.amount
       };

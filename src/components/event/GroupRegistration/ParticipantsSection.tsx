@@ -358,14 +358,6 @@ const ParticipantsSection = memo(function ParticipantsSection({
               <p className="text-sm text-gray-800 leading-relaxed">
             대표자도 대회에 참여하는 경우 아래 참가자 정보를 작성하시기 바랍니다.
           </p>
-              <p className="text-sm text-gray-800 leading-relaxed">
-                참가 대표자는 반드시 한 명만 지정해야 합니다. 참가 대표자로 지정된 참가자의 행은 파란색으로 표시됩니다.
-              </p>
-              {isEditMode && (
-                <p className="text-sm text-orange-600 font-semibold leading-relaxed">
-                  ⚠️ 수정 모드에서는 참가 대표자를 변경할 수 없습니다.
-                </p>
-              )}
               <p className="text-xs text-gray-600 italic leading-relaxed">
             *(한번에 최대 100명까지만 신청 가능하며, 초과 인원은 별도의 단체로 신청 해주시기 바랍니다.)
           </p>
@@ -430,9 +422,6 @@ const ParticipantsSection = memo(function ParticipantsSection({
         <table className="w-full border-collapse min-w-[2132px]">
           <thead>
             <tr className="bg-gray-50">
-              <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">
-                참가<br />대표자
-              </th>
               <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">번호</th>
               <th className="px-3 py-3 text-sm font-bold text-center w-32 border-r border-gray-300">이름</th>
               <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">생년월일</th>
@@ -482,80 +471,16 @@ const ParticipantsSection = memo(function ParticipantsSection({
               // isDisabled는 행 블락 상태와 동일 (기존 코드 호환성)
               const isDisabled = isRowBlocked;
               
-              const isLeader = participant.isLeader === true;
-              
               return (
               <tr 
                 key={index} 
                 className={`border-b border-gray-200 ${
                   isDisabled 
                     ? 'bg-gray-50 opacity-75 cursor-not-allowed' 
-                    : isLeader 
-                    ? 'bg-blue-50' 
                     : ''
                 }`}
                 style={isDisabled ? { pointerEvents: 'none' } : {}}
               >
-                {/* 참가 대표자 체크박스 */}
-                <td className="px-3 py-3 text-center w-20 border-r border-gray-200">
-                  {isEditMode ? (
-                    // 수정 모드: 읽기 전용 표시
-                    <div className="flex items-center justify-center">
-                      {participant.isLeader ? (
-                        <div className="w-4 h-4 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      ) : (
-                        <div className="w-4 h-4 border-2 border-gray-300 rounded bg-white"></div>
-                      )}
-                    </div>
-                  ) : (
-                    <TooltipWrapper
-                      content={
-                        isDisabled 
-                          ? '결제가 완료된 참가자는 수정할 수 없습니다'
-                          : participant.isLeader
-                          ? '이 참가자는 현재 참가 대표자로 지정되어 있습니다'
-                          : '이 참가자를 참가 대표자로 설정합니다. 참가 대표자는 반드시 한 명만 지정해야 합니다'
-                      }
-                    >
-                      <input
-                        type="checkbox"
-                        checked={participant.isLeader || false}
-                        disabled={isDisabled}
-                        readOnly={isEditMode}
-                        onChange={(e) => {
-                          if (isDisabled || isEditMode) return;
-                          handleParticipantChange(index, 'isLeader', e.target.checked);
-                        }}
-                        onClick={(e) => {
-                          if (isEditMode) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            return false;
-                          }
-                        }}
-                        onMouseDown={(e) => {
-                          if (isEditMode) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            return false;
-                          }
-                        }}
-                        style={isEditMode ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}
-                        className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 ${
-                          isDisabled
-                            ? 'opacity-50 cursor-not-allowed'
-                            : isEditMode
-                            ? 'opacity-50 cursor-not-allowed pointer-events-none'
-                            : 'cursor-pointer'
-                        }`}
-                      />
-                    </TooltipWrapper>
-                  )}
-                </td>
                 <td className="px-3 py-3 text-center text-sm w-20 border-r border-gray-200">
                   <div className="flex items-center justify-center gap-1">
                     {index + 1}.

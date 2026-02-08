@@ -150,7 +150,6 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
                 note: participant.note || '',
                 paymentStatus: participant.paymentStatus || 'UNPAID',
                 registrationId: participant.registrationId,
-                isLeader: participant.checkLeader || false,
                 originalAmount: participant.amount
               };
             });

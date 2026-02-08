@@ -14,32 +14,6 @@ export const useParticipantHandlers = ({
   isEditMode = false
 }: UseParticipantHandlersProps) => {
   const handleParticipantChange = useCallback((index: number, field: keyof ParticipantData, value: string | boolean | undefined) => {
-    // 참가 대표자 체크박스 처리 (참가 대표자는 한 명만 가능)
-    if (field === 'isLeader') {
-      // 수정 모드에서는 참가 대표자 변경 불가 (체크박스 자체가 비활성화됨)
-      if (isEditMode) {
-        return;
-      }
-      
-      if (value === true) {
-        // 참가 대표자 체크: 현재 참가자를 참가 대표자로, 다른 참가자는 모두 해제
-        const updatedParticipants = participants.map((p, idx) => ({
-          ...p,
-          isLeader: idx === index ? true : false
-        }));
-        onParticipantsChange(updatedParticipants);
-        return;
-      } else {
-        // 참가 대표자 해제: 현재 참가자의 참가 대표자만 해제
-        const updatedParticipants = participants.map((p, idx) => ({
-          ...p,
-          isLeader: idx === index ? false : p.isLeader
-        }));
-        onParticipantsChange(updatedParticipants);
-        return;
-      }
-    }
-
     const newParticipants = participants.map((participant, i) => {
       if (i === index) {
         // 참가종목이 변경되면 기념품 관련 필드들 초기화

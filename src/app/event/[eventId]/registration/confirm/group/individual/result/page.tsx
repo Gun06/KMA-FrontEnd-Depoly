@@ -147,11 +147,12 @@ export default function IndividualGroupConfirmResultPage() {
           {/* 개별 확인 결과 컴포넌트 */}
           <IndividualGroupConfirmResult data={individualData} />
 
-          {/* 목록으로 돌아가기 버튼 */}
-          <div className="mt-8 text-center">
+          {/* 버튼 그룹 */}
+          <div className="flex flex-row justify-center gap-2 sm:gap-4 mt-8">
+            {/* 목록으로 돌아가기 버튼 */}
             <button
               onClick={handleBackToList}
-              className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+              className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-black text-white hover:bg-gray-800"
             >
               목록으로 돌아가기
             </button>

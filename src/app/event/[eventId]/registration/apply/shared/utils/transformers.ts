@@ -188,12 +188,6 @@ export const transformFormDataToUpdateApi = (
 
 // 단체신청 데이터 변환
 export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: any): GroupApiRequestData => {
-  // 참가 대표자 검증: 정확히 한 명이어야 함
-  const leaderCount = formData.participants.filter(p => p.isLeader === true).length;
-  if (leaderCount !== 1) {
-    throw new Error(`단체 신청 내에는 참가 대표자가 반드시 한 명 존재해야 합니다.`);
-  }
-  
   // 단체 정보에서 기념품 정보를 JSON으로 변환
   const souvenirJson = formData.participants.map(participant => ({
     category: participant.category,
@@ -319,11 +313,6 @@ export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: 
           registrationInfo
         }
       };
-
-      // checkLeader 필드 추가 (isLeader가 true인 경우만)
-      if (participant.isLeader === true) {
-        transformedParticipant.checkLeader = true;
-      }
       
       // note 필드 추가 (있는 경우)
       if (participant.note && participant.note.trim().length > 0) {
@@ -439,20 +428,6 @@ export const transformGroupFormDataToUpdateApi = (
         registrationInfo
       }
     };
-
-    // 원본 데이터에서 checkLeader였던 참가자는 수정 불가 (원본 데이터의 checkLeader 값 유지)
-    // registrationId가 있으면 registrationId로, 없으면 index로 매칭
-    const originalParticipant = participant.registrationId 
-      ? originalData?.innerUserRegistrationList?.find((p: any) => p.registrationId === participant.registrationId)
-      : originalData?.innerUserRegistrationList?.[index];
-    
-    if (originalParticipant?.checkLeader) {
-      // 원본에서 checkLeader였던 경우, 항상 true로 유지 (수정 불가)
-      transformedParticipant.checkLeader = true;
-    } else if (participant.isLeader) {
-      // 신규로 leader로 설정된 경우
-      transformedParticipant.checkLeader = true;
-    }
     
     // note 필드 추가 (있는 경우 - registrationInfo에 이미 추가되었지만 API 스키마에 따라 최상위에도 추가)
     if (participant.note && participant.note.trim().length > 0) {
