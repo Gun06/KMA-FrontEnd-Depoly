@@ -329,7 +329,10 @@ export default function Header() {
             ) : (
               <a
                 href="/login"
-                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center space-x-1 text-gray-400 cursor-not-allowed opacity-50 pointer-events-none"
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
               >
                 <Image
                   src={userIcon}
@@ -659,7 +662,10 @@ export default function Header() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center space-x-1 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+                      className="flex items-center space-x-1 p-2 rounded-full transition-colors focus:outline-none opacity-50 cursor-not-allowed pointer-events-none"
+                      onClick={(e) => {
+                        e.preventDefault();
+                      }}
                     >
                       <Image
                         src={userIcon}
