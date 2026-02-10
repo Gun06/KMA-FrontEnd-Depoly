@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { GroupRegistrationResponse } from "../../../app/event/[eventId]/registration/apply/shared/types/common";
 import { fetchIndividualGroupRegistration } from "../../../app/event/[eventId]/registration/confirm/group/api";
+import PasswordResetRequestModal from "./PasswordResetRequestModal";
+import PasswordResetOtpModal from "./PasswordResetOtpModal";
+import { requestGroupPasswordReset, reissueGroupOtp } from "../../../app/event/[eventId]/registration/apply/shared/api/passwordReset";
 
 // API 함수 (현재 API와 새로운 스키마 모두 지원)
-const verifyGroupRegistration = async (eventId: string, data: any): Promise<GroupRegistrationResponse | any> => {
+const verifyGroupRegistration = async (eventId: string, data: { groupName: string; password: string }): Promise<GroupRegistrationResponse> => {
   try {
     const requestBody = {
       id: data.groupName,
@@ -27,10 +30,8 @@ const verifyGroupRegistration = async (eventId: string, data: any): Promise<Grou
       const errorText = await response.text();
       // 사용자 친화적 에러 메시지 매핑
       try {
-        const errorJson = JSON.parse(errorText);
+        JSON.parse(errorText); // 파싱 확인용
         const status = response.status;
-        const code = errorJson?.code || '';
-        const serverMsg = errorJson?.message || '';
 
         if (status === 400 || status === 404) {
           throw new Error('신청정보 또는 비밀번호가 다름니다.');
@@ -40,7 +41,7 @@ const verifyGroupRegistration = async (eventId: string, data: any): Promise<Grou
         }
         // 기타 케이스
         throw new Error('신청정보 또는 비밀번호가 다름니다.');
-      } catch {
+      } catch (_e) {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
@@ -51,8 +52,8 @@ const verifyGroupRegistration = async (eventId: string, data: any): Promise<Grou
     
     const result = await response.json();
     return result;
-  } catch (error) {
-    throw error;
+  } catch (_error) {
+    throw _error;
   }
 };
 
@@ -62,11 +63,21 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
   const [error, setError] = useState<string | null>(null);
   const [individualError, setIndividualError] = useState<string | null>(null);
   const [individualLoading, setIndividualLoading] = useState(false);
+  
+  // 비밀번호 초기화 모달 상태
+  const [showPasswordResetRequestModal, setShowPasswordResetRequestModal] = useState(false);
+  const [showPasswordResetOtpModal, setShowPasswordResetOtpModal] = useState(false);
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
+  const [passwordResetOrganizationAccount, setPasswordResetOrganizationAccount] = useState<string | null>(null);
+  const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
 
   const [formData, setFormData] = useState({
     groupName: "",
     password: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [individualFormData, setIndividualFormData] = useState({
     orgAccount: "",
@@ -153,7 +164,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
             _password: formData.password // 비밀번호를 별도 필드로 저장
           };
           sessionStorage.setItem(storageKey, JSON.stringify(dataToStore));
-        } catch (e) {
+        } catch (_e) {
           // sessionStorage 접근 실패 시 무시
         }
         
@@ -226,6 +237,76 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
     }
   };
 
+  // 비밀번호 초기화 요청 핸들러
+  const handlePasswordResetRequest = async (data: { name?: string; phNum?: string; birth?: string; organizationAccount?: string }) => {
+    setIsPasswordResetLoading(true);
+    try {
+      if (!data.organizationAccount) {
+        throw new Error('단체 아이디를 입력해주세요.');
+      }
+      
+      const result = await requestGroupPasswordReset(eventId, {
+        organizationAccount: data.organizationAccount
+      });
+      
+      if (result.token) {
+        // 이전 타이머 정보 초기화 (새로운 요청이므로)
+        sessionStorage.removeItem('passwordResetTimer');
+        sessionStorage.removeItem('passwordResetTimerStart');
+        sessionStorage.removeItem('passwordResetReissueCount');
+        
+        setPasswordResetToken(result.token);
+        setPasswordResetOrganizationAccount(data.organizationAccount); // organizationAccount 저장
+        setShowPasswordResetRequestModal(false);
+        setShowPasswordResetOtpModal(true);
+      } else {
+        throw new Error('토큰을 받지 못했습니다.');
+      }
+    } catch (err) {
+      throw err;
+    } finally {
+      setIsPasswordResetLoading(false);
+    }
+  };
+
+  // OTP 재전송 핸들러
+  const handleOtpReissue = async () => {
+    if (!passwordResetToken || !passwordResetOrganizationAccount) {
+      throw new Error('토큰 또는 단체 아이디가 없습니다.');
+    }
+    setIsOtpReissuing(true);
+    try {
+      await reissueGroupOtp(eventId, {
+        token: passwordResetToken,
+        uniqueInfo: {
+          organizationAccount: passwordResetOrganizationAccount
+        }
+      });
+    } finally {
+      setIsOtpReissuing(false);
+    }
+  };
+
+  // 비밀번호 변경 핸들러
+  const handlePasswordChange = async (otp: string, newPassword: string) => {
+    if (!passwordResetToken) {
+      throw new Error('토큰이 없습니다.');
+    }
+    const { changeGroupPassword } = await import("../../../app/event/[eventId]/registration/apply/shared/api/passwordReset");
+    await changeGroupPassword(eventId, {
+      token: passwordResetToken,
+      otp,
+      newPassword
+    });
+  };
+
+  // 비밀번호 변경 성공 핸들러
+  const handlePasswordResetSuccess = () => {
+    setPasswordResetToken(null);
+    setPasswordResetOrganizationAccount(null);
+    // 단체 신청 확인 페이지로 이동
+    router.push(`/event/${eventId}/registration/confirm/group`);
+  };
 
   const [activeTab, setActiveTab] = useState<'group' | 'individual'>('group');
 
@@ -306,22 +387,41 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
               <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
                 단체 비밀번호
               </label>
-              <div className="w-full sm:w-[500px]">
+              <div className="w-full sm:w-[500px] relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   placeholder="단체 비밀번호를 입력해주세요."
                   autoComplete="new-password"
                   name="no-autofill-group-password"
-                  className="w-full px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full px-3 sm:px-4 py-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
 
           {/* 제출 버튼 */}
-          <div className="mt-6 sm:mt-8 text-center">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => setShowPasswordResetRequestModal(true)}
+              type="button"
+              className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg text-black hover:bg-[#C0C0C0]"
+              style={{ backgroundColor: '#D9D9D9' }}
+            >
+              비밀번호 초기화
+            </button>
             <button
               onClick={handleSubmit}
               disabled={isLoading}
@@ -599,6 +699,41 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
 
         </>
       )}
+
+      {/* 비밀번호 초기화 요청 모달 */}
+      <PasswordResetRequestModal
+        isOpen={showPasswordResetRequestModal}
+        onClose={() => {
+          setShowPasswordResetRequestModal(false);
+          setPasswordResetToken(null);
+          setPasswordResetOrganizationAccount(null);
+        }}
+        onSubmit={handlePasswordResetRequest}
+        isLoading={isPasswordResetLoading}
+        type="group"
+      />
+
+      {/* OTP 인증 및 비밀번호 변경 모달 */}
+      <PasswordResetOtpModal
+        isOpen={showPasswordResetOtpModal}
+        onClose={() => {
+          setShowPasswordResetOtpModal(false);
+          setPasswordResetToken(null);
+          setPasswordResetOrganizationAccount(null);
+          sessionStorage.removeItem('passwordResetTimer');
+          sessionStorage.removeItem('passwordResetTimerStart');
+          sessionStorage.removeItem('passwordResetReissueCount');
+        }}
+        onBack={() => {
+          setShowPasswordResetOtpModal(false);
+          setShowPasswordResetRequestModal(true);
+        }}
+        onSubmit={handlePasswordChange}
+        onReissue={handleOtpReissue}
+        isLoading={isPasswordResetLoading}
+        isReissuing={isOtpReissuing}
+        onSuccess={handlePasswordResetSuccess}
+      />
     </div>
   );
 }

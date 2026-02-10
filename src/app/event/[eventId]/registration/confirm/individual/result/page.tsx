@@ -11,13 +11,6 @@ import { requestIndividualRefund } from "@/app/event/[eventId]/registration/appl
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { fetchIndividualRegistrationConfirm } from "./api";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
-import PasswordResetRequestModal from "@/components/event/Registration/PasswordResetRequestModal";
-import PasswordResetOtpModal from "@/components/event/Registration/PasswordResetOtpModal";
-import { 
-  requestIndividualPasswordReset, 
-  reissueIndividualOtp, 
-  changeIndividualPassword 
-} from "@/app/event/[eventId]/registration/apply/shared/api/passwordReset";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -35,12 +28,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   const [possibleToRequest, setPossibleToRequest] = useState<boolean | null>(null);
   const [requestReason, setRequestReason] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
-  const [isPasswordResetRequestModalOpen, setIsPasswordResetRequestModalOpen] = useState(false);
-  const [isPasswordResetOtpModalOpen, setIsPasswordResetOtpModalOpen] = useState(false);
-  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
-  const [passwordResetUniqueInfo, setPasswordResetUniqueInfo] = useState<{ name: string; phNum: string; birth: string } | null>(null);
-  const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
-  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -261,77 +248,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
   const handleBackToList = () => {
     router.push(`/event/${params.eventId}/registration/confirm/individual`);
-  };
-
-  // 비밀번호 초기화 요청 핸들러
-  const handlePasswordResetRequest = async (data: { name?: string; phNum?: string; birth?: string; organizationAccount?: string }) => {
-    setIsPasswordResetLoading(true);
-    try {
-      const result = await requestIndividualPasswordReset(params.eventId, {
-        name: data.name!,
-        phNum: data.phNum!,
-        birth: data.birth!
-      });
-      
-      if (result.token) {
-        // 이전 타이머 정보 초기화 (새로운 요청이므로)
-        sessionStorage.removeItem('passwordResetTimer');
-        sessionStorage.removeItem('passwordResetTimerStart');
-        sessionStorage.removeItem('passwordResetReissueCount');
-        
-        setPasswordResetToken(result.token);
-        // uniqueInfo 저장 (OTP 재발급 시 필요)
-        setPasswordResetUniqueInfo({
-          name: data.name!,
-          phNum: data.phNum!,
-          birth: data.birth!
-        });
-        setIsPasswordResetRequestModalOpen(false);
-        setIsPasswordResetOtpModalOpen(true);
-      } else {
-        throw new Error('토큰을 받지 못했습니다.');
-      }
-    } catch (error: any) {
-      throw error;
-    } finally {
-      setIsPasswordResetLoading(false);
-    }
-  };
-
-  // OTP 재발급 핸들러
-  const handleOtpReissue = async () => {
-    if (!passwordResetToken || !passwordResetUniqueInfo) {
-      throw new Error('토큰 또는 인증 정보가 없습니다.');
-    }
-    setIsOtpReissuing(true);
-    try {
-      await reissueIndividualOtp(params.eventId, { 
-        token: passwordResetToken,
-        uniqueInfo: passwordResetUniqueInfo
-      });
-    } finally {
-      setIsOtpReissuing(false);
-    }
-  };
-
-  // 비밀번호 변경 핸들러
-  const handlePasswordChange = async (otp: string, newPassword: string) => {
-    if (!passwordResetToken) {
-      throw new Error('토큰이 없습니다.');
-    }
-    await changeIndividualPassword(params.eventId, {
-      token: passwordResetToken,
-      otp,
-      newPassword
-    });
-  };
-
-  // 비밀번호 변경 성공 핸들러
-  const handlePasswordResetSuccess = () => {
-    setPasswordResetToken(null);
-    setPasswordResetUniqueInfo(null);
-    // 신청 확인 페이지로 이동
-    router.push(`/event/${params.eventId}/registration/confirm`);
   };
 
   const handleEdit = (e?: React.MouseEvent) => {
@@ -924,17 +840,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 </div>
               );
             })()}
-            {/* 비밀번호 초기화 버튼 */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsPasswordResetRequestModalOpen(true);
-              }}
-              className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-[#D9D9D9] text-black hover:bg-[#C0C0C0]"
-            >
-              비밀번호 초기화
-            </button>
             {/* 확인 버튼 */}
             <button
               onClick={(e) => {
@@ -984,42 +889,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         title="신청 및 수정 불가"
         message="현재 대회 신청 및 수정 일정이 마감되어 수정 및 환불할 수 없습니다."
         confirmText="확인"
-      />
-
-      {/* 비밀번호 초기화 요청 모달 */}
-      <PasswordResetRequestModal
-        isOpen={isPasswordResetRequestModalOpen}
-        onClose={() => {
-          setIsPasswordResetRequestModalOpen(false);
-          setPasswordResetToken(null);
-          setPasswordResetUniqueInfo(null);
-        }}
-        onSubmit={handlePasswordResetRequest}
-        isLoading={isPasswordResetLoading}
-        type="individual"
-      />
-
-      {/* 비밀번호 초기화 OTP 모달 */}
-      <PasswordResetOtpModal
-        isOpen={isPasswordResetOtpModalOpen}
-        onClose={() => {
-          setIsPasswordResetOtpModalOpen(false);
-          setPasswordResetToken(null);
-          setPasswordResetUniqueInfo(null);
-          sessionStorage.removeItem('passwordResetTimer');
-          sessionStorage.removeItem('passwordResetTimerStart');
-          sessionStorage.removeItem('passwordResetReissueCount');
-        }}
-        onBack={() => {
-          setIsPasswordResetOtpModalOpen(false);
-          setIsPasswordResetRequestModalOpen(true);
-        }}
-        onSubmit={handlePasswordChange}
-        onReissue={handleOtpReissue}
-        isLoading={isPasswordResetLoading}
-        isReissuing={isOtpReissuing}
-        onSuccess={handlePasswordResetSuccess}
-        phoneNumber={registrationData?.phNum}
       />
     </SubmenuLayout>
   );

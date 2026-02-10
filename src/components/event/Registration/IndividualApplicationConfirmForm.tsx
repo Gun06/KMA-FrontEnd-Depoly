@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
 import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
+import PasswordResetRequestModal from "./PasswordResetRequestModal";
+import PasswordResetOtpModal from "./PasswordResetOtpModal";
+import { requestIndividualPasswordReset, reissueIndividualOtp } from "../../../app/event/[eventId]/registration/apply/shared/api/passwordReset";
 
 export default function IndividualApplicationConfirmForm({ eventId }: { eventId: string }) {
   const router = useRouter();
@@ -41,6 +44,8 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
     phone3: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -52,6 +57,14 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // 비밀번호 초기화 모달 상태
+  const [showPasswordResetRequestModal, setShowPasswordResetRequestModal] = useState(false);
+  const [showPasswordResetOtpModal, setShowPasswordResetOtpModal] = useState(false);
+  const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
+  const [passwordResetUniqueInfo, setPasswordResetUniqueInfo] = useState<{ name: string; phNum: string; birth: string } | null>(null);
+  const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
 
   const handleSubmit = async () => {
     // 필수 필드 검증
@@ -118,7 +131,7 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
               _password: formData.password // 비밀번호를 별도 필드로 저장
             };
             sessionStorage.setItem(storageKey, JSON.stringify(dataToStore));
-          } catch (e) {
+          } catch (_e) {
             // sessionStorage 접근 실패 시 무시
           }
           
@@ -132,10 +145,8 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
       } else {
         const errorText = await response.text();
         try {
-          const errorJson = JSON.parse(errorText);
+          JSON.parse(errorText); // 파싱 확인용
           const status = response.status;
-          const code = errorJson?.code || '';
-          const serverMsg = errorJson?.message || '';
 
           if (status === 400 || status === 404) {
             setError('신청정보 또는 비밀번호가 다름니다.');
@@ -144,7 +155,7 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
           } else {
             setError('신청정보 또는 비밀번호가 다름니다.');
           }
-        } catch {
+        } catch (_e) {
           if (response.status === 400 || response.status === 404) {
             setError('신청정보 또는 비밀번호가 다름니다.');
           } else if (response.status >= 500) {
@@ -164,6 +175,77 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
     }
   };
 
+  // 비밀번호 초기화 요청 핸들러
+  const handlePasswordResetRequest = async (data: { name?: string; phNum?: string; birth?: string }) => {
+    setIsPasswordResetLoading(true);
+    try {
+      const result = await requestIndividualPasswordReset(eventId, {
+        name: data.name!,
+        phNum: data.phNum!,
+        birth: data.birth!
+      });
+      
+      if (result.token) {
+        // 이전 타이머 정보 초기화 (새로운 요청이므로)
+        sessionStorage.removeItem('passwordResetTimer');
+        sessionStorage.removeItem('passwordResetTimerStart');
+        sessionStorage.removeItem('passwordResetReissueCount');
+        
+        setPasswordResetToken(result.token);
+        // uniqueInfo 저장 (OTP 재발급 시 필요)
+        setPasswordResetUniqueInfo({
+          name: data.name!,
+          phNum: data.phNum!,
+          birth: data.birth!
+        });
+        setShowPasswordResetRequestModal(false);
+        setShowPasswordResetOtpModal(true);
+      } else {
+        throw new Error('토큰을 받지 못했습니다.');
+      }
+    } catch (err) {
+      throw err;
+    } finally {
+      setIsPasswordResetLoading(false);
+    }
+  };
+
+  // OTP 재전송 핸들러
+  const handleOtpReissue = async () => {
+    if (!passwordResetToken || !passwordResetUniqueInfo) {
+      throw new Error('토큰 또는 인증 정보가 없습니다.');
+    }
+    setIsOtpReissuing(true);
+    try {
+      await reissueIndividualOtp(eventId, {
+        token: passwordResetToken,
+        uniqueInfo: passwordResetUniqueInfo
+      });
+    } finally {
+      setIsOtpReissuing(false);
+    }
+  };
+
+  // 비밀번호 변경 핸들러
+  const handlePasswordChange = async (otp: string, newPassword: string) => {
+    if (!passwordResetToken) {
+      throw new Error('토큰이 없습니다.');
+    }
+    const { changeIndividualPassword } = await import("../../../app/event/[eventId]/registration/apply/shared/api/passwordReset");
+    await changeIndividualPassword(eventId, {
+      token: passwordResetToken,
+      otp,
+      newPassword
+    });
+  };
+
+  // 비밀번호 변경 성공 핸들러
+  const handlePasswordResetSuccess = () => {
+    setPasswordResetToken(null);
+    setPasswordResetUniqueInfo(null);
+    // 개인 신청 확인 페이지로 이동
+    router.push(`/event/${eventId}/registration/confirm/individual`);
+  };
 
   // 현재 연도를 기준으로 100년 범위 생성 (예: 2026, 2025, ... )
   const currentYear = new Date().getFullYear();
@@ -385,22 +467,27 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
           <label className="w-full sm:w-24 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
             비밀번호 <span className="text-red-500">*</span>
           </label>
-          <div className="w-full sm:w-[400px]">
+          <div className="w-full sm:w-[400px] relative">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
               placeholder="입력해주세요."
               autoComplete="new-password"
               name="no-autofill-individual-password"
-              className="w-full px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              className="w-full px-3 sm:px-4 py-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
-            {/* <button
-              onClick={handlePasswordFind}
-              className="w-full sm:w-auto px-4 sm:px-6 py-3 sm:py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap text-sm sm:text-base"
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
-              비밀번호 찾기
-            </button> */}
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -422,7 +509,15 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
       )}
 
       {/* 제출 버튼 */}
-      <div className="mt-6 sm:mt-8 text-center">
+      <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button
+          onClick={() => setShowPasswordResetRequestModal(true)}
+          type="button"
+          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg text-black hover:bg-[#C0C0C0]"
+          style={{ backgroundColor: '#D9D9D9' }}
+        >
+          비밀번호 초기화
+        </button>
         <button
           onClick={handleSubmit}
           disabled={isLoading}
@@ -445,6 +540,41 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
       
       {/* 스폰서와의 여백 */}
       <div className="h-12 sm:h-16"></div>
+
+      {/* 비밀번호 초기화 요청 모달 */}
+      <PasswordResetRequestModal
+        isOpen={showPasswordResetRequestModal}
+        onClose={() => {
+          setShowPasswordResetRequestModal(false);
+          setPasswordResetToken(null);
+          setPasswordResetUniqueInfo(null);
+        }}
+        onSubmit={handlePasswordResetRequest}
+        isLoading={isPasswordResetLoading}
+        type="individual"
+      />
+
+      {/* OTP 인증 및 비밀번호 변경 모달 */}
+      <PasswordResetOtpModal
+        isOpen={showPasswordResetOtpModal}
+        onClose={() => {
+          setShowPasswordResetOtpModal(false);
+          setPasswordResetToken(null);
+          setPasswordResetUniqueInfo(null);
+          sessionStorage.removeItem('passwordResetTimer');
+          sessionStorage.removeItem('passwordResetTimerStart');
+          sessionStorage.removeItem('passwordResetReissueCount');
+        }}
+        onBack={() => {
+          setShowPasswordResetOtpModal(false);
+          setShowPasswordResetRequestModal(true);
+        }}
+        onSubmit={handlePasswordChange}
+        onReissue={handleOtpReissue}
+        isLoading={isPasswordResetLoading}
+        isReissuing={isOtpReissuing}
+        onSuccess={handlePasswordResetSuccess}
+      />
     </div>
   );
 }
