@@ -1,5 +1,5 @@
-import { useGetQuery } from '@/hooks/useFetch';
-import type { UserListResponse, UserRegistrationListResponse, OrganizationListResponse, OrganizationMemberListResponse, OrganizationDetailResponse } from '@/types/user';
+import { useGetQuery, useApiMutation } from '@/hooks/useFetch';
+import type { UserListResponse, UserRegistrationListResponse, OrganizationListResponse, OrganizationMemberListResponse, OrganizationDetailResponse, UpdateOrganizationRequest } from '@/types/user';
 
 // 개인 회원 목록 조회 API (검색 API 사용)
 export function useIndividualUsersList(params: {
@@ -195,5 +195,22 @@ export function useOrganizationMembersSearch(params: {
       placeholderData: (previousData) => previousData,
     },
     true
+  );
+}
+
+// 단체 기본 정보 수정 API
+// PATCH /api/v1/organization/{organizationId}
+export function useUpdateOrganizationInfo(organizationId: string) {
+  return useApiMutation<string, UpdateOrganizationRequest>(
+    `/api/v1/organization/${organizationId}`,
+    'admin',
+    'PATCH',
+    true, // 인증 필요
+    {
+      onSuccess: () => {
+        // 성공 시 쿼리 캐시 무효화하여 자동 리프레시
+        // queryClient.invalidateQueries는 컴포넌트에서 처리
+      },
+    }
   );
 }

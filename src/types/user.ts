@@ -247,10 +247,23 @@ export interface OrganizationDetailResponse {
   email: string;
   address?: string;
   addressDetail?: string;
+  zipCode?: string;
   eventName: string;
   createdAt: string; // ISO 8601 형식
   paymentStatus: string;
   totalAmount?: number;
+}
+
+// 단체 기본 정보 수정 요청 타입
+// PATCH /api/v1/organization/{organizationId}
+export interface UpdateOrganizationRequest {
+  account: string;
+  groupName: string;
+  leaderName: string;
+  leaderPhNum: string;
+  zipCode: string;
+  address: string;
+  addressDetail: string;
 }
 
 // ───────────── 단체 구성원 API 타입 ─────────────

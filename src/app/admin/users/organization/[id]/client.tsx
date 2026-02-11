@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import OrgMembersTable from '@/components/admin/Users/organization/OrgMembersTable';
-import { useOrganizationMembersSearch, useOrganizationDetail, useOrganizationMembersList } from '@/services/admin/users';
+import { useOrganizationMembersSearch, useOrganizationDetail, useOrganizationMembersList, useUpdateOrganizationInfo } from '@/services/admin/users';
 import { transformOrgMemberApiToRow, type OrgMemberRow } from '@/data/users/orgMembers';
 import { getRegistrationDetail, resetOrganizationPassword } from '@/services/registration';
 import { toast } from 'react-toastify';
@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import type { RegistrationItem } from '@/types/registration';
 import { getSimpleEventList } from '@/services/event';
+import PostalCodeSearchButton from '@/components/common/PostalCodeSearchButton';
+import { useQueryClient } from '@tanstack/react-query';
 
 type SearchKey = 'ALL' | 'NAME' | 'PAYMENTER_NAME' | 'ORGANIZATION' | 'MEMO' | 'DETAIL_MEMO' | 'NOTE' | 'MATCHING_LOG' | 'BIRTH' | 'PH_NUM';
 type PaymentStatus = '' | 'UNPAID' | 'COMPLETED' | 'MUST_CHECK' | 'NEED_PARTITIAL_REFUND' | 'NEED_REFUND' | 'REFUNDED';
@@ -39,11 +41,11 @@ export default function Client({ orgId }: { orgId: string }) {
       ownerPhone: orgDetailData.leaderPhNum,
       address: orgDetailData.address,
       addressDetail: orgDetailData.addressDetail,
+      zipCode: orgDetailData.zipCode || '',
       eventTitle: orgDetailData.eventName,
       createdAt: orgDetailData.createdAt,
     };
   }, [orgDetailData, numericOrgId]);
-
 
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -65,6 +67,49 @@ export default function Client({ orgId }: { orgId: string }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [newPwd, setNewPwd] = useState('');
   const [pwdSaving, setPwdSaving] = useState(false);
+
+  // 기본정보 수정 모달 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    account: '',
+    groupName: '',
+    leaderName: '',
+    leaderPhNum: '',
+    zipCode: '',
+    address: '',
+    addressDetail: '',
+  });
+  const queryClient = useQueryClient();
+  const { mutate: updateOrganization, isPending: isUpdating } = useUpdateOrganizationInfo(orgId);
+
+  // 모달 열 때 폼 데이터 초기화
+  useEffect(() => {
+    if (showEditModal && orgDetailData) {
+      // 주소에서 우편번호 추출 및 제거
+      let address = orgDetailData.address || '';
+      let zipCode = orgDetailData.zipCode || '';
+      
+      // zipCode가 없고 주소에 우편번호가 포함되어 있으면 추출
+      if (!zipCode && address) {
+        const zipMatch = address.match(/^\((\d{5})\)/);
+        if (zipMatch) {
+          zipCode = zipMatch[1];
+          // 주소에서 우편번호 부분 제거
+          address = address.replace(/^\(\d{5}\)\s*/, '');
+        }
+      }
+
+      setEditFormData({
+        account: orgDetailData.account || '',
+        groupName: orgDetailData.groupName || '',
+        leaderName: orgDetailData.leaderName || '',
+        leaderPhNum: orgDetailData.leaderPhNum || '',
+        zipCode: zipCode,
+        address: address,
+        addressDetail: orgDetailData.addressDetail || '',
+      });
+    }
+  }, [showEditModal, orgDetailData]);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -355,6 +400,14 @@ export default function Client({ orgId }: { orgId: string }) {
               </button>
               <button
                 onClick={() => {
+                  setShowEditModal(true);
+                }}
+                className="px-4 py-2 text-sm rounded border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
+              >
+                수정하기
+              </button>
+              <button
+                onClick={() => {
                   setShowPwdModal(true);
                   setNewPwd('');
                 }}
@@ -408,6 +461,190 @@ export default function Client({ orgId }: { orgId: string }) {
         title={<span className="text-gray-700">단체 구성원 목록</span>}
         onRowClick={handleRowClick}
       />
+
+      {/* 기본정보 수정 모달 */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => !isUpdating && setShowEditModal(false)} />
+          <div className="relative bg-white rounded-md shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+            <h4 className="font-semibold mb-4 text-lg">단체 기본정보 수정</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              {org?.org ?? '단체'}의 기본정보를 수정합니다.
+            </p>
+            
+            <div className="space-y-4">
+              {/* 단체명 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  단체명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  value={editFormData.groupName}
+                  onChange={(e) => setEditFormData({ ...editFormData, groupName: e.target.value })}
+                  disabled={isUpdating}
+                />
+              </div>
+
+              {/* 대표자명 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  대표자명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  value={editFormData.leaderName}
+                  onChange={(e) => setEditFormData({ ...editFormData, leaderName: e.target.value })}
+                  disabled={isUpdating}
+                />
+              </div>
+
+              {/* 대표 아이디 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  대표 아이디 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  value={editFormData.account}
+                  onChange={(e) => setEditFormData({ ...editFormData, account: e.target.value })}
+                  disabled={isUpdating}
+                />
+              </div>
+
+              {/* 대표 연락처 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  대표 연락처 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  value={editFormData.leaderPhNum}
+                  onChange={(e) => setEditFormData({ ...editFormData, leaderPhNum: e.target.value })}
+                  placeholder="010-1234-5678"
+                  disabled={isUpdating}
+                />
+              </div>
+
+              {/* 주소 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  주소 <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                    value={editFormData.zipCode}
+                    placeholder="우편번호"
+                    readOnly
+                    disabled={isUpdating}
+                  />
+                  <PostalCodeSearchButton
+                    onSelect={(postalCode, address) => {
+                      setEditFormData({
+                        ...editFormData,
+                        zipCode: postalCode,
+                        address: address,
+                      });
+                    }}
+                    label="주소검색 >"
+                    className="whitespace-nowrap !border-blue-600 !bg-blue-600 !text-white hover:!bg-blue-600 hover:!border-blue-600"
+                  />
+                </div>
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm mb-2"
+                  value={editFormData.address}
+                  placeholder="주소"
+                  readOnly
+                  disabled={isUpdating}
+                />
+                <input
+                  type="text"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  value={editFormData.addressDetail}
+                  onChange={(e) => setEditFormData({ ...editFormData, addressDetail: e.target.value })}
+                  placeholder="상세주소를 입력하세요"
+                  disabled={isUpdating}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                className="px-4 py-2 rounded border border-gray-300 text-sm hover:bg-gray-50 disabled:opacity-50"
+                onClick={() => {
+                  if (!isUpdating) {
+                    setShowEditModal(false);
+                  }
+                }}
+                disabled={isUpdating}
+              >
+                취소
+              </button>
+              <button
+                className="px-4 py-2 rounded border border-blue-600 bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => {
+                  // 유효성 검증
+                  if (!editFormData.groupName.trim()) {
+                    toast.error('단체명을 입력해주세요.');
+                    return;
+                  }
+                  if (!editFormData.leaderName.trim()) {
+                    toast.error('대표자명을 입력해주세요.');
+                    return;
+                  }
+                  if (!editFormData.account.trim()) {
+                    toast.error('대표 아이디를 입력해주세요.');
+                    return;
+                  }
+                  if (!editFormData.leaderPhNum.trim()) {
+                    toast.error('대표 연락처를 입력해주세요.');
+                    return;
+                  }
+                  if (!editFormData.address.trim()) {
+                    toast.error('주소를 입력해주세요.');
+                    return;
+                  }
+
+                  // 주소에서 우편번호가 포함되어 있으면 제거 (백엔드에서 zipCode를 추가하므로)
+                  let cleanAddress = editFormData.address;
+                  // 주소 앞에 우편번호 패턴이 있으면 제거
+                  cleanAddress = cleanAddress.replace(/^\(\d{5}\)\s*/, '');
+
+                  updateOrganization({
+                    ...editFormData,
+                    address: cleanAddress,
+                  }, {
+                    onSuccess: () => {
+                      // 쿼리 캐시 무효화하여 데이터 갱신
+                      queryClient.invalidateQueries({ queryKey: ['admin', 'users', 'organization', 'detail', orgId] });
+                      // 모달을 먼저 닫고 토스트 표시
+                      setShowEditModal(false);
+                      // 모달이 완전히 닫힌 후 토스트 표시
+                      setTimeout(() => {
+                        toast.success('단체 기본정보가 수정되었습니다.');
+                      }, 100);
+                    },
+                    onError: (error: unknown) => {
+                      const errorMessage = error instanceof Error ? error.message : '기본정보 수정에 실패했습니다.';
+                      toast.error(errorMessage);
+                    },
+                  });
+                }}
+                disabled={isUpdating}
+              >
+                {isUpdating ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 비밀번호 초기화 모달 */}
       {showPwdModal && (

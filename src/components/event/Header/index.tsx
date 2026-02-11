@@ -115,10 +115,11 @@ export default function EventHeader({
       { label: '집결 출발', href: `/event/${eventId}/guide/gathering` },
     ],
     apply: [
-      {
-        label: '참가자 동의사항',
-        href: `/event/${eventId}/registration/agreement`,
-      },
+      // 참가자 동의사항 서브메뉴 제거 (이슈: 참가자 유의사항 & 약관 멘트 수정 및 유의사항 서브메뉴 없앰)
+      // {
+      //   label: '참가자 동의사항',
+      //   href: `/event/${eventId}/registration/agreement`,
+      // },
       { label: '신청하기', href: `/event/${eventId}/registration/apply` },
       { label: '신청 확인', href: `/event/${eventId}/registration/confirm` },
       // 서비스 준비중: 버스예약 임시 비활성화 → 준비중 페이지로 연결
