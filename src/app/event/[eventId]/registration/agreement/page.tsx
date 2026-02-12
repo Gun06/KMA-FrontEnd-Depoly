@@ -59,7 +59,7 @@ export default function AgreementPage({ params }: { params: { eventId: string } 
             <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상상태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품 발송)</span>
+                <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상상태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품은 발송)</span>
               </div>
               
               <div className="flex items-start space-x-2">
