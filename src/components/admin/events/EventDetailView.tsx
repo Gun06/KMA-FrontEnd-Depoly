@@ -49,11 +49,13 @@ export type EventDetailData = {
     id: string;
     name: string;
     amount?: number;
+    isActive?: boolean;
     souvenirs: Array<{
       id: string;
       name: string;
       sizes?: string;
       eventCategoryId: string;
+      isActive?: boolean;
     }>;
   }>;
   eventBanners?: Array<{
@@ -496,15 +498,27 @@ export default function EventDetailView({
           </div>
           <div className="px-6 py-6">
             <div className="space-y-4">
-              {eventData.eventCategories.map(category => (
-                <div
-                  key={category.id}
-                  className="border border-gray-200 rounded-lg p-4"
-                >
+              {eventData.eventCategories.map(category => {
+                const isCategoryActive = category.isActive !== false; // 기본값은 true
+                return (
+                  <div
+                    key={category.id}
+                    className={cn(
+                      "border border-gray-200 rounded-lg p-4",
+                      isCategoryActive ? "bg-white" : "bg-gray-100"
+                    )}
+                  >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                      {category.name}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-pretendard font-medium text-gray-900">
+                        {category.name}
+                      </h3>
+                      {!isCategoryActive && (
+                        <span className="text-xs px-2 py-0.5 bg-red-500 text-white rounded whitespace-nowrap font-medium">
+                          마감
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xl font-pretendard font-semibold text-blue-600">
                       {category.amount ? category.amount.toLocaleString() : 0}원
                     </span>
@@ -516,26 +530,42 @@ export default function EventDetailView({
                         기념품
                       </h4>
                       <div className="space-y-2">
-                        {category.souvenirs.map(souvenir => (
-                          <div
-                            key={souvenir.id}
-                            className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded"
-                          >
-                            <span className="text-sm font-pretendard text-gray-900">
-                              {souvenir.name}
-                            </span>
+                        {category.souvenirs.map(souvenir => {
+                          const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+                          return (
+                            <div
+                              key={souvenir.id}
+                              className={cn(
+                                "flex items-center justify-between py-2 px-3 rounded",
+                                isSouvenirActive 
+                                  ? "bg-gray-50" 
+                                  : "bg-gray-100" // 기념품 마감된 경우 진한 회색
+                              )}
+                            >
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-pretendard text-gray-900">
+                                {souvenir.name}
+                              </span>
+                              {!isSouvenirActive && (
+                                <span className="text-xs px-2 py-0.5 bg-red-500 text-white rounded whitespace-nowrap font-medium">
+                                  마감
+                                </span>
+                              )}
+                            </div>
                             {souvenir.sizes && (
                               <span className="text-xs font-pretendard text-gray-600">
                                 {souvenir.sizes}
                               </span>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -36,7 +36,7 @@ import type {
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
   // STEP 2: 기념품만 저장 (gifts 배열 직접 전달)
-  onSaveSouvenirs?: (gifts: Array<{ name: string; size: string }>) => Promise<void>;
+  onSaveSouvenirs?: (gifts: Array<{ name: string; size: string; isActive?: boolean }>) => Promise<void>;
   // STEP 3: 종목만 저장 (courses와 gifts 배열 직접 전달)
   onSaveCourses?: (courses: Array<{ name: string; price: string; selectedGifts: number[] }>, gifts: Array<{ name: string; size: string }>) => Promise<void>;
   onBack?: () => void;
@@ -53,8 +53,8 @@ type Props = {
     bannerType: string;
     static: boolean;
   }>;
-  initialGifts?: Array<{ name: string; size: string }>;
-  initialCourses?: Array<{ name: string; price: string; selectedGifts: number[] }>;
+  initialGifts?: Array<{ name: string; size: string; isActive?: boolean }>;
+  initialCourses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
 };
 
 export default function EditForm({
@@ -103,7 +103,7 @@ export default function EditForm({
   const { gifts, setGifts } = giftsHandlers;
 
   // 저장된 기념품만 추적하는 상태 (서버에 저장된 기념품만)
-  const [savedGifts, setSavedGifts] = useState<Array<{ name: string; size: string }>>(initialGifts);
+  const [savedGifts, setSavedGifts] = useState<Array<{ name: string; size: string; isActive?: boolean }>>(initialGifts);
 
   // 종목 핸들러 (초기값 설정)
   const coursesHandlers = useCoursesHandlers(initialCourses);
@@ -449,6 +449,7 @@ export default function EditForm({
           onRemoveGift={giftsHandlers.handleRemoveGift}
           onChangeGiftName={giftsHandlers.handleChangeGiftName}
           onChangeGiftSize={giftsHandlers.handleChangeGiftSize}
+          onToggleGiftEnabled={giftsHandlers.handleToggleGiftEnabled}
           readOnly={readOnly}
         />
 
@@ -488,6 +489,7 @@ export default function EditForm({
           onRemoveCourse={coursesHandlers.handleRemoveCourse}
           onChangeCourseName={coursesHandlers.handleChangeCourseName}
           onChangeCoursePrice={coursesHandlers.handleChangeCoursePrice}
+          onToggleCourseEnabled={coursesHandlers.handleToggleCourseEnabled}
           onSelectGifts={coursesHandlers.handleSelectGifts}
           onRemoveGiftFromCourse={coursesHandlers.handleRemoveGiftFromCourse}
           readOnly={readOnly}

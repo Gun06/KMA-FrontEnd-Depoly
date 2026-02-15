@@ -148,11 +148,13 @@ export function transformApiDataToEventDetail(
       id: c.id,
       name: c.name,
       amount: c.amount,
+      isActive: c.isActive !== false, // 기본값은 true
       souvenirs: c.souvenirs.map(s => ({
         id: s.id,
         name: s.name,
         sizes: s.sizes,
         eventCategoryId: s.eventCategoryId || c.id, // eventCategoryId가 없으면 카테고리 ID 사용
+        isActive: s.isActive !== false, // 기본값은 true
       })),
     })),
     eventBanners: eventBanners.map(b => ({

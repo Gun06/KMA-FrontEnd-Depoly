@@ -70,11 +70,13 @@ export default function DetailClient({
             id: category.id,
             name: category.name,
             amount: category.amount,
+            isActive: category.isActive !== false, // 기본값은 true
             souvenirs: category.souvenirs.map(s => ({
               id: s.id,
               name: s.name,
               sizes: s.sizes,
               eventCategoryId: category.id,
+              isActive: s.isActive !== false, // 기본값은 true
             })),
           }));
         } else {
@@ -86,11 +88,13 @@ export default function DetailClient({
               return {
                 ...cat,
                 amount: dropdownCat.amount,
+                isActive: dropdownCat.isActive !== false, // 기본값은 true
                 souvenirs: dropdownCat.souvenirs.map(s => ({
                   id: s.id,
                   name: s.name,
                   sizes: s.sizes,
                   eventCategoryId: cat.id,
+                  isActive: s.isActive !== false, // 기본값은 true
                 })),
               };
             }

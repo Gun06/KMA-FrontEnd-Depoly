@@ -247,6 +247,7 @@ export interface SouvenirUpdateRequest {
   id?: string; // 없으면 생성, 있으면 수정
   name: string; // 기념품명
   sizes: string; // 사이즈 (예: "S|M|L")
+  isActive?: boolean; // 활성화 여부 (마감 처리용)
 }
 
 // ===== 종목 API 타입 =====
@@ -259,6 +260,7 @@ export interface EventCategoryUpdateRequest {
   id?: string; // 없으면 생성, 있으면 수정
   name: string; // 종목명
   price: number; // 참가비
+  isActive?: boolean; // 활성화 여부 (마감 처리용)
   souvenirIds: string[]; // 기념품 ID 배열
 }
 

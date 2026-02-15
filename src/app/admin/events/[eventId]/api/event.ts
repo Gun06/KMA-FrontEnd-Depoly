@@ -40,11 +40,13 @@ export interface EventDetailApiResponse {
     id: string;
     name: string;
     amount: number;
+    isActive?: boolean;
     souvenirs: Array<{
       id: string;
       name: string;
       sizes: string;
       eventCategoryId?: string; // 선택적 필드로 변경
+      isActive?: boolean;
     }>;
   }>;
   eventBanners: Array<{
@@ -59,6 +61,7 @@ export interface EventDetailApiResponse {
     id: string;
     name: string;
     sizes: string;
+    isActive?: boolean;
   }>;
   // 페이지별 이미지 (다중 이미지 지원)
   outlinePageImages?: Array<{

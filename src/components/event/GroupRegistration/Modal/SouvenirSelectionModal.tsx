@@ -65,14 +65,16 @@ export default function SouvenirSelectionModal({
         }
 
         const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
+        const isCategoryActive = selectedCategory?.isActive !== false; // 기본값은 true
         
-        // "기념품 없음"을 제외한 실제 기념품 목록
+        // "기념품 없음"을 제외하고 isActive가 true인 실제 기념품 목록
         const actualSouvenirs = availableSouvenirs.filter(souvenir => {
           const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
                               souvenir.souvenirId === '0' || 
                               souvenir.souvenirId === '1' || 
                               souvenir.souvenirId === '2';
-          return !isNoSouvenir;
+          const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+          return !isNoSouvenir && isSouvenirActive && isCategoryActive;
         });
 
         // 실제 기념품이 1개 이상 있는 경우, 모두 필수 선택
@@ -132,8 +134,13 @@ export default function SouvenirSelectionModal({
   }
 
   const availableSouvenirs = selectedCategory?.categorySouvenirPair || [];
+  const isCategoryActive = selectedCategory?.isActive !== false; // 기본값은 true
 
   const handleSouvenirToggle = (souvenirId: string, souvenirName: string) => {
+    // 종목이 비활성화된 경우 기념품 선택 불가
+    if (!isCategoryActive) {
+      return;
+    }
     // "기념품 없음"을 제외한 실제 기념품 목록
     const actualSouvenirs = availableSouvenirs.filter(souvenir => {
       const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
@@ -197,13 +204,14 @@ export default function SouvenirSelectionModal({
       return false;
     }
 
-    // "기념품 없음"을 제외한 실제 기념품 목록
+    // "기념품 없음"을 제외하고 isActive가 true인 실제 기념품 목록
     const actualSouvenirs = availableSouvenirs.filter(souvenir => {
       const isNoSouvenir = souvenir.souvenirName === '기념품 없음' || 
                           souvenir.souvenirId === '0' || 
                           souvenir.souvenirId === '1' || 
                           souvenir.souvenirId === '2';
-      return !isNoSouvenir;
+      const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+      return !isNoSouvenir && isSouvenirActive && isCategoryActive;
     });
 
     // 실제 기념품이 없으면 (기념품 없음만 있는 경우) 하나 이상 선택하면 통과
@@ -264,7 +272,8 @@ export default function SouvenirSelectionModal({
                                     souvenir.souvenirId === '0' || 
                                     souvenir.souvenirId === '1' || 
                                     souvenir.souvenirId === '2';
-                return !isNoSouvenir;
+                const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+                return !isNoSouvenir && isSouvenirActive && isCategoryActive;
               });
 
               if (actualSouvenirs.length >= 1) {
@@ -292,25 +301,32 @@ export default function SouvenirSelectionModal({
                                 souvenir.souvenirId === '0' || 
                                 souvenir.souvenirId === '1' || 
                                 souvenir.souvenirId === '2';
+            const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+            // 종목이 비활성화되었거나 기념품이 비활성화된 경우 선택 불가
+            const isActive = isCategoryActive && isSouvenirActive;
 
-            // "기념품 없음"을 제외한 실제 기념품 목록
+            // "기념품 없음"을 제외하고 isActive가 true인 실제 기념품 목록
             const actualSouvenirs = availableSouvenirs.filter(s => {
               const isNoSouvenirItem = s.souvenirName === '기념품 없음' || 
                                       s.souvenirId === '0' || 
                                       s.souvenirId === '1' || 
                                       s.souvenirId === '2';
-              return !isNoSouvenirItem;
+              const isSouvenirActive = s.isActive !== false; // 기본값은 true
+              return !isNoSouvenirItem && isSouvenirActive && isCategoryActive;
             });
 
             // 실제 기념품이 1개 이상 있고, 현재 기념품이 실제 기념품인 경우 체크박스만 비활성화 (사이즈는 선택 가능)
+            // 또는 종목/기념품이 비활성화된 경우 비활성화
             const isMultipleRequired = actualSouvenirs.length >= 1 && !isNoSouvenir;
-            const isCheckboxDisabled = isMultipleRequired && isSelected;
+            const isCheckboxDisabled = !isActive || (isMultipleRequired && isSelected);
 
             return (
               <div
                 key={souvenir.souvenirId}
                 className={`border rounded-lg p-4 ${
-                  isSelected 
+                  !isActive && !isSelected
+                    ? 'border-gray-200 bg-gray-100 opacity-60'
+                    : isSelected 
                     ? 'border-blue-500 bg-blue-50' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
@@ -355,7 +371,7 @@ export default function SouvenirSelectionModal({
                     htmlFor={`souvenir-${souvenir.souvenirId}`}
                     className={`flex-1 ${isCheckboxDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    <div className="font-medium text-gray-900">
+                    <div className={`font-medium ${!isActive && !isSelected ? 'text-gray-400' : 'text-gray-900'}`}>
                       {souvenir.souvenirName}
                     </div>
                   </label>

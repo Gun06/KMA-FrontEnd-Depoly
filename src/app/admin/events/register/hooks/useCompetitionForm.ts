@@ -721,6 +721,25 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       )
     );
 
+  const toggleCourseEnabled = (gi: number, enabled: boolean) =>
+    setGroups(p =>
+      p.map((g, i) =>
+        i === gi ? { ...g, course: { ...g.course, isActive: enabled } } : g
+      )
+    );
+
+  const toggleGiftEnabled = (gi: number, gj: number, enabled: boolean) =>
+    setGroups(p =>
+      p.map((g, i) =>
+        i === gi
+          ? {
+              ...g,
+              gifts: g.gifts.map((x, j) => (j === gj ? { ...x, isActive: enabled } : x)),
+            }
+          : g
+      )
+    );
+
   /** ===== FormState / API Body ===== */
   const buildFormState = (): EventFormState => ({
     titleKo,
@@ -1074,10 +1093,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     removeCourse,
     changeCourseName,
     changeCoursePrice,
+    toggleCourseEnabled,
     addGift,
     removeGift,
     changeGiftLabel,
     changeGiftSize,
+    toggleGiftEnabled,
 
     // parties
     hostItems,

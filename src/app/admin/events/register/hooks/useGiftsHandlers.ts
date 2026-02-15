@@ -26,6 +26,10 @@ export function useGiftsHandlers(initialGifts: GiftItem[] = []) {
     setGifts(gifts.map((g, i) => (i === index ? { ...g, size: value } : g)));
   };
 
+  const handleToggleGiftEnabled = (index: number, enabled: boolean) => {
+    setGifts(gifts.map((g, i) => (i === index ? { ...g, isActive: enabled } : g)));
+  };
+
   return {
     gifts,
     setGifts,
@@ -33,5 +37,6 @@ export function useGiftsHandlers(initialGifts: GiftItem[] = []) {
     handleRemoveGift,
     handleChangeGiftName,
     handleChangeGiftSize,
+    handleToggleGiftEnabled,
   };
 }

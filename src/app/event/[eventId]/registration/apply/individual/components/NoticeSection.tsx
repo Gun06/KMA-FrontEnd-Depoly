@@ -22,7 +22,7 @@ export default function NoticeSection({
             신청 내역을 확인하기 위해 신청서와 동일한 정보를 입력한 후, 확인하기를 클릭하세요.
           </p>
           <p className="text-sm sm:text-base text-gray-700">
-            비밀번호를 잊어버린 경우, 비밀번호 찾기를 클릭하시면 입력하신 이메일 주소로 비밀번호를 보내드립니다.
+            비밀번호를 잊어버린 경우, 신청확인 페이지에서 비밀번호 초기화를 이용해주세요.
           </p>
         </>
       )}

@@ -47,7 +47,7 @@ export default function EditClient({
   // 드롭다운 데이터를 기념품과 종목으로 변환
   // 저장된 모든 기념품 사용 (apiData와 dropdownData 모두에서 가져옴)
   const initialGifts = useMemo(() => {
-    const allSouvenirsMap = new Map<string, { name: string; size: string; id?: string }>();
+    const allSouvenirsMap = new Map<string, { name: string; size: string; id?: string; isActive?: boolean }>();
 
     // 1. apiData에서 기념품 추출 (종목에 연결되지 않은 기념품도 포함)
     if (apiData?.souvenirs && apiData.souvenirs.length > 0) {
@@ -58,6 +58,7 @@ export default function EditClient({
             name: souvenir.name.trim(),
             size: souvenir.sizes || '',
             id: souvenir.id,
+            isActive: souvenir.isActive !== false, // 기본값은 true
           });
         }
       });
@@ -74,6 +75,7 @@ export default function EditClient({
                 name: souvenir.name.trim(),
                 size: souvenir.sizes || '',
                 id: souvenir.id,
+                isActive: souvenir.isActive !== false, // 기본값은 true
               });
             }
           });
@@ -92,6 +94,7 @@ export default function EditClient({
                 name: souvenir.name.trim(),
                 size: souvenir.sizes || '',
                 id: souvenir.id,
+                isActive: souvenir.isActive !== false, // 기본값은 true
               });
             }
           });
@@ -99,10 +102,11 @@ export default function EditClient({
       });
     }
 
-    // Map에서 배열로 변환 (id 제거)
+    // Map에서 배열로 변환
     return Array.from(allSouvenirsMap.values()).map(s => ({
       name: s.name,
       size: s.size,
+      isActive: s.isActive,
     }));
   }, [apiData, dropdownData]);
 
@@ -184,6 +188,7 @@ export default function EditClient({
         name: category.name || '',
         price: String(category.amount || 0),
         selectedGifts,
+        isActive: category.isActive !== false, // 기본값은 true
       };
     });
   }, [dropdownData, initialGifts, apiData]);
@@ -356,7 +361,7 @@ export default function EditClient({
   };
 
   // STEP 2: 기념품만 저장
-  const handleSaveSouvenirs = async (gifts: Array<{ name: string; size: string }>) => {
+  const handleSaveSouvenirs = async (gifts: Array<{ name: string; size: string; isActive?: boolean }>) => {
     if (!apiData) return;
     if (!gifts || gifts.length === 0) {
       setInfoModalType('warning');

@@ -16,10 +16,10 @@ export function transformSouvenirsToApi(
     name: string;
     sizes: string;
   }>,
-  gifts?: Array<{ name: string; size: string }>
+  gifts?: Array<{ name: string; size: string; isActive?: boolean }>
 ): SouvenirUpdateRequest[] {
   // 모든 기념품 수집
-  const allGifts = new Map<string, { name: string; size: string }>();
+  const allGifts = new Map<string, { name: string; size: string; isActive?: boolean }>();
 
   // gifts 배열이 직접 전달된 경우 우선 사용
   if (gifts && gifts.length > 0) {
@@ -29,6 +29,7 @@ export function transformSouvenirsToApi(
         allGifts.set(key, {
           name: gift.name.trim(),
           size: (gift.size || '').trim(),
+          isActive: gift.isActive,
         });
       }
     });
@@ -67,6 +68,7 @@ export function transformSouvenirsToApi(
       id: existingId, // 있으면 수정, 없으면 생성
       name: gift.name,
       sizes: gift.size,
+      isActive: gift.isActive !== false, // isActive가 false가 아니면 true (기본값 true)
     };
   });
 

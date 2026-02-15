@@ -30,7 +30,7 @@ export function transformCategoriesToApi(
     name: string;
     sizes: string;
   }>,
-  courses?: Array<{ name: string; price: string; selectedGifts: number[] }>,
+  courses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
   gifts?: Array<{ name: string; size: string }>
 ): EventCategoryUpdateRequest[] {
   // courses 배열이 직접 전달된 경우 우선 사용
@@ -80,6 +80,7 @@ export function transformCategoriesToApi(
           id: existingCategoryId, // 있으면 수정, 없으면 생성
           name: courseName,
           price: Number.isFinite(price) ? price : 0,
+          isActive: course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
           souvenirIds,
         };
       })
@@ -136,6 +137,7 @@ export function transformCategoriesToApi(
         id: existingCategoryId, // 있으면 수정, 없으면 생성
         name: courseName,
         price: Number.isFinite(price) ? price : 0,
+        isActive: group.course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
         souvenirIds,
       };
     })

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
-type GiftItem = { name: string; size: string };
+type GiftItem = { name: string; size: string; isActive?: boolean };
 
 type GiftSelectionModalProps = {
   isOpen: boolean;
@@ -76,23 +76,41 @@ export default function GiftSelectionModal({
             <div className="space-y-2">
               {availableGifts.map((gift, index) => {
                 const isSelected = tempSelected.includes(index);
+                const isActive = gift.isActive !== false; // 기본값은 true
+                const canToggle = isActive || isSelected; // 활성 상태이거나 이미 선택된 경우 토글 가능
                 return (
                   <label
                     key={index}
                     className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-md border cursor-pointer transition-colors',
-                      isSelected
+                      'flex items-center gap-3 px-4 py-3 rounded-md border transition-colors',
+                      canToggle
+                        ? 'cursor-pointer'
+                        : 'cursor-not-allowed opacity-60',
+                      isSelected && isActive
                         ? 'bg-blue-50 border-blue-300'
+                        : isSelected && !isActive
+                        ? 'bg-neutral-100 border-neutral-300'
+                        : !isActive
+                        ? 'bg-neutral-50 border-neutral-200'
                         : 'bg-white border-neutral-300 hover:bg-neutral-50'
                     )}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => handleToggle(index)}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      onChange={() => canToggle && handleToggle(index)}
+                      disabled={!canToggle}
+                      className={cn(
+                        'w-4 h-4 rounded focus:ring-blue-500',
+                        canToggle
+                          ? 'text-blue-600 cursor-pointer'
+                          : 'text-neutral-400 cursor-not-allowed'
+                      )}
                     />
-                    <span className="text-sm text-neutral-700 flex-1">
+                    <span className={cn(
+                      'text-sm flex-1',
+                      isActive ? 'text-neutral-700' : 'text-neutral-400'
+                    )}>
                       {gift.name} {gift.size && `(${gift.size})`}
                     </span>
                   </label>

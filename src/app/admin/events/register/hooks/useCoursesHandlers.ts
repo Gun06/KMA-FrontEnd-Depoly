@@ -26,6 +26,10 @@ export function useCoursesHandlers(initialCourses: CourseItem[] = []) {
     setCourses(courses.map((c, i) => (i === index ? { ...c, price: value } : c)));
   };
 
+  const handleToggleCourseEnabled = (index: number, enabled: boolean) => {
+    setCourses(courses.map((c, i) => (i === index ? { ...c, isActive: enabled } : c)));
+  };
+
   const handleSelectGifts = (courseIndex: number, selectedIndices: number[]) => {
     setCourses(courses.map((c, i) => {
       if (i === courseIndex) {
@@ -57,6 +61,7 @@ export function useCoursesHandlers(initialCourses: CourseItem[] = []) {
     handleRemoveCourse,
     handleChangeCourseName,
     handleChangeCoursePrice,
+    handleToggleCourseEnabled,
     handleSelectGifts,
     handleRemoveGiftFromCourse,
   };

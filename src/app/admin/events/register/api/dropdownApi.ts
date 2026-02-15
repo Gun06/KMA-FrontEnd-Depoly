@@ -21,10 +21,12 @@ export interface EventCategoryDropdownItem {
   id: string;
   name: string;
   amount: number;
+  isActive?: boolean;
   souvenirs: Array<{
     id: string;
     name: string;
     sizes: string;
+    isActive?: boolean;
   }>;
 }
 

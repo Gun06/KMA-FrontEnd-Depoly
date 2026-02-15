@@ -8,8 +8,9 @@ import { FormLayoutProvider } from '@/components/admin/Form/FormLayoutContext';
 import TextField from '@/components/common/TextField/TextField';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import { Plus, Minus, Gift } from 'lucide-react';
+import MiniToggle from '@/components/common/Toggle/MiniToggle';
 
-export type GiftItem = { name: string; size: string };
+export type GiftItem = { name: string; size: string; isActive?: boolean };
 
 type GiftsSectionProps = {
   gifts: GiftItem[];
@@ -17,6 +18,7 @@ type GiftsSectionProps = {
   onRemoveGift: (index: number) => void;
   onChangeGiftName: (index: number, value: string) => void;
   onChangeGiftSize: (index: number, value: string) => void;
+  onToggleGiftEnabled?: (index: number, enabled: boolean) => void;
   readOnly?: boolean;
 };
 
@@ -26,6 +28,7 @@ export default function GiftsSection({
   onRemoveGift,
   onChangeGiftName,
   onChangeGiftSize,
+  onToggleGiftEnabled,
   readOnly = false,
 }: GiftsSectionProps) {
   const noop = () => {};
@@ -66,13 +69,32 @@ export default function GiftsSection({
               </div>
             ) : (
               <div className="divide-y divide-neutral-300">
-                {gifts.map((gift, index) => (
-                  <div key={index} className="flex items-stretch">
-                    <div className="flex-1">
-                      <FormRow
-                        label={`기념품 ${index + 1}`}
-                        contentClassName="items-center"
-                      >
+                {gifts.map((gift, index) => {
+                  const isActive = gift.isActive !== false; // 기본값은 true
+                  return (
+                    <div 
+                      key={index} 
+                      className={cn(
+                        "flex items-stretch",
+                        !isActive && "bg-gray-200 opacity-70"
+                      )}
+                    >
+                      <div className="flex-1">
+                        <FormRow
+                          label={
+                            <div className="flex items-center justify-center w-full gap-3">
+                              <span>기념품 {index + 1}</span>
+                              {!readOnly && onToggleGiftEnabled && (
+                                <MiniToggle
+                                  value={isActive}
+                                  onChange={(enabled) => onToggleGiftEnabled(index, enabled)}
+                                  disabled={readOnly}
+                                />
+                              )}
+                            </div>
+                          }
+                          contentClassName="items-center"
+                        >
                         <div className="flex items-center w-full">
                           <div className="flex-1">
                             <TextField
@@ -84,7 +106,7 @@ export default function GiftsSection({
                                   : onChangeGiftName(index, e.currentTarget.value)
                               }
                               className={cn(fieldCls, textCls)}
-                              readOnly={readOnly}
+                              readOnly={readOnly || !isActive}
                             />
                           </div>
                           <div className="w-px h-8 bg-neutral-300 mx-3" />
@@ -98,7 +120,7 @@ export default function GiftsSection({
                                   : onChangeGiftSize(index, e.currentTarget.value)
                               }
                               className={cn(fieldCls, textCls)}
-                              readOnly={readOnly}
+                              readOnly={readOnly || !isActive}
                             />
                           </div>
                         </div>
@@ -117,7 +139,8 @@ export default function GiftsSection({
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -147,6 +170,9 @@ export default function GiftsSection({
             {
               text: '※ 종목 생성 전에 기념품을 먼저 생성해야 합니다.',
               highlight: true,
+            },
+            {
+              text: '※ 마감하고 싶은 기념품은 OFF로 설정한 후 "기념품 저장" 버튼을 눌러주세요.',
             },
           ]}
         />

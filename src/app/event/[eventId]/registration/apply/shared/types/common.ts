@@ -14,6 +14,7 @@ export interface CategorySouvenir {
   distance: string; // 거리 정보 (예: "10km", "21km")
   amount: number;
   categorySouvenirPair: SouvenirPair[];
+  isActive?: boolean; // 활성화 여부 (마감 처리용)
 }
 
 // 기념품 쌍 인터페이스
@@ -21,6 +22,7 @@ export interface SouvenirPair {
   souvenirName: string;
   souvenirId: string;
   souvenirSize: string[];
+  isActive?: boolean; // 활성화 여부 (마감 처리용)
 }
 
 // API 스키마에 맞는 인터페이스 정의

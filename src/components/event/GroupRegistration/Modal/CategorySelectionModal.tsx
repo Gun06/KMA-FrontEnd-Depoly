@@ -175,19 +175,31 @@ export default function CategorySelectionModal({
                   <div className="text-sm text-gray-400 py-4 text-center">세부종목이 없습니다</div>
                 ) : (
                   <div className="space-y-0">
-                    {categoriesByDistance.map((category) => (
-                      <button
-                        key={category.categoryId}
-                        type="button"
-                        onClick={() => handleCategorySelect(category.categoryName)}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${selectedCategory === category.categoryName
-                          ? 'bg-blue-500 text-white font-medium'
-                          : 'bg-white text-gray-900 hover:bg-gray-50'
+                    {categoriesByDistance.map((category) => {
+                      const isCategoryActive = category.isActive !== false; // 기본값은 true
+                      // 기념품 중 하나라도 isActive: false가 있으면 종목 비활성화
+                      const hasInactiveSouvenir = category.categorySouvenirPair?.some(
+                        souvenir => souvenir.isActive === false
+                      ) || false;
+                      const isActive = isCategoryActive && !hasInactiveSouvenir;
+                      return (
+                        <button
+                          key={category.categoryId}
+                          type="button"
+                          onClick={() => isActive && handleCategorySelect(category.categoryName)}
+                          disabled={!isActive}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            !isActive
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
+                              : selectedCategory === category.categoryName
+                              ? 'bg-blue-500 text-white font-medium'
+                              : 'bg-white text-gray-900 hover:bg-gray-50'
                           }`}
-                      >
-                        {category.categoryName}
-                      </button>
-                    ))}
+                        >
+                          {category.categoryName}{hasInactiveSouvenir && ' (기념품 마감)'}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

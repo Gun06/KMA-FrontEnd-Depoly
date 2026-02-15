@@ -27,10 +27,12 @@ export default function CourseGiftsSection({
         onRemoveCourse={readOnly ? undefined : f.removeCourse}
         onChangeCourseName={readOnly ? noop : f.changeCourseName}
       onChangeCoursePrice={readOnly ? undefined : f.changeCoursePrice}
+        onToggleCourseEnabled={readOnly ? undefined : f.toggleCourseEnabled}
         onAddGift={readOnly ? undefined : f.addGift}
         onRemoveGift={readOnly ? undefined : f.removeGift}
       onChangeGiftLabel={readOnly ? noop : f.changeGiftLabel}
       onChangeGiftSize={readOnly ? noop : f.changeGiftSize}
+        onToggleGiftEnabled={readOnly ? undefined : f.toggleGiftEnabled}
       readOnly={readOnly}
     />
 
