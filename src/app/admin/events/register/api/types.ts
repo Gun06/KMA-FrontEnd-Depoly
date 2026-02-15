@@ -202,8 +202,8 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
   };
   fees?: Array<{ name: string; price: number }>;
   groups?: Array<{
-    course: { name: string; price: number };
-    gifts: { label: string; size: string }[];
+    course: { name: string; price: number; isActive?: boolean };
+    gifts: { label: string; size: string; isActive?: boolean }[];
   }>;
   partners?: {
     hosts?: Array<{
