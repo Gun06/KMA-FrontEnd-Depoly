@@ -27,10 +27,10 @@ export default function SignupSuccessPage() {
 
         {/* 환영 메시지 */}
         <div className="space-y-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             회원가입이 완료되었습니다! 🎉
           </h1>
-          <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+          <p className="text-base sm:text-l text-gray-600 leading-relaxed">
             전국마라톤협회의 회원이 되신 것을 환영합니다.<br />
             이제 로그인하여 다양한 서비스를 이용하실 수 있습니다.
           </p>
@@ -40,17 +40,16 @@ export default function SignupSuccessPage() {
         <div className="pt-4">
           <button
             onClick={handleGoToLogin}
-            className="inline-flex items-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg sm:text-xl"
+            className="inline-flex items-center space-x-2 px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm sm:text-base"
           >
             <span>로그인하러 가기</span>
-            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
         {/* 추가 안내 */}
         <div className="text-sm text-gray-500 space-y-2">
-          <p>문의사항이 있으시면 고객센터로 연락해주세요.</p>
-          <p>고객센터: 02-1234-5678</p>
+          <p>문의사항이 있으시면 게시판 메뉴에서 문의사항으로 문의해주세요.</p>
         </div>
       </div>
     </SignupLayout>

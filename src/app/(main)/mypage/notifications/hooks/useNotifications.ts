@@ -42,22 +42,14 @@ function createEmptyNotificationResponse(page: number, size: number): Notificati
  * 전체 알림 목록 조회 훅
  */
 export function useGlobalNotifications(page: number = 1, size: number = 20) {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, hasHydrated } = useAuthStore();
   
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'global', page, size],
     queryFn: async () => {
-      try {
-        return await getGlobalNotifications(page, size);
-      } catch (error) {
-        // 로그인하지 않은 경우에만 에러 무시하고 빈 데이터 반환
-        if (!isLoggedIn) {
-          return createEmptyNotificationResponse(page, size);
-        }
-        // 로그인한 상태에서는 에러를 다시 throw하여 정상적으로 처리
-        throw error;
-      }
+      return await getGlobalNotifications(page, size);
     },
+    enabled: hasHydrated && isLoggedIn, // 스토어가 로드되고 로그인 상태일 때만 호출
     staleTime: 1 * 60 * 1000, // 1분
     retry: false, // 에러 발생 시 재시도 안 함
   });
@@ -67,22 +59,14 @@ export function useGlobalNotifications(page: number = 1, size: number = 20) {
  * 대회 알림 목록 조회 훅
  */
 export function useEventNotifications(page: number = 1, size: number = 20) {
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, hasHydrated } = useAuthStore();
   
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'event', page, size],
     queryFn: async () => {
-      try {
-        return await getEventNotifications(page, size);
-      } catch (error) {
-        // 로그인하지 않은 경우에만 에러 무시하고 빈 데이터 반환
-        if (!isLoggedIn) {
-          return createEmptyNotificationResponse(page, size);
-        }
-        // 로그인한 상태에서는 에러를 다시 throw하여 정상적으로 처리
-        throw error;
-      }
+      return await getEventNotifications(page, size);
     },
+    enabled: hasHydrated && isLoggedIn, // 스토어가 로드되고 로그인 상태일 때만 호출
     staleTime: 1 * 60 * 1000, // 1분
     retry: false, // 에러 발생 시 재시도 안 함
   });

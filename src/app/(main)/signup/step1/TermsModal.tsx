@@ -4,8 +4,10 @@ import React from 'react'
 import { X } from 'lucide-react'
 
 interface TermsModalProps {
-  type: 'terms' | 'privacy' | 'personalInfo' | 'marketing'
+  type: 'terms' | 'privacy' | 'personalInfo' | 'marketing' | 'irreversibleConfirmed'
   onClose: () => void
+  onAgree?: (agreed: boolean) => void
+  isAgreed?: boolean
 }
 
 const termsContent = {
@@ -286,11 +288,70 @@ const termsContent = {
 
 시행일자: 2024년 1월 1일
     `
+  },
+  irreversibleConfirmed: {
+    title: '비회원 신청 내역 연동 동의',
+    content: `
+비회원 신청 내역 연동에 대한 안내
+
+전국마라톤협회(이하 "협회")는 회원가입 시 이전에 비회원으로 신청했던 대회 신청 내역을 자동으로 연동하는 서비스를 제공합니다.
+
+1. 연동 대상
+   회원가입을 완료하면, 이전에 비회원으로 신청했던 기록을 자동으로 내 계정에 연동합니다.
+   연동 대상은 입력하신 이름 / 생년월일 / 전화번호가 동일한 신청 내역입니다.
+
+2. 연동 후 이용 가능한 기능
+   연동이 완료되면 해당 신청 내역은 내 계정에서 확인 및 수정/환불 요청 등을 진행할 수 있습니다.
+   - 신청 내역 조회
+   - 신청 정보 수정
+   - 환불 요청
+   - 대회 관련 알림 수신
+   - 기타 회원 서비스 이용
+
+3. 연동의 불가역성
+   이 작업은 되돌릴 수 없습니다.
+   일단 연동이 완료되면, 해당 신청 내역은 회원 계정과 영구적으로 연결됩니다.
+   연동 후에는 비회원 상태로 되돌릴 수 없으며, 회원 계정을 통해서만 해당 신청 내역을 관리할 수 있습니다.
+
+4. 연동 조건
+   - 회원가입 시 입력한 이름, 생년월일, 전화번호가 기존 비회원 신청 내역과 일치해야 합니다.
+   - 모든 정보가 정확히 일치하는 경우에만 자동으로 연동됩니다.
+   - 일부 정보만 일치하는 경우 연동되지 않을 수 있습니다.
+
+5. 연동 시점
+   - 회원가입 완료 시점에 자동으로 연동됩니다.
+   - 연동은 즉시 처리되며, 별도의 확인 절차 없이 진행됩니다.
+
+6. 연동 거부 권리
+   - 회원가입 시 이 동의를 거부할 수 있습니다.
+   - 단, 동의를 거부할 경우 회원가입을 진행할 수 없습니다.
+   - 동의를 거부하면 기존 비회원 신청 내역은 연동되지 않으며, 별도로 관리해야 합니다.
+
+7. 개인정보 보호
+   - 연동 과정에서 수집되는 정보는 연동 목적에만 사용됩니다.
+   - 연동된 신청 내역의 개인정보는 회원 계정의 개인정보 처리방침에 따라 관리됩니다.
+
+8. 문의 및 불만처리
+   - 연동과 관련된 문의사항이나 불만사항이 있는 경우 헤더의 게시판 > 문의사항에서 문의사항을 작성해 주시기 바랍니다.
+   - 협회는 회원의 의견을 반영하여 연동 서비스를 개선하도록 노력하겠습니다.
+
+9. 약관 변경
+   - 이 약관은 협회의 필요에 따라 변경될 수 있습니다.
+   - 약관 변경 시 변경사항을 사전에 공지하며, 변경된 약관에 동의하지 않는 경우 회원탈퇴를 할 수 있습니다.
+
+10. 기타
+    - 이 동의는 회원가입을 위한 필수 사항입니다.
+    - 동의하지 않을 경우 회원가입을 진행할 수 없습니다.
+    - 연동된 신청 내역은 회원 계정과 함께 관리되며, 회원탈퇴 시 처리방침에 따라 관리됩니다.
+
+시행일자: 2024년 1월 1일
+    `
   }
 }
 
-export default function TermsModal({ type, onClose }: TermsModalProps) {
+export default function TermsModal({ type, onClose, onAgree, isAgreed }: TermsModalProps) {
   const content = termsContent[type]
+  const isIrreversibleConfirmed = type === 'irreversibleConfirmed'
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 pt-20">
@@ -316,13 +377,35 @@ export default function TermsModal({ type, onClose }: TermsModalProps) {
         </div>
         
         {/* 하단 버튼 */}
-        <div className="flex justify-end p-4 border-t border-gray-200 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
-          >
-            닫기
-          </button>
+        <div className="flex justify-between items-center p-4 border-t border-gray-200 bg-gray-50">
+          {isIrreversibleConfirmed && onAgree ? (
+            <>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAgreed || false}
+                  onChange={(e) => onAgree(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-900">
+                  위 내용을 확인했으며, 기존 비회원 신청 내역이 내 계정으로 자동 연동되는 것에 동의합니다.
+                </span>
+              </label>
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+              >
+                닫기
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onClose}
+              className="ml-auto px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+            >
+              닫기
+            </button>
+          )}
         </div>
       </div>
     </div>

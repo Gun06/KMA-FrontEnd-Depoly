@@ -130,13 +130,14 @@ const initialState: SignupState = {
       marketingEmail: false,
       marketingSMS: false,
       ageVerification: false,
+      irreversibleConfirmed: false,
     },
     account: {
       account: '',
       password: '',
       passwordConfirm: '',
     },
-    personal: {
+      personal: {
       name: '',
       birthDate: '',
       gender: '',
@@ -147,6 +148,7 @@ const initialState: SignupState = {
       phoneLast: '',
       isPhoneVerified: false,
       isCustomDomain: false,
+      phNumValidateToken: undefined,
     },
     address: {
       postalCode: '',
@@ -190,6 +192,7 @@ const validateTerms = (terms: TermsAgreement): { isValid: boolean; errors: strin
   if (!terms.serviceTerms) errors.push(SIGNUP_ERROR_MESSAGES.TERMS_REQUIRED);
   if (!terms.privacyTerms) errors.push(SIGNUP_ERROR_MESSAGES.TERMS_REQUIRED);
   if (!terms.ageVerification) errors.push(SIGNUP_ERROR_MESSAGES.AGE_VERIFICATION_REQUIRED);
+  if (!terms.irreversibleConfirmed) errors.push(SIGNUP_ERROR_MESSAGES.IRREVERSIBLE_CONFIRMED_REQUIRED);
   
   return {
     isValid: errors.length === 0,
@@ -522,10 +525,7 @@ export const useSignupStore = create<SignupState & SignupActions>()(
         // 이메일 조합
         const email = `${formData.personal.emailLocal}@${formData.personal.emailDomain}`;
         
-        // 주소 파싱 (예: "서울특별시 강남구 테헤란로 231" -> siDo: "서울특별시", siGunGu: "강남구")
-        const addressParts = formData.address.address.split(' ');
-        const siDo = addressParts[0] || '';
-        const siGunGu = addressParts[1] || '';
+        // 주소 파싱은 더 이상 필요하지 않음 (address 필드로 직접 전송)
         
         return {
           account: {
@@ -547,12 +547,14 @@ export const useSignupStore = create<SignupState & SignupActions>()(
             personalInfoCollectionAndUse: formData.terms.ageVerification,
           },
           address: {
-            siDo: siDo,
-            siGunGu: siGunGu,
-            roadAddress: formData.address.address,
+            address: formData.address.address, // address 필드 추가
             zipCode: formData.address.postalCode,
             addressDetail: formData.address.addressDetail,
           },
+          irreversibleConfirmed: formData.terms.irreversibleConfirmed, // 최상위 레벨로 이동
+          ...(formData.personal.phNumValidateToken && {
+            phNumValidateToken: formData.personal.phNumValidateToken,
+          }),
         };
       },
       

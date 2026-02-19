@@ -6,6 +6,8 @@ import { ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react'
 import SignupLayout from '@/components/common/SignupLayout'
 import DatePicker from './DatePicker'
 import { useSignupStore, useSignupActions } from '@/stores'
+import PhoneOtpModal from '@/components/signup/PhoneOtpModal'
+import { authService } from '@/services/auth'
 
 export default function SignupStep3Page() {
   const router = useRouter()
@@ -32,6 +34,14 @@ export default function SignupStep3Page() {
   const [showEmailDomainDropdown, setShowEmailDomainDropdown] = useState(false)
   const [isCustomDomain, setIsCustomDomain] = useState(false)
   const domainInputRef = React.useRef<HTMLInputElement>(null)
+  
+  // 전화번호 인증 관련 상태
+  const [showPhoneOtpModal, setShowPhoneOtpModal] = useState(false)
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false)
+  const [isReissuingOtp, setIsReissuingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [otpToken, setOtpToken] = useState<string | null>(null)
+  const [pendingPhNumValidateToken, setPendingPhNumValidateToken] = useState<string | null>(null)
 
   // store의 데이터로 초기화
   useEffect(() => {
@@ -42,7 +52,7 @@ export default function SignupStep3Page() {
         gender: formData.personal.gender || '',
         emailLocal: formData.personal.emailLocal || '',
         emailDomain: formData.personal.emailDomain || '',
-        phonePrefix: formData.personal.phonePrefix || '010',
+        phonePrefix: formData.personal.phonePrefix !== undefined ? formData.personal.phonePrefix : '010',
         phoneMiddle: formData.personal.phoneMiddle || '',
         phoneLast: formData.personal.phoneLast || ''
       })
@@ -56,26 +66,27 @@ export default function SignupStep3Page() {
     let newValue = value
     
     // 전화번호 필드는 숫자만 입력 가능
-    if (field === 'phoneMiddle' || field === 'phoneLast') {
+    if (field === 'phonePrefix' || field === 'phoneMiddle' || field === 'phoneLast') {
       newValue = value.replace(/[^0-9]/g, '')
     }
     
     const newFormData = { ...formDataLocal, [field]: newValue }
     setFormDataLocal(newFormData)
     
-    // store에 업데이트
+    // store에 업데이트 (빈 값도 허용)
     updatePersonal({
       name: newFormData.name,
       birthDate: newFormData.birthDate,
       gender: newFormData.gender,
       emailLocal: newFormData.emailLocal,
       emailDomain: newFormData.emailDomain,
-      phonePrefix: newFormData.phonePrefix,
+      phonePrefix: newFormData.phonePrefix, // 빈 값도 허용
       phoneMiddle: newFormData.phoneMiddle,
       phoneLast: newFormData.phoneLast,
       isCustomDomain: isCustomDomain
     })
   }
+
 
   // 도메인 선택 시 직접 입력 모드 해제
   const handleDomainSelection = (domain: string) => {
@@ -130,16 +141,26 @@ export default function SignupStep3Page() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // 전화번호 인증 없이 진행 가능하도록 수정
+  // 전화번호 인증 완료 여부 확인
+  const isPhoneVerified = formData.personal?.phNumValidateToken ? true : false
+  
+  // 전화번호 인증 완료 필수
   const canProceed = formDataLocal.name && formDataLocal.birthDate && formDataLocal.gender && 
                     formDataLocal.emailLocal && formDataLocal.emailDomain &&
-                    formDataLocal.phoneMiddle && formDataLocal.phoneLast
+                    formDataLocal.phoneMiddle && formDataLocal.phoneLast &&
+                    isPhoneVerified
 
   const handleNext = () => {
     // 필수 필드 검증
     if (!formDataLocal.name || !formDataLocal.birthDate || !formDataLocal.gender || 
         !formDataLocal.emailLocal || !formDataLocal.emailDomain ||
         !formDataLocal.phoneMiddle || !formDataLocal.phoneLast) {
+      return
+    }
+    
+    // 전화번호 인증 완료 확인
+    if (!isPhoneVerified) {
+      alert('전화번호 인증을 완료해주세요.')
       return
     }
     
@@ -153,6 +174,101 @@ export default function SignupStep3Page() {
   const handlePrev = () => {
     setCurrentStep(2)
     router.push('/signup/step2')
+  }
+
+  // 전화번호 인증 버튼 클릭
+  const handlePhoneVerificationClick = () => {
+    // 전화번호 입력 확인
+    const phNum = getPhoneNumber()
+    if (!phNum) {
+      alert('전화번호를 모두 입력해주세요.')
+      return
+    }
+    setShowPhoneOtpModal(true)
+  }
+
+  // 전화번호 조합 함수
+  const getPhoneNumber = (): string | null => {
+    if (!formDataLocal.phonePrefix || !formDataLocal.phoneMiddle || !formDataLocal.phoneLast) {
+      return null
+    }
+    return `${formDataLocal.phonePrefix}-${formDataLocal.phoneMiddle}-${formDataLocal.phoneLast}`
+  }
+
+  // OTP 발급 요청
+  const handleRequestOtp = async () => {
+    const phNum = getPhoneNumber()
+
+    if (!phNum) {
+      throw new Error('전화번호를 모두 입력해주세요.')
+    }
+
+    setIsRequestingOtp(true)
+    try {
+      const result = await authService.requestSignupPhoneOtp(phNum)
+      setOtpToken(result.token)
+    } finally {
+      setIsRequestingOtp(false)
+    }
+  }
+
+  // OTP 재발급
+  const handleReissueOtp = async () => {
+    if (!otpToken) {
+      throw new Error('OTP 토큰이 없습니다.')
+    }
+
+    const phNum = getPhoneNumber()
+    if (!phNum) {
+      throw new Error('전화번호를 모두 입력해주세요.')
+    }
+
+    setIsReissuingOtp(true)
+    try {
+      const result = await authService.reissueSignupPhoneOtp(otpToken, phNum)
+      setOtpToken(result.token)
+    } finally {
+      setIsReissuingOtp(false)
+    }
+  }
+
+  // OTP 인증 및 토큰 발급
+  const handleVerifyOtp = async (otp: string) => {
+    if (!otpToken) {
+      throw new Error('OTP 토큰이 없습니다.')
+    }
+
+    const phNum = getPhoneNumber()
+    if (!phNum) {
+      throw new Error('전화번호를 모두 입력해주세요.')
+    }
+
+    setIsVerifyingOtp(true)
+    try {
+      const phNumValidateToken = await authService.verifySignupPhoneOtp(otpToken, phNum, otp)
+      
+      // 확인 버튼을 눌러야 store에 저장되도록 임시 저장
+      setPendingPhNumValidateToken(phNumValidateToken)
+    } finally {
+      setIsVerifyingOtp(false)
+    }
+  }
+
+  // 인증 완료 확인 버튼 클릭 핸들러
+  const handleConfirmVerification = () => {
+    if (pendingPhNumValidateToken) {
+      // Store에 토큰 저장 및 인증 완료 상태 업데이트
+      updatePersonal({
+        phNumValidateToken: pendingPhNumValidateToken,
+        isPhoneVerified: true
+      })
+      setPendingPhNumValidateToken(null)
+    }
+    setShowPhoneOtpModal(false)
+    setOtpToken(null)
+    sessionStorage.removeItem('signupOtpTimer')
+    sessionStorage.removeItem('signupOtpTimerStart')
+    sessionStorage.removeItem('signupOtpReissueCount')
   }
 
   return (
@@ -178,7 +294,7 @@ export default function SignupStep3Page() {
         {/* 생년월일 입력 */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            생년월일
+            생년월일 <span className="text-red-500">*</span>
           </label>
           <DatePicker
             value={formDataLocal.birthDate}
@@ -221,7 +337,7 @@ export default function SignupStep3Page() {
         {/* 이메일 입력 */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            이메일
+            이메일 <span className="text-red-500">*</span>
           </label>
           <div className="flex items-center space-x-1 sm:space-x-2">
             <input
@@ -291,48 +407,75 @@ export default function SignupStep3Page() {
         {/* 전화번호 입력 */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            전화번호
+            전화번호 <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 sm:items-center">
             <div className="flex items-center space-x-2">
-              <select
+              <input
+                type="text"
                 value={formDataLocal.phonePrefix}
                 onChange={(e) => handleInputChange('phonePrefix', e.target.value)}
-                className="px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-              >
-                <option value="010">010</option>
-                <option value="011">011</option>
-                <option value="016">016</option>
-                <option value="017">017</option>
-                <option value="018">018</option>
-                <option value="019">019</option>
-              </select>
+                placeholder="010"
+                maxLength={3}
+                inputMode="numeric"
+                readOnly={isPhoneVerified}
+                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                  isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
+              />
               <span className="text-gray-500">-</span>
               <input
                 type="text"
                 value={formDataLocal.phoneMiddle}
                 onChange={(e) => handleInputChange('phoneMiddle', e.target.value)}
-                placeholder=""
+                placeholder="1234"
                 maxLength={4}
                 inputMode="numeric"
-                className="w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base"
+                readOnly={isPhoneVerified}
+                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                  isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
               />
               <span className="text-gray-500">-</span>
               <input
                 type="text"
                 value={formDataLocal.phoneLast}
                 onChange={(e) => handleInputChange('phoneLast', e.target.value)}
-                placeholder=""
+                placeholder="5678"
                 maxLength={4}
                 inputMode="numeric"
-                className="w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base"
+                readOnly={isPhoneVerified}
+                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                  isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
               />
             </div>
             
-            {/* 휴대폰 인증 버튼 제거 - 인증 없이 진행 가능 */}
+            {/* 전화번호 인증 버튼 */}
+            <button
+              type="button"
+              onClick={handlePhoneVerificationClick}
+              disabled={!getPhoneNumber() || isPhoneVerified}
+              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors flex items-center justify-center whitespace-nowrap text-sm sm:text-base ${
+                isPhoneVerified 
+                  ? 'bg-gray-300 text-gray-700 cursor-default' 
+                  : (!formDataLocal.phoneMiddle || !formDataLocal.phoneLast)
+                  ? 'bg-blue-600 text-white opacity-50 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isPhoneVerified ? '인증 완료' : '전화번호 인증 >'}
+            </button>
           </div>
           
-          {/* 휴대폰 인증 관련 UI 제거 - 인증 없이 진행 가능 */}
+          {/* 전화번호 인증 완료 표시 */}
+          {isPhoneVerified && (
+            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-700">
+                ✓ 전화번호 인증이 완료되었습니다.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 유효성 검사 에러 메시지 */}
@@ -367,6 +510,27 @@ export default function SignupStep3Page() {
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
+
+      {/* 전화번호 인증 OTP 모달 */}
+      <PhoneOtpModal
+        isOpen={showPhoneOtpModal}
+        onClose={() => {
+          setShowPhoneOtpModal(false)
+          setOtpToken(null)
+          setPendingPhNumValidateToken(null)
+          sessionStorage.removeItem('signupOtpTimer')
+          sessionStorage.removeItem('signupOtpTimerStart')
+          sessionStorage.removeItem('signupOtpReissueCount')
+        }}
+        onRequestOtp={handleRequestOtp}
+        onReissue={handleReissueOtp}
+        onSubmit={handleVerifyOtp}
+        onConfirm={handleConfirmVerification}
+        isLoading={isVerifyingOtp}
+        isReissuing={isReissuingOtp}
+        isRequesting={isRequestingOtp}
+        phoneNumber={getPhoneNumber() || ''}
+      />
     </SignupLayout>
   )
 }

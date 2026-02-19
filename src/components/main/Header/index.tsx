@@ -327,10 +327,13 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <a
+              <Link
                 href="/login"
-                className="flex items-center space-x-1 text-gray-400 cursor-not-allowed opacity-50 pointer-events-none"
+                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
                 onClick={(e) => {
+                  // 클라이언트에서만 returnUrl 설정
+                  const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
+                  router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
                   e.preventDefault();
                 }}
               >
@@ -344,7 +347,7 @@ export default function Header() {
                 <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
                   로그인
                 </span>
-              </a>
+              </Link>
             )}
           </div>
 
@@ -662,8 +665,11 @@ export default function Header() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center space-x-1 p-2 rounded-full transition-colors focus:outline-none opacity-50 cursor-not-allowed pointer-events-none"
+                      className="flex items-center space-x-1 p-2 rounded-full transition-colors focus:outline-none hover:bg-gray-100 text-gray-600 hover:text-gray-900"
                       onClick={(e) => {
+                        const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
+                        router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                        updateState({ mobileOpen: false });
                         e.preventDefault();
                       }}
                     >

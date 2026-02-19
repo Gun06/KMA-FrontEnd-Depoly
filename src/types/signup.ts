@@ -11,6 +11,7 @@ export interface TermsAgreement {
   marketingEmail: boolean;
   marketingSMS: boolean;
   ageVerification: boolean;
+  irreversibleConfirmed: boolean; // 비회원 신청 내역 연동 동의
 }
 
 // Step 2: 계정 정보
@@ -32,6 +33,7 @@ export interface PersonalInfo {
   phoneLast: string; // 전화번호 마지막자리
   isPhoneVerified: boolean; // 휴대폰 인증 완료 여부
   isCustomDomain: boolean; // 커스텀 도메인 입력 모드 여부
+  phNumValidateToken?: string; // 전화번호 인증 토큰
 }
 
 // Step 4: 주소 정보
@@ -162,6 +164,7 @@ export const SIGNUP_ERROR_MESSAGES = {
   // Step 1
   TERMS_REQUIRED: '필수 약관에 동의해주세요.',
   AGE_VERIFICATION_REQUIRED: '만 14세 이상이어야 합니다.',
+  IRREVERSIBLE_CONFIRMED_REQUIRED: '비회원 신청 내역 연동 동의가 필요합니다.',
   
   // Step 2
   ACCOUNT_REQUIRED: '아이디를 입력해주세요.',

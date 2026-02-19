@@ -19,11 +19,12 @@ export default function SignupStep1Page() {
     personalInfo: false,
     marketing: false,
     email: false,
-    sms: false
+    sms: false,
+    irreversibleConfirmed: false
   })
 
   const [showTermsModal, setShowTermsModal] = useState(false)
-  const [selectedTermsType, setSelectedTermsType] = useState<'terms' | 'privacy' | 'personalInfo' | 'marketing'>('terms')
+  const [selectedTermsType, setSelectedTermsType] = useState<'terms' | 'privacy' | 'personalInfo' | 'marketing' | 'irreversibleConfirmed'>('terms')
 
   // store의 데이터로 초기화
   useEffect(() => {
@@ -35,7 +36,8 @@ export default function SignupStep1Page() {
         personalInfo: formData.terms.ageVerification,
         marketing: formData.terms.marketingTerms,
         email: formData.terms.marketingEmail,
-        sms: formData.terms.marketingSMS
+        sms: formData.terms.marketingSMS,
+        irreversibleConfirmed: formData.terms.irreversibleConfirmed
       })
     }
   }, [formData.terms])
@@ -52,7 +54,8 @@ export default function SignupStep1Page() {
         personalInfo: value,
         marketing: value,
         email: value,
-        sms: value
+        sms: value,
+        irreversibleConfirmed: value
       }
     } else if (key === 'marketing') {
       // 마케팅 체크박스를 체크하면 E-Mail과 SMS 둘 다 체크
@@ -75,11 +78,11 @@ export default function SignupStep1Page() {
         newAgreements.marketing = false
       }
     } else {
-      // 필수 약관들 (이용약관, 개인정보처리방침, 개인정보수집이용동의)
+      // 필수 약관들 (이용약관, 개인정보처리방침, 개인정보수집이용동의, 비회원 신청 내역 연동 동의)
       newAgreements = { ...newAgreements, [key]: value }
       
       // 필수 항목들이 모두 체크되었는지 확인
-      const allChecked = newAgreements.terms && newAgreements.privacy && newAgreements.personalInfo
+      const allChecked = newAgreements.terms && newAgreements.privacy && newAgreements.personalInfo && newAgreements.irreversibleConfirmed
       newAgreements.all = allChecked
     }
     
@@ -93,15 +96,20 @@ export default function SignupStep1Page() {
       ageVerification: newAgreements.personalInfo,
       marketingTerms: newAgreements.marketing,
       marketingEmail: newAgreements.email,
-      marketingSMS: newAgreements.sms
+      marketingSMS: newAgreements.sms,
+      irreversibleConfirmed: newAgreements.irreversibleConfirmed
     })
   }
 
-  const canProceed = agreements.terms && agreements.privacy && agreements.personalInfo
+  const canProceed = agreements.terms && agreements.privacy && agreements.personalInfo && agreements.irreversibleConfirmed
 
-  const handleShowTerms = (type: 'terms' | 'privacy' | 'personalInfo' | 'marketing') => {
+  const handleShowTerms = (type: 'terms' | 'privacy' | 'personalInfo' | 'marketing' | 'irreversibleConfirmed') => {
     setSelectedTermsType(type)
     setShowTermsModal(true)
+  }
+
+  const handleIrreversibleConfirmedAgree = (agreed: boolean) => {
+    handleAgreementChange('irreversibleConfirmed', agreed)
   }
 
   const handleCloseTermsModal = () => {
@@ -227,6 +235,33 @@ export default function SignupStep1Page() {
                 약관보기
               </button>
             </div>
+
+            {/* 비회원 신청 내역 연동 동의 */}
+            <div className="flex items-center justify-between p-2 sm:p-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                <button
+                  onClick={() => handleAgreementChange('irreversibleConfirmed', !agreements.irreversibleConfirmed)}
+                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
+                    agreements.irreversibleConfirmed 
+                      ? 'text-blue-600' 
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
+                  </svg>
+                </button>
+                <span className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                  [필수] 비회원 신청 내역 연동 동의
+                </span>
+              </div>
+              <button 
+                onClick={() => handleShowTerms('irreversibleConfirmed')}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium flex-shrink-0 ml-4"
+              >
+                약관보기
+              </button>
+            </div>
           </div>
           
           {/* 선택 약관 */}
@@ -304,7 +339,6 @@ export default function SignupStep1Page() {
                 </p>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -359,6 +393,8 @@ export default function SignupStep1Page() {
         <TermsModal
           type={selectedTermsType}
           onClose={handleCloseTermsModal}
+          onAgree={selectedTermsType === 'irreversibleConfirmed' ? handleIrreversibleConfirmedAgree : undefined}
+          isAgreed={selectedTermsType === 'irreversibleConfirmed' ? agreements.irreversibleConfirmed : undefined}
         />
       )}
     </SignupLayout>

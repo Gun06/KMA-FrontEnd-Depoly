@@ -114,12 +114,14 @@ export default function SignupStep4Page() {
           personalInfoCollectionAndUse: formData.terms.ageVerification
         },
         address: {
-          siDo: formData.address.address.split(' ')[0] || '', // 첫 번째 공백까지 (시도)
-          siGunGu: formData.address.address.split(' ')[1] || '', // 두 번째 공백까지 (시군구)
-          roadAddress: formData.address.address,
+          address: formData.address.address, // address 필드 추가
           zipCode: formData.address.postalCode,
           addressDetail: formData.address.addressDetail
-        }
+        },
+        irreversibleConfirmed: formData.terms.irreversibleConfirmed, // 최상위 레벨로 이동
+        ...(formData.personal.phNumValidateToken && {
+          phNumValidateToken: formData.personal.phNumValidateToken
+        })
       }
 
 
@@ -131,7 +133,7 @@ export default function SignupStep4Page() {
       resetStore()
       router.push('/signup/success')
       
-    } catch (err) {
+    } catch (_err) {
       setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setLoading(false)

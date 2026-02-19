@@ -149,12 +149,12 @@ interface SignupApiRequest {
     personalInfoCollectionAndUse: boolean;
   };
   address: {
-    siDo: string;
-    siGunGu: string;
-    roadAddress: string;
+    address: string;
     zipCode: string;
     addressDetail: string;
   };
+  irreversibleConfirmed: boolean; // 비회원 신청 내역 연동 동의 (최상위 레벨)
+  phNumValidateToken?: string; // 전화번호 인증 토큰
 }
 
 interface SignupResponse {
@@ -778,5 +778,149 @@ export const authService = {
     } catch (error: unknown) {
       throw error;
     }
+  },
+
+  /** 회원가입 전화번호 인증 OTP 발급 */
+  async requestSignupPhoneOtp(phNum: string): Promise<{ token: string; expiresInSecond: number }> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+    if (!API_BASE_URL) {
+      throw new Error('API_BASE_URL_USER is not defined');
+    }
+
+    const url = `${API_BASE_URL}/api/v1/public/register/phNum-otp`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        phNum,
+      }),
+    });
+
+    if (!response.ok) {
+      await response.text().catch(() => '');
+      throw new Error(`OTP 발급 실패: ${response.status}`);
+    }
+
+    const body = await safeParseJson(response);
+    if (!body || !isRecord(body)) {
+      throw new Error('OTP 발급 응답 형식이 올바르지 않습니다.');
+    }
+
+    const token = getString(body.token);
+    const expiresInSecond = typeof body.expiresInSecond === 'number' ? body.expiresInSecond : 180;
+
+    if (!token) {
+      throw new Error('OTP 토큰을 받지 못했습니다.');
+    }
+
+    return { token, expiresInSecond };
+  },
+
+  /** 회원가입 전화번호 인증 OTP 재발급 */
+  async reissueSignupPhoneOtp(token: string, phNum: string): Promise<{ token: string; expiresInSecond: number }> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+    if (!API_BASE_URL) {
+      throw new Error('API_BASE_URL_USER is not defined');
+    }
+
+    const url = `${API_BASE_URL}/api/v1/public/registrer/phNum-otp/reissue`;
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        token,
+        phNum,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      let errorMessage = `OTP 재발급 실패: ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.code === 'MAX_REQUESTED') {
+          throw { code: 'MAX_REQUESTED', message: 'OTP 재발급 횟수를 초과했습니다.' };
+        }
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        // JSON 파싱 실패 시 기본 메시지 사용
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const body = await safeParseJson(response);
+    if (!body || !isRecord(body)) {
+      throw new Error('OTP 재발급 응답 형식이 올바르지 않습니다.');
+    }
+
+    const newToken = getString(body.token);
+    const expiresInSecond = typeof body.expiresInSecond === 'number' ? body.expiresInSecond : 180;
+
+    if (!newToken) {
+      throw new Error('OTP 토큰을 받지 못했습니다.');
+    }
+
+    return { token: newToken, expiresInSecond };
+  },
+
+  /** 회원가입 전화번호 인증 토큰 발급 */
+  async verifySignupPhoneOtp(token: string, phNum: string, otp: string): Promise<string> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
+    if (!API_BASE_URL) {
+      throw new Error('API_BASE_URL_USER is not defined');
+    }
+
+    const url = `${API_BASE_URL}/api/v1/public/registrer/phNum-token`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        token,
+        otpNumber: otp,
+        phNum,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      let errorMessage = `전화번호 인증 실패: ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        // JSON 파싱 실패 시 기본 메시지 사용
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const body = await safeParseJson(response);
+    if (!body || !isRecord(body)) {
+      throw new Error('전화번호 인증 응답 형식이 올바르지 않습니다.');
+    }
+
+    // 응답에서 phNumToken 또는 phNumValidateToken 확인
+    const phNumValidateToken = getString(body.phNumToken) || getString(body.phNumValidateToken);
+
+    if (!phNumValidateToken) {
+      throw new Error('전화번호 인증 토큰을 받지 못했습니다.');
+    }
+
+    return phNumValidateToken;
   },
 };
