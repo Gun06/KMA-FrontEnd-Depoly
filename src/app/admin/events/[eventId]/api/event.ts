@@ -27,6 +27,8 @@ export interface EventDetailApiResponse {
     resultImageUrl: string;
     coursePageImageUrl: string;
     eventsPageUrl: string;
+    /** 통계 페이지 URL */
+    statisticsUrl?: string;
     eventStatus: 'PENDING' | 'OPEN' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
     visibleStatus: 'OPEN' | 'TEST' | 'CLOSE' | boolean; // boolean은 레거시 지원
     registDeadline: string; // ISO 8601

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Users, FileText, Plus, ArrowRight, Clock } from 'lucide-react';
+import { Calendar, Users, FileText, Plus, ArrowRight, Clock, Image, Database } from 'lucide-react';
 import { useAdminEventList, transformAdminEventToEventRow } from '@/services/admin';
 import { useAllInquiries } from '@/hooks/useInquiries';
 import type { AdminEventItem } from '@/types/Admin';
@@ -103,7 +103,7 @@ export default function AdminHomePage() {
           value={inquiriesLoading ? '...' : totalInquiries.toLocaleString()}
           icon={FileText}
           color="orange"
-          href="/admin/boards/inquiry"
+          href="/admin/boards/inquiry/all"
         />
         <StatCard
           title="미답변 문의"
@@ -128,17 +128,17 @@ export default function AdminHomePage() {
             color="blue"
           />
           <QuickAccessCard
-            title="신청자 관리"
-            description="참가 신청자를 관리합니다"
-            href="/admin/applications/management"
-            icon={Users}
+            title="스폰서 관리"
+            description="스폰서 배너를 관리합니다"
+            href="/admin/banners/sponsors"
+            icon={Image}
             color="green"
           />
           <QuickAccessCard
-            title="문의사항 관리"
-            description="사용자 문의사항을 확인합니다"
-            href="/admin/boards/inquiry"
-            icon={FileText}
+            title="배너 관리"
+            description="메인 배너를 관리합니다"
+            href="/admin/banners/main"
+            icon={Database}
             color="orange"
           />
           <QuickAccessCard

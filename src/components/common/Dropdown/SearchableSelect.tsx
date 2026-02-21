@@ -24,6 +24,8 @@ interface SearchableSelectProps<T = string> {
   className?: string;
   /** 값이 비어있을 때 텍스트 색상을 회색으로 */
   showPlaceholderColor?: boolean;
+  /** 드롭다운 최대 높이 (Tailwind 클래스, 예: 'max-h-60', 'max-h-96') */
+  maxHeight?: string;
 }
 
 export function SearchableSelect<T = string>({
@@ -35,6 +37,7 @@ export function SearchableSelect<T = string>({
   searchPlaceholder = '검색...',
   className = '',
   showPlaceholderColor = true,
+  maxHeight = 'max-h-60',
 }: SearchableSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -84,7 +87,13 @@ export function SearchableSelect<T = string>({
           setSearchKeyword('');
         }}
       >
-        <span className={`block pr-8 ${selectedOption && !showPlaceholderColor ? 'text-gray-900' : selectedOption ? 'text-gray-900' : 'text-gray-400'}`}>
+        <span className={`block pr-8 ${
+          selectedOption 
+            ? 'text-gray-900' 
+            : showPlaceholderColor 
+              ? 'text-gray-400' 
+              : 'text-gray-900'
+        }`}>
           {selectedOption?.label || placeholder}
         </span>
         <svg 
@@ -99,7 +108,7 @@ export function SearchableSelect<T = string>({
       
       {/* 드롭다운 메뉴 */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] max-h-60 flex flex-col">
+        <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] ${maxHeight} flex flex-col`}>
             {/* 검색 입력 필드 (searchable이 true일 때만) */}
             {searchable && (
               <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">

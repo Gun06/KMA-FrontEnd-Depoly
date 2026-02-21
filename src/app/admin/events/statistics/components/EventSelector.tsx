@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { useAdminEventList } from '@/services/admin';
+import { SearchableSelect, type SearchableSelectOption } from '@/components/common/Dropdown/SearchableSelect';
 
 interface EventSelectorProps {
   selectedEventId: string | null;
@@ -30,6 +31,14 @@ export default function EventSelector({
       return dateB - dateA;
     });
   }, [data]);
+
+  // SearchableSelect용 옵션 변환 (조건부 return 이전에 호출)
+  const selectOptions: SearchableSelectOption<string>[] = React.useMemo(() => {
+    return events.map((event) => ({
+      value: String(event.id),
+      label: `${event.nameKr} (${event.startDate.split('T')[0]})`,
+    }));
+  }, [events]);
 
   if (isLoading) {
     return (
@@ -67,26 +76,24 @@ export default function EventSelector({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         대회 선택
       </label>
-      <select
-        value={selectedEventId || ''}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value) {
-            onSelectEvent(value);
-          } else {
-            // 빈 값 선택 시 null로 설정
-            onSelectEvent('');
-          }
-        }}
-        className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-      >
-        <option value="">대회를 선택하세요</option>
-        {events.map((event) => (
-          <option key={event.id} value={String(event.id)}>
-            {event.nameKr} ({event.startDate.split('T')[0]})
-          </option>
-        ))}
-      </select>
+      <div className="w-full max-w-md">
+        <SearchableSelect
+          value={selectedEventId || null}
+          options={selectOptions}
+          onChange={(value) => {
+            if (value) {
+              onSelectEvent(value);
+            } else {
+              onSelectEvent('');
+            }
+          }}
+          placeholder="대회를 선택하세요"
+          searchable={true}
+          searchPlaceholder="대회명 검색..."
+          showPlaceholderColor={false}
+          maxHeight="max-h-96"
+        />
+      </div>
     </div>
   );
 }

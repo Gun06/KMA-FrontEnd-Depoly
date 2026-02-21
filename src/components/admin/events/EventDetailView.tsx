@@ -37,6 +37,8 @@ export type EventDetailData = {
   resultImageUrl?: string;
   coursePageImageUrl?: string;
   eventsPageUrl?: string;
+  /** 통계 페이지 URL */
+  statisticsUrl?: string;
   eventStatus: string;
   visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   registDeadline?: string;
@@ -85,6 +87,7 @@ export default function EventDetailView({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   
   // 결제정보(은행/계좌) - eventData에서 직접 가져오기
   const bankName = eventData.bank || '';
@@ -153,6 +156,16 @@ export default function EventDetailView({
 
   const closeImageModal = () => {
     setSelectedImage(null);
+  };
+
+  const handleCopyUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
   };
 
   return (
@@ -327,32 +340,14 @@ export default function EventDetailView({
             </div>
           </div>
 
-          {/* 5. 메인색상 | 이벤트페이지 */}
+          {/* 5. 이벤트페이지 | 통계페이지 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
-                메인 색상
-              </span>
-              <div className="flex items-center gap-3 pt-1">
-                <div
-                  className={cn(
-                    'w-10 h-10 rounded-lg border-2 border-gray-300 shadow-sm',
-                    PREVIEW_BG[eventData.mainBannerColor as EventTheme] ||
-                      'bg-gray-400'
-                  )}
-                ></div>
-                <span className="text-base text-gray-900 font-pretendard font-medium">
-                  {eventData.mainBannerColor}
-                </span>
-              </div>
-            </div>
-
             {eventData.eventsPageUrl && (
               <div className="space-y-1">
                 <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                   이벤트 페이지
                 </span>
-                <div className="pt-1">
+                <div className="pt-1 flex items-center gap-3">
                   <a
                     href={eventData.eventsPageUrl}
                     target="_blank"
@@ -374,12 +369,146 @@ export default function EventDetailView({
                     </svg>
                     링크 열기
                   </a>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => handleCopyUrl(eventData.eventsPageUrl!)}
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium font-pretendard transition-colors"
+                  >
+                    {copiedUrl === eventData.eventsPageUrl ? (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        복사됨
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        복사하기
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {eventData.statisticsUrl && (
+              <div className="space-y-1">
+                <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                  통계 페이지
+                </span>
+                <div className="pt-1 flex items-center gap-3">
+                  <a
+                    href={eventData.statisticsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium font-pretendard transition-colors"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                    링크 열기
+                  </a>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => handleCopyUrl(eventData.statisticsUrl!)}
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium font-pretendard transition-colors"
+                  >
+                    {copiedUrl === eventData.statisticsUrl ? (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        복사됨
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
+                        </svg>
+                        복사하기
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* 6. 결제 정보 - 맨 아래 */}
+          {/* 6. 메인 색상 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                메인 색상
+              </span>
+              <div className="flex items-center gap-3 pt-1">
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-lg border-2 border-gray-300 shadow-sm',
+                    PREVIEW_BG[eventData.mainBannerColor as EventTheme] ||
+                      'bg-gray-400'
+                  )}
+                ></div>
+                <span className="text-base text-gray-900 font-pretendard font-medium">
+                  {eventData.mainBannerColor}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. 결제 정보 - 맨 아래 */}
           {(bankName || accountNumber) && (
             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 font-pretendard mb-5 flex items-center gap-2">

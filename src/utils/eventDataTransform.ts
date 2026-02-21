@@ -138,6 +138,7 @@ export function transformApiDataToEventDetail(
     resultImageUrl: eventInfo.resultImageUrl,
     coursePageImageUrl: eventInfo.coursePageImageUrl,
     eventsPageUrl: eventInfo.eventsPageUrl,
+    statisticsUrl: eventInfo.statisticsUrl,
     eventStatus: eventInfo.eventStatus,
     visibleStatus: normalizeVisibleStatus(eventInfo.visibleStatus),
     registDeadline: eventInfo.registDeadline,

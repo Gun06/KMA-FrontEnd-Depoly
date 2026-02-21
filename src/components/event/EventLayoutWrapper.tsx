@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import EventLayout, { EventLayoutThemed } from '@/layouts/event/EventLayout';
 import { MainBannerProvider } from '@/components/providers/MainBannerContext';
 
@@ -71,6 +71,15 @@ export default function EventLayoutWrapper({
   initialMainBannerColor,
 }: EventLayoutWrapperProps) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  // 통계 페이지인지 확인 (헤더/푸터 없이 표시)
+  const isStatisticsPage = pathname?.includes('/statistics');
+
+  // 통계 페이지는 레이아웃 없이 children만 반환
+  if (isStatisticsPage) {
+    return <>{children}</>;
+  }
 
   const theme = searchParams.get('theme') || '';
   const hb = searchParams.get('hb') || '';
