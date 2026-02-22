@@ -10,6 +10,7 @@ type Props = {
   responsive?: boolean;        // ✅ 뷰포트에 따라 자동으로 개수 조절
   showEdge?: boolean;
   className?: string;
+  activeColor?: 'black' | 'blue'; // 활성 페이지 색상 (기본: black)
 };
 
 export default function Pagination({
@@ -21,6 +22,7 @@ export default function Pagination({
   responsive = true,          // 기본 켬
   showEdge = true,
   className,
+  activeColor = 'black',
 }: Props) {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(Math.max(1, page), pageCount);
@@ -62,7 +64,9 @@ export default function Pagination({
       "w-[26px] h-[26px] text-xs font-extrabold",
       "sm:w-7 sm:h-7 sm:text-[13px]",
       "md:w-[30px] md:h-[30px] md:text-[15px]",
-      active ? "bg-black text-white" : "text-[#111827] hover:bg-[#F3F4F6] bg-white"
+      active 
+        ? (activeColor === 'blue' ? "bg-blue-600 text-white" : "bg-black text-white")
+        : "text-[#111827] hover:bg-[#F3F4F6] bg-white"
     );
 
   const iconBtn = (disabled: boolean) =>

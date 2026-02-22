@@ -351,6 +351,7 @@ function ClientContent() {
               groupSize={10}
               responsive={true}
               showEdge={true}
+              activeColor="blue"
             />
           </div>
         )}
