@@ -19,9 +19,34 @@ interface EventCardProps {
   eventId?: string; // API에서 받은 이벤트 ID
   eventUrl?: string; // 로컬대회의 경우 외부 URL (eventUrl이 있으면 이걸 우선 사용)
   className?: string;
-  size?: 'small' | 'medium' | 'large' | 'test'; // 추가: 사이즈 설정용
-  isDragging?: boolean; // 드래그 중인지 여부
-  dragDistance?: number; // 드래그 거리 (픽셀)
+  size?: 'small' | 'medium' | 'large' | 'test' | 'olive'; // olive: KMA-Mobile/올리브영 스타일
+  isDragging?: boolean;
+  dragDistance?: number;
+}
+
+/** 접수 마감일 기준 D-Day (KMA-Mobile 동일) */
+function calculateDDayFromDeadline(deadline: string | undefined): string | null {
+  if (!deadline?.trim()) return null;
+  const d = new Date(deadline.trim());
+  if (Number.isNaN(d.getTime())) return null;
+  const today = new Date();
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.floor((targetDate.getTime() - todayDate.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays < 0) return null;
+  if (diffDays === 0) return 'D-Day';
+  return `D-${diffDays}`;
+}
+
+/** 날짜 포맷 YYYY.MM.DD (KMA-Mobile 동일) */
+function formatEventDate(dateStr: string): string {
+  if (!dateStr?.trim()) return '';
+  const d = new Date(dateStr.trim());
+  if (Number.isNaN(d.getTime())) return dateStr;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}.${m}.${day}`;
 }
 
 export default function EventCard({
@@ -34,7 +59,7 @@ export default function EventCard({
   status,
   eventDate,
   eventStartDate,
-  eventDeadLine: _eventDeadLine,
+  eventDeadLine,
   eventId,
   eventUrl,
   className,
@@ -165,6 +190,84 @@ export default function EventCard({
   };
 
   const statusColors = getStatusColors();
+
+  // KMA-Mobile / 올리브영 스타일 카드 (size === 'olive')
+  if (size === 'olive') {
+    const statusMap: Record<string, { text: string; bg: string }> = {
+      PENDING: { text: '접수예정', bg: '#FF6B00' },
+      ONGOING: { text: '접수중', bg: '#00C73C' },
+      OPEN: { text: '접수중', bg: '#00C73C' },
+      COMPLETED: { text: '접수마감', bg: '#999999' },
+      CLOSED: { text: '접수마감', bg: '#999999' },
+      FINAL_CLOSED: { text: '접수마감', bg: '#999999' },
+    };
+    const statusInfo = statusMap[status] || { text: status || '접수중', bg: '#00C73C' };
+    const dDay = calculateDDayFromDeadline(eventDeadLine);
+    const href = eventUrl
+      ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
+      : (eventId ? `/event/${eventId}/guide/overview` : '#');
+    const isExternal = !!eventUrl && !eventUrl.startsWith('/');
+
+    const oliveCard = (
+      <div className="w-[180px] md:w-[200px] flex flex-col">
+        <div className="relative w-full aspect-[16/10] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden">
+          {imageSrc ? (
+            <Image
+              src={imageSrc}
+              alt={imageAlt}
+              fill
+              className="object-cover"
+              sizes="200px"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
+            </div>
+          )}
+          {/* 상태 뱃지: 좌상단 (KMA-Mobile) */}
+          <div
+            className="absolute top-0 left-0 px-2 py-1 text-[10px] font-bold text-white"
+            style={{
+              backgroundColor: statusInfo.bg,
+              borderTopLeftRadius: '12px',
+              borderBottomRightRadius: '8px',
+            }}
+          >
+            {statusInfo.text}
+          </div>
+          {/* 화살표 원형 버튼: 우하단 (링크는 버튼에만, 이미지에는 링크 없음) */}
+          {href && href !== '#' ? (
+            <Link
+              href={href}
+              className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
+              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              aria-label="대회 상세 보기"
+            >
+              <svg className="w-4 h-4 text-black/87 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" /></svg>
+            </Link>
+          ) : (
+            <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center" aria-hidden>
+              <svg className="w-4 h-4 text-black/87 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" /></svg>
+            </div>
+          )}
+        </div>
+        <div className="mt-2.5 flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {dDay && <span className="text-xs font-black shrink-0" style={{ color: '#FF4081' }}>{dDay}</span>}
+            <span className="text-[11px] text-gray-500 truncate">{formatEventDate(eventDate)}</span>
+          </div>
+          <p className="mt-1 text-[13px] font-semibold text-black leading-tight truncate" style={{ letterSpacing: '-0.3px' }} title={title}>
+            {title}
+          </p>
+          {categoryNames && (
+            <p className="mt-1 text-[11px] text-gray-500 truncate">{formatCategoryNames(categoryNames)}</p>
+          )}
+        </div>
+      </div>
+    );
+
+    return <li className={clsx('shrink-0 list-none', className)}>{oliveCard}</li>;
+  }
 
   const cardContent = (
     <div className={clsx(
