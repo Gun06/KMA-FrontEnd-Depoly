@@ -3,18 +3,24 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image, { StaticImageData } from 'next/image'
-import problemImg from '@/assets/images/main/problem.png'
-import moneyImg from '@/assets/images/main/money.png'
+import playstoreImg from '@/assets/images/main/playstore.webp'
+import appstoreImg from '@/assets/images/main/appstore.png'
 
 type CtaCardVariant = 'primary' | 'teal'
-type CtaCardPreset = 'group' | 'payment'
+type CtaCardPreset = 'android' | 'ios'
+type CtaCardImageSrc = StaticImageData | string
+
+const PRESET_IMAGES: Record<CtaCardPreset, StaticImageData> = {
+  android: playstoreImg,
+  ios: appstoreImg,
+}
 
 export interface CtaCardProps {
   preset?: CtaCardPreset
   title?: string
   description?: string
   href?: string
-  image?: StaticImageData
+  image?: CtaCardImageSrc
   imageAlt?: string
   variant?: CtaCardVariant
   gradientClassName?: string
@@ -25,30 +31,27 @@ const PRESETS: Record<CtaCardPreset, {
   title: string
   description: string
   href: string
-  image: StaticImageData
   imageAlt: string
   variant: CtaCardVariant
 }> = {
-  group: {
-    title: '단체 활용 문의',
-    description: '전국마라톤협회에서 마라톤에 대한 다양한 궁금증을\nFAQ를 통해 해결하세요.',
-    href: '/notice/faq',
-    image: problemImg,
-    imageAlt: '퍼즐과 말풍선 일러스트',
+  android: {
+    title: 'Android 다운로드',
+    description: '전국마라톤협회 공식 앱을 Android에서 만나보세요. 곧 출시됩니다.',
+    href: '#',
+    imageAlt: 'Google Play에서 다운로드',
     variant: 'primary',
   },
-  payment: {
-    title: '결제 관련 문의',
-    description: '결제 관련하여 문의가 필요하신 분은 해당 FAQ를 통해 해결하세요.',
-    href: '/notice/faq',
-    image: moneyImg,
-    imageAlt: '지폐와 카드 일러스트',
-    variant: 'teal',
+  ios: {
+    title: 'iOS 다운로드',
+    description: '전국마라톤협회 공식 앱을 iOS에서 만나보세요. 곧 출시됩니다.',
+    href: '#',
+    imageAlt: 'App Store에서 다운로드',
+    variant: 'primary',
   },
 }
 
 export default function CtaCard({
-  preset,
+  preset = 'android',
   title,
   description,
   href,
@@ -58,16 +61,16 @@ export default function CtaCard({
   gradientClassName,
   className = '',
 }: CtaCardProps) {
-  const presetValues = preset ? PRESETS[preset] : undefined
+  const presetValues = PRESETS[preset]
   const resolvedVariant: CtaCardVariant = variant ?? presetValues?.variant ?? 'primary'
   const resolvedTitle = title ?? presetValues?.title ?? ''
   const resolvedDescription = description ?? presetValues?.description ?? ''
   const resolvedHref = href ?? presetValues?.href ?? '#'
-  const resolvedImage = image ?? presetValues?.image
+  const resolvedImage = image ?? PRESET_IMAGES[preset]
   const resolvedImageAlt = imageAlt ?? presetValues?.imageAlt ?? ''
   const variantGradients: Record<CtaCardVariant, string> = {
-    primary: 'from-[#1F4FB9] to-[#5B9DF0]',
-    teal: 'from-[#2F7CCF] to-[#7ED7D0]',
+    primary: 'from-[#1e3a5f] via-[#1d4ed8] to-[#38bdf8]',
+    teal: 'from-[#134e4a] via-[#0f766e] to-[#5eead4]',
   }
   const gradient = gradientClassName ?? variantGradients[resolvedVariant]
   const descriptionRef = useRef<HTMLParagraphElement | null>(null)
@@ -133,14 +136,14 @@ export default function CtaCard({
   return (
     <Link
       href={resolvedHref}
-      className={`group block w-full cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-r ${gradient} shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 transition duration-300 ease-out hover:shadow-md md:hover:shadow-lg hover:-translate-y-[2px] active:scale-[0.99] ${className}`}
+      className={`group block w-full cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 transition duration-300 ease-out hover:shadow-md md:hover:shadow-lg hover:-translate-y-[2px] active:scale-[0.99] ${className}`}
       aria-label={resolvedTitle}
     >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-r from-black/40 via-black/25 to-transparent"
       />
-      <div className="grid h-[140px] md:h-[180px] grid-cols-12 p-4 md:p-5">
+      <div className="grid h-[120px] md:h-[150px] grid-cols-12 p-4 md:p-5">
         <div className="col-span-12 lg:col-span-9 flex flex-col justify-center relative z-10">
           <h3 className="font-pretendard-extrabold text-white text-[18px] md:text-[22px] mb-2 truncate pl-3 antialiased">{resolvedTitle}</h3>
           <p
@@ -158,15 +161,19 @@ export default function CtaCard({
           </p>
         </div>
         <div className="col-span-12 lg:col-span-3 relative">
-          <div className="absolute right-1.5 md:right-4 top-1/2 -translate-y-1/2 w-[180px] md:w-[260px] aspect-[4/3] z-0">
-            <Image
-              src={resolvedImage as StaticImageData}
-              alt={resolvedImageAlt}
-              fill
-              sizes="(max-width: 768px) 220px, 340px"
-              className="object-cover pointer-events-none transition-transform duration-300 ease-out group-hover:scale-110 group-hover:translate-x-1 md:group-hover:translate-x-2 group-active:scale-105"
-              priority
-            />
+          <div
+            className={`absolute right-1.5 md:right-4 top-[30%] md:top-[35%] lg:top-1/2 -translate-y-1/2 w-[180px] md:w-[260px] aspect-[4/3] z-0 flex items-center justify-end origin-center transition-transform duration-300 ease-out ${preset === 'android' ? '-rotate-[10deg] group-hover:-rotate-[8deg]' : 'rotate-[10deg] group-hover:rotate-[8deg]'}`}
+          >
+            {resolvedImage ? (
+              <Image
+                src={resolvedImage}
+                alt={resolvedImageAlt}
+                fill
+                sizes="(max-width: 768px) 220px, 340px"
+                className="object-contain object-right pointer-events-none transition-transform duration-300 ease-out group-hover:scale-110 group-hover:translate-x-1 md:group-hover:translate-x-2 group-active:scale-105"
+                priority
+              />
+            ) : null}
           </div>
         </div>
       </div>

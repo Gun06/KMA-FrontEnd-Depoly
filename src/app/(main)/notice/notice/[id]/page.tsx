@@ -60,7 +60,7 @@ export default function NoticeDetailPage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
             <span className="ml-4 text-gray-600">공지사항을 불러오는 중...</span>
@@ -79,7 +79,7 @@ export default function NoticeDetailPage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="text-red-600 text-base sm:text-lg mb-2">{error}</div>
             <button
@@ -103,7 +103,7 @@ export default function NoticeDetailPage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="text-gray-500 text-base sm:text-lg mb-2">공지사항을 찾을 수 없습니다</div>
             <button
@@ -125,7 +125,7 @@ export default function NoticeDetailPage() {
         subMenu: "공지사항"
       }}
     >
-      <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
         {/* 뒤로가기 버튼 */}
         <button
           onClick={handleBack}

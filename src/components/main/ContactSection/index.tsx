@@ -93,7 +93,7 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
             style={{ clipPath: `inset(30% 0 0 0)` }}
           />
           
-          <div className="px-6 md:px-20 py-8 md:py-12 relative z-10">
+          <div className="px-8 md:px-9 lg:px-10 py-8 md:py-12 relative z-10">
             {/* 컨텐츠 */}
             <div className="relative">
               <div className="grid grid-cols-2 gap-y-12 md:gap-y-16 gap-x-1 md:grid-cols-3 md:gap-x-2 lg:grid-cols-5 lg:gap-x-3 items-start relative z-10">

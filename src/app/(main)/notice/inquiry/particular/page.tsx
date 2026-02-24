@@ -201,7 +201,7 @@ export default function InquiryDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16 flex items-center justify-center">
+        <div className="w-full h-full px-0 py-6 sm:py-8 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <div className="text-gray-600 text-base sm:text-lg mb-2">문의사항을 불러오는 중입니다</div>
@@ -221,7 +221,7 @@ export default function InquiryDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <PasswordModal
             isOpen={true}
             onClose={handleSecretModalClose}
@@ -244,7 +244,7 @@ export default function InquiryDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
             <div className="text-center">
               <div className="text-red-500 text-base sm:text-lg mb-2">오류가 발생했습니다</div>
               <div className="text-xs sm:text-sm text-gray-400 break-words">{error}</div>
@@ -279,7 +279,7 @@ export default function InquiryDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16 flex items-center justify-center">
+        <div className="w-full h-full px-0 py-6 sm:py-8 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <div className="text-gray-600 text-base sm:text-lg mb-2">문의사항을 불러오는 중입니다</div>
@@ -297,7 +297,7 @@ export default function InquiryDetailPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
         {/* 답변 ID가 있으면 답변만, 없으면 문의글만 표시 */}
         {answerId ? (
           // 답변만 표시

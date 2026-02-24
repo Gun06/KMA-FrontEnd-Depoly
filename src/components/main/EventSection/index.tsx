@@ -83,11 +83,12 @@ export default function EventSection() {
 
   return (
     <section className="bg-white pt-8 pb-5">
-      {/* KMA-Mobile 스타일: 섹션 헤더 (주요대회일정 + 더보기) */}
-      <div className="px-5 md:px-6 flex items-end justify-between">
-        <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
-          주요대회일정
-        </h2>
+      {/* 타이틀 위치: 공지사항과 동일 (32/36/40px) */}
+      <div className="max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10">
+        <div className="flex items-end justify-between">
+          <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
+            주요대회일정
+          </h2>
         <Link
           href="/schedule"
           className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
@@ -102,7 +103,7 @@ export default function EventSection() {
           ref={scrollRef}
           role="region"
           aria-label="주요대회일정 카드 목록"
-          className={`h-[210px] md:h-[240px] overflow-x-auto overflow-y-hidden scrollbar-hide ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+          className={`h-[250px] md:h-[280px] overflow-x-auto overflow-y-hidden scrollbar-hide ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
           style={{ touchAction: 'none' }}
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}
@@ -112,10 +113,10 @@ export default function EventSection() {
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
         >
-          <ul className="flex gap-3 px-5 md:px-6 pb-2 w-max min-w-full list-none">
+          <ul className="flex gap-3 px-8 md:px-9 lg:px-10 pb-2 w-max min-w-full list-none">
             {isLoading || error ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <li key={`skeleton-${i}`} className="shrink-0 w-[180px] md:w-[200px]">
+                <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
                   <div className="w-full aspect-[16/10] rounded-xl bg-gray-200 animate-pulse" />
                   <div className="mt-2.5 space-y-1.5">
                     <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
@@ -151,7 +152,8 @@ export default function EventSection() {
                 등록된 대회 일정이 없습니다.
               </li>
             )}
-          </ul>
+            </ul>
+          </div>
         </div>
       </div>
     </section>

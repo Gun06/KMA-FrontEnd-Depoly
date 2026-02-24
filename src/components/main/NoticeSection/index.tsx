@@ -71,9 +71,9 @@ export default function NoticeSection() {
   }));
 
   return (
-    <div className="bg-white rounded-lg shadow-none border border-white p-4 md:p-5 lg:p-6">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-lg shadow-none border border-white pt-4 pr-4 pb-4 pl-4 md:pt-5 md:pr-5 md:pb-5 md:pl-6">
+      {/* 헤더 - 타이틀 위치: 대회사진 갤러리와 동일 (pl-4 md:pl-6) */}
+      <div className="flex items-center justify-between mb-6 -mx-4 md:-mx-6 px-4 md:px-6">
         <h3 className="font-giants text-[22px] md:text-[28px] text-gray-900">
           공지사항
         </h3>

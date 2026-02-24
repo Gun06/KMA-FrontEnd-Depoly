@@ -198,6 +198,7 @@ export default function EventCard({
       ONGOING: { text: '접수중', bg: '#00C73C' },
       OPEN: { text: '접수중', bg: '#00C73C' },
       COMPLETED: { text: '접수마감', bg: '#999999' },
+      CANCELLED: { text: '접수마감', bg: '#999999' },
       CLOSED: { text: '접수마감', bg: '#999999' },
       FINAL_CLOSED: { text: '접수마감', bg: '#999999' },
     };
@@ -207,17 +208,23 @@ export default function EventCard({
       ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
       : (eventId ? `/event/${eventId}/guide/overview` : '#');
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
+    const isGridCell = className?.includes('w-full');
 
     const oliveCard = (
-      <div className="w-[180px] md:w-[200px] flex flex-col">
-        <div className="relative w-full aspect-[16/10] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden">
+      <div className={clsx(isGridCell ? 'w-full' : 'w-[240px] md:w-[267px]', 'flex flex-col select-none')}>
+        <div
+          className="relative w-full aspect-[16/10] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden"
+          onDragStart={(e) => e.preventDefault()}
+          draggable={false}
+        >
           {imageSrc ? (
             <Image
               src={imageSrc}
               alt={imageAlt}
               fill
-              className="object-cover"
-              sizes="200px"
+              className="object-cover pointer-events-none"
+              sizes="267px"
+              draggable={false}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-300">
@@ -226,7 +233,7 @@ export default function EventCard({
           )}
           {/* 상태 뱃지: 좌상단 (KMA-Mobile) */}
           <div
-            className="absolute top-0 left-0 px-2 py-1 text-[10px] font-bold text-white"
+            className="absolute top-0 left-0 px-2.5 py-1.5 text-[13px] font-bold text-white"
             style={{
               backgroundColor: statusInfo.bg,
               borderTopLeftRadius: '12px',
@@ -253,14 +260,14 @@ export default function EventCard({
         </div>
         <div className="mt-2.5 flex flex-col min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {dDay && <span className="text-xs font-black shrink-0" style={{ color: '#FF4081' }}>{dDay}</span>}
-            <span className="text-[11px] text-gray-500 truncate">{formatEventDate(eventDate)}</span>
+            {dDay && <span className="text-sm font-black shrink-0" style={{ color: '#FF4081' }}>{dDay}</span>}
+            <span className="text-sm text-gray-500 truncate">{formatEventDate(eventDate)}</span>
           </div>
-          <p className="mt-1 text-[13px] font-semibold text-black leading-tight truncate" style={{ letterSpacing: '-0.3px' }} title={title}>
+          <p className="mt-1 text-base font-semibold text-black leading-tight truncate" style={{ letterSpacing: '-0.3px' }} title={title}>
             {title}
           </p>
           {categoryNames && (
-            <p className="mt-1 text-[11px] text-gray-500 truncate">{formatCategoryNames(categoryNames)}</p>
+            <p className="mt-1 text-sm text-gray-500 truncate">{formatCategoryNames(categoryNames)}</p>
           )}
         </div>
       </div>

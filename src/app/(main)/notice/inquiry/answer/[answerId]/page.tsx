@@ -142,7 +142,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="text-gray-500 text-base sm:text-lg mb-2">로딩 중...</div>
             <div className="text-xs sm:text-sm text-gray-400">답변을 불러오는 중입니다</div>
@@ -161,7 +161,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
             <div className="text-center">
               <div className="text-red-500 text-base sm:text-lg mb-2">오류가 발생했습니다</div>
               <div className="text-xs sm:text-sm text-gray-400 break-words">{error}</div>
@@ -195,7 +195,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="text-gray-500 text-base sm:text-lg mb-2">문의사항을 찾을 수 없습니다</div>
             <button
@@ -219,7 +219,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
               <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@ export default function AnswerDetailPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
             {/* 답변만 표시 */}
             <AnswerSection
               answerHeader={directAnswerHeader || answerHeader}

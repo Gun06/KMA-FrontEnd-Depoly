@@ -72,8 +72,8 @@ export default function SubmenuLayout({
           </div>
         </div>
         
-        {/* 페이지 콘텐츠 */}
-        <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+        {/* 페이지 콘텐츠 - 모바일/태블릿 좌우 여백 최소화, lg부터만 여유 */}
+        <div className="container mx-auto px-2 py-4 sm:py-6 lg:px-6 lg:py-8">
           {children}
         </div>
       </main>
@@ -147,8 +147,8 @@ export function SubmenuLayoutThemed({
           </div>
         </div>
         
-        {/* 페이지 콘텐츠 */}
-        <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+        {/* 페이지 콘텐츠 - 모바일/태블릿 좌우 여백 최소화, lg부터만 여유 */}
+        <div className="container mx-auto px-2 py-4 sm:py-6 lg:px-6 lg:py-8">
           {children}
         </div>
       </main>

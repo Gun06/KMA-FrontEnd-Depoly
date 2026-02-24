@@ -206,7 +206,7 @@ export default function InquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           {/* 안내문구 */}
           <div className="mb-6">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
@@ -309,7 +309,7 @@ export default function InquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="text-center">
             <div className="text-red-600 text-lg mb-2">{error}</div>
             <button
@@ -333,7 +333,7 @@ export default function InquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           {/* 안내문구 */}
           <div className="mb-6">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
@@ -367,7 +367,7 @@ export default function InquiryPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
         {/* 안내문구 */}
         <div className="mb-6">
           <div className="bg-gray-100 rounded-lg p-4 text-center">

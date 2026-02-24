@@ -157,7 +157,7 @@ export default function InquiryEditPage() {
           subMenu: "문의사항 수정"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="flex items-center justify-center py-8">
             <div className="text-gray-500">문의사항을 불러오는 중...</div>
           </div>
@@ -175,7 +175,7 @@ export default function InquiryEditPage() {
           subMenu: "문의사항 수정"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="text-red-500 text-lg mb-2">권한이 없습니다</div>
@@ -200,7 +200,7 @@ export default function InquiryEditPage() {
         subMenu: "문의사항 수정"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
         <div className="max-w-6xl mx-auto">
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-8">

@@ -140,7 +140,7 @@ export default function GallerySection({ className }: GallerySectionProps) {
       >
         {/* 우측 상단 더보기 버튼 */}
         <div className="relative">
-          <div className="absolute right-6 md:right-20 -top-12 md:-top-16 z-20 flex items-center gap-6">
+          <div className="absolute right-8 md:right-9 lg:right-10 -top-12 md:-top-16 z-20 flex items-center gap-6">
             <Link
               href={GALLERY_PAGE_PATH}
               className="text-sm md:text-base text-gray-700 hover:text-gray-900 transition-colors duration-200"

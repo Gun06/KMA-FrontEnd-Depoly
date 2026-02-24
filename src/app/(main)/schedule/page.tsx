@@ -588,23 +588,19 @@ export default function SchedulePage() {
                           )}
                         </div>
                       ) : (
-                        /* 이벤트 카드 그리드 */
+                        /* 이벤트 카드 그리드 - 주요대회일정과 동일한 olive 카드 디자인 */
                         /* 915px~1260px 구간에서는 4열, 1260px~1560px: 5열, 1560px 이상: 6열 */
-                        <div className="grid grid-cols-2 sm:grid-cols-3 min-[915px]:grid-cols-4 min-[1260px]:grid-cols-5 min-[1560px]:grid-cols-6 gap-4 md:gap-5 lg:gap-6 auto-rows-fr">
+                        <ul className="grid grid-cols-2 sm:grid-cols-3 min-[915px]:grid-cols-4 min-[1260px]:grid-cols-5 min-[1560px]:grid-cols-6 gap-4 md:gap-5 lg:gap-6 auto-rows-fr list-none">
                           {filteredMonthEvents.map(event => {
                             const eventDate = new Date(event.eventDate);
                             const today = new Date();
                             const isPast = eventDate < today;
-                            
-                            // EventCard에 필요한 props 매핑
-                            // API 상태 값을 한글로 변환 (메인 페이지와 동일하게)
-                            const getStatusText = (status: string) => {
-                              if (status === 'OPEN') return '접수중';
-                              if (status === 'PENDING') return '접수예정';
-                              if (status === 'CLOSED') return '접수마감';
-                              if (status === 'FINAL_CLOSED') return '접수마감';
-                              return '상태불명'; // 예상치 못한 상태 값의 경우
-                            };
+                            const eventDateStr = typeof event.eventDate === 'string' && event.eventDate.includes('T')
+                              ? event.eventDate.split('T')[0]
+                              : event.eventDate;
+                            const eventDeadLineStr = event.eventDeadLine && typeof event.eventDeadLine === 'string' && event.eventDeadLine.includes('T')
+                              ? event.eventDeadLine.split('T')[0]
+                              : event.eventDeadLine ?? undefined;
                             
                             const eventCardProps = {
                               imageSrc: event.eventImgSrc,
@@ -613,20 +609,23 @@ export default function SchedulePage() {
                               subtitle: event.eventNameEn,
                               date: `${eventDate.getMonth() + 1}월 ${eventDate.getDate()}일 ${eventDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`,
                               categoryNames: event.categoryNames,
-                              status: isPast ? '접수마감' : getStatusText(event.status),
-                              eventDate: event.eventDate,
+                              status: event.status,
+                              eventDate: eventDateStr,
+                              eventDeadLine: eventDeadLineStr,
                               eventId: event.eventId,
-                              // null이 올 수 있으므로 undefined로 정규화
-                              eventUrl: event.eventUrl ?? undefined // 로컬대회의 경우 외부 URL
+                              eventUrl: event.eventUrl ?? undefined,
                             };
                             
                             return (
-                              <div key={event.eventId} className={clsx(isPast && 'opacity-60')}>
-                                <EventCard {...eventCardProps} size="test" className="w-full" />
-                              </div>
+                              <EventCard
+                                key={event.eventId}
+                                {...eventCardProps}
+                                size="olive"
+                                className={clsx('w-full', isPast && 'opacity-60')}
+                              />
                             );
                           })}
-                        </div>
+                        </ul>
                       )}
                     </div>
                   );

@@ -73,7 +73,7 @@ export default function FeaturesSection() {
         {/* 메인 타이틀 */}
         <div className="text-center mb-12">
           <h2 className="font-giants text-2xl md:text-3xl lg:text-4xl text-gray-900 mb-4">
-            전국마라톤 협회 사이트에서 지원하는 더 많은 기능
+            전국마라톤 협회에서 지원하는 더 많은 기능
           </h2>
           <div className="w-32 md:w-48 lg:w-60 h-1 bg-slate-200 mx-auto"></div>
         </div>

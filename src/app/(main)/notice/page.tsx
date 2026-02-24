@@ -25,7 +25,7 @@ export default function NoticePage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
             <span className="ml-4 text-gray-600">공지사항을 불러오는 중...</span>
@@ -44,7 +44,7 @@ export default function NoticePage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full px-0 py-6 sm:py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-600 mb-4">{error}</p>
@@ -68,7 +68,7 @@ export default function NoticePage() {
         subMenu: "공지사항"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full px-0 py-6 sm:py-8">
         <NoticeBoard
           data={noticeData}
           onRowClick={handleRowClick}

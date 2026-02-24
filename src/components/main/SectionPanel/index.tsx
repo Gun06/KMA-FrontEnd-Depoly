@@ -30,7 +30,7 @@ export default function SectionPanel({
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 h-full">
         {/* Title */}
         <div
-          className={`h-full flex items-center pl-6 md:pl-20 relative z-10 ${titleClassName}`}
+          className={`h-full flex items-center pl-4 md:pl-3 lg:pl-4 relative z-10 ${titleClassName}`}
           style={titleStart ? { paddingLeft: titleStart } : undefined}
         >
           <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900 flex items-center">
