@@ -276,7 +276,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
           {/* 안내문구 */}
           <div className="mb-6">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
@@ -393,7 +393,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="text-red-500 text-lg mb-2">오류가 발생했습니다</div>
@@ -489,7 +489,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
           <div className="text-center">
             <div className="text-gray-500 text-lg mb-2">
               {appliedSearchKeyword || appliedSearchType !== 'ALL' 
@@ -533,7 +533,7 @@ export default function EventInquiryPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
         {/* 안내문구 */}
         <div className="mb-6">
           <div className="bg-gray-100 rounded-lg p-4 text-center">
