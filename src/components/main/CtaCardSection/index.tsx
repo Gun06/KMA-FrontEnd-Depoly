@@ -8,7 +8,7 @@ interface CtaCardsProps {
   className?: string
 }
 
-export default function CtaCards({ presets = ['android', 'ios'], className = '' }: CtaCardsProps) {
+export default function CtaCards({ presets = ['ios', 'android'], className = '' }: CtaCardsProps) {
   return (
     <section aria-label="앱 다운로드" className={`relative ${className}`}>
       <div className="max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6">

@@ -39,7 +39,7 @@ const PRESETS: Record<CtaCardPreset, {
     description: '전국마라톤협회 공식 앱을 Android에서 만나보세요. 곧 출시됩니다.',
     href: '#',
     imageAlt: 'Google Play에서 다운로드',
-    variant: 'primary',
+    variant: 'teal',
   },
   ios: {
     title: 'iOS 다운로드',
@@ -68,9 +68,10 @@ export default function CtaCard({
   const resolvedHref = href ?? presetValues?.href ?? '#'
   const resolvedImage = image ?? PRESET_IMAGES[preset]
   const resolvedImageAlt = imageAlt ?? presetValues?.imageAlt ?? ''
+  // 한 가지 색(파란색)으로 통일. iOS(왼쪽) → Android(오른쪽) 맞닿는 면(#2563eb)에서 자연스럽게 이어짐
   const variantGradients: Record<CtaCardVariant, string> = {
-    primary: 'from-[#1e3a5f] via-[#1d4ed8] to-[#38bdf8]',
-    teal: 'from-[#134e4a] via-[#0f766e] to-[#5eead4]',
+    primary: 'from-[#1e3a5f] via-[#1d4ed8] to-[#2563eb]',
+    teal: 'from-[#2563eb] via-[#3b82f6] to-[#60a5fa]',
   }
   const gradient = gradientClassName ?? variantGradients[resolvedVariant]
   const descriptionRef = useRef<HTMLParagraphElement | null>(null)
@@ -136,12 +137,12 @@ export default function CtaCard({
   return (
     <Link
       href={resolvedHref}
-      className={`group block w-full cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-200 transition duration-300 ease-out hover:shadow-md md:hover:shadow-lg hover:-translate-y-[2px] active:scale-[0.99] ${className}`}
+      className={`group block w-full cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-br ${gradient} shadow-md shadow-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition duration-300 ease-out hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 active:scale-[0.99] ${className}`}
       aria-label={resolvedTitle}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-r from-black/40 via-black/25 to-transparent"
+        className="pointer-events-none absolute inset-0 z-[5] bg-gradient-to-r from-black/20 via-black/5 to-transparent"
       />
       <div className="grid h-[120px] md:h-[150px] grid-cols-12 p-4 md:p-5">
         <div className="col-span-12 lg:col-span-9 flex flex-col justify-center relative z-10">

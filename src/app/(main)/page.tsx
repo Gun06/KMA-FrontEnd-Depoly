@@ -28,7 +28,7 @@ export default function AssociationPage() {
 
       {/* 단체 활용 문의 / 결제 관련 문의 카드 (공지·문의 아래) */}
       <div className="py-6 md:py-8 bg-white">
-        <CtaCards presets={['android', 'ios']} />
+        <CtaCards presets={['ios', 'android']} />
       </div>
 
       {/* 기능 소개 섹션 */}
