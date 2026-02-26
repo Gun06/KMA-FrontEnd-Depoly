@@ -72,7 +72,7 @@ export default function AdminHomePage() {
   };
 
   const responseRate = totalInquiries > 0
-    ? Math.round(((totalInquiries - unansweredInquiries) / totalInquiries) * 100)
+    ? Number((((totalInquiries - unansweredInquiries) / totalInquiries) * 100).toFixed(1))
     : 0;
   const closedEvents = Math.max(totalEvents - openEvents, 0);
 
@@ -188,7 +188,7 @@ export default function AdminHomePage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            <HeaderPill label="문의 응답률" value={inquiriesLoading ? '...' : `${responseRate}%`} tone="blue" />
+            <HeaderPill label="문의 응답률" value={inquiriesLoading ? '...' : `${responseRate.toFixed(1)}%`} tone="blue" />
             <HeaderPill label="미답변 문의" value={inquiriesLoading ? '...' : unansweredInquiries.toLocaleString()} tone="red" />
             <HeaderPill label="접수중 대회" value={eventsLoading ? '...' : openEvents.toLocaleString()} tone="green" />
           </div>
@@ -295,7 +295,7 @@ export default function AdminHomePage() {
               <div className="flex items-end justify-between">
                 <p className="text-sm font-medium text-slate-600">답변 완료율</p>
                 <p className="text-2xl font-bold text-slate-900">
-                  {inquiriesLoading ? '...' : `${responseRate}%`}
+                  {inquiriesLoading ? '...' : `${responseRate.toFixed(1)}%`}
                 </p>
               </div>
               <div className="mt-3 h-2 w-full rounded-full bg-slate-200">
