@@ -59,7 +59,7 @@ export default function EventNoticePage() {
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
           {/* 스켈레톤 UI */}
           <NoticeSkeleton />
         </div>
@@ -90,7 +90,7 @@ export default function EventNoticePage() {
         subMenu: "공지사항"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
         <NoticeBoard
           data={displayNotices}
           onRowClick={handleRowClick}

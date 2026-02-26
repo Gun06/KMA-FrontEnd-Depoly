@@ -76,7 +76,7 @@ export default function EventSelector({
       <label className="block text-sm font-medium text-gray-700 mb-2">
         대회 선택
       </label>
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-4xl">
         <SearchableSelect
           value={selectedEventId || null}
           options={selectOptions}

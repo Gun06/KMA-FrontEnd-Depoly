@@ -50,7 +50,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16 flex items-center justify-center">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">답변을 불러오는 중...</p>
@@ -69,7 +69,7 @@ export default function AnswerDetailPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16 flex items-center justify-center">
+        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-500 text-lg mb-4">{error}</p>
             <button
@@ -92,7 +92,7 @@ export default function AnswerDetailPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
+      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
         {/* 뒤로가기 버튼 */}
         <button
           onClick={() => router.push(`/event/${eventId}/notices/inquiry`)}

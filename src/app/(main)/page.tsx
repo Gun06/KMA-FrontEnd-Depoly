@@ -11,7 +11,7 @@ import FeaturesSection from '@/components/main/FeaturesSection'
 export default function AssociationPage() {
   return (
     <>
-    <MarathonHeroCarousel />
+      <MarathonHeroCarousel />
       {/* SPONSOR 섹션 */}
       <SponsorSection />
 

@@ -22,3 +22,22 @@ export function useEventStatistics(eventId: string | null) {
     true // withAuth = true
   );
 }
+
+/**
+ * 대회별 종목 통계 데이터 조회 Hook
+ * @param eventId - 대회 고유 번호 (선택)
+ * @returns 종목 통계 데이터 및 로딩/에러 상태
+ */
+export function useEventDistanceStatistics(eventId: string | null) {
+  return useGetQuery<EventStatisticsResponse>(
+    ['admin', 'events', 'distance-statistics', eventId],
+    eventId ? `/api/v1/${eventId}/registration/distancd-statistics` : '',
+    'admin',
+    {
+      enabled: !!eventId,
+      staleTime: 30 * 1000,
+      refetchOnWindowFocus: true,
+    },
+    true
+  );
+}

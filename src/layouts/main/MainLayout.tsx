@@ -12,7 +12,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="pt-16 flex-1">
+      <main
+        className="flex-1"
+        style={{ paddingTop: 'var(--kma-main-header-offset, 64px)' }}
+      >
         {children}
       </main>
       <Footer />
