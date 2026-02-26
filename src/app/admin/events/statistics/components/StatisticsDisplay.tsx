@@ -3,179 +3,234 @@
  */
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { EventStatisticsResponse } from '../types';
 import { formatNumber, formatGenderPercentage, parseCategoryParticipants } from '../utils';
 
 interface StatisticsDisplayProps {
   data: EventStatisticsResponse;
+  distanceData?: EventStatisticsResponse;
 }
 
-export default function StatisticsDisplay({ data }: StatisticsDisplayProps) {
+export default function StatisticsDisplay({ data, distanceData }: StatisticsDisplayProps) {
+  const [isDistanceExpanded, setIsDistanceExpanded] = useState(false);
+  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  const distanceParticipants = distanceData?.eventCategoryParticipants ?? [];
+
+  const renderParticipantCards = (
+    participants: EventStatisticsResponse['eventCategoryParticipants']
+  ) => {
+    if (!participants || participants.length === 0) return null;
+
+    return (
+      <div className="space-y-2.5">
+        {participants.map((category, index) => {
+          const parsed = parseCategoryParticipants(category.totalParticipants);
+          const paidPercentage = parsed.total > 0
+            ? Math.round((parsed.paid / parsed.total) * 100)
+            : 0;
+
+          return (
+            <div
+              key={`participant-${index}`}
+              className="rounded-lg border border-gray-200 bg-gray-50/70 p-4"
+            >
+              <div className="mb-3 border-b border-gray-200 pb-2">
+                <h4 className="text-sm font-semibold text-gray-900 leading-tight">
+                  {category.categoryName}
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-md border border-gray-200 bg-white p-3">
+                  <div className="mb-1 text-[11px] font-medium text-gray-500">
+                    총 참가자
+                  </div>
+                  <div className="text-xl font-semibold text-gray-900">
+                    {formatNumber(parsed.total)}
+                    <span className="ml-1 text-sm font-normal text-gray-500">명</span>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-gray-200 bg-white p-3">
+                  <div className="mb-1 text-[11px] font-medium text-gray-500">
+                    성별 구성
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">남성</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        {formatNumber(parsed.male)}명
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">여성</span>
+                      <span className="text-sm font-semibold text-gray-800">
+                        {formatNumber(parsed.female)}명
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-green-200 bg-green-50/60 p-3">
+                  <div className="mb-1 text-[11px] font-medium text-green-700">
+                    입금 완료
+                  </div>
+                  <div className="mb-0.5 text-xl font-semibold text-green-700">
+                    {formatNumber(parsed.paid)}
+                    <span className="ml-1 text-sm font-normal text-green-600">명</span>
+                  </div>
+                  <div className="text-[11px] text-green-700/80">
+                    {paidPercentage}% 완료
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-red-200 bg-red-50/60 p-3">
+                  <div className="mb-1 text-[11px] font-medium text-red-700">
+                    미입금
+                  </div>
+                  <div className="mb-0.5 text-xl font-semibold text-red-700">
+                    {formatNumber(parsed.unpaid)}
+                    <span className="ml-1 text-sm font-normal text-red-600">명</span>
+                  </div>
+                  <div className="text-[11px] text-red-700/80">
+                    {100 - paidPercentage}% 미완료
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 대회명 */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg shadow-sm border border-blue-200">
-        <h2 className="text-3xl font-bold text-gray-900">
+      <div className="rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm">
+        <p className="mb-1 text-xs font-medium text-gray-500">선택한 대회</p>
+        <h2 className="text-2xl font-semibold text-gray-900">
           {data.eventName}
         </h2>
       </div>
 
       {/* 주요 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-gray-400 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-gray-500">
             총 참가자 수
           </div>
-          <div className="text-3xl font-bold text-gray-900">
+          <div className="text-2xl font-semibold text-gray-900">
             {formatNumber(data.totalParticipants)}
-            <span className="text-lg font-normal text-gray-600 ml-1">명</span>
+            <span className="ml-1 text-sm font-normal text-gray-500">명</span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-blue-400 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+        <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-blue-700/80">
             오늘 참가자 수
           </div>
-          <div className="text-3xl font-bold text-blue-600">
+          <div className="text-2xl font-semibold text-blue-700">
             {formatNumber(data.todayParticipants)}
-            <span className="text-lg font-normal text-blue-500 ml-1">명</span>
+            <span className="ml-1 text-sm font-normal text-blue-700/80">명</span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-green-400 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+        <div className="rounded-lg border border-green-200 bg-green-50/40 p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-green-700/80">
             완료 참가자 수
           </div>
-          <div className="text-3xl font-bold text-green-600">
+          <div className="text-2xl font-semibold text-green-700">
             {formatNumber(data.totalCompletedParticipants)}
-            <span className="text-lg font-normal text-green-500 ml-1">명</span>
+            <span className="ml-1 text-sm font-normal text-green-700/80">명</span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-lg shadow-md border-l-4 border-red-400 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+        <div className="rounded-lg border border-red-200 bg-red-50/40 p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-red-700/80">
             미결제 참가자 수
           </div>
-          <div className="text-3xl font-bold text-red-600">
+          <div className="text-2xl font-semibold text-red-700">
             {formatNumber(data.totalUnpaidParticipants)}
-            <span className="text-lg font-normal text-red-500 ml-1">명</span>
+            <span className="ml-1 text-sm font-normal text-red-700/80">명</span>
           </div>
         </div>
       </div>
 
       {/* 추가 통계 정보 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-gray-500">
             성별 비율
           </div>
-          <div className="text-lg font-semibold text-gray-900 leading-relaxed">
+          <div className="text-base font-semibold text-gray-900 leading-relaxed">
             {formatGenderPercentage(data.totalGenderPercentage)}
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-          <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-1 text-xs font-medium text-gray-500">
             총 단체 수
           </div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-xl font-semibold text-gray-900">
             {formatNumber(data.totalOrganizations)}
-            <span className="text-base font-normal text-gray-600 ml-1">팀</span>
+            <span className="ml-1 text-sm font-normal text-gray-500">팀</span>
           </div>
         </div>
       </div>
 
-      {/* 카테고리별 참가자 수 */}
+      {/* 종목별 참가자 통계 */}
+      {distanceParticipants.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+            onClick={() => setIsDistanceExpanded((prev) => !prev)}
+            aria-expanded={isDistanceExpanded}
+          >
+            <h3 className="text-base font-semibold text-gray-900">
+              종목별 참가자 통계
+            </h3>
+            <span className="text-xs font-medium text-gray-500">
+              {isDistanceExpanded ? '접기' : '펼치기'}
+            </span>
+          </button>
+
+          {isDistanceExpanded && (
+            <div className="border-t border-gray-200 px-4 pb-4 pt-3">
+              <div className="mt-1">
+                  {renderParticipantCards(distanceParticipants)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 카테고리별 참가자 통계 (기본 접힘) */}
       {data.eventCategoryParticipants && data.eventCategoryParticipants.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b border-gray-200">
-            카테고리별 참가자 통계
-          </h3>
-          <div className="space-y-3">
-            {data.eventCategoryParticipants.map((category, index) => {
-              const parsed = parseCategoryParticipants(category.totalParticipants);
-              const paidPercentage = parsed.total > 0 
-                ? Math.round((parsed.paid / parsed.total) * 100) 
-                : 0;
-              
-              return (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-5 hover:border-blue-300 hover:shadow-md transition-all bg-gray-50 hover:bg-white"
-                >
-                  {/* 카테고리명 */}
-                  <div className="mb-4 pb-3 border-b border-gray-200">
-                    <h4 className="text-base font-bold text-gray-900 leading-tight">
-                      {category.categoryName}
-                    </h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* 총 참가자 수 */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
-                        총 참가자
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {formatNumber(parsed.total)}
-                        <span className="text-base font-normal text-gray-600 ml-1">명</span>
-                      </div>
-                    </div>
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+            onClick={() => setIsCategoryExpanded((prev) => !prev)}
+            aria-expanded={isCategoryExpanded}
+          >
+            <h3 className="text-base font-semibold text-gray-900">
+              카테고리별 참가자 통계
+            </h3>
+            <span className="text-xs font-medium text-gray-500">
+              {isCategoryExpanded ? '접기' : '펼치기'}
+            </span>
+          </button>
 
-                    {/* 성별 정보 */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
-                        성별 구성
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">남성</span>
-                          <span className="text-base font-semibold text-blue-700">
-                            {formatNumber(parsed.male)}명
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">여성</span>
-                          <span className="text-base font-semibold text-pink-700">
-                            {formatNumber(parsed.female)}명
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 입금 정보 */}
-                    <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
-                      <div className="text-xs font-medium text-green-700 mb-2 uppercase tracking-wide">
-                        입금 완료
-                      </div>
-                      <div className="text-2xl font-bold text-green-700 mb-1">
-                        {formatNumber(parsed.paid)}
-                        <span className="text-base font-normal text-green-600 ml-1">명</span>
-                      </div>
-                      <div className="text-xs text-green-600">
-                        {paidPercentage}% 완료
-                      </div>
-                    </div>
-
-                    {/* 미입금 정보 */}
-                    <div className="bg-red-50 rounded-lg p-4 border-2 border-red-200">
-                      <div className="text-xs font-medium text-red-700 mb-2 uppercase tracking-wide">
-                        미입금
-                      </div>
-                      <div className="text-2xl font-bold text-red-700 mb-1">
-                        {formatNumber(parsed.unpaid)}
-                        <span className="text-base font-normal text-red-600 ml-1">명</span>
-                      </div>
-                      <div className="text-xs text-red-600">
-                        {100 - paidPercentage}% 미완료
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {isCategoryExpanded && (
+            <div className="border-t border-gray-200 px-4 pb-4 pt-3">
+              <div className="mt-1">
+                  {renderParticipantCards(data.eventCategoryParticipants)}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
