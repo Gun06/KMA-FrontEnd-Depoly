@@ -21,6 +21,13 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isIdPasswordModalOpen, setIsIdPasswordModalOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string>('');
+  // OTP 인증용 스테이징 정보
+  const [stagedToken, setStagedToken] = useState<string | null>(null);
+  const [otpPhoneNumber, setOtpPhoneNumber] = useState<string | null>(null);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isOtpSubmitting, setIsOtpSubmitting] = useState(false);
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
+  const [isLoadingInfo, setIsLoadingInfo] = useState(false);
 
   // Refs for dropdowns
   const yearRef = useRef<HTMLDivElement>(null);
@@ -317,7 +324,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           transformFormDataToUpdateApi(formData, eventInfo) : 
           transformFormDataToApi(formData, eventInfo);
         
-        let _result;
+        let _result: any;
         if (isEditMode) {
           // 수정 모드: PATCH API 호출
           // sessionStorage 또는 URL 파라미터에서 registrationId 가져오기
@@ -373,13 +380,18 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           // 신규 신청 모드: POST API 호출
           _result = await submitIndividualRegistration(eventId, apiData);
         }
-        
-        // 성공 시 오류 메시지 초기화
-        setSubmitError('');
-        
-        // 성공 페이지로 이동
-        const modeParam = isEditMode ? '&mode=edit' : '';
-        router.push(`/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}${modeParam}`);
+        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
+        if (_result && _result.stagedToken) {
+          setStagedToken(_result.stagedToken as string);
+          // 현재 폼의 전화번호를 그대로 사용 (010-1234-5678 형태)
+          const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+          setOtpPhoneNumber(phoneNumber);
+          setIsOtpModalOpen(true);
+          // 이전 에러 메시지 초기화
+          setSubmitError('');
+        } else {
+          throw new Error('스테이징 토큰을 받지 못했습니다.');
+        }
       } catch (error) {
         // 수정 모드인지 다시 확인 (catch 블록에서 사용)
         const isEditMode = typeof window !== 'undefined' && 
@@ -461,8 +473,38 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     }
   };
 
+  // 스마트 정보 불러오기 (로그인 상태 확인 후 자동 처리)
+  const handleLoadInfo = async () => {
+    setIsLoadingInfo(true);
+    try {
+      // 먼저 로그인 상태 확인 (GET API)
+      const { fetchDefaultInfo } = await import('../api/individual');
+      const userData = await fetchDefaultInfo();
+      
+      // 성공 시 바로 폼에 입력 (로그인 상태이므로 accountId는 없음)
+      handleUserDataLoad(userData);
+    } catch (error) {
+      // 인증 에러(401, 403) 또는 UNAUTHORIZED 에러인 경우에만 모달 열기
+      const isUnauthorized = error instanceof Error && 
+        (error.message === 'UNAUTHORIZED' || 
+         (error as any).status === 401 || 
+         (error as any).status === 403);
+      
+      if (isUnauthorized) {
+        // 로그인되지 않은 상태이므로 모달 열기
+        setIsIdPasswordModalOpen(true);
+      } else {
+        // 다른 에러인 경우 에러 메시지 표시
+        console.error('정보 불러오기 실패:', error);
+        // 필요시 에러 토스트나 알림 표시 가능
+      }
+    } finally {
+      setIsLoadingInfo(false);
+    }
+  };
+
   // 사용자 정보 자동 입력 처리
-  const handleUserDataLoad = (userData: UserData) => {
+  const handleUserDataLoad = (userData: UserData, accountId?: string) => {
     // 생년월일 분리 (YYYY-MM-DD -> YYYY, MM, DD)
     const birthParts = userData.birth?.split('-') || ['', '', ''];
     
@@ -474,12 +516,13 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     const isTempEmail = !email || email.trim() === '' || email.includes('TEMP_EMAIL') || email.includes('NOT_TRUE_VALUE');
     const emailParts = isTempEmail ? ['', ''] : (email.split('@') || ['', '']);
     
-    // 주소 정보 처리
-    const fullAddress = userData.address?.roadAddress || '';
+    // 주소 정보 처리 (address.address 또는 roadAddress 사용)
+    const fullAddress = userData.address?.address || userData.address?.roadAddress || '';
     const addressDetail = userData.address?.addressDetail || '';
     
     setFormData(prev => ({
       ...prev,
+      jeonmahyupId: accountId || prev.jeonmahyupId, // 전마협 아이디 설정
       name: userData.name || '',
       birthYear: birthParts[0] || '',
       birthMonth: birthParts[1] || '',
@@ -493,8 +536,66 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       phone3: phoneParts[2] || '',
       email1: emailParts[0] || '',
       emailDomain: emailParts[1] || '',
-      depositorName: userData.name || '' // 입금자명을 사용자 이름으로 설정
+      // 입금자명은 실제 입금자와 다를 수 있으므로 자동 변경하지 않음
+      depositorName: prev.depositorName
     }));
+  };
+
+  // OTP 요청 (스테이징 단계에서 이미 발송되었다고 가정하므로 별도 서버 호출 없음)
+  const handleOtpRequest = async () => {
+    // 필요 시 서버에 별도 요청을 추가할 수 있으나, 현재는 no-op
+    return;
+  };
+
+  // OTP 재발급
+  const handleOtpReissue = async () => {
+    if (!stagedToken || !otpPhoneNumber) {
+      throw new Error('재발급할 스테이징 정보가 없습니다.');
+    }
+    setIsOtpReissuing(true);
+    try {
+      const { reissueStagedOtp } = await import('../api/individual');
+      await reissueStagedOtp(stagedToken, otpPhoneNumber);
+    } finally {
+      setIsOtpReissuing(false);
+    }
+  };
+
+  // OTP 인증 완료 → commit 호출
+  const handleOtpSubmit = async (otp: string) => {
+    if (!stagedToken || !otpPhoneNumber) {
+      throw new Error('커밋할 스테이징 정보가 없습니다.');
+    }
+    setIsOtpSubmitting(true);
+    try {
+      const { commitStagedRegistration } = await import('../api/individual');
+      await commitStagedRegistration(stagedToken, otp, otpPhoneNumber);
+
+      // 커밋 성공 시 스테이징 정보 정리 및 모달 닫기
+      setStagedToken(null);
+      setOtpPhoneNumber(null);
+      setIsOtpModalOpen(false);
+      // 성공 페이지로 이동 (기존 로직 재사용)
+      const isEditMode =
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('mode') === 'edit';
+      const modeParam = isEditMode ? '&mode=edit' : '';
+      router.push(
+        `/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(
+          formData.name
+        )}${modeParam}`
+      );
+    } catch (error) {
+      const message = formatError(error);
+      setSubmitError(message);
+      throw error;
+    } finally {
+      setIsOtpSubmitting(false);
+    }
+  };
+
+  const closeOtpModal = () => {
+    setIsOtpModalOpen(false);
   };
 
   return {
@@ -528,7 +629,19 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     modal: {
       isIdPasswordModalOpen,
       setIsIdPasswordModalOpen,
-      handleUserDataLoad
+      handleUserDataLoad,
+      handleLoadInfo,
+      isLoadingInfo,
+      otp: {
+        isOpen: isOtpModalOpen,
+        phoneNumber: otpPhoneNumber,
+        isSubmitting: isOtpSubmitting,
+        isReissuing: isOtpReissuing,
+        handleRequest: handleOtpRequest,
+        handleReissue: handleOtpReissue,
+        handleSubmit: handleOtpSubmit,
+        close: closeOtpModal,
+      },
     },
     error: {
       submitError,

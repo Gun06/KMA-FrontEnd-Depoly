@@ -15,6 +15,7 @@ import PaymentInfoSection from "./components/PaymentInfoSection";
 import BottomNoticeSection from "./components/BottomNoticeSection";
 import SubmitButton from "./components/SubmitButton";
 import IdPasswordModal from "@/components/event/Registration/IdPasswordModal";
+import RegistrationOtpModal from "@/components/event/Registration/RegistrationOtpModal";
 
 export default function IndividualApplyPage({ params }: { params: { eventId: string } }) {
   const { eventInfo, isLoading: isLoadingEvent, error: eventError, refetch } = useEventRegistration(params.eventId);
@@ -23,7 +24,6 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
     setFormData: _setFormData,
     openDropdown,
     setOpenDropdown,
-    idCheckResult,
     isSubmitted,
     isFormValid,
     refs,
@@ -76,13 +76,13 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
               {/* 개인정보 섹션 */}
               <PersonalInfoSection
                 formData={formData}
-                idCheckResult={idCheckResult}
                 openDropdown={openDropdown}
                 onInputChange={handlers.handleInputChange}
-                onIdCheck={handlers.handleIdCheck}
                 onAddressSelect={handlers.handleAddressSelect}
                 onDropdownToggle={setOpenDropdown}
                 onOpenIdPasswordModal={() => modal.setIsIdPasswordModalOpen(true)}
+                onLoadInfo={modal.handleLoadInfo}
+                isLoadingInfo={modal.isLoadingInfo}
                 refs={refs}
               />
 
@@ -133,6 +133,20 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
         isOpen={modal.isIdPasswordModalOpen}
         onClose={() => modal.setIsIdPasswordModalOpen(false)}
         onSuccess={modal.handleUserDataLoad}
+        initialAccountId={formData.jeonmahyupId}
+      />
+      
+      {/* 신청용 전화번호 OTP 모달 */}
+      <RegistrationOtpModal
+        isOpen={modal.otp.isOpen}
+        onClose={modal.otp.close}
+        onSubmit={modal.otp.handleSubmit}
+        onReissue={modal.otp.handleReissue}
+        onRequestOtp={modal.otp.handleRequest}
+        phoneNumber={modal.otp.phoneNumber || undefined}
+        isSubmitting={modal.otp.isSubmitting}
+        isReissuing={modal.otp.isReissuing}
+        isEditMode={isEditMode}
       />
       
       {/* 오류 모달 */}

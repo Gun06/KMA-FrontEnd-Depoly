@@ -44,14 +44,10 @@ export const handleIdCheck = async (
   }
 
   try {
-    // TODO: 실제 API 호출로 변경
-    // const response = await checkIdExists(jeonmahyupId);
-    // setIdCheckResult(response.exists ? 'exists' : 'not_exists');
-    
-    // 임시로 랜덤 결과 반환
-    const exists = Math.random() > 0.5;
+    const { checkJeonmahyupId } = await import('../api/individual');
+    const exists = await checkJeonmahyupId(jeonmahyupId);
     setIdCheckResult(exists ? 'exists' : 'not_exists');
-  } catch (error) {
+  } catch (_error) {
     setIdCheckResult('none');
   }
 };
@@ -136,7 +132,7 @@ export const handleGroupNameCheck = async (
       setNameCheckResult('available');
       return true;
     }
-  } catch (error) {
+  } catch (_error) {
     setNameCheckResult('error');
     return false;
   }
@@ -177,7 +173,7 @@ export const handleGroupIdCheck = async (
       setIdCheckResult('available');
       return true;
     }
-  } catch (error) {
+  } catch (_error) {
     setIdCheckResult('error');
     return false;
   }

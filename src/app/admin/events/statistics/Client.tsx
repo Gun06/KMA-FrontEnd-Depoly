@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import EventSelector from './components/EventSelector';
 import StatisticsDisplay from './components/StatisticsDisplay';
-import { useEventDistanceStatistics, useEventStatistics } from './hooks/useStatistics';
+import { useEventStatistics } from './hooks/useStatistics';
 
 export default function StatisticsClient() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -16,11 +16,6 @@ export default function StatisticsClient() {
     isLoading,
     error,
   } = useEventStatistics(selectedEventId);
-  const {
-    data: distanceStatisticsData,
-    isLoading: isDistanceLoading,
-    error: distanceError,
-  } = useEventDistanceStatistics(selectedEventId);
 
   const handleSelectEvent = (eventId: string) => {
     setSelectedEventId(eventId || null);
@@ -48,28 +43,24 @@ export default function StatisticsClient() {
         </div>
       )}
 
-      {selectedEventId && (isLoading || isDistanceLoading) && (
+      {selectedEventId && isLoading && (
         <div className="flex items-center justify-center py-12">
           <div className="text-gray-500">통계 데이터를 불러오는 중...</div>
         </div>
       )}
 
-      {selectedEventId && (error || distanceError) && (
+      {selectedEventId && error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <div className="text-red-800 font-medium mb-2">오류 발생</div>
           <div className="text-red-600">
             통계 데이터를 불러오는 중 오류가 발생했습니다.
-            {(error instanceof Error && ` (${error.message})`) ||
-              (distanceError instanceof Error && ` (${distanceError.message})`)}
+            {error instanceof Error && ` (${error.message})`}
           </div>
         </div>
       )}
 
       {selectedEventId && statisticsData && (
-        <StatisticsDisplay
-          data={statisticsData}
-          distanceData={distanceStatisticsData}
-        />
+        <StatisticsDisplay data={statisticsData} />
       )}
     </div>
   );

@@ -34,19 +34,19 @@ const verifyGroupRegistration = async (eventId: string, data: { groupName: strin
         const status = response.status;
 
         if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다름니다.');
+          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
         }
         if (status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
         // 기타 케이스
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
       } catch (_e) {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
       }
     }
     
@@ -171,10 +171,10 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
         // 성공 시 결과 페이지로 이동 (organizationAccount만 전달)
         router.push(`/event/${eventId}/registration/confirm/group/result?orgAccount=${encodeURIComponent(response.organizationAccount)}`);
       } else {
-        setError('신청정보 또는 비밀번호가 다름니다.');
+        setError('신청정보 또는 비밀번호가 다릅니다.');
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다름니다.');
+      setError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다릅니다.');
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +232,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
       });
       router.push(`/event/${eventId}/registration/confirm/group/individual/result?${params.toString()}`);
     } catch (error) {
-      setIndividualError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다름니다.');
+      setIndividualError(error instanceof Error ? error.message : '신청정보 또는 비밀번호가 다릅니다.');
       setIndividualLoading(false);
     }
   };

@@ -25,6 +25,13 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
   const [openDropdown, setOpenDropdown] = useState<'phone1' | 'emailDomain' | null>(null);
   const [editData, setEditData] = useState<any>(null); // 수정 모드 데이터 저장
 
+  // OTP 인증용 스테이징 정보
+  const [stagedToken, setStagedToken] = useState<string | null>(null);
+  const [otpPhoneNumber, setOtpPhoneNumber] = useState<string | null>(null);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isOtpSubmitting, setIsOtpSubmitting] = useState(false);
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false);
+
   // refs for dropdowns
   const phone1Ref = useRef<HTMLDivElement>(null);
   // const emailDomainRef = useRef<HTMLDivElement>(null); // API 구조 변경으로 제거
@@ -274,7 +281,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           }
         }
 
-        let response;
+        let response: any;
         if (isEdit) {
           // 수정 모드인데 editData가 없으면 에러
           if (!currentEditData) {
@@ -314,14 +321,16 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           const requestData = transformGroupFormDataToApi(formData, eventInfo);
           response = await submitGroupRegistration(eventId, requestData);
         }
-
-        // 성공 시 오류 메시지 초기화
-        setSubmitError('');
-
-        // 성공 페이지로 이동
-        const modeParam = isEdit ? '&mode=edit' : '';
-        const successUrl = `/event/${eventId}/registration/apply/group/success?name=${encodeURIComponent(formData.groupName)}&groupName=${encodeURIComponent(formData.groupName)}&participantCount=${formData.participants.length}${modeParam}`;
-        router.push(successUrl);
+        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
+        if (response && response.stagedToken) {
+          setStagedToken(response.stagedToken as string);
+          const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+          setOtpPhoneNumber(phoneNumber);
+          setIsOtpModalOpen(true);
+          setSubmitError('');
+        } else {
+          throw new Error('스테이징 토큰을 받지 못했습니다.');
+        }
       } catch (error) {
         const errorMessage = formatError(error);
         setSubmitError(errorMessage);
@@ -333,6 +342,59 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
       const errorMessage = getGroupFormValidationErrors(formData);
       setSubmitError(errorMessage);
     }
+  };
+
+  // OTP 요청 (스테이징 단계에서 이미 발송되었다고 가정하므로 별도 서버 호출 없음)
+  const handleOtpRequest = async () => {
+    return;
+  };
+
+  // OTP 재발급
+  const handleOtpReissue = async () => {
+    if (!stagedToken || !otpPhoneNumber) {
+      throw new Error('재발급할 스테이징 정보가 없습니다.');
+    }
+    setIsOtpReissuing(true);
+    try {
+      const { reissueStagedOtp } = await import('../api/individual');
+      await reissueStagedOtp(stagedToken, otpPhoneNumber);
+    } finally {
+      setIsOtpReissuing(false);
+    }
+  };
+
+  // OTP 인증 완료 → commit 호출
+  const handleOtpSubmit = async (otp: string) => {
+    if (!stagedToken || !otpPhoneNumber) {
+      throw new Error('커밋할 스테이징 정보가 없습니다.');
+    }
+    setIsOtpSubmitting(true);
+    try {
+      const { commitStagedRegistration } = await import('../api/individual');
+      await commitStagedRegistration(stagedToken, otp, otpPhoneNumber);
+
+      setStagedToken(null);
+      setOtpPhoneNumber(null);
+      setIsOtpModalOpen(false);
+
+      const modeParam = isEditMode ? '&mode=edit' : '';
+      const successUrl = `/event/${eventId}/registration/apply/group/success?name=${encodeURIComponent(
+        formData.groupName
+      )}&groupName=${encodeURIComponent(
+        formData.groupName
+      )}&participantCount=${formData.participants.length}${modeParam}`;
+      router.push(successUrl);
+    } catch (error) {
+      const errorMessage = formatError(error);
+      setSubmitError(errorMessage);
+      throw error;
+    } finally {
+      setIsOtpSubmitting(false);
+    }
+  };
+
+  const closeOtpModal = () => {
+    setIsOtpModalOpen(false);
   };
 
   return {
@@ -369,6 +431,16 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
     error: {
       submitError,
       clearSubmitError: () => setSubmitError('')
-    }
+    },
+    otp: {
+      isOpen: isOtpModalOpen,
+      phoneNumber: otpPhoneNumber,
+      isSubmitting: isOtpSubmitting,
+      isReissuing: isOtpReissuing,
+      handleRequest: handleOtpRequest,
+      handleReissue: handleOtpReissue,
+      handleSubmit: handleOtpSubmit,
+      close: closeOtpModal,
+    },
   };
 };

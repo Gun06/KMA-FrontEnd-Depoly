@@ -14,14 +14,12 @@ import GroupPaymentInfoSection from "./components/GroupPaymentInfoSection";
 import BottomNoticeSection from "./components/BottomNoticeSection";
 import SubmitButton from "./components/SubmitButton";
 import ParticipantsSection from "@/components/event/GroupRegistration/ParticipantsSection";
+import RegistrationOtpModal from "@/components/event/Registration/RegistrationOtpModal";
 
 export default function GroupApplyPage({ params }: { params: { eventId: string } }) {
   const { eventInfo, isLoading: isLoadingEvent, error: eventError, refetch } = useEventRegistration(params.eventId);
   const {
     formData,
-    setFormData,
-    isGroupNameChecked,
-    isGroupIdChecked,
     groupNameCheckResult,
     groupIdCheckResult,
     isEditMode,
@@ -31,7 +29,8 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
     setOpenDropdown,
     refs,
     handlers,
-    error
+    error,
+    otp,
   } = useGroupForm(params.eventId, eventInfo);
   
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -123,6 +122,19 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
         </div>
       </div>
       
+      {/* 단체 신청용 전화번호 OTP 모달 */}
+      <RegistrationOtpModal
+        isOpen={otp.isOpen}
+        onClose={otp.close}
+        onSubmit={otp.handleSubmit}
+        onReissue={otp.handleReissue}
+        onRequestOtp={otp.handleRequest}
+        phoneNumber={otp.phoneNumber || undefined}
+        isSubmitting={otp.isSubmitting}
+        isReissuing={otp.isReissuing}
+        isEditMode={isEditMode}
+      />
+
       {/* 오류 모달 */}
       <ErrorModal
         isOpen={isErrorModalOpen}

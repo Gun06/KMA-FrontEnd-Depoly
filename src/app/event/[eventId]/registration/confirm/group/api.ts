@@ -30,24 +30,22 @@ export const fetchIndividualGroupRegistration = async (
       
       // 에러 메시지 파싱 시도
       try {
-        const errorJson = JSON.parse(errorText);
+        JSON.parse(errorText); // 파싱만 시도하여 형식 검증
         const status = response.status;
-        const code = errorJson?.code || '';
-        const serverMsg = errorJson?.message || '';
 
         if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다름니다.');
+          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
         }
         if (status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
-      } catch (parseError) {
+        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+      } catch (_parseError) {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
-        throw new Error('신청정보 또는 비밀번호가 다름니다.');
+        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
       }
     }
     

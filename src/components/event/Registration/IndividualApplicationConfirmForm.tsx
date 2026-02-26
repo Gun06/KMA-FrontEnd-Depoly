@@ -149,19 +149,19 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
           const status = response.status;
 
           if (status === 400 || status === 404) {
-            setError('신청정보 또는 비밀번호가 다름니다.');
+            setError('신청정보 또는 비밀번호가 다릅니다.');
           } else if (status >= 500) {
             setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           } else {
-            setError('신청정보 또는 비밀번호가 다름니다.');
+            setError('신청정보 또는 비밀번호가 다릅니다.');
           }
         } catch (_e) {
           if (response.status === 400 || response.status === 404) {
-            setError('신청정보 또는 비밀번호가 다름니다.');
+            setError('신청정보 또는 비밀번호가 다릅니다.');
           } else if (response.status >= 500) {
             setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
           } else {
-            setError('신청정보 또는 비밀번호가 다름니다.');
+            setError('신청정보 또는 비밀번호가 다릅니다.');
           }
         }
       }

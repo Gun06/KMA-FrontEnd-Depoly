@@ -75,11 +75,24 @@ export const transformFormDataToApi = (
   
   const apiData = {
     registrationPersonalInfo: {
+      // 전마협 아이디 (nullable/optional) - 개인 신청에만 사용
+      kmaId:
+        formData.jeonmahyupId && formData.jeonmahyupId.trim().length > 0
+          ? formData.jeonmahyupId.trim()
+          : undefined,
       registerMustInfo: {
         personalInfo: {
-          birth: formatBirthDate(formData.birthYear, formData.birthMonth, formData.birthDay),
+          birth: formatBirthDate(
+            formData.birthYear,
+            formData.birthMonth,
+            formData.birthDay
+          ),
           name: formData.name,
-          phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
+          phNum: formatPhoneNumber(
+            formData.phone1,
+            formData.phone2,
+            formData.phone3
+          ),
           email: formatEmail(formData.email1, formData.emailDomain),
           gender: formData.gender === 'male' ? 'M' : 'F'
         },
@@ -91,7 +104,10 @@ export const transformFormDataToApi = (
         addressDetail: formData.detailedAddress
       },
       paymentDefaultInfo: {
-        paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
+        paymentType:
+          formData.paymentMethod === 'bank_transfer'
+            ? 'ACCOUNT_TRANSFER'
+            : 'CARD',
         paymenterName: formData.depositorName
       }
     },
@@ -160,12 +176,29 @@ export const transformFormDataToUpdateApi = (
   
   const apiData = {
     registrationPersonalInfo: {
+      // 전마협 아이디 (nullable/optional)
+      kmaId:
+        formData.jeonmahyupId && formData.jeonmahyupId.trim().length > 0
+          ? formData.jeonmahyupId.trim()
+          : undefined,
       registerMustInfo: {
         personalInfo: {
-          birth: formatBirthDate(formData.birthYear, formData.birthMonth, formData.birthDay),
+          birth: formatBirthDate(
+            formData.birthYear,
+            formData.birthMonth,
+            formData.birthDay
+          ),
           name: formData.name,
-          phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
-          email: formatEmail(formData.email1, formData.emailDomain, formData.email2),
+          phNum: formatPhoneNumber(
+            formData.phone1,
+            formData.phone2,
+            formData.phone3
+          ),
+          email: formatEmail(
+            formData.email1,
+            formData.emailDomain,
+            formData.email2
+          ),
           gender: formData.gender === 'male' ? 'M' : 'F'
         },
         registrationInfo

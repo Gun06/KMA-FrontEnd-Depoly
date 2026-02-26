@@ -4,20 +4,21 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import InquiryItem from './MagazineItem';
 import { InquiryResponse, InquiryItem as ApiInquiryItem } from '@/types/event';
-import { SecretPostModal } from '@/components/common/Modal/SecretPostModal';
+import { useAuth } from '@/hooks/useAuth';
+import { canAccessSecretPost, canWritePost } from '@/utils/authUtils';
 
 export default function InquirySection() {
   const router = useRouter();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   
   // API 데이터 상태
   const [inquiryData, setInquiryData] = useState<ApiInquiryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // 비밀글 비밀번호 모달 상태
-  const [isSecretModalOpen, setIsSecretModalOpen] = useState(false);
-  const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null);
-  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  // 모달 상태
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSecretModal, setShowSecretModal] = useState(false);
 
   // API에서 문의사항 데이터 가져오기
   useEffect(() => {
@@ -69,49 +70,31 @@ export default function InquirySection() {
     fetchInquiryData();
   }, []);
 
+  // 비밀글 접근 권한 확인 (서버에서 JWT로 검증하므로 단순화)
+  const checkSecretAccess = React.useCallback((item: ApiInquiryItem) => {
+    if (!item.questionHeader.secret) return true;
+    
+    // 인증 상태가 로딩 중이면 보수적으로 접근 불가로 처리
+    if (authLoading) return false;
+    
+    // 로그인되어 있으면 서버에서 권한 검증
+    return isAuthenticated;
+  }, [isAuthenticated, authLoading]);
+
   // 문의사항 클릭 핸들러
   const handleInquiryClick = (item: ApiInquiryItem) => {
-    // 비밀글이면 로그인 여부와 관계없이 비밀번호 모달 표시
-    if (item.questionHeader.secret) {
-      setSelectedInquiryId(item.questionHeader.id);
-      setIsSecretModalOpen(true);
+    // 비밀글인 경우 권한 확인
+    if (item.questionHeader.secret && !checkSecretAccess(item)) {
+      if (!isAuthenticated) {
+        setShowLoginModal(true);
+      } else {
+        setShowSecretModal(true);
+      }
       return;
     }
     
-    // 공개글이면 상세 페이지로 이동
+    // 권한이 있으면 상세 페이지로 이동
     router.push(`/notice/inquiry/particular?id=${item.questionHeader.id}`);
-  };
-
-  const handleSecretModalClose = () => {
-    setIsSecretModalOpen(false);
-    setSelectedInquiryId(null);
-  };
-
-  const handlePasswordConfirm = async (password: string) => {
-    if (!selectedInquiryId) return;
-
-    try {
-      setIsPasswordLoading(true);
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-      const API_ENDPOINT = `${API_BASE_URL}/api/v0/public/question/${selectedInquiryId}`;
-
-      const response = await fetch(API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
-
-      if (!response.ok) {
-        throw new Error('비밀번호가 올바르지 않습니다.');
-      }
-
-      router.push(`/notice/inquiry/particular?id=${selectedInquiryId}&password=${encodeURIComponent(password)}`);
-      handleSecretModalClose();
-    } finally {
-      setIsPasswordLoading(false);
-    }
   };
 
   // 표시할 데이터 결정 (API 데이터만 사용)
@@ -123,13 +106,13 @@ export default function InquirySection() {
         month: '2-digit',
         day: '2-digit'
       }).replace(/\./g, '.').replace(/\s/g, ''),
-      title: item.questionHeader.title,
+      title: item.questionHeader.secret && !isAuthenticated ? '비밀글입니다' : item.questionHeader.title,
       description: item.questionHeader.title,
       link: `/notice/inquiry/particular?id=${item.questionHeader.id}`,
       secret: item.questionHeader.secret,
-      canAccess: !item.questionHeader.secret
+      canAccess: checkSecretAccess(item)
     }));
-  }, [inquiryData]);
+  }, [inquiryData, checkSecretAccess, isAuthenticated]);
 
   return (
     <div className="bg-white rounded-lg shadow-none border border-white pt-4 pr-4 pb-4 pl-4 md:pt-5 md:pr-5 md:pb-5 md:pl-6">
@@ -214,12 +197,56 @@ export default function InquirySection() {
         )}
       </div>
 
-      <SecretPostModal
-        isOpen={isSecretModalOpen}
-        onClose={handleSecretModalClose}
-        onConfirm={handlePasswordConfirm}
-        isLoading={isPasswordLoading}
-      />
+      {/* 로그인 모달 */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">로그인이 필요합니다</h3>
+            <p className="text-gray-600 mb-6">
+              비밀글을 보시려면 로그인해주세요.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  // 현재 경로를 returnUrl로 설정
+                  const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
+                  router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                로그인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 비밀글 접근 거부 모달 */}
+      {showSecretModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">접근 권한이 없습니다</h3>
+            <p className="text-gray-600 mb-6">
+              비밀글은 작성자만 볼 수 있습니다.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSecretModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

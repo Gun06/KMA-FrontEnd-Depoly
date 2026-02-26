@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import AppInstallBanner from '@/components/main/AppInstallBanner';
 import logoImage from '@/assets/images/main/logo.jpg';
 import searchIcon from '@/assets/icons/main/search.svg';
 import userIcon from '@/assets/icons/main/user.svg';
@@ -98,7 +97,6 @@ export default function Header() {
   const { isCustom } = useBreakpoints();
   const { isLoggedIn, user, accessToken } = useAuthStore();
   const router = useRouter();
-  const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   // Hydration mismatch 방지: 클라이언트 마운트 후에만 토큰/스토어 기반 판별
   const [mounted, setMounted] = useState(false);
@@ -215,30 +213,9 @@ export default function Header() {
     }
   }, [isCustom, updateState]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const updateMainOffset = () => {
-      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      const offset = isBannerVisible ? (isDesktop ? '128px' : '120px') : '64px';
-      document.documentElement.style.setProperty('--kma-main-header-offset', offset);
-    };
-
-    updateMainOffset();
-    window.addEventListener('resize', updateMainOffset);
-    return () => {
-      window.removeEventListener('resize', updateMainOffset);
-    };
-  }, [isBannerVisible]);
-
-  const hasTopBanner = isBannerVisible;
-  const panelTopClass = hasTopBanner ? 'top-[120px] md:top-32' : 'top-16';
-  const mobileToggleTopClass = hasTopBanner ? 'top-[4.1rem]' : 'top-3';
-
 
   return (
     <header className="bg-white fixed top-0 left-0 w-full z-[150] shadow-sm">
-      <AppInstallBanner onVisibilityChange={setIsBannerVisible} />
       <div className="w-full max-w-[1920px] mx-auto px-4">
         <div
           className="grid items-center h-16"
@@ -375,7 +352,7 @@ export default function Header() {
           </div>
 
           {/* 모바일 햄버거/닫기 버튼 */}
-          <div className={`custom:hidden fixed right-4 flex items-center space-x-2 z-[160] ${mobileToggleTopClass}`}>
+          <div className="custom:hidden fixed top-3 right-4 flex items-center space-x-2 z-[160]">
             {/* 햄버거/닫기 버튼 */}
             <button
               className="p-2 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
@@ -433,7 +410,7 @@ export default function Header() {
           <div className="fixed inset-0 z-[90]">
             {/* 블러 배경 - 헤더 아래쪽에만 적용 */}
             <div
-              className={`absolute left-0 right-0 bottom-0 bg-white bg-opacity-20 ${panelTopClass}`}
+              className="absolute top-16 left-0 right-0 bottom-0 bg-white bg-opacity-20"
               style={{
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
@@ -442,7 +419,7 @@ export default function Header() {
             />
 
             <motion.div
-              className={`absolute left-0 w-full bg-white z-[95] shadow-lg ${panelTopClass}`}
+              className="absolute left-0 top-16 w-full bg-white z-[95] shadow-lg"
               initial="hidden"
               animate="visible"
               exit="hidden"
@@ -506,7 +483,7 @@ export default function Header() {
           <div className="fixed inset-0 z-[90]">
             {/* 블러 배경 - 헤더 아래쪽에만 적용 */}
             <div
-              className={`absolute left-0 right-0 bottom-0 bg-white bg-opacity-20 ${panelTopClass}`}
+              className="absolute top-16 left-0 right-0 bottom-0 bg-white bg-opacity-20"
               style={{
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
@@ -515,7 +492,7 @@ export default function Header() {
             />
 
             <motion.div
-              className={`absolute left-0 w-full bg-white z-[95] shadow-lg ${panelTopClass}`}
+              className="absolute left-0 top-16 w-full bg-white z-[95] shadow-lg"
               initial="hidden"
               animate="visible"
               exit="hidden"
@@ -581,7 +558,7 @@ export default function Header() {
             <div className="custom:hidden fixed inset-0 z-[110]">
               {/* 헤더 아래쪽만 블러 처리 */}
               <div
-                className={`absolute left-0 right-0 bottom-0 bg-white bg-opacity-20 ${panelTopClass}`}
+                className="absolute top-16 left-0 right-0 bottom-0 bg-white bg-opacity-20"
                 style={{
                   backdropFilter: 'blur(8px)',
                   WebkitBackdropFilter: 'blur(8px)',

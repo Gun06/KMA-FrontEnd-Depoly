@@ -1,9 +1,10 @@
 'use client';
-import React, { useMemo, useCallback, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores';
 import { useMainBanner } from '@/components/providers/MainBannerContext';
+import { forceLogout } from '@/services/authPublic';
 
 interface EventHeaderProps {
   eventName?: string;
@@ -31,17 +32,15 @@ export default function EventHeader({
 }: EventHeaderProps) {
   const { mainBannerColor: contextBannerColor } = useMainBanner();
   const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const [desktopOpenKey, setDesktopOpenKey] = React.useState<string | null>(
     null
   );
-  const [mobileExpandedKey, setMobileExpandedKey] = React.useState<
-    string | null
-  >(null);
-  const { isLoggedIn, user, logout } = useAuthStore();
+  const [mobileExpandedKey, setMobileExpandedKey] = React.useState<string | null>(
+    null
+  );
+  const { isLoggedIn, user } = useAuthStore();
   const pathname = usePathname();
-  const router = useRouter();
 
   // API에서 이벤트 정보 가져오기 (캐시 사용)
   useEffect(() => {
@@ -66,7 +65,6 @@ export default function EventHeader({
           }
         }
 
-        setIsLoading(true);
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
         const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/mainpage-images`;
 
@@ -81,10 +79,9 @@ export default function EventHeader({
             timestamp: Date.now()
           }));
         }
-      } catch (error) {
+      } catch (_error) {
         // 이벤트 정보를 가져오는데 실패했습니다
       } finally {
-        setIsLoading(false);
       }
     };
 
@@ -122,8 +119,7 @@ export default function EventHeader({
       // },
       { label: '신청하기', href: `/event/${eventId}/registration/apply` },
       { label: '신청 확인', href: `/event/${eventId}/registration/confirm` },
-      // 서비스 준비중: 버스예약 임시 비활성화 → 준비중 페이지로 연결
-      { label: '마라톤 버스예약', href: `/event/${eventId}/registration/bus/coming-soon` },
+      // 마라톤 버스예약 메뉴 제거 (현재는 별도 페이지 제공하지 않음)
     ],
     records: [
       { label: '개인 기록', href: `/event/${eventId}/records` },
@@ -292,16 +288,21 @@ export default function EventHeader({
               (구)전마협
               <span aria-hidden>↗</span>
             </a>
-            <div className="text-sm text-white/50 whitespace-nowrap">
+            <a
+              href="/"
+              className="text-sm text-white/70 hover:text-white whitespace-nowrap"
+            >
               전국마라톤협회
-            </div>
+            </a>
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-white whitespace-nowrap">
                   {user?.account || '회원'} 님
                 </span>
                 <button
-                  onClick={() => logout()}
+                  onClick={() => {
+                    forceLogout();
+                  }}
                   className="p-2 rounded bg-white/10 hover:bg-white/20 transition-colors"
                   title="로그아웃"
                   aria-label="로그아웃"
@@ -321,10 +322,19 @@ export default function EventHeader({
                 </button>
               </div>
             ) : (
-              // 로그인 버튼 비활성화
-              <div className="text-sm text-white/50 whitespace-nowrap">
+              <button
+                type="button"
+                className="text-sm text-white/70 hover:text-white whitespace-nowrap"
+                onClick={() => {
+                  const returnUrl =
+                    typeof window !== 'undefined' ? window.location.pathname : '/';
+                  window.location.href = `/login?returnUrl=${encodeURIComponent(
+                    returnUrl
+                  )}`;
+                }}
+              >
                 로그인
-              </div>
+              </button>
             )}
           </div>
 
@@ -439,9 +449,13 @@ export default function EventHeader({
                   >
                     (구)전마협 ↗
                   </a>
-                  <div className="text-sm text-white/50">
+                  <a
+                    href="/"
+                    className="text-sm text-white/70 hover:text-white"
+                    onClick={() => setIsOpen(false)}
+                  >
                     전국마라톤협회
-                  </div>
+                  </a>
                   {isLoggedIn ? (
                     <>
                       <span className="text-sm text-white whitespace-nowrap">
@@ -450,7 +464,7 @@ export default function EventHeader({
                       <button
                         className="text-sm text-white px-3 py-1 rounded bg-white/10 hover:bg-white/20"
                         onClick={() => {
-                          logout();
+                          forceLogout();
                           setIsOpen(false);
                         }}
                       >

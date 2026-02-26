@@ -31,7 +31,8 @@ export default function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
     if (items[1]?.label === "대회안내") {
       baseItems.push({ label: "대회안내", href: `/event/${eventId}/guide/overview` });
     } else if (items[1]?.label === "참가신청") {
-      baseItems.push({ label: "참가신청", href: `/event/${eventId}/registration/agreement` });
+      // 동의 페이지를 거치지 않고 바로 신청하기로 이동
+      baseItems.push({ label: "참가신청", href: `/event/${eventId}/registration/apply` });
     } else if (items[1]?.label === "기록조회") {
       baseItems.push({ label: "기록조회", href: `/event/${eventId}/records` });
     } else if (items[1]?.label === "게시판") {

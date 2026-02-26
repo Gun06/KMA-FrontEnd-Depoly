@@ -263,7 +263,7 @@ export default function EventInquiryWritePage() {
           subMenu: isEditMode ? "문의사항 수정" : "문의사항 작성"
         }}
       >
-        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+        <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -283,7 +283,7 @@ export default function EventInquiryWritePage() {
         subMenu: isEditMode ? "문의사항 수정" : "문의사항 작성"
       }}
     >
-      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+      <div className="w-full h-full px-8 py-12 sm:px-12 lg:px-16">
         <div className="max-w-6xl mx-auto">
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-8">

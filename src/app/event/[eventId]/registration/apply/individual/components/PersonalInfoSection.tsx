@@ -10,13 +10,15 @@ import { genderOptions, generateYearOptions, generateMonthOptions, generateDayOp
 
 interface PersonalInfoSectionProps {
   formData: IndividualFormData;
-  idCheckResult: IdCheckResult;
+  idCheckResult?: IdCheckResult;
   openDropdown: OpenDropdown;
   onInputChange: (field: keyof IndividualFormData, value: string) => void;
-  onIdCheck: () => void;
+  onIdCheck?: () => void;
   onAddressSelect: (postalCode: string, address: string) => void;
   onDropdownToggle: (dropdown: OpenDropdown) => void;
   onOpenIdPasswordModal: () => void;
+  onLoadInfo?: () => void;
+  isLoadingInfo?: boolean;
   refs: {
     yearRef: React.RefObject<HTMLDivElement>;
     monthRef: React.RefObject<HTMLDivElement>;
@@ -29,10 +31,12 @@ export default function PersonalInfoSection({
   idCheckResult,
   openDropdown,
   onInputChange,
-  onIdCheck: _onIdCheck,
+  onIdCheck,
   onAddressSelect,
   onDropdownToggle,
   onOpenIdPasswordModal,
+  onLoadInfo,
+  isLoadingInfo = false,
   refs
 }: PersonalInfoSectionProps) {
   return (
@@ -43,6 +47,40 @@ export default function PersonalInfoSection({
       </div>
       
       <div className="space-y-4 sm:space-y-6">
+        {/* 전마협 아이디 */}
+        <FormField label="전마협 아이디">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="전마협 아이디는 정보 불러오기로만 입력됩니다"
+              value={formData.jeonmahyupId}
+              readOnly
+              className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-gray-50 cursor-not-allowed"
+            />
+            <button
+              type="button"
+              onClick={onLoadInfo || onOpenIdPasswordModal}
+              disabled={isLoadingInfo}
+              className={`w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${
+                isLoadingInfo ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {isLoadingInfo ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  불러오는 중...
+                </span>
+              ) : (
+                '정보 불러오기 →'
+              )}
+            </button>
+          </div>
+        </FormField>
+        <hr className="border-gray-200" />
+        
         {/* 이름 */}
         <FormField label="이름" required>
           <input
@@ -150,32 +188,6 @@ export default function PersonalInfoSection({
           </div>
         </FormField>
         <hr className="border-gray-200" />
-        
-        {/* 전마협 아이디 - 주석 처리 (비활성화) */}
-        {/* <FormField label="전마협 아이디">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onOpenIdPasswordModal}
-              disabled
-              className="w-full sm:w-auto px-4 py-3 sm:py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 text-sm sm:text-base whitespace-nowrap flex items-center justify-center"
-            >
-              아이디 확인 →
-            </button>
-          </div>
-        </FormField>
-        
-        {idCheckResult !== 'none' && (
-          <div className={`text-sm sm:text-base mt-1 sm:ml-32 ${
-            idCheckResult === 'exists' ? 'text-green-600' : 'text-red-500'
-          }`}>
-            {idCheckResult === 'exists' 
-              ? '등록된 전마협 아이디입니다.' 
-              : '등록되지 않은 전마협 아이디입니다. 추후에 회원가입을 진행하세요.'
-            }
-          </div>
-        )}
-        <hr className="border-gray-200" /> */}
         
         {/* 주소 */}
         <FormField label="주소" required>

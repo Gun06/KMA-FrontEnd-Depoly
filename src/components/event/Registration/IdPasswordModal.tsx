@@ -1,20 +1,31 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { UserData } from '@/app/event/[eventId]/registration/apply/shared/api/individual';
 
 interface IdPasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (userData: UserData) => void;
+  onSuccess: (userData: UserData, accountId?: string) => void;
+  initialAccountId?: string; // 전마협 아이디 자동 채움용
 }
 
-export default function IdPasswordModal({ isOpen, onClose, onSuccess }: IdPasswordModalProps) {
+export default function IdPasswordModal({ isOpen, onClose, onSuccess, initialAccountId = '' }: IdPasswordModalProps) {
   const [formData, setFormData] = useState({
-    accountId: '',
+    accountId: initialAccountId,
     accountPw: ''
   });
+
+  // 모달이 열릴 때 initialAccountId가 있으면 자동 채움
+  useEffect(() => {
+    if (isOpen && initialAccountId) {
+      setFormData(prev => ({
+        ...prev,
+        accountId: initialAccountId
+      }));
+    }
+  }, [isOpen, initialAccountId]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -50,9 +61,9 @@ export default function IdPasswordModal({ isOpen, onClose, onSuccess }: IdPasswo
       // 성공 시 상태 메시지 표시
       setStatusMessage('회원 정보를 찾았습니다.');
       
-      // 잠시 후 부모 컴포넌트로 데이터 전달
+      // 잠시 후 부모 컴포넌트로 데이터 전달 (입력한 아이디도 함께 전달)
       setTimeout(() => {
-        onSuccess(userData);
+        onSuccess(userData, formData.accountId);
         // 폼 초기화
         setFormData({ accountId: '', accountPw: '' });
         setStatusMessage(null);
@@ -60,7 +71,9 @@ export default function IdPasswordModal({ isOpen, onClose, onSuccess }: IdPasswo
       }, 1000);
       
     } catch (error) {
-      setError(error instanceof Error ? error.message : '사용자 정보를 불러올 수 없습니다.');
+      // 에러 메시지 표시 (이미 API에서 message만 추출해서 전달)
+      const errorMessage = error instanceof Error ? error.message : '사용자 정보를 불러올 수 없습니다.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +93,7 @@ export default function IdPasswordModal({ isOpen, onClose, onSuccess }: IdPasswo
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">전마협 아이디 확인</h2>
           <button
             onClick={handleClose}
@@ -88,6 +101,15 @@ export default function IdPasswordModal({ isOpen, onClose, onSuccess }: IdPasswo
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* 안내 문구 */}
+        <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-gray-700 text-center">
+            개인 신청에 필요한 개인정보를 자동으로 불러올 수 있습니다.
+            <br />
+            <span className="text-xs text-gray-600">(이름, 전화번호, 생년월일, 주소, 상세주소, 우편번호, 이메일)</span>
+          </p>
         </div>
 
         {/* 폼 */}
