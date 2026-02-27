@@ -127,6 +127,16 @@ const ParticipantsSection = memo(function ParticipantsSection({
     eventInfo
   });
 
+  const existingParticipantsCount = useMemo(() => {
+    if (!isEditMode) return 0;
+    return participants.filter((participant) => Boolean(participant.registrationId)).length;
+  }, [isEditMode, participants]);
+
+  const firstNewParticipantIndex = useMemo(() => {
+    if (!isEditMode) return -1;
+    return participants.findIndex((participant) => !participant.registrationId);
+  }, [isEditMode, participants]);
+
   useEffect(() => {
     setPendingParticipantCount(participants.length);
   }, [participants.length]);
@@ -436,6 +446,8 @@ const ParticipantsSection = memo(function ParticipantsSection({
           </thead>
           <tbody>
             {participants.map((participant, index) => {
+              const isExistingParticipant = isEditMode && Boolean(participant.registrationId);
+              const isNewParticipant = isEditMode && !participant.registrationId;
               const paymentStatus = participant.paymentStatus?.toUpperCase();
               
               // 전체 행 블락 상태: 확인필요, 환불요청(전액/차액), 환불완료 상태
@@ -472,17 +484,36 @@ const ParticipantsSection = memo(function ParticipantsSection({
               const isDisabled = isRowBlocked;
               
               return (
-              <tr 
-                key={index} 
+              <React.Fragment key={index}>
+                {isEditMode && index === 0 && existingParticipantsCount > 0 && (
+                  <tr className="bg-gray-100 border-b border-gray-300">
+                    <td colSpan={10} className="px-4 py-2 text-sm font-semibold text-gray-700">
+                      기존 신청자 ({existingParticipantsCount}명)
+                    </td>
+                  </tr>
+                )}
+                {isEditMode && index === firstNewParticipantIndex && (
+                  <tr className="bg-blue-50 border-y border-blue-200">
+                    <td colSpan={10} className="px-4 py-2 text-sm font-semibold text-blue-700">
+                      신규 추가 신청자 ({participants.length - existingParticipantsCount}명)
+                    </td>
+                  </tr>
+                )}
+              <tr
                 className={`border-b border-gray-200 ${
-                  isDisabled 
-                    ? 'bg-gray-50 opacity-75 cursor-not-allowed' 
+                  isDisabled
+                    ? 'bg-gray-50 opacity-75 cursor-not-allowed'
                     : ''
                 }`}
                 style={isDisabled ? { pointerEvents: 'none' } : {}}
               >
                 <td className="px-3 py-3 text-center text-sm w-20 border-r border-gray-200">
-                  <div className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-1.5">
+                    {isNewParticipant && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold leading-none">
+                        신규
+                      </span>
+                    )}
                     {index + 1}.
                     {isDisabled && (
                       <span className="text-xs text-orange-600 font-semibold" title="수정불가">🔒</span>
@@ -708,7 +739,6 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 <td className="px-3 py-3 text-center text-sm w-16">
                   {(() => {
                     // 수정 모드에서는 기존 참가자(registrationId가 있는 참가자)는 삭제 불가
-                    const isExistingParticipant = isEditMode && participant.registrationId;
                     const canDelete = !isDisabled && (!isEditMode || !isExistingParticipant);
                     
                     return (
@@ -741,6 +771,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                   })()}
                 </td>
               </tr>
+              </React.Fragment>
               );
             })}
           </tbody>
