@@ -107,7 +107,7 @@ export default function EventUploader({
       {!hasFile && (
         readOnly ? (
           // ✅ 프리필(읽기 전용) + 파일 없음 → 안내 문구만 표시
-          <div className="text-sm text-[#8A949E] py-2" role="status">
+          <div className="text-[13px] text-[#8A949E] py-2" role="status">
             {emptyText}
           </div>
         ) : (
@@ -122,7 +122,7 @@ export default function EventUploader({
               showIcon
               className={cn("self-start", buttonClassName)}
             />
-            <p className="text-xs sm:text-sm text-[#8A949E]">
+            <p className="text-[13px] text-[#8A949E]">
               선택된 파일 없음 / {maxSizeMB}MB 이내
             </p>
           </div>
@@ -141,7 +141,7 @@ export default function EventUploader({
           <div className={cn("flex items-center gap-3 min-w-0 w-full", hasError ? "" : "h-full")}>
             {/* 파일명 + 용량 */}
             <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
-              <span className="truncate text-[15px] text-[#0F1113] w-full" title={file.name}>
+              <span className="truncate text-[13px] text-[#0F1113] w-full" title={file.name}>
                 {truncateMiddle(file.name, nameMaxChars)}
               </span>
               <span className="text-[12px] text-[#6B7280] shrink-0">[{file.sizeMB}MB]</span>
@@ -151,7 +151,7 @@ export default function EventUploader({
             {!readOnly && (
               <button
                 type="button"
-                className="shrink-0 flex-shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
+                className="shrink-0 flex-shrink-0 text-[13px] text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
                 onClick={removeOne}
                 aria-label={`${file.name} 삭제`}
               >
@@ -163,7 +163,7 @@ export default function EventUploader({
           {hasError && (
             <>
               <div className="my-3 h-px bg-[#B7B7B7]/70" />
-              <div className="text-sm text-[#B42318] whitespace-pre-line">{file.error}</div>
+              <div className="text-[13px] text-[#B42318] whitespace-pre-line">{file.error}</div>
             </>
           )}
         </div>

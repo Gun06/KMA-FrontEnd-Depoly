@@ -128,7 +128,7 @@ export default function Client() {
   };
 
   return (
-    <main className="mx-auto max-w-[1300px] px-4 py-6">
+    <main className="mx-auto max-w-[1320px] px-3 py-4">
       <CreateForm
         prefill={{ applyStatus: '접수중', visibility: '공개' }}
         onRegister={handleRegister}

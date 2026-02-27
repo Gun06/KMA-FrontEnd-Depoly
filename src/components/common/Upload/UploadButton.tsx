@@ -53,8 +53,8 @@ export default function UploadButton({
   // 언더라인은 hover 에만
   const textCls =
     size === "compact"
-      ? "text-[14px] leading-[24px] hover:underline text-[#256EF4] whitespace-nowrap"
-      : "text-[14px] md:text-[16px] leading-[24px] hover:underline text-[#256EF4] whitespace-nowrap";
+      ? "text-[13px] leading-[24px] hover:underline text-[#256EF4] whitespace-nowrap"
+      : "text-[13px] leading-[24px] hover:underline text-[#256EF4] whitespace-nowrap";
 
   const iconCls = size === "compact" ? "h-4 w-4" : "h-5 w-5 md:h-6 md:w-6";
 

@@ -21,16 +21,16 @@ export default function ThemeSection({
   const optionTextCls = readOnly ? "text-[#646464]" : "text-black";
 
   return (
-    <FormTable title="대회 색상" labelWidth={200} center>
+    <FormTable title="대회 색상" labelWidth={200} tightRows center>
       <div className="grid" style={{ gridTemplateColumns: `200px 1fr` }}>
         <div
-          className="bg-[#4D4D4D] text-white text-[16px] flex items-center justify-center border-right border-neutral-300"
-          style={{ gridRow: "span 2", minHeight: 120 }}
+          className="bg-[#4D4D4D] text-white text-[13px] flex items-center justify-center border-r border-neutral-300"
+          style={{ gridRow: "span 2", minHeight: 104 }}
         >
           대회색상
         </div>
 
-        <div className="bg-white flex items-center px-4 min-h-[60px]">
+        <div className="bg-white flex items-center px-3 min-h-[52px]">
           <div className={readOnly ? "pointer-events-none opacity-70" : ""}>
             <Segmented
               value={f.themeStyle}
@@ -43,17 +43,17 @@ export default function ThemeSection({
           </div>
         </div>
 
-        <div className="bg-white flex items-center px-4 pt-2 min-h-[60px]">
-          <div className="flex flex-col gap-4 w-full pb-2">
+        <div className="bg-white flex items-center px-3 pt-1 min-h-[52px]">
+          <div className="flex flex-col gap-3 w-full pb-1">
             {f.themeStyle === "base" ? (
               <div className={optionTextCls}>
                 <RadioGroup
                   name={`${f.uid}-theme-base`}
                   value={f.baseColor}
                   onValueChange={readOnly ? noop : f.setBaseColor}
-                  gapPx={40}
+                  className={cn(optionTextCls, "text-[13px]")}
+                  gapPx={24}
                   options={THEME_BASE_OPTIONS}
-                  className={optionTextCls}        // (RadioGroup이 className 받으면 적용)
                 />
               </div>
             ) : (
@@ -62,16 +62,16 @@ export default function ThemeSection({
                   name={`${f.uid}-theme-grad`}
                   value={f.gradColor}
                   onValueChange={readOnly ? noop : f.setGradColor}
-                  gapPx={40}
+                  className={cn(optionTextCls, "text-[13px]")}
+                  gapPx={24}
                   options={THEME_GRAD_OPTIONS}
-                  className={optionTextCls}        // (RadioGroup이 className 받으면 적용)
                 />
               </div>
             )}
 
             <div
               className={cn(
-                "w-full h-8 rounded-md ring-1 ring-black/10",
+                "w-full h-7 rounded-md ring-1 ring-black/10",
                 PREVIEW_BG[f.finalEventTheme]
               )}
             />

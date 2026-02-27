@@ -66,13 +66,13 @@ const toRO = (arr: UploadItem[] | undefined): ReadonlyFile[] =>
   }));
 
 // 내용 높이만 살짝 여유 — 라벨엔 영향 없도록 content에만 패딩
-const contentPad = (count: number) => (count > 0 ? "items-start py-3" : "items-center py-0");
+const contentPad = (count: number) => (count > 0 ? "items-start py-2" : "items-center py-0");
 
 export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
   return (
     <>
       {/* 배너 등록 */}
-      <FormTable title="배너 등록" labelWidth={200} center>
+      <FormTable title="배너 등록" labelWidth={200} tightRows center>
         <FileSection
           label="대회메인 배너-데스크탑"
           editable={!readOnly}
@@ -162,7 +162,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
       </div>
 
       {/* 3. 각 페이지별 이미지 등록 (드래그 앤 드롭 + 순서 변경 버튼) */}
-      <FormTable title="각 페이지별 이미지 등록" labelWidth={200} center>
+      <FormTable title="각 페이지별 이미지 등록" labelWidth={200} tightRows center>
         <SortableFileSection
           label="유의사항 페이지"
           editable={!readOnly}
@@ -221,7 +221,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
       </FormTable>
 
       {/* 인증서 배경 이미지 (단일 파일) */}
-      <FormTable title="인증서 배경 이미지" labelWidth={200} center>
+      <FormTable title="인증서 배경 이미지" labelWidth={200} tightRows center>
         <FileSection
           label="인증서 배경 이미지"
           editable={!readOnly}

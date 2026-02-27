@@ -60,7 +60,7 @@ export default function LocalEventForm({
   const readOnly = false;
   const inputColorCls = 'text-black';
   const fieldCls =
-    'w-full text-[16px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
+    'w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
   const noop = () => {};
   const dimCls = readOnly ? 'text-[#646464]' : 'text-black';
 
@@ -105,7 +105,7 @@ export default function LocalEventForm({
 
   return (
     <div className="w-full">
-      <div className="max-w-[1200px] mx-auto px-4 space-y-5 pb-6">
+      <div className="max-w-[1280px] mx-auto px-3 space-y-5 pb-6">
         {/* 제목과 취소 버튼 */}
         <div className="mb-1.5 flex items-center justify-between gap-3">
           <h1 className="text-lg font-semibold">{title}</h1>
@@ -124,7 +124,7 @@ export default function LocalEventForm({
           </div>
         </div>
 
-        <FormTable labelWidth={200}>
+        <FormTable labelWidth={200} tightRows>
           {/* 대회명 */}
           <FormRow label="대회명" contentClassName="items-center">
             <TextField
@@ -135,6 +135,8 @@ export default function LocalEventForm({
                 readOnly ? noop() : f.setEventName(e.currentTarget.value)
               }
               className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
               readOnly={readOnly}
             />
           </FormRow>
@@ -148,6 +150,8 @@ export default function LocalEventForm({
                 readOnly ? noop() : f.setEventUrl(e.currentTarget.value)
               }
               className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
               readOnly={readOnly}
             />
           </FormRow>
@@ -156,14 +160,14 @@ export default function LocalEventForm({
           <InlineLabelPairRow
             leftLabel="대회 상태"
             rightLabel="공개 여부"
-            reserveTailAction
             leftField={
-              <div className="px-4 py-2">
+              <div className="px-3 py-1">
                 <RadioGroup
                   name={`${f.uid}-eventStatus`}
                   value={f.eventStatus}
                   onValueChange={f.setEventStatus}
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: 'PENDING', label: '대기' },
                     { value: 'OPEN', label: '진행중' },
@@ -173,12 +177,13 @@ export default function LocalEventForm({
               </div>
             }
             rightField={
-              <div className="px-4 py-2">
+              <div className="px-3 py-1">
                 <RadioGroup
                   name={`${f.uid}-visibleStatus`}
                   value={f.visibleStatus}
                   onValueChange={f.setVisibleStatus}
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: 'OPEN', label: '공개' },
                     { value: 'TEST', label: '테스트' },
@@ -187,21 +192,24 @@ export default function LocalEventForm({
                 />
               </div>
             }
+            rowHeight={52}
           />
 
           {/* 대회 시작일 */}
           <FormRow label="대회 시작일" contentClassName="items-left mr-auto">
             <div
               ref={fieldRefs?.get('eventStartDate') as React.RefObject<HTMLDivElement>}
-              className="grid w-full items-center gap-3 mr-20"
-              style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+              className="grid w-full items-center gap-2 mr-10"
+              style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
             >
               <BirthDateInput
                 value={f.eventStartDate}
                 onChange={readOnly ? noop : f.setEventStartDate}
                 placeholder="날짜를 선택하세요"
                 variant="flat"
-                className={cn('min-w-[280px]', dimCls)}
+                fontSizePx={13}
+                heightPx={52}
+                className={cn('min-w-[240px]', dimCls)}
                 disabled={readOnly}
                 readOnly={true}
               />
@@ -214,7 +222,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
@@ -226,7 +234,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 분
               </span>
             </div>
@@ -236,15 +244,17 @@ export default function LocalEventForm({
           <FormRow label="신청 시작일" contentClassName="items-left mr-auto">
             <div
               ref={fieldRefs?.get('registStartDate') as React.RefObject<HTMLDivElement>}
-              className="grid w-full items-center gap-3 mr-20"
-              style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+              className="grid w-full items-center gap-2 mr-10"
+              style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
             >
               <BirthDateInput
                 value={f.registStartDate}
                 onChange={readOnly ? noop : f.setRegistStartDate}
                 placeholder="날짜를 선택하세요"
                 variant="flat"
-                className={cn('min-w-[280px]', dimCls)}
+                fontSizePx={13}
+                heightPx={52}
+                className={cn('min-w-[240px]', dimCls)}
                 disabled={readOnly}
                 readOnly={true}
               />
@@ -257,7 +267,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
@@ -269,7 +279,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 분
               </span>
             </div>
@@ -279,15 +289,17 @@ export default function LocalEventForm({
           <FormRow label="신청 마감일" contentClassName="items-left mr-auto">
             <div
               ref={fieldRefs?.get('registDeadline') as React.RefObject<HTMLDivElement>}
-              className="grid w-full items-center gap-3 mr-20"
-              style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+              className="grid w-full items-center gap-2 mr-10"
+              style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
             >
               <BirthDateInput
                 value={f.registDeadline}
                 onChange={readOnly ? noop : f.setRegistDeadline}
                 placeholder="날짜를 선택하세요"
                 variant="flat"
-                className={cn('min-w-[280px]', dimCls)}
+                fontSizePx={13}
+                heightPx={52}
+                className={cn('min-w-[240px]', dimCls)}
                 disabled={readOnly}
                 readOnly={true}
               />
@@ -300,7 +312,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 시
               </span>
 
@@ -312,7 +324,7 @@ export default function LocalEventForm({
                 disabled={readOnly}
               />
 
-              <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+              <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
                 분
               </span>
             </div>
@@ -327,6 +339,8 @@ export default function LocalEventForm({
                 f.setEventCategoryCsv(e.currentTarget.value);
               }}
               className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
               readOnly={readOnly}
             />
           </FormRow>

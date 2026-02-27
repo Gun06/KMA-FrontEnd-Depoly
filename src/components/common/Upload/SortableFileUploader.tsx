@@ -149,7 +149,7 @@ export default function SortableFileUploader({
           />
         )}
         {!(single && hasItems) && (
-          <p className="text-xs sm:text-sm text-[#8A949E] sm:ml-2">
+          <p className="text-[13px] text-[#8A949E] sm:ml-2">
             {single ? `선택된 파일 없음 / ${maxSizeMB}MB 이내` : helper}
           </p>
         )}
@@ -158,13 +158,13 @@ export default function SortableFileUploader({
       {/* 멀티 전용: 카운트 + 전체 삭제 */}
       {!single && hasItems && (
         <div className="mt-3 flex items-center justify-between" aria-live="polite">
-          <span className="text-[14px] sm:text-[15px] text-[#0F1113]">
+          <span className="text-[13px] text-[#0F1113]">
             <b className="text-[#256EF4]">{items.length}개</b> / {effectiveMaxCount}개
           </span>
           <button
             type="button"
             onClick={removeAll}
-            className="rounded-[8px] border border-[#D1D5DB] px-3 py-1.5 text-sm text-[#374151] hover:bg-gray-50"
+            className="rounded-[8px] border border-[#D1D5DB] px-3 py-1.5 text-[13px] text-[#374151] hover:bg-gray-50"
           >
             전체 파일 삭제
           </button>

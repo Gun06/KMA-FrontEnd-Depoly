@@ -51,7 +51,7 @@ export function TimeSelect({
       {/* 선택된 값 표시 버튼 */}
       <button
         type="button"
-        className={`w-full rounded px-2 py-1 text-center bg-white hover:bg-gray-50 relative ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+        className={`w-full rounded px-2 py-1 text-center text-[13px] bg-white hover:bg-gray-50 relative ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
       >
@@ -82,7 +82,7 @@ export function TimeSelect({
               <button
                 key={option}
                 type="button"
-                className={`w-full px-3 py-2 text-center text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                className={`w-full px-3 py-2 text-center text-[13px] hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
                   option === value ? 'bg-blue-50 font-medium' : ''
                 }`}
                 onClick={(e) => {

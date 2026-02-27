@@ -91,7 +91,7 @@ export default function SortableFileItem({
         </button>
 
         {/* 순서 번호 */}
-        <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-[#F3F4F6] text-[#6B7280] text-sm font-medium">
+        <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-[#F3F4F6] text-[#6B7280] text-[13px] font-medium">
           {index + 1}
         </div>
 
@@ -122,7 +122,7 @@ export default function SortableFileItem({
 
         {/* 파일 정보 */}
         <div className="min-w-0 flex-1 text-[#0F1113] overflow-hidden">
-          <span className="block truncate text-[15px] w-full" title={item.name}>
+              <span className="block truncate text-[13px] w-full" title={item.name}>
             {item.name}
           </span>
           <span className="ml-0.5 text-[12px] text-[#6B7280]">[{item.sizeMB}MB]</span>
@@ -199,7 +199,7 @@ export default function SortableFileItem({
         {/* 삭제 버튼 */}
         <button
           type="button"
-          className="shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
+          className="shrink-0 text-[13px] text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
           onClick={() => onRemove(item.id)}
           aria-label={`${item.name} 삭제`}
         >
@@ -211,7 +211,7 @@ export default function SortableFileItem({
       {isError && (
         <>
           <div className="my-3 h-px bg-[#B7B7B7]/70" />
-          <div className="text-sm text-[#B42318] whitespace-pre-line">{item.error}</div>
+          <div className="text-[13px] text-[#B42318] whitespace-pre-line">{item.error}</div>
         </>
       )}
     </div>

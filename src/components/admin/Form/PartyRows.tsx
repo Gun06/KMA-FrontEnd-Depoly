@@ -28,7 +28,7 @@ function MiniToggle({ value, onChange, disabled, className }: {
         aria-pressed={value}
         onClick={() => !disabled && onChange?.(true)}
         className={cn(
-          "h-6 px-2 rounded-full text-xs font-medium transition",
+          "h-6 px-2 rounded-full text-[13px] font-medium transition",
           value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
         )}
       >
@@ -39,7 +39,7 @@ function MiniToggle({ value, onChange, disabled, className }: {
         aria-pressed={!value}
         onClick={() => !disabled && onChange?.(false)}
         className={cn(
-          "h-6 px-2 rounded-full text-xs font-medium transition",
+          "h-6 px-2 rounded-full text-[13px] font-medium transition",
           !value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
         )}
       >
@@ -57,8 +57,6 @@ export type PartyItem = {
 };
 
 const ACTION_COL_W = 56;
-// 세로 구분선 색상을 border-neutral-300과 일치시킴 (Tailwind neutral-300 ≈ #D4D4D4)
-const VLINE = "#D4D4D4";
 
 type Props = {
   kind: "주최" | "주관" | "후원" | "협력";
@@ -89,11 +87,14 @@ export default function PartyRows({
   onToggleEnabled,
   readOnly = false,
   labelCellWidth,
-  rowHeight = 60,
+  rowHeight,
   className,
 }: Props) {
-  const { labelWidth } = useFormLayout();
+  const { labelWidth, tightRows } = useFormLayout();
   const lw = labelCellWidth ?? labelWidth;
+  const effectiveRowHeight = rowHeight ?? (tightRows ? 52 : 60);
+  const labelTextSize = tightRows ? "text-[13px]" : "text-[16px]";
+  const textFieldSize = tightRows ? "text-[13px]" : "text-[16px]";
 
   // ✅ readOnly일 때만 글씨색을 연하게
   const textCls = readOnly ? "text-[#646464]" : "text-neutral-900";
@@ -114,13 +115,13 @@ export default function PartyRows({
             {/* 라벨 + 토글 */}
             <div
               className={cn(
-                "relative bg-[#4D4D4D] text-white text-[16px] flex items-center justify-center text-center",
+                "relative bg-[#4D4D4D] text-white flex items-center justify-center text-center border-r border-neutral-300",
+                labelTextSize,
                 rowBorder,
                 "pr-16"
               )}
               style={{ 
-                minHeight: rowHeight, 
-                borderRight: `1px solid ${VLINE}`,
+                minHeight: effectiveRowHeight, 
                 width: `${lw}px`,
                 minWidth: `${lw}px`,
                 maxWidth: `${lw}px`
@@ -134,10 +135,9 @@ export default function PartyRows({
 
             {/* 이름 */}
             <div
-              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)}
+              className={cn("bg-white flex items-center min-w-0 px-4 border-r border-neutral-300", rowBorder)}
               style={{ 
-                minHeight: rowHeight, 
-                borderRight: `1px solid ${VLINE}`,
+                minHeight: effectiveRowHeight, 
                 width: '100%',
                 minWidth: 0,
                 overflow: 'hidden'
@@ -147,17 +147,18 @@ export default function PartyRows({
                 value={it.name}
                 onChange={(e) => onChangeName(idx, e.currentTarget.value)}
                 placeholder={`${kind}명을 입력하세요`}
-                className={cn("w-full text-[16px] bg-white border-0 outline-none focus:ring-0 shadow-none", textCls)}
+                className={cn("w-full bg-white border-0 outline-none focus:ring-0 shadow-none", textFieldSize, textCls)}
+                fontSizePx={tightRows ? 13 : 16}
+                heightPx={tightRows ? 52 : 60}
                 disabled={readOnly}
               />
             </div>
 
             {/* 링크 */}
             <div
-              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)}
+              className={cn("bg-white flex items-center min-w-0 px-4 border-r border-neutral-300", rowBorder)}
               style={{ 
-                minHeight: rowHeight, 
-                borderRight: `1px solid ${VLINE}`,
+                minHeight: effectiveRowHeight, 
                 width: '100%',
                 minWidth: 0,
                 overflow: 'hidden'
@@ -167,7 +168,9 @@ export default function PartyRows({
                 value={it.link}
                 onChange={(e) => onChangeLink(idx, e.currentTarget.value)}
                 placeholder={`${kind} 링크를 입력하세요`}
-                className={cn("w-full text-[16px] bg-white border-0 outline-none focus:ring-0 shadow-none", textCls)}
+                className={cn("w-full bg-white border-0 outline-none focus:ring-0 shadow-none", textFieldSize, textCls)}
+                fontSizePx={tightRows ? 13 : 16}
+                heightPx={tightRows ? 52 : 60}
                 disabled={readOnly}
               />
             </div>
@@ -176,8 +179,7 @@ export default function PartyRows({
             <div 
               className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)} 
               style={{ 
-                minHeight: rowHeight, 
-                borderRight: `1px solid ${VLINE}`,
+                minHeight: effectiveRowHeight, 
                 width: '100%',
                 minWidth: 0,
                 overflow: 'hidden'
@@ -197,18 +199,12 @@ export default function PartyRows({
 
             {/* 삭제 버튼 - 모든 행에 표시 */}
             <div
-              className={cn("flex items-center justify-center", rowBorder)}
+              className={cn("flex items-center justify-center bg-white border-l border-neutral-300", rowBorder)}
               style={{ 
-                minHeight: rowHeight, 
+                minHeight: effectiveRowHeight, 
                 width: `${ACTION_COL_W}px`,
                 minWidth: `${ACTION_COL_W}px`,
-                maxWidth: `${ACTION_COL_W}px`,
-                border: 'none',
-                borderTop: idx > 0 ? `1px solid #D4D4D4` : 'none',
-                borderRight: 'none',
-                borderBottom: 'none',
-                borderLeft: 'none',
-                background: 'transparent'
+                maxWidth: `${ACTION_COL_W}px`
               }}
             >
               {onRemove && (

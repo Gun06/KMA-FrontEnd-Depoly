@@ -28,19 +28,20 @@ export default function PartiesSection({
     setter((p: any[]) => p.map((it, j) => (j === i ? { ...it, enabled: v } : it)));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 2. 배너 */}
       {/* 주최 섹션 */}
       <FormTable 
         title="주최 배너" 
         labelWidth={200} 
+        tightRows
         center
         actions={
           !readOnly && (
             <button
               type="button"
               onClick={add(f.setHostItems)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
               aria-label="주최 항목 추가"
             >
               <Plus size={16} strokeWidth={2.25} />
@@ -66,13 +67,14 @@ export default function PartiesSection({
       <FormTable 
         title="주관 배너" 
         labelWidth={200} 
+        tightRows
         center
         actions={
           !readOnly && (
             <button
               type="button"
               onClick={add(f.setOrganizerItems)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
               aria-label="주관 항목 추가"
             >
               <Plus size={16} strokeWidth={2.25} />
@@ -98,13 +100,14 @@ export default function PartiesSection({
       <FormTable 
         title="후원 배너" 
         labelWidth={200} 
+        tightRows
         center
         actions={
           !readOnly && (
             <button
               type="button"
               onClick={add(f.setSponsorItems)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
               aria-label="후원 항목 추가"
             >
               <Plus size={16} strokeWidth={2.25} />
@@ -130,13 +133,14 @@ export default function PartiesSection({
       <FormTable 
         title="협력 배너" 
         labelWidth={200} 
+        tightRows
         center
         actions={
           !readOnly && (
             <button
               type="button"
               onClick={add(f.setAssistItems)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
               aria-label="협력 항목 추가"
             >
               <Plus size={16} strokeWidth={2.25} />

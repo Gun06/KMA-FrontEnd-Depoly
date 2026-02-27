@@ -21,14 +21,17 @@ export default function FormRow({
   contentClassName,
   labelClassName,
 }: Props) {
-  const { labelWidth } = useFormLayout();
+  const { labelWidth, tightRows } = useFormLayout();
+  const rowMinHeight = tightRows ? "min-h-[52px]" : "min-h-[60px]";
+  const labelTextSize = tightRows ? "text-[13px]" : "text-[16px]";
 
   return (
     <div className="grid" style={{ gridTemplateColumns: `${labelWidth}px 1fr` }}>
       {/* 라벨: 오른쪽 구분선 추가 */}
       <div
         className={cn(
-          "flex items-center justify-center text-[16px] border-r border-neutral-300",
+          "flex items-center justify-center border-r border-neutral-300",
+          labelTextSize,
           // labelClassName이 있으면 사용, 없으면 기본 어두운 배경 + 흰색 글씨
           labelClassName || "bg-[#4D4D4D] text-white"
         )}
@@ -39,7 +42,8 @@ export default function FormRow({
       {/* 콘텐츠: 기본 60px 보장 + 세로 패딩 4px */}
       <div
         className={cn(
-          "bg-white flex gap-3 min-h-[60px] py-0.5 min-w-0",
+          "bg-white flex gap-3 py-0.5 min-w-0",
+          rowMinHeight,
           contentClassName || "items-start"
         )}
       >

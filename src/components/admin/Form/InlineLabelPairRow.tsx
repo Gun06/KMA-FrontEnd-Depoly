@@ -13,7 +13,7 @@ export default function InlineLabelPairRow({
   rightField,
   labelCellWidth,
   gapX = 0,
-  rowHeight = 60,
+  rowHeight,
   className,
   reserveTailAction = false,   // ← 추가: 액션 칸 예약
   actionWidth = ACTION_COL_W,  // ← 추가: 고정폭(동일 값)
@@ -29,11 +29,14 @@ export default function InlineLabelPairRow({
   reserveTailAction?: boolean; // ← 추가
   actionWidth?: number;        // ← 추가
 }) {
-  const { labelWidth } = useFormLayout();
+  const { labelWidth, tightRows } = useFormLayout();
   const lw = labelCellWidth ?? labelWidth;
+  const effectiveRowHeight = rowHeight ?? (tightRows ? 52 : 60);
+  const labelTextSize = tightRows ? "text-[13px]" : "text-[16px]";
   const cols = reserveTailAction
     ? `${lw}px 1fr ${lw}px 1fr ${actionWidth}px`
     : `${lw}px 1fr ${lw}px 1fr`;
+  const rightFieldBorderCls = reserveTailAction ? "border-r border-neutral-300" : "";
 
   return (
     <div
@@ -42,27 +45,35 @@ export default function InlineLabelPairRow({
     >
       {/* 왼쪽 라벨 */}
       <div
-        className="bg-[#4D4D4D] text-white text-[16px] whitespace-nowrap
-                   flex items-center justify-center text-center
-                   border-r border-neutral-300"
-        style={{ height: rowHeight }}
+        className={cn(
+          "bg-[#4D4D4D] text-white whitespace-nowrap flex items-center justify-center text-center border-r border-neutral-300",
+          labelTextSize
+        )}
+        style={{ height: effectiveRowHeight }}
       >
         {leftLabel}
       </div>
-      <div className="flex items-center" style={{ height: rowHeight }}>
+      <div
+        className="flex items-center min-w-0 overflow-hidden bg-white border-r border-neutral-300"
+        style={{ height: effectiveRowHeight }}
+      >
         {leftField}
       </div>
 
       {/* 오른쪽 라벨 */}
       <div
-        className="bg-[#4D4D4D] text-white text-[16px] whitespace-nowrap
-                   flex items-center justify-center text-center
-                   border-r border-neutral-300"
-        style={{ height: rowHeight }}
+        className={cn(
+          "bg-[#4D4D4D] text-white whitespace-nowrap flex items-center justify-center text-center border-r border-neutral-300",
+          labelTextSize
+        )}
+        style={{ height: effectiveRowHeight }}
       >
         {rightLabel}
       </div>
-      <div className="flex items-center" style={{ height: rowHeight }}>
+      <div
+        className={cn("flex items-center min-w-0 overflow-hidden bg-white", rightFieldBorderCls)}
+        style={{ height: effectiveRowHeight }}
+      >
         {rightField}
       </div>
 
@@ -71,7 +82,7 @@ export default function InlineLabelPairRow({
         <div
           aria-hidden
           className="bg-white"
-          style={{ height: rowHeight, width: actionWidth }}
+          style={{ height: effectiveRowHeight, width: actionWidth }}
         />
       )}
     </div>

@@ -21,7 +21,7 @@ export default function Segmented({
             key={it.value}
             onClick={() => onChange(it.value)}
             className={
-              "px-3 h-8 rounded-full text-sm font-medium transition " +
+              "px-3 h-8 rounded-full text-[13px] font-medium transition " +
               (active
                 ? "bg-white shadow ring-1 ring-black/10 text-neutral-900"
                 : "text-neutral-500 hover:text-neutral-800")

@@ -36,7 +36,7 @@ export function RadioGroup<T extends string>({
   return (
     <RadioCtx.Provider value={{ name: groupName, value, onChange: onValueChange, disabled }}>
       <div
-        className={cn("flex items-center flex-wrap text-[16px]", className)}
+        className={cn("flex items-center flex-wrap text-inherit", className)}
         style={{ columnGap: gapPx }}
         aria-disabled={disabled ? "true" : undefined}
       >

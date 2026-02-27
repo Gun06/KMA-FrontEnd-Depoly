@@ -135,7 +135,7 @@ export default function CreateForm({
   const readOnly = false;
   const inputColorCls = 'text-black';
   const fieldCls =
-    'w-full text-[16px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
+    'w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
   const noop = () => {};
 
   // 1차 저장: 대회 기본 정보만 저장 (기념품/종목 제외)
@@ -158,10 +158,10 @@ export default function CreateForm({
 
   return (
     <div className="w-full">
-      <div className="max-w-[1200px] mx-auto px-4 space-y-10 pb-12">
+      <div className="max-w-[1280px] mx-auto px-3 space-y-6 pb-8">
         {/* 제목과 취소 버튼 */}
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">대회 기본 정보</h1>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h1 className="text-[17px] font-semibold">대회 기본 정보</h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-3">
               <Button
@@ -178,8 +178,8 @@ export default function CreateForm({
         </div>
 
         {/* 기념품/종목 설정 안내 - 대회 기본 정보 제목 아래 */}
-        <div className="w-full bg-gray-100 rounded-lg p-6 mb-4 text-center">
-          <p className="text-gray-700 text-[14px] leading-6">
+        <div className="w-full bg-gray-100 rounded-md p-4 mb-2 text-center">
+          <p className="text-gray-700 text-[13px] leading-5">
             기념품과 종목은 대회 등록 페이지에서 보이지 않으며,<br />
             대회 등록을 완료한 후 기념품 설정 단계로 안내됩니다.
             대회생성을 먼저 진행해주세요.
@@ -188,6 +188,7 @@ export default function CreateForm({
 
         <FormTable
           labelWidth={200}
+          tightRows
         >
           {/* 1. 대회 기본 정보 */}
           <BasicInfoSection
@@ -202,14 +203,14 @@ export default function CreateForm({
           <InlineLabelPairRow
             leftLabel="공개여부"
             rightLabel="셔틀 운행여부"
-            reserveTailAction
             leftField={
-              <div className="px-4 py-2">
+              <div className="px-3 py-1">
                 <RadioGroup
                   name={`${f.uid}-visibility`}
                   value={f.visibility}
                   onValueChange={f.setVisibility}
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: '공개', label: '공개' },
                     { value: '테스트', label: '테스트' },
@@ -219,22 +220,24 @@ export default function CreateForm({
               </div>
             }
             rightField={
-              <div className="px-4 py-2">
+              <div className="px-3 py-1">
                 <RadioGroup
                   name={`${f.uid}-shuttle`}
                   value={f.shuttle}
                   onValueChange={v => f.setShuttle(v as Shuttle)}
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: '운행', label: '운행' },
                     { value: '비운행', label: '비운행' },
                   ]}
                 />
-                <span className="text-xs text-[#646464]">
+                <span className="text-[13px] text-[#646464]">
                   (현재는 사용되지 않습니다)
                 </span>
               </div>
             }
+            rowHeight={52}
           />
         </FormTable>
 
@@ -248,7 +251,7 @@ export default function CreateForm({
         <ThemeSection f={f} readOnly={readOnly} />
 
         {/* 기념품/종목 설정 안내 - 저장하기 버튼 위 */}
-        <div className="mx-auto px-4 mb-4">
+        <div className="mx-auto px-2 mb-2">
           <NoticeMessage
             items={[
               {
@@ -279,8 +282,8 @@ export default function CreateForm({
             {/* Tooltip */}
             <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
               <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                <div className="font-semibold mb-2 text-sm">대회 등록 저장</div>
-                <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                <div className="font-semibold mb-2 text-[13px]">대회 등록 저장</div>
+                <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                   저장하기를 누르면 대회가 등록되며, 이후 기념품 설정 단계로 안내됩니다. 대회 생성을 먼저 진행해주세요.
                 </div>
                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>

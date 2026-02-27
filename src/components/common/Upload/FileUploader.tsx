@@ -93,7 +93,7 @@ export default function FileUploader({
           />
         )}
         {!(single && hasItems) && (
-          <p className="text-xs sm:text-sm text-[#8A949E] sm:ml-2">
+          <p className="text-[13px] text-[#8A949E] sm:ml-2">
             {single ? `선택된 파일 없음 / ${maxSizeMB}MB 이내` : helper}
           </p>
         )}
@@ -102,13 +102,13 @@ export default function FileUploader({
       {/* 멀티 전용: 카운트 + 전체 삭제 */}
       {!single && hasItems && (
         <div className="mt-3 flex items-center justify-between" aria-live="polite">
-          <span className="text-[14px] sm:text-[15px] text-[#0F1113]">
+          <span className="text-[13px] text-[#0F1113]">
             <b className="text-[#256EF4]">{items.length}개</b> / {effectiveMaxCount}개
           </span>
           <button
             type="button"
             onClick={removeAll}
-            className="rounded-[8px] border border-[#D1D5DB] px-3 py-1.5 text-sm text-[#374151] hover:bg-gray-50"
+            className="rounded-[8px] border border-[#D1D5DB] px-3 py-1.5 text-[13px] text-[#374151] hover:bg-gray-50"
           >
             전체 파일 삭제
           </button>
@@ -128,7 +128,7 @@ export default function FileUploader({
             <div key={it.id} className={cn(rowCls, "w-full min-w-0")}>
               <div className="flex items-center justify-between gap-3 min-w-0 w-full">
                 <div className="min-w-0 flex-1 text-[#0F1113] overflow-hidden">
-                  <span className="block truncate text-[15px] w-full" title={it.name}>
+                  <span className="block truncate text-[13px] w-full" title={it.name}>
                     {it.name}
                   </span>
                   <span className="ml-0.5 text-[12px] text-[#6B7280]">[{it.sizeMB}MB]</span>
@@ -136,7 +136,7 @@ export default function FileUploader({
 
                 <button
                   type="button"
-                  className="shrink-0 flex-shrink-0 text-sm text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
+                  className="shrink-0 flex-shrink-0 text-[13px] text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
                   onClick={() => removeOne(it.id)}
                   aria-label={`${it.name} 삭제`}
                 >
@@ -147,7 +147,7 @@ export default function FileUploader({
               {isError && (
                 <>
                   <div className="my-3 h-px bg-[#B7B7B7]/70" />
-                  <div className="text-sm text-[#B42318] whitespace-pre-line">{it.error}</div>
+                  <div className="text-[13px] text-[#B42318] whitespace-pre-line">{it.error}</div>
                 </>
               )}
             </div>

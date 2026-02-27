@@ -80,7 +80,6 @@ export default function BasicInfoSection({
       <InlineLabelPairRow
         leftLabel="대회명(한글)"
         rightLabel="대회명(영문)"
-        reserveTailAction
         leftField={
           <TextField
             ref={fieldRefs?.get('titleKo') as React.RefObject<HTMLInputElement>}
@@ -90,6 +89,8 @@ export default function BasicInfoSection({
               readOnly ? noop() : f.setTitleKo(e.currentTarget.value)
             }
             className={cn(fieldCls, inputColorCls)}
+            fontSizePx={13}
+            heightPx={52}
             readOnly={readOnly}
           />
         }
@@ -101,19 +102,22 @@ export default function BasicInfoSection({
               readOnly ? noop() : f.setTitleEn(e.currentTarget.value)
             }
             className={cn(fieldCls, inputColorCls)}
+            fontSizePx={13}
+            heightPx={52}
             readOnly={readOnly}
           />
         }
       />
 
       {/* 신청여부 */}
-      <FormRow label="신청상태" contentClassName="items-center pl-4">
+      <FormRow label="신청상태" contentClassName="items-center pl-3">
         <div className={dimCls}>
           <RadioGroup
             name={`${f.uid}-applyStatus`}
             value={f.applyStatus}
             onValueChange={readOnly ? noop : f.setApplyStatus}
-            gapPx={40}
+            className="text-[13px]"
+            gapPx={24}
             options={[
               { value: '접수중', label: '접수중' },
               { value: '비접수', label: '비접수' },
@@ -128,15 +132,17 @@ export default function BasicInfoSection({
       <FormRow label="신청시작일" contentClassName="items-left mr-auto">
         <div
           ref={fieldRefs?.get('registStartDate') as React.RefObject<HTMLDivElement>}
-          className="grid w-full items-center gap-3 mr-20"
-          style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+          className="grid w-full items-center gap-2 mr-10"
+          style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
         >
           <BirthDateInput
             value={f.registStartDate}
             onChange={readOnly ? noop : f.setRegistStartDate}
             placeholder="날짜를 선택하세요"
             variant="flat"
-            className={cn('min-w-[280px]', dimCls)}
+            fontSizePx={13}
+            heightPx={52}
+            className={cn('min-w-[240px]', dimCls)}
             disabled={readOnly}
             readOnly={true}
           />
@@ -149,7 +155,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             시
           </span>
 
@@ -161,7 +167,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             분
           </span>
         </div>
@@ -171,15 +177,17 @@ export default function BasicInfoSection({
       <FormRow label="접수마감" contentClassName="items-left mr-auto">
         <div
           ref={fieldRefs?.get('deadlineDate') as React.RefObject<HTMLDivElement>}
-          className="grid w-full items-center gap-3 mr-20"
-          style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+          className="grid w-full items-center gap-2 mr-10"
+          style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
         >
           <BirthDateInput
             value={f.deadlineDate}
             onChange={readOnly ? noop : f.setDeadlineDate}
             placeholder="날짜를 선택하세요"
             variant="flat"
-            className={cn('min-w-[280px]', dimCls)}
+            fontSizePx={13}
+            heightPx={52}
+            className={cn('min-w-[240px]', dimCls)}
             disabled={readOnly}
             readOnly={true}
           />
@@ -192,7 +200,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             시
           </span>
 
@@ -204,7 +212,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             분
           </span>
         </div>
@@ -214,15 +222,17 @@ export default function BasicInfoSection({
       <FormRow label="입금마감" contentClassName="items-left mr-auto">
         <div
           ref={fieldRefs?.get('paymentDeadlineDate') as React.RefObject<HTMLDivElement>}
-          className="grid w-full items-center gap-3 mr-20"
-          style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+          className="grid w-full items-center gap-2 mr-10"
+          style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
         >
           <BirthDateInput
             value={f.paymentDeadlineDate}
             onChange={readOnly ? noop : f.setPaymentDeadlineDate}
             placeholder="날짜를 선택하세요"
             variant="flat"
-            className={cn('min-w-[280px]', dimCls)}
+            fontSizePx={13}
+            heightPx={52}
+            className={cn('min-w-[240px]', dimCls)}
             disabled={readOnly}
             readOnly={true}
           />
@@ -235,7 +245,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             시
           </span>
 
@@ -247,7 +257,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             분
           </span>
         </div>
@@ -257,15 +267,17 @@ export default function BasicInfoSection({
       <FormRow label="개최일시" contentClassName="items-left mr-auto">
         <div
           ref={fieldRefs?.get('date') as React.RefObject<HTMLDivElement>}
-          className="grid w-full items-center gap-3 mr-20"
-          style={{ gridTemplateColumns: '1fr 90px 20px 90px 20px' }}
+          className="grid w-full items-center gap-2 mr-10"
+          style={{ gridTemplateColumns: '1fr 82px 18px 82px 18px' }}
         >
           <BirthDateInput
             value={f.date}
             onChange={readOnly ? noop : f.setDate}
             placeholder="날짜를 선택하세요"
             variant="flat"
-            className={cn('min-w-[280px]', dimCls)}
+            fontSizePx={13}
+            heightPx={52}
+            className={cn('min-w-[240px]', dimCls)}
             disabled={readOnly}
             readOnly={true}
           />
@@ -278,7 +290,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             시
           </span>
 
@@ -290,7 +302,7 @@ export default function BasicInfoSection({
             disabled={readOnly}
           />
 
-          <span className={cn('text-center', readOnly && 'text-[#646464]')}>
+          <span className={cn('text-center text-[13px]', readOnly && 'text-[#646464]')}>
             분
           </span>
         </div>
@@ -305,6 +317,8 @@ export default function BasicInfoSection({
             readOnly ? noop() : f.setMaxParticipants(e.currentTarget.value)
           }
           className={cn(fieldCls, inputColorCls)}
+          fontSizePx={13}
+          heightPx={52}
           readOnly={readOnly}
           type="number"
           min="1"
@@ -320,6 +334,8 @@ export default function BasicInfoSection({
             readOnly ? noop() : f.setPlace(e.currentTarget.value)
           }
       className={cn(fieldCls, inputColorCls)}
+      fontSizePx={13}
+      heightPx={52}
       readOnly={readOnly}
     />
   </FormRow>
@@ -333,6 +349,8 @@ export default function BasicInfoSection({
             readOnly ? noop() : f.setEventPageUrl(e.currentTarget.value)
           }
           className={cn(fieldCls, inputColorCls)}
+          fontSizePx={13}
+          heightPx={52}
           readOnly={readOnly}
         />
       </FormRow>
@@ -341,13 +359,14 @@ export default function BasicInfoSection({
   <InlineLabelPairRow
     leftLabel="은행명"
     rightLabel="계좌번호"
-    reserveTailAction
     leftField={
     <TextField
       placeholder="예: 국민은행"
       value={f.bank ?? ''}
       onChange={e => (readOnly || !f.setBank ? noop() : f.setBank(e.currentTarget.value))}
       className={cn(fieldCls, inputColorCls)}
+      fontSizePx={13}
+      heightPx={52}
       readOnly={readOnly}
     />
     }
@@ -357,6 +376,8 @@ export default function BasicInfoSection({
       value={f.virtualAccount ?? ''}
       onChange={e => (readOnly || !f.setVirtualAccount ? noop() : f.setVirtualAccount(e.currentTarget.value))}
       className={cn(fieldCls, inputColorCls)}
+      fontSizePx={13}
+      heightPx={52}
       readOnly={readOnly}
     />
     }
