@@ -53,7 +53,7 @@ export default function GalleryCard({
   return (
     <div
       ref={cardRef}
-      className={`w-[250px] md:w-[350px] h-[320px] md:h-[425px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 transition-opacity duration-500 ${
+      className={`w-[235px] md:w-[300px] h-[300px] md:h-[380px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 transition-opacity duration-500 ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
@@ -80,7 +80,7 @@ export default function GalleryCard({
             alt={imageAlt}
             fill
             className="object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] border-2 border-gray-50 pointer-events-none select-none"
-            sizes="(max-width: 768px) 250px, 350px"
+            sizes="(max-width: 768px) 235px, 300px"
             draggable={false}
           />
         )}

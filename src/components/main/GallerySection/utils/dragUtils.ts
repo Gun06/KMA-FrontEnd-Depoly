@@ -23,7 +23,7 @@ export function calculateDragBounds({
   windowWidth,
   isMobile,
 }: DragBoundsParams): DragBounds {
-  const cardWidth = isMobile ? 250 : 350;
+  const cardWidth = isMobile ? 235 : 300;
   const cardGap = isMobile ? 12 : 24;
   const moreButtonMargin = isMobile ? 24 : 48;
   const extraSpace = isMobile ? 80 : 150;

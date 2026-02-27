@@ -19,21 +19,21 @@ function getStatusConfig(status: string): { label: string; className: string } {
   const statusMap: Record<string, { label: string; className: string }> = {
     '신청 완료': {
       label: '신청 완료',
-      className: 'bg-blue-600 text-white'
+      className: 'bg-blue-50 text-blue-700 border border-blue-200'
     },
     '참가 완료': {
       label: '참가 완료',
-      className: 'bg-green-600 text-white'
+      className: 'bg-emerald-50 text-emerald-700 border border-emerald-200'
     },
     '신청 취소': {
       label: '신청 취소',
-      className: 'bg-red-600 text-white'
+      className: 'bg-rose-50 text-rose-700 border border-rose-200'
     }
   }
   
   return statusMap[status] || {
     label: status || '알 수 없음',
-    className: 'bg-gray-600 text-white'
+    className: 'bg-gray-50 text-gray-700 border border-gray-200'
   }
 }
 
@@ -184,29 +184,59 @@ export default function Client() {
       }}
     >
       <div className="max-w-6xl mx-auto">
-        {/* 환영 메시지 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-giants-bold mb-2 text-black">
-            <span className="text-blue-600">Run </span>
-            Together, <span className="text-blue-600">Grow </span>Together!
-          </h1>
-          <p className="text-xl font-bold text-black">{user?.account || '회원'}님!</p>
-        </div>
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
+          {/* 왼쪽 프로필 패널 */}
+          <aside className="order-1">
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-4 py-4 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">프로필 정보</h3>
+              </div>
+              <div className="px-4 py-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">아이디</span>
+                  <span className="text-gray-800 font-medium">{user?.account || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">회원번호</span>
+                  <span className="text-gray-800 font-medium">{user?.id || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">권한</span>
+                  <span className="text-gray-800 font-medium">{user?.role || '-'}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                  <span className="text-gray-500">상태</span>
+                  <span className="text-gray-800 font-medium">활성</span>
+                </div>
+              </div>
+              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => alert('서비스 준비중입니다!')}
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  프로필 정보 수정
+                </button>
+              </div>
+            </div>
+          </aside>
 
-        {/* 탭 네비게이션 */}
-        <MypageTabs />
+          {/* 오른쪽 컨텐츠 영역 */}
+          <div className="order-2 min-w-0">
+            {/* 탭 네비게이션 */}
+            <MypageTabs />
 
         {/* 필터 섹션 */}
-        <div className="bg-gray-100 p-4 sm:p-6 rounded-xl mt-4 mb-4">
+        <div className="bg-white border border-gray-200 p-4 sm:p-6 rounded-2xl mt-4 mb-4">
+          <div className="text-[11px] tracking-[0.12em] text-gray-400 font-medium mb-3">FILTER</div>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* 기간 세그먼트 - 모바일: 텍스트 형태, 데스크탑: SegmentedControl */}
             <div className="w-full lg:w-auto">
               {/* 모바일: 텍스트 형태 */}
               <div className="flex flex-wrap items-center gap-2 sm:hidden">
                 {periods.map((period, index) => (
-                  <>
+                  <div key={period} className="inline-flex items-center gap-2">
                     <button
-                      key={period}
                       type="button"
                       onClick={() => setSelectedPeriod(period)}
                       className={`text-sm transition-colors ${
@@ -218,9 +248,9 @@ export default function Client() {
                       {period}
                     </button>
                     {index < periods.length - 1 && (
-                      <span key={`separator-${index}`} className="text-gray-400">|</span>
+                      <span className="text-gray-400">|</span>
                     )}
-                  </>
+                  </div>
                 ))}
               </div>
               {/* 데스크탑: SegmentedControl */}
@@ -285,7 +315,7 @@ export default function Client() {
               </div>
             ) : (
               paginatedData.map((item, index) => (
-                <div key={item.regiNum || `item-${index}`} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                <div key={item.regiNum || `item-${index}`} className="bg-white rounded-xl border border-gray-200 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm text-gray-500">
@@ -301,7 +331,7 @@ export default function Client() {
                     {(() => {
                       const statusInfo = getStatusConfig(item.status)
                       return (
-                        <span className={`inline-flex px-2 py-1 text-[10px] font-semibold rounded-md ${statusInfo.className}`}>
+                        <span className={`inline-flex px-2 py-1 text-[10px] font-medium rounded-md ${statusInfo.className}`}>
                           {statusInfo.label}
                         </span>
                       )
@@ -323,21 +353,21 @@ export default function Client() {
         {(isLoading || data === undefined) && !error ? (
           // 스켈레톤 UI - 데스크탑
           <div className="mt-4 hidden sm:block">
-            <div className="overflow-x-auto border-t border-gray-200">
+            <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[680px] sm:min-w-0 text-xs sm:text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">신청날짜</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">접수번호</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">대회명</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">기념품</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">코스</th>
-                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">상태</th>
+                  <tr className="border-b border-gray-200 bg-gray-50/70">
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청날짜</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">접수번호</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">대회명</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">기념품</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">코스</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">상태</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={`skeleton-desktop-${index}`} className="hover:bg-gray-50">
+                    <tr key={`skeleton-desktop-${index}`} className="hover:bg-gray-50/70 transition-colors">
                       <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
                         <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mx-auto" />
                       </td>
@@ -371,16 +401,16 @@ export default function Client() {
                 <p className="text-sm text-gray-500">다른 기간을 선택하거나 날짜 범위를 변경해보세요</p>
               </div>
             ) : (
-              <div className="overflow-x-auto border-t border-gray-200">
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full min-w-[680px] sm:min-w-0 text-xs sm:text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">신청날짜</th>
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">접수번호</th>
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">대회명</th>
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">기념품</th>
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">코스</th>
-                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">
+                    <tr className="border-b border-gray-200 bg-gray-50/70">
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청날짜</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">접수번호</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">대회명</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">기념품</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">코스</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">
                         <div className="flex items-center justify-center space-x-1">
                           <span>상태</span>
                           <ChevronDown className="w-4 h-4" />
@@ -390,22 +420,22 @@ export default function Client() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {paginatedData.map((item, index) => (
-                      <tr key={item.regiNum || `item-${index}`} className="hover:bg-gray-50">
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">
+                      <tr key={item.regiNum || `item-${index}`} className="hover:bg-gray-50/70 transition-colors">
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-700 text-center">
                           {formatDateForDisplay(item.date)}
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center">
                           {item.regiNum || '-'}
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{item.eventName}</td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{item.souvenir}</td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{item.course}</td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-5 text-center whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-900 text-center max-w-[240px] truncate">{item.eventName}</td>
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center max-w-[160px] truncate">{item.souvenir}</td>
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center max-w-[200px] truncate">{item.course}</td>
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-center whitespace-nowrap">
                           {(() => {
                             const statusInfo = getStatusConfig(item.status)
                             return (
                               <span
-                                className={`inline-flex items-center justify-center min-w-[64px] px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap ${statusInfo.className}`}
+                                className={`inline-flex items-center justify-center min-w-[72px] px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${statusInfo.className}`}
                               >
                                 {statusInfo.label}
                               </span>
@@ -455,6 +485,8 @@ export default function Client() {
             />
           </div>
         )}
+          </div>
+        </div>
       </div>
     </SubmenuLayout>
   )

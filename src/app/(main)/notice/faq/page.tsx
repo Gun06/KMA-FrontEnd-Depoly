@@ -154,38 +154,39 @@ export default function FaqPage() {
       }}
     >
       <div className="w-full h-full px-0 py-6 sm:py-8">
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="bg-white rounded-lg">
           {/* FAQ 내용 */}
           <div className="px-6 md:px-8 py-6">
             {faqItemsWithHtml.length > 0 ? (
-              <div className="divide-y divide-gray-200">
+              <div className="space-y-3">
                 {faqItemsWithHtml.map((item, index) => {
                   const isOpen = openSet.has(index)
                   const buttonId = `faq-button-${index}`
                   const panelId = `faq-panel-${index}`
+                  const questionCaption = `QUESTION ${String(index + 1).padStart(2, '0')}`
                   return (
-                    <div key={index} className="">
+                    <div key={index} className={`rounded-lg transition-colors ${isOpen ? 'bg-white' : 'bg-gray-50/70'}`}>
                       <button
                         id={buttonId}
                         aria-controls={panelId}
                         aria-expanded={isOpen}
                         onClick={() => toggle(index)}
-                        className="w-full flex items-center gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 pl-0 pr-0"
+                        className="w-full flex items-center gap-3 py-4 sm:py-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 px-4 sm:px-6"
                       >
-                        <span aria-hidden className="text-gray-800 font-giants text-[22px] md:text-[28px] leading-none">
-                          Q
-                        </span>
-                        <span 
-                          className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
-                          dangerouslySetInnerHTML={{ __html: item.questionHtml }}
-                        />
-                        <span aria-hidden>
+                        <div className="flex-1">
+                          <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">{questionCaption}</p>
+                          <span 
+                            className="font-pretendard text-[15px] sm:text-[16px] font-medium text-gray-800 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:leading-[1.6]"
+                            dangerouslySetInnerHTML={{ __html: item.questionHtml }}
+                          />
+                        </div>
+                        <span aria-hidden className="text-gray-500">
                           <Image
                             src={isOpen ? upIcon : downIcon}
                             alt=""
                             width={16}
                             height={16}
-                            className="w-4 h-4 md:w-5 md:h-5"
+                            className="w-4 h-4"
                           />
                         </span>
                       </button>
@@ -194,10 +195,10 @@ export default function FaqPage() {
                         role="region"
                         aria-labelledby={buttonId}
                         hidden={!isOpen}
-                        className="pb-6 pl-10 pr-0"
+                        className="pb-5 px-4 sm:px-6"
                       >
                         <div 
-                          className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
+                          className="mt-1 pl-3 sm:pl-4 border-l-2 border-gray-200 text-gray-600 text-[14px] sm:text-[15px] font-light [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:leading-[1.7] [&_p+p]:mt-2"
                           dangerouslySetInnerHTML={{ __html: item.answerHtml }}
                         />
                       </div>

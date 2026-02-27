@@ -128,13 +128,13 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
 
   const item = (entry: { type: 'host' | 'organizer' | 'sponsor' | 'assist'; logo: Logo }, _idx: number) => {
     const badgeColorMap: Record<'host' | 'organizer' | 'sponsor' | 'assist', string> = {
-      host: 'bg-red-100 text-red-800',
-      organizer: 'bg-blue-100 text-blue-800',
-      sponsor: 'bg-amber-100 text-amber-800',
-      assist: 'bg-green-100 text-green-800',
+      host: 'bg-red-500',
+      organizer: 'bg-blue-500',
+      sponsor: 'bg-amber-500',
+      assist: 'bg-emerald-500',
     }
     const badge = (
-      <span className={`absolute left-2 top-2 px-1 md:px-1.5 py-0.5 rounded-md text-[9px] md:text-xs whitespace-nowrap shadow-sm ${badgeColorMap[entry.type]}`}>
+      <span className={`absolute left-0 top-0 inline-flex items-center px-2.5 py-1 text-[10px] md:text-[11px] font-semibold text-white rounded-tl-2xl rounded-br-xl shadow-sm ${badgeColorMap[entry.type]}`}>
         {labelMap[entry.type]}
       </span>
     )

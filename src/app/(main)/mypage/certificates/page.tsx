@@ -60,17 +60,47 @@ function MyCertificatesPage() {
       }}
     >
       <div className="max-w-6xl mx-auto">
-        {/* 환영 메시지 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-giants-bold mb-2 text-black">
-            <span className="text-blue-600">Run </span>
-            Together, <span className="text-blue-600">Grow </span>Together!
-          </h1>
-          <p className="text-xl font-bold text-black">{user?.account || '회원'}님!</p>
-        </div>
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
+          {/* 왼쪽 프로필 패널 */}
+          <aside className="order-1">
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-4 py-4 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">프로필 정보</h3>
+              </div>
+              <div className="px-4 py-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">아이디</span>
+                  <span className="text-gray-800 font-medium">{user?.account || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">회원번호</span>
+                  <span className="text-gray-800 font-medium">{user?.id || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">권한</span>
+                  <span className="text-gray-800 font-medium">{user?.role || '-'}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
+                  <span className="text-gray-500">상태</span>
+                  <span className="text-gray-800 font-medium">활성</span>
+                </div>
+              </div>
+              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => alert('서비스 준비중입니다!')}
+                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  프로필 정보 수정
+                </button>
+              </div>
+            </div>
+          </aside>
 
-        {/* 탭 네비게이션 */}
-        <MypageTabs />
+          {/* 오른쪽 컨텐츠 영역 */}
+          <div className="order-2 min-w-0">
+            {/* 탭 네비게이션 */}
+            <MypageTabs />
 
         {/* 필터 섹션 */}
         <div className="bg-gray-100 p-6 rounded-xl mt-4 mb-4">
@@ -188,6 +218,8 @@ function MyCertificatesPage() {
             >
               다음
             </button>
+          </div>
+        </div>
           </div>
         </div>
       </div>

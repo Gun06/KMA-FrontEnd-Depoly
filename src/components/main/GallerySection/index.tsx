@@ -38,7 +38,7 @@ export default function GallerySection({ className }: GallerySectionProps) {
   // 드래그 범위 계산 (메모이제이션)
   const dragBounds = useMemo(() => {
     if (typeof window === 'undefined') {
-      return { maxLeft: 0, maxRight: 0, cardWidth: 350, cardGap: 24 };
+      return { maxLeft: 0, maxRight: 0, cardWidth: 300, cardGap: 24 };
     }
 
     const isMobile = window.innerWidth < 768;
@@ -152,7 +152,7 @@ export default function GallerySection({ className }: GallerySectionProps) {
       </SectionPanel>
 
       {/* 갤러리 영역 */}
-      <div className="relative w-screen left-1/2 -translate-x-1/2 h-[350px] md:h-[450px] flex items-center justify-center bg-gray-50">
+      <div className="relative w-screen left-1/2 -translate-x-1/2 h-[330px] md:h-[405px] flex items-center justify-center bg-gray-50">
         <div className="w-full max-w-6xl px-4 md:px-6">
           {/* 스켈레톤 UI - 로딩 중일 때 표시 */}
           {isLoading && (
