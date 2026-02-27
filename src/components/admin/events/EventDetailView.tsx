@@ -834,34 +834,15 @@ export default function EventDetailView({
         </div>
         <div className="px-6 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 홍보용(인스타배너) */}
-            {eventData.promotionBanner && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                  홍보용(인스타배너)
-                </h3>
-                <img
-                  src={eventData.promotionBanner}
-                  alt="홍보용(인스타배너)"
-                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => handleImageClick(eventData.promotionBanner)}
-                  onError={e => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-
-            {/* 대회메인 배너-데스크탑 */}
+            {/* 대회 메인배너(데스크탑) */}
             {eventData.mainBannerPcImageUrl && (
               <div className="space-y-2">
                 <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                  대회메인 배너(데스크탑)
+                  대회 메인배너(데스크탑)
                 </h3>
                 <img
                   src={eventData.mainBannerPcImageUrl}
-                  alt="대회메인 배너(데스크탑)"
+                  alt="대회 메인배너(데스크탑)"
                   className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() =>
                     handleImageClick(eventData.mainBannerPcImageUrl)
@@ -874,15 +855,15 @@ export default function EventDetailView({
               </div>
             )}
 
-            {/* 대회메인 배너-모바일 */}
+            {/* 대회 메인배너(모바일) */}
             {eventData.mainBannerMobileImageUrl && (
               <div className="space-y-2">
                 <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                  대회메인 배너(모바일)
+                  대회 메인배너(모바일)
                 </h3>
                 <img
                   src={eventData.mainBannerMobileImageUrl}
-                  alt="대회메인 배너(모바일)"
+                  alt="대회 메인배너(모바일)"
                   className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() =>
                     handleImageClick(eventData.mainBannerMobileImageUrl)
@@ -895,36 +876,15 @@ export default function EventDetailView({
               </div>
             )}
 
-            {/* 사이드메뉴배너 */}
-            {eventData.sideMenuBannerImageUrl && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                  사이드메뉴배너
-                </h3>
-                <img
-                  src={eventData.sideMenuBannerImageUrl}
-                  alt="사이드메뉴배너"
-                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() =>
-                    handleImageClick(eventData.sideMenuBannerImageUrl)
-                  }
-                  onError={e => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-
-            {/* 대회메인 중간배너 PC */}
+            {/* 대회 중간배너(데스크탑) */}
             {eventData.mainOutlinePcImageUrl && (
               <div className="space-y-2">
                 <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                대회메인 중간배너(PC)
+                  대회 중간배너(데스크탑)
                 </h3>
                 <img
                   src={eventData.mainOutlinePcImageUrl}
-                  alt="대회메인 중간배너(PC)"
+                  alt="대회 중간배너(데스크탑)"
                   className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() =>
                     handleImageClick(eventData.mainOutlinePcImageUrl)
@@ -937,19 +897,78 @@ export default function EventDetailView({
               </div>
             )}
 
-            {/* 대회메인 중간배너 모바일 */}
+            {/* 대회 중간배너(모바일) */}
             {eventData.mainOutlineMobileImageUrl && (
               <div className="space-y-2">
                 <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                대회메인 중간배너(모바일)
+                  대회 중간배너(모바일)
                 </h3>
                 <img
                   src={eventData.mainOutlineMobileImageUrl}
-                  alt="대회메인 중간배너(모바일)"
+                  alt="대회 중간배너(모바일)"
                   className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() =>
                     handleImageClick(eventData.mainOutlineMobileImageUrl)
                   }
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 인스타배너(홍보용) */}
+            {eventData.promotionBanner && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-pretendard font-medium text-gray-900">
+                  인스타배너(홍보용)
+                </h3>
+                <img
+                  src={eventData.promotionBanner}
+                  alt="인스타배너(홍보용)"
+                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleImageClick(eventData.promotionBanner)}
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 사이드 메뉴배너 */}
+            {eventData.sideMenuBannerImageUrl && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-pretendard font-medium text-gray-900">
+                  사이드 메뉴배너
+                </h3>
+                <img
+                  src={eventData.sideMenuBannerImageUrl}
+                  alt="사이드 메뉴배너"
+                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() =>
+                    handleImageClick(eventData.sideMenuBannerImageUrl)
+                  }
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 인증서 배경 이미지 */}
+            {eventData.resultImageUrl && (
+              <div className="space-y-2">
+                <h3 className="text-lg font-pretendard font-medium text-gray-900">
+                  인증서 배경 이미지
+                </h3>
+                <img
+                  src={eventData.resultImageUrl}
+                  alt="인증서 배경 이미지"
+                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleImageClick(eventData.resultImageUrl)}
                   onError={e => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
@@ -1032,25 +1051,6 @@ export default function EventDetailView({
                   onClick={() =>
                     handleImageClick(eventData.meetingPlacePageImageUrl)
                   }
-                  onError={e => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
-
-            {/* 결과 이미지 */}
-            {eventData.resultImageUrl && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-pretendard font-medium text-gray-900">
-                  인증서 배경 이미지
-                </h3>
-                <img
-                  src={eventData.resultImageUrl}
-                  alt="인증서 배경 이미지"
-                  className="w-full h-48 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => handleImageClick(eventData.resultImageUrl)}
                   onError={e => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
