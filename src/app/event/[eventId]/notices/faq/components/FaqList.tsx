@@ -9,7 +9,7 @@ interface FaqListProps {
 
 export const FaqList = ({ faqItems, isOpen, onToggle }: FaqListProps) => {
   return (
-    <div className="divide-y divide-gray-200 bg-white rounded-md">
+    <div className="space-y-3 bg-transparent">
       {faqItems.map((item, index) => (
         <FaqItem
           key={index}
