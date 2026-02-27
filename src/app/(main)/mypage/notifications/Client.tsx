@@ -2,6 +2,7 @@
 
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
+import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useEffect, useState, useCallback } from 'react'
 import { X } from 'lucide-react'
 import ConfirmModal from '@/components/common/Modal/ConfirmModal'
@@ -126,41 +127,14 @@ function ClientContent() {
     >
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-          {/* 왼쪽 프로필 패널 */}
-          <aside className="order-1">
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-              <div className="px-4 py-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">프로필 정보</h3>
-              </div>
-              <div className="px-4 py-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">아이디</span>
-                  <span className="text-gray-800 font-medium">{user?.account || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">회원번호</span>
-                  <span className="text-gray-800 font-medium">{user?.id || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">권한</span>
-                  <span className="text-gray-800 font-medium">{user?.role || '-'}</span>
-                </div>
-                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-gray-500">미읽음 알림</span>
-                  <span className="text-gray-800 font-medium">{globalUnreadCount + eventUnreadCount}건</span>
-                </div>
-              </div>
-              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
-                <button
-                  type="button"
-                  onClick={() => alert('서비스 준비중입니다!')}
-                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  프로필 정보 수정
-                </button>
-              </div>
-            </div>
-          </aside>
+          <ProfileInfoPanel
+            name={user?.account}
+            account={user?.account}
+            role={user?.role}
+            statusText="활성"
+            unreadCountText={`${globalUnreadCount + eventUnreadCount}건`}
+            onEditClick={() => alert('서비스 준비중입니다!')}
+          />
 
           {/* 오른쪽 알림 목록 영역 */}
           <div className="order-2 min-w-0">

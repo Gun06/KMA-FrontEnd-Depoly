@@ -8,8 +8,11 @@ import { ChevronDown, CalendarX, X } from 'lucide-react'
 
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
+import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useAuthStore } from '@/stores/authStore'
 import { useApplications } from './hooks/useApplications'
+import { useGlobalNotifications, useEventNotifications } from '../notifications/hooks/useNotifications'
+import type { NotificationItem } from '../notifications/types/notification'
 import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
 import type { ApplicationItem } from './types/application'
@@ -36,6 +39,12 @@ function getStatusConfig(status: string): { label: string; className: string } {
     label: status || '알 수 없음',
     className: 'bg-gray-50 text-gray-700 border border-gray-200'
   }
+}
+
+function isUnreadNotification(notification: NotificationItem): boolean {
+  if (notification.isRead !== undefined) return notification.isRead === false
+  if (notification.read !== undefined) return notification.read === false
+  return true
 }
 
 // 날짜 형식 검증: YYYY.MM.DD 형식인지 확인
@@ -114,6 +123,15 @@ export default function Client() {
   const pageSize = 10
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedApplication, setSelectedApplication] = useState<ApplicationItem | null>(null)
+  const { data: globalCountData } = useGlobalNotifications(1, 20)
+  const { data: eventCountData } = useEventNotifications(1, 20)
+  const unreadCount =
+    (globalCountData?.content
+      ? globalCountData.content.filter((n) => isUnreadNotification(n)).length
+      : 0) +
+    (eventCountData?.content
+      ? eventCountData.content.filter((n) => isUnreadNotification(n)).length
+      : 0)
 
   // 기간 선택 변경 시 날짜 자동 업데이트
   useEffect(() => {
@@ -193,41 +211,14 @@ export default function Client() {
     >
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-          {/* 왼쪽 프로필 패널 */}
-          <aside className="order-1">
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-              <div className="px-4 py-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">프로필 정보</h3>
-              </div>
-              <div className="px-4 py-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">아이디</span>
-                  <span className="text-gray-800 font-medium">{user?.account || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">회원번호</span>
-                  <span className="text-gray-800 font-medium">{user?.id || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">권한</span>
-                  <span className="text-gray-800 font-medium">{user?.role || '-'}</span>
-                </div>
-                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-gray-500">상태</span>
-                  <span className="text-gray-800 font-medium">활성</span>
-                </div>
-              </div>
-              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
-                <button
-                  type="button"
-                  onClick={() => alert('서비스 준비중입니다!')}
-                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  프로필 정보 수정
-                </button>
-              </div>
-            </div>
-          </aside>
+          <ProfileInfoPanel
+            name={user?.account}
+            account={user?.account}
+            role={user?.role}
+            statusText="활성"
+            unreadCountText={`${unreadCount}건`}
+            onEditClick={() => alert('서비스 준비중입니다!')}
+          />
 
           {/* 오른쪽 컨텐츠 영역 */}
           <div className="order-2 min-w-0">

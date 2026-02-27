@@ -2,10 +2,13 @@
 
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
+import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useEffect, useState } from 'react'
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
 import { useAuthStore } from '@/stores/authStore'
+import { useGlobalNotifications, useEventNotifications } from '../notifications/hooks/useNotifications'
+import type { NotificationItem } from '../notifications/types/notification'
 
 interface CertificateData {
   id: string
@@ -28,13 +31,21 @@ const statusLabel: Record<CertificateData['status'], string> = {
 }
 
 const statusClass: Record<CertificateData['status'], string> = {
-  available: 'bg-blue-600 text-white',
-  pending: 'bg-yellow-500 text-white',
-  expired: 'bg-gray-400 text-white',
+  available: 'bg-blue-50 text-blue-700 border border-blue-200',
+  pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+  expired: 'bg-gray-50 text-gray-700 border border-gray-200',
+}
+
+function isUnreadNotification(notification: NotificationItem): boolean {
+  if (notification.isRead !== undefined) return notification.isRead === false
+  if (notification.read !== undefined) return notification.read === false
+  return true
 }
 
 function MyCertificatesPage() {
   const { user } = useAuthStore()
+  const { data: globalCountData } = useGlobalNotifications(1, 20)
+  const { data: eventCountData } = useEventNotifications(1, 20)
   const [selectedPeriod, setSelectedPeriod] = useState('1주일')
   const [startDate, setStartDate] = useState('2025.04.26')
   const [endDate, setEndDate] = useState('2025.07.26')
@@ -51,6 +62,13 @@ function MyCertificatesPage() {
   const filtered = mockCertificates // 실제 구현 시 기간/날짜 필터 적용
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const unreadCount =
+    (globalCountData?.content
+      ? globalCountData.content.filter((n) => isUnreadNotification(n)).length
+      : 0) +
+    (eventCountData?.content
+      ? eventCountData.content.filter((n) => isUnreadNotification(n)).length
+      : 0)
 
   return (
     <SubmenuLayout
@@ -61,41 +79,14 @@ function MyCertificatesPage() {
     >
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
-          {/* 왼쪽 프로필 패널 */}
-          <aside className="order-1">
-            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-              <div className="px-4 py-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">프로필 정보</h3>
-              </div>
-              <div className="px-4 py-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">아이디</span>
-                  <span className="text-gray-800 font-medium">{user?.account || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">회원번호</span>
-                  <span className="text-gray-800 font-medium">{user?.id || '-'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500">권한</span>
-                  <span className="text-gray-800 font-medium">{user?.role || '-'}</span>
-                </div>
-                <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-gray-500">상태</span>
-                  <span className="text-gray-800 font-medium">활성</span>
-                </div>
-              </div>
-              <div className="px-4 py-4 border-t border-gray-200 bg-gray-50">
-                <button
-                  type="button"
-                  onClick={() => alert('서비스 준비중입니다!')}
-                  className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  프로필 정보 수정
-                </button>
-              </div>
-            </div>
-          </aside>
+          <ProfileInfoPanel
+            name={user?.account}
+            account={user?.account}
+            role={user?.role}
+            statusText="활성"
+            unreadCountText={`${unreadCount}건`}
+            onEditClick={() => alert('서비스 준비중입니다!')}
+          />
 
           {/* 오른쪽 컨텐츠 영역 */}
           <div className="order-2 min-w-0">
@@ -103,7 +94,8 @@ function MyCertificatesPage() {
             <MypageTabs />
 
         {/* 필터 섹션 */}
-        <div className="bg-gray-100 p-6 rounded-xl mt-4 mb-4">
+        <div className="bg-white border border-gray-200 p-4 sm:p-6 rounded-2xl mt-4 mb-4">
+          <div className="text-[11px] tracking-[0.12em] text-gray-400 font-medium mb-3">FILTER</div>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <SegmentedControl
               options={periods.map((p) => ({ key: p, label: p }))}
@@ -122,23 +114,20 @@ function MyCertificatesPage() {
         </div>
 
         {/* 안내 메시지 */}
-        <p className="text-xs sm:text-sm text-gray-500 mb-6">
+        <p className="text-xs sm:text-sm text-gray-500 mb-5 pl-3 border-l-2 border-gray-200">
           *기록증은 대회 주최 측 처리 후 발급 가능합니다.
         </p>
-
-        {/* 제목 */}
-        <h2 className="text-2xl font-giants-bold text-gray-900 mb-3">기록증 조회</h2>
 
         {/* 모바일 카드 리스트 */}
         <div className="mt-2 sm:hidden space-y-3">
           {paginated.map((row) => (
-            <div key={row.id} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <div key={row.id} className="bg-white rounded-xl border border-gray-200 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm text-gray-500">{row.date}</div>
                   <div className="mt-1 text-base font-semibold text-gray-900">{row.eventName}</div>
                 </div>
-                <span className={`inline-flex items-center justify-center min-w-[64px] px-2 py-1 text-[10px] font-semibold rounded-md whitespace-nowrap ${statusClass[row.status]}`}>
+                <span className={`inline-flex items-center justify-center min-w-[72px] px-3 py-1 text-[10px] font-medium rounded-md whitespace-nowrap ${statusClass[row.status]}`}>
                   {statusLabel[row.status]}
                 </span>
               </div>
@@ -156,28 +145,30 @@ function MyCertificatesPage() {
 
         {/* 테이블 (태블릿 이상) */}
         <div className="mt-2 hidden sm:block">
-          <div className="overflow-x-auto border-t border-gray-200">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full min-w-[640px] sm:min-w-0 text-xs sm:text-sm">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">일자</th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">대회명</th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">기록</th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">발급상태</th>
-                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-center font-medium text-gray-500">다운로드</th>
+                <tr className="border-b border-gray-200 bg-gray-50/70">
+                  <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">일자</th>
+                  <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">대회명</th>
+                  <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">기록</th>
+                  <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">발급상태</th>
+                  <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">다운로드</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {paginated.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
-                    <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{row.date}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{row.eventName}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">{row.time}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center whitespace-nowrap">
-                      {statusLabel[row.status]}
+                  <tr key={row.id} className="hover:bg-gray-50/70 transition-colors">
+                    <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-700 text-center">{row.date}</td>
+                    <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-900 text-center max-w-[260px] truncate">{row.eventName}</td>
+                    <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center">{row.time}</td>
+                    <td className="px-3 sm:px-6 py-4 sm:py-5 text-center whitespace-nowrap">
+                      <span className={`inline-flex items-center justify-center min-w-[72px] px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${statusClass[row.status]}`}>
+                        {statusLabel[row.status]}
+                      </span>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-5 text-gray-900 text-center">
-                      <button className="text-gray-900 underline">[PDF 다운로드]</button>
+                    <td className="px-3 sm:px-6 py-4 sm:py-5 text-center">
+                      <button className="text-gray-700 hover:text-gray-900 underline underline-offset-2">[PDF 다운로드]</button>
                     </td>
                   </tr>
                 ))}
