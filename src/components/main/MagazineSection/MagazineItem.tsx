@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { InquiryItem as InquiryItemType } from './types';
 
 interface InquiryItemProps {
@@ -29,9 +28,7 @@ export default function InquiryItem({ item, onClick }: InquiryItemProps) {
           
           {/* 제목만 표시 */}
           <div className="flex-1 min-w-0">
-            <h4 className={`text-sm leading-relaxed truncate min-w-0 ${
-              item.secret ? 'text-gray-500 italic' : 'text-gray-900'
-            }`}>
+            <h4 className="text-sm text-gray-900 leading-relaxed truncate min-w-0">
               {item.title}
             </h4>
           </div>
