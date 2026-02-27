@@ -4,7 +4,7 @@ import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 
-import { ChevronDown, CalendarX } from 'lucide-react'
+import { ChevronDown, CalendarX, X } from 'lucide-react'
 
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useApplications } from './hooks/useApplications'
 import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
+import type { ApplicationItem } from './types/application'
 
 // 상태 매핑 함수
 // 백엔드 응답: '신청 취소', '참가 완료', '신청 완료' 3가지
@@ -111,6 +112,8 @@ export default function Client() {
 
   const [page, setPage] = useState(1)
   const pageSize = 10
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [selectedApplication, setSelectedApplication] = useState<ApplicationItem | null>(null)
 
   // 기간 선택 변경 시 날짜 자동 업데이트
   useEffect(() => {
@@ -174,6 +177,11 @@ export default function Client() {
   // 페이지 변경 핸들러
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage)
+  }, [])
+
+  const handleApplicationClick = useCallback((item: ApplicationItem) => {
+    setSelectedApplication(item)
+    setShowDetailModal(true)
   }, [])
 
   return (
@@ -315,7 +323,19 @@ export default function Client() {
               </div>
             ) : (
               paginatedData.map((item, index) => (
-                <div key={item.regiNum || `item-${index}`} className="bg-white rounded-xl border border-gray-200 p-4">
+                <div
+                  key={item.regiNum || `item-${index}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleApplicationClick(item)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleApplicationClick(item)
+                    }
+                  }}
+                  className="bg-white rounded-xl border border-gray-200 p-4 cursor-pointer hover:bg-gray-50/70 transition-colors"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm text-gray-500">
@@ -420,7 +440,11 @@ export default function Client() {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {paginatedData.map((item, index) => (
-                      <tr key={item.regiNum || `item-${index}`} className="hover:bg-gray-50/70 transition-colors">
+                      <tr
+                        key={item.regiNum || `item-${index}`}
+                        className="hover:bg-gray-50/70 transition-colors cursor-pointer"
+                        onClick={() => handleApplicationClick(item)}
+                      >
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-700 text-center">
                           {formatDateForDisplay(item.date)}
                         </td>
@@ -483,6 +507,61 @@ export default function Client() {
               showEdge={true}
               activeColor="blue"
             />
+          </div>
+        )}
+
+        {showDetailModal && selectedApplication && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
+            onClick={() => setShowDetailModal(false)}
+          >
+            <div
+              className="w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                <h3 className="text-base font-semibold text-gray-900">신청내역 상세</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowDetailModal(false)}
+                  className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                  aria-label="상세 모달 닫기"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="px-5 py-5 space-y-4">
+                <div className="grid grid-cols-[96px_1fr] gap-y-3 text-sm">
+                  <span className="text-gray-500">신청날짜</span>
+                  <span className="text-gray-900">{formatDateForDisplay(selectedApplication.date)}</span>
+
+                  <span className="text-gray-500">접수번호</span>
+                  <span className="text-gray-900">{selectedApplication.regiNum || '-'}</span>
+
+                  <span className="text-gray-500">대회명</span>
+                  <span className="text-gray-900 break-words">{selectedApplication.eventName}</span>
+
+                  <span className="text-gray-500">기념품</span>
+                  <span className="text-gray-900 break-words">{selectedApplication.souvenir}</span>
+
+                  <span className="text-gray-500">코스</span>
+                  <span className="text-gray-900 break-words">{selectedApplication.course}</span>
+
+                  <span className="text-gray-500">상태</span>
+                  <span>
+                    {(() => {
+                      const statusInfo = getStatusConfig(selectedApplication.status)
+                      return (
+                        <span className={`inline-flex items-center justify-center min-w-[72px] px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${statusInfo.className}`}>
+                          {statusInfo.label}
+                        </span>
+                      )
+                    })()}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
           </div>
