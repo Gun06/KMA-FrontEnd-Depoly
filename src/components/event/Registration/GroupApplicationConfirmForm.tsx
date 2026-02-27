@@ -340,16 +340,18 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
       {activeTab === 'group' && (
         <>
           {/* 섹션 제목 */}
-          <div className="mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-black text-left">단체 참가자 정보</h2>
-            <hr className="border-black border-[1.5px] mt-2" />
+          <div className="mb-3 sm:mb-4">
+            <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">GROUP CHECK</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-black text-left">단체 참가자 정보</h2>
           </div>
 
           {/* 안내 문구 */}
-          <div className="mb-8 sm:mb-12 text-left">
-            <p className="text-sm sm:text-base text-black leading-relaxed font-bold">
-              신청 내역을 확인하기 위해 신청서와 동일한 정보를 입력한 후, 확인하기를 클릭하세요.
-            </p>
+          <div className="mb-10 sm:mb-14 text-left">
+            <div className="pl-3 border-l-2 border-gray-200">
+              <p className="text-sm sm:text-base text-black leading-relaxed font-thin">
+                신청 내역을 확인하기 위해 신청서와 동일한 정보를 입력한 후, 확인하기를 클릭하세요.
+              </p>
+            </div>
           </div>
 
           {/* 에러 메시지 */}
@@ -451,16 +453,18 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
       {activeTab === 'individual' && (
         <>
           {/* 섹션 제목 */}
-          <div className="mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-black text-left">단체 신청 개별 확인</h2>
-            <hr className="border-black border-[1.5px] mt-2" />
+          <div className="mb-3 sm:mb-4">
+            <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">INDIVIDUAL CHECK</p>
+            <h2 className="text-lg sm:text-xl font-semibold text-black text-left">단체 신청 개별 확인</h2>
           </div>
 
           {/* 안내 문구 */}
-          <div className="mb-8 sm:mb-12 text-left">
-            <p className="text-sm sm:text-base text-black leading-relaxed font-bold">
-              개별 참가자의 신청 내역을 확인하기 위해 정보를 입력한 후, 확인하기를 클릭하세요.
-            </p>
+          <div className="mb-10 sm:mb-14 text-left">
+            <div className="pl-3 border-l-2 border-gray-200">
+              <p className="text-sm sm:text-base text-black leading-relaxed font-thin">
+                개별 참가자의 신청 내역을 확인하기 위해 정보를 입력한 후, 확인하기를 클릭하세요.
+              </p>
+            </div>
           </div>
 
           {/* 개별 확인 폼 */}

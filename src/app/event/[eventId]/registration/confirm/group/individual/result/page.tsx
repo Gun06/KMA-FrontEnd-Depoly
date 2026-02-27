@@ -138,12 +138,6 @@ export default function IndividualGroupConfirmResultPage() {
     >
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* 페이지 제목 */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-black mb-2">단체 신청 개별 확인 결과</h1>
-            <hr className="border-black border-[1.5px]" />
-          </div>
-
           {/* 개별 확인 결과 컴포넌트 */}
           <IndividualGroupConfirmResult data={individualData} />
 

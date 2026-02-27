@@ -540,20 +540,21 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
           </div>
 
           {/* 신청 정보 카드 */}
-          <div className="bg-white mb-8 shadow-lg rounded-lg overflow-hidden">
+          <div className="bg-white mb-8 rounded-xl">
 
             {/* 신청 기본 정보 섹션 */}
-            <div className="p-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4">신청 기본 정보</h3>
-              <div className="space-y-4">
+            <div className="p-6 sm:p-8">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">APPLICATION</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">신청 기본 정보</h3>
+              <div className="space-y-5 text-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">신청일시</label>
-                  <span className="text-base text-black">{formatDate(registrationData.registrationDate)}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">신청일시</label>
+                  <span className="font-medium text-gray-800">{formatDate(registrationData.registrationDate)}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4">
-                  <label className="text-base font-medium text-black">회원구분</label>
-                  <span className="text-base text-black">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">회원구분</label>
+                  <span className="font-medium text-gray-800">
                     {registrationData.personalAccount || "없음"}
                   </span>
                 </div>
@@ -561,32 +562,33 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             </div>
 
             {/* 개인정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">개인정보</h3>
-              <div className="space-y-4">
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">PROFILE</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">개인정보</h3>
+              <div className="space-y-5 text-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">이름</label>
-                  <span className="text-base text-black">{registrationData.name}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">이름</label>
+                  <span className="font-medium text-gray-800">{registrationData.name}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">생년월일</label>
-                  <span className="text-base text-black">{registrationData.birth}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">생년월일</label>
+                  <span className="font-medium text-gray-800">{registrationData.birth}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">성별</label>
-                  <span className="text-base text-black">{getGenderText(registrationData.gender)}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">성별</label>
+                  <span className="font-medium text-gray-800">{getGenderText(registrationData.gender)}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">휴대폰번호</label>
-                  <span className="text-base text-black">{registrationData.phNum}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">휴대폰번호</label>
+                  <span className="font-medium text-gray-800">{registrationData.phNum}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">이메일</label>
-                  <span className="text-base text-black">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">이메일</label>
+                  <span className="font-medium text-gray-800">
                     {registrationData.email && !registrationData.email.includes('TEMP_EMAIL') && registrationData.email.trim() !== ''
                       ? registrationData.email
                       : '-'}
@@ -594,22 +596,22 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">우편번호</label>
-                  <span className="text-base text-black">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">우편번호</label>
+                  <span className="font-medium text-gray-800">
                     {registrationData.zipCode || '-'}
                   </span>
                 </div>
 
                 <div className="flex items-start justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">주소</label>
-                  <span className="text-base text-black text-right">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">주소</label>
+                  <span className="font-medium text-gray-800 text-right break-all">
                     {cleanAddress(registrationData.address || '', registrationData.zipCode) || '-'}
                   </span>
                 </div>
 
                 <div className="flex items-start justify-between pb-4">
-                  <label className="text-base font-medium text-black">상세주소</label>
-                  <span className="text-base text-black">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">상세주소</label>
+                  <span className="font-medium text-gray-800">
                     {registrationData.addressDetail || '-'}
                   </span>
                 </div>
@@ -617,9 +619,10 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             </div>
 
             {/* 신청 정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">신청 정보</h3>
-              <div className="space-y-4">
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">REGISTRATION</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">신청 정보</h3>
+              <div className="space-y-5 text-sm">
                 {(() => {
                   // eventCategoryName을 | 기준으로 분리
                   const categoryName = registrationData.eventCategoryName || '';
@@ -630,14 +633,14 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   return (
                     <>
                       <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                        <label className="text-base font-medium text-black">참가종목</label>
-                        <span className="text-base text-black">{distance || '-'}</span>
+                        <label className="font-medium text-gray-500 min-w-[112px] pr-4">참가종목</label>
+                        <span className="font-medium text-gray-800">{distance || '-'}</span>
                       </div>
 
                       {detailCategory && (
                         <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                          <label className="text-base font-medium text-black">참가종목 상세</label>
-                          <span className="text-base text-black">{detailCategory}</span>
+                          <label className="font-medium text-gray-500 min-w-[112px] pr-4">참가종목 상세</label>
+                          <span className="font-medium text-gray-800">{detailCategory}</span>
                         </div>
                       )}
                     </>
@@ -645,30 +648,36 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 })()}
 
                 <div className="flex items-start justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">기념품</label>
-                  <div className="text-base text-black text-right">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">기념품</label>
+                  <div className="flex flex-wrap justify-end gap-2 max-w-[70%]">
                     {registrationData.souvenir && registrationData.souvenir.length > 0 ? (
                       registrationData.souvenir.map((item, index) => (
-                        <div key={index} className="mb-1">
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs text-gray-600"
+                        >
                           {item.souvenirName} {item.souvenirSize ? `(${item.souvenirSize})` : ''}
-                        </div>
+                        </span>
                       ))
                     ) : (
-                      <span className="text-gray-400">기념품 없음</span>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs text-gray-600">
+                        기념품 없음
+                      </span>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pb-4">
-                  <label className="text-base font-medium text-black">비용</label>
-                  <span className="text-base text-black">{registrationData.amount.toLocaleString()}원</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">비용</label>
+                  <span className="font-medium text-blue-600">{registrationData.amount.toLocaleString()}원</span>
                 </div>
               </div>
             </div>
 
             {/* 결제 정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">결제 정보</h3>
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">PAYMENT</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">결제 정보</h3>
 
               {/* 계좌 안내 문구 */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
@@ -676,27 +685,27 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
                   <p>
                     계좌번호 :{' '}
-                    <span className="bg-yellow-200 font-semibold px-2 py-1 rounded">
+                    <span className="bg-yellow-200 font-medium px-2 py-1 rounded">
                       {bankName && virtualAccount ? `${bankName} ${virtualAccount}` : '계좌 정보 준비 중입니다.'}
                     </span>
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5 text-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">결제 방식</label>
-                  <span className="text-base text-black">{getPaymentTypeText(registrationData.paymentType)}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">결제 방식</label>
+                  <span className="font-medium text-gray-800">{getPaymentTypeText(registrationData.paymentType)}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">입금자명</label>
-                  <span className="text-base text-black">{registrationData.paymenterName}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">입금자명</label>
+                  <span className="font-medium text-gray-800">{registrationData.paymenterName}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">결제상태</label>
-                  <span className={`text-base font-medium ${getPaymentStatusColor(registrationData.paymentStatus)}`}>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">결제상태</label>
+                  <span className={`font-medium ${getPaymentStatusColor(registrationData.paymentStatus)}`}>
                     {getPaymentStatusText(registrationData.paymentStatus)}
                   </span>
                 </div>
@@ -704,15 +713,15 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 {(registrationData.paymenterBank || registrationData.accountNumber) && (
                   <>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                      <label className="text-base font-medium text-black">환불 은행명</label>
-                      <span className="text-base text-black">
+                      <label className="font-medium text-gray-500 min-w-[112px] pr-4">환불 은행명</label>
+                      <span className="font-medium text-gray-800">
                         {registrationData.paymenterBank || '-'}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between pb-4">
-                      <label className="text-base font-medium text-black">환불 계좌번호</label>
-                      <span className="text-base text-black">
+                      <label className="font-medium text-gray-500 min-w-[112px] pr-4">환불 계좌번호</label>
+                      <span className="font-medium text-gray-800">
                         {registrationData.accountNumber || '-'}
                       </span>
                     </div>

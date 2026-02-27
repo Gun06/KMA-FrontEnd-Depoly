@@ -994,15 +994,16 @@ export default function GroupApplicationConfirmResultPage() {
           </div>
 
           {/* 신청 정보 카드 */}
-          <div className="bg-white mb-8">
+          <div className="bg-white mb-8 rounded-xl">
 
             {/* 신청 정보 섹션 */}
-            <div className="p-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4">신청 정보</h3>
-              <div className="space-y-4">
+            <div className="p-6 sm:p-8">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">APPLICATION</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">신청 정보</h3>
+              <div className="space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">신청일시</label>
-                  <span className="text-base text-black">
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">신청일시</label>
+                  <span className="text-sm font-medium text-gray-800">
                     {groupApplicationData.registrationDate}
                   </span>
                 </div>
@@ -1010,44 +1011,45 @@ export default function GroupApplicationConfirmResultPage() {
             </div>
 
             {/* 단체 정보 섹션 */}
-            <div className="p-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4">단체 정보</h3>
-              <div className="space-y-4">
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">ORGANIZATION</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">단체 정보</h3>
+              <div className="space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">단체명</label>
-                  <span className="text-base text-black">{groupApplicationData.organizationName}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">단체명</label>
+                  <span className="text-sm font-medium text-gray-800">{groupApplicationData.organizationName}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">단체신청용 ID</label>
-                  <span className="text-base text-black">{groupApplicationData.organizationAccount}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">단체신청용 ID</label>
+                  <span className="text-sm font-medium text-gray-800">{groupApplicationData.organizationAccount}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">대표자명</label>
-                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderName?: string }).leaderName || groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">대표자명</label>
+                  <span className="text-sm font-medium text-gray-800">{(groupApplicationData as GroupRegistrationConfirmData & { leaderName?: string }).leaderName || groupApplicationData.innerUserRegistrationList[0]?.name || "정보 없음"}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">대표자 생년월일</label>
-                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderBirth?: string }).leaderBirth || groupApplicationData.birth || "정보 없음"}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">대표자 생년월일</label>
+                  <span className="text-sm font-medium text-gray-800">{(groupApplicationData as GroupRegistrationConfirmData & { leaderBirth?: string }).leaderBirth || groupApplicationData.birth || "정보 없음"}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">우편번호</label>
-                  <span className="text-base text-black">{groupApplicationData.zipCode || '-'}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">우편번호</label>
+                  <span className="text-sm font-medium text-gray-800">{groupApplicationData.zipCode || '-'}</span>
                 </div>
 
                 <div className="flex items-start justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">주소</label>
-                  <span className="text-base text-black text-right">
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">주소</label>
+                  <span className="text-sm font-medium text-gray-800 text-right break-all">
                     {cleanAddress(groupApplicationData.address || '', groupApplicationData.zipCode) || '-'}
                   </span>
                 </div>
 
                 <div className="flex items-start justify-between pb-4">
-                  <label className="text-base font-medium text-black">상세주소</label>
-                  <span className="text-base text-black">
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">상세주소</label>
+                  <span className="text-sm font-medium text-gray-800">
                     {groupApplicationData.addressDetail || '-'}
                   </span>
                 </div>
@@ -1055,25 +1057,27 @@ export default function GroupApplicationConfirmResultPage() {
             </div>
 
             {/* 연락처 정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">연락처 정보</h3>
-              <div className="space-y-4">
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">CONTACT</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">연락처 정보</h3>
+              <div className="space-y-5">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">휴대폰번호</label>
-                  <span className="text-base text-black">{(groupApplicationData as GroupRegistrationConfirmData & { leaderPhNum?: string }).leaderPhNum || groupApplicationData.phNum || "정보 없음"}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">휴대폰번호</label>
+                  <span className="text-sm font-medium text-gray-800">{(groupApplicationData as GroupRegistrationConfirmData & { leaderPhNum?: string }).leaderPhNum || groupApplicationData.phNum || "정보 없음"}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4">
-                  <label className="text-base font-medium text-black">이메일</label>
-                  <span className="text-base text-black">{groupApplicationData.email}</span>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">이메일</label>
+                  <span className="text-sm font-medium text-gray-800">{groupApplicationData.email}</span>
                 </div>
               </div>
             </div>
 
             {/* 참가자 정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">참가자 정보</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">PARTICIPANTS</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">참가자 정보</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {groupApplicationData.innerUserRegistrationList.slice(0, displayedCount).map((participant, index) => {
                   // 상세 정보가 로드된 참가자는 업데이트된 정보 사용
                   const registrationId = participant.registrationId;
@@ -1082,20 +1086,20 @@ export default function GroupApplicationConfirmResultPage() {
                     : participant;
 
                   return (
-                    <div key={detailedParticipant.registrationId || index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={detailedParticipant.registrationId || index} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-sm">
                       {/* 참가자 헤더 */}
                       <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-blue-100">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                          <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
                             {index + 1}
                           </div>
-                          <h4 className="text-lg font-bold text-black">{detailedParticipant.name}</h4>
+                          <h4 className="text-base font-medium text-gray-800">{detailedParticipant.name}</h4>
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                             {getGenderLabel(detailedParticipant.gender)}
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-blue-600">
+                          <div className="text-base font-medium text-blue-600">
                             {detailedParticipant.amount.toLocaleString()}원
                           </div>
                         </div>
@@ -1104,24 +1108,24 @@ export default function GroupApplicationConfirmResultPage() {
                       {/* 참가자 상세 정보 */}
                       <div className="space-y-3 mb-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600 font-medium">생년월일</span>
-                          <span className="text-black font-semibold">
+                          <span className="text-gray-500 min-w-[88px] pr-3">생년월일</span>
+                          <span className="text-gray-800 font-medium">
                             {detailedParticipant.birth}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600 font-medium">전마협 ID</span>
-                          <span className="text-black font-semibold">{detailedParticipant.personalAccount || "없음"}</span>
+                          <span className="text-gray-500 min-w-[88px] pr-3">전마협 ID</span>
+                          <span className="text-gray-800 font-medium">{detailedParticipant.personalAccount || "없음"}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600 font-medium">연락처</span>
-                          <span className="text-black font-semibold">{detailedParticipant.phNum}</span>
+                          <span className="text-gray-500 min-w-[88px] pr-3">연락처</span>
+                          <span className="text-gray-800 font-medium">{detailedParticipant.phNum}</span>
                         </div>
                       </div>
 
                       {/* 비용 상세 정보 */}
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <h5 className="text-sm font-semibold text-gray-700 mb-3">종목&비용 상세</h5>
+                        <h5 className="text-sm font-medium text-gray-600 mb-3">종목&비용 상세</h5>
                         <div className="space-y-2 text-sm">
                           {(() => {
                             // eventCategoryName을 | 기준으로 분리
@@ -1133,38 +1137,47 @@ export default function GroupApplicationConfirmResultPage() {
                             return (
                               <>
                                 <div className="flex justify-between">
-                                  <span className="text-gray-600">참가종목</span>
-                                  <span className="text-black">{distance || '-'}</span>
+                                  <span className="text-gray-500 min-w-[88px] pr-3">참가종목</span>
+                                  <span className="text-gray-800 font-medium">{distance || '-'}</span>
                                 </div>
 
                                 {detailCategory && (
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">참가종목 상세</span>
-                                    <span className="text-black">{detailCategory}</span>
+                                    <span className="text-gray-500 min-w-[88px] pr-3">참가종목 상세</span>
+                                    <span className="text-gray-800 font-medium">{detailCategory}</span>
                                   </div>
                                 )}
                               </>
                             );
                           })()}
 
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">기념품</span>
-                            <div className="text-black text-right">
+                          <div className="flex justify-between items-start">
+                            <span className="text-gray-500 min-w-[88px] pr-3">기념품</span>
+                            <div className="flex flex-wrap justify-end gap-2 max-w-[70%]">
                               {detailedParticipant.souvenir && detailedParticipant.souvenir.length > 0
                                 ? detailedParticipant.souvenir.map((item, idx: number) => {
                                   const size = (item.souvenirSize === '사이즈 없음' || item.souvenirSize === '기념품 없음') ? '' : ` (${item.souvenirSize})`;
                                   const label = (item.souvenirName === '기념품 없음') ? '없음' : `${item.souvenirName}${size}`;
                                   return (
-                                    <div key={idx}>{label}</div>
+                                    <span
+                                      key={idx}
+                                      className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs text-gray-600"
+                                    >
+                                      {label}
+                                    </span>
                                   );
                                 })
-                                : '없음'}
+                                : (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs text-gray-600">
+                                    없음
+                                  </span>
+                                )}
                             </div>
                           </div>
 
                           <div className="border-t border-gray-200 pt-2 mt-2">
-                            <div className="flex justify-between font-semibold">
-                              <span className="text-gray-700">총금액</span>
+                            <div className="flex justify-between font-medium">
+                              <span className="text-gray-500">총금액</span>
                               <span className="text-blue-600">{detailedParticipant.amount.toLocaleString()}원</span>
                             </div>
                           </div>
@@ -1174,8 +1187,8 @@ export default function GroupApplicationConfirmResultPage() {
                       {/* 결제 상태 - 각 참가자별 결제 상태 표시 */}
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600 font-medium">결제상태</span>
-                          <span className={`text-sm font-semibold ${getPaymentStatusColor(detailedParticipant.paymentStatus || 'UNPAID')}`}>
+                          <span className="text-gray-500 min-w-[88px] pr-3">결제상태</span>
+                          <span className={`text-sm font-medium ${getPaymentStatusColor(detailedParticipant.paymentStatus || 'UNPAID')}`}>
                             {getPaymentStatusLabel(detailedParticipant.paymentStatus || 'UNPAID')}
                           </span>
                         </div>
@@ -1223,8 +1236,9 @@ export default function GroupApplicationConfirmResultPage() {
             </div>
 
             {/* 결제 정보 섹션 */}
-            <div className="px-8 pb-8">
-              <h3 className="text-lg font-bold text-black mb-6 border-b-2 border-black pb-4 pt-8">결제 정보</h3>
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">PAYMENT</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">결제 정보</h3>
 
               {/* 계좌 안내 문구 */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
@@ -1232,38 +1246,38 @@ export default function GroupApplicationConfirmResultPage() {
                   <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
                   <p>
                     계좌번호 :{' '}
-                    <span className="bg-yellow-200 font-semibold px-2 py-1 rounded">
+                    <span className="bg-yellow-200 font-medium px-2 py-1 rounded">
                       {bankName && virtualAccount ? `${bankName} ${virtualAccount}` : '계좌 정보 준비 중입니다.'}
                     </span>
                   </p>
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-5 text-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">참가인원</label>
-                  <span className="text-base text-black">{groupApplicationData.organizationHeadCount}명</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">참가인원</label>
+                  <span className="font-medium text-gray-800">{groupApplicationData.organizationHeadCount}명</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">총 참가비</label>
-                  <span className="text-base text-black">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">총 참가비</label>
+                  <span className="font-medium text-gray-800">
                     {groupApplicationData.sumAmount.toLocaleString()}원
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">결제방법</label>
-                  <span className="text-base text-black">{getPaymentTypeLabel(groupApplicationData.paymentType)}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">결제방법</label>
+                  <span className="font-medium text-gray-800">{getPaymentTypeLabel(groupApplicationData.paymentType)}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-base font-medium text-black">입금자명</label>
-                  <span className="text-base text-black">{groupApplicationData.paymenterName}</span>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">입금자명</label>
+                  <span className="font-medium text-gray-800">{groupApplicationData.paymenterName}</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-4">
-                  <label className="text-base font-medium text-black">결제상태</label>
-                  <span className={`text-base font-semibold ${getPaymentStatusColor(groupApplicationData.paymentStatus, true)}`}>
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">결제상태</label>
+                  <span className={`font-medium ${getPaymentStatusColor(groupApplicationData.paymentStatus, true)}`}>
                     {getPaymentStatusLabel(groupApplicationData.paymentStatus, true, (groupApplicationData as GroupRegistrationConfirmData & { _isMixedStatus?: boolean })._isMixedStatus || false)}
                   </span>
                 </div>
