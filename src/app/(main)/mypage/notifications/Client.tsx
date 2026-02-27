@@ -247,12 +247,15 @@ function ClientContent() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="text-sm sm:text-[15px] font-medium text-gray-900 truncate">
+                            <h3 className={`text-[14px] sm:text-[15px] font-semibold tracking-[-0.01em] truncate ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
                               {n.title}
                             </h3>
-                            <p className="mt-1 text-xs sm:text-sm text-gray-700 truncate">
-                              {n.body}
-                            </p>
+                            <div className="mt-1.5 flex items-center gap-2 min-w-0">
+                              <span className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0" aria-hidden="true" />
+                              <p className="text-[11px] sm:text-xs text-gray-500 truncate">
+                                {n.body}
+                              </p>
+                            </div>
                           </div>
                           <p className="pt-0.5 text-[11px] sm:text-xs text-gray-400 tabular-nums whitespace-nowrap text-right">
                             {formatted === '-' ? '-' : formatted.datePart}
