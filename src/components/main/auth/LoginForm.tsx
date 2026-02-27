@@ -76,7 +76,8 @@ export default function LoginForm() {
         
         // returnUrl이 있으면 해당 페이지로, 없으면 홈으로 이동
         const redirectUrl = returnUrl && returnUrl !== '/login' ? returnUrl : '/';
-        router.push(redirectUrl);
+        // 로그인 직후 인증 의존 데이터(알림 등)가 즉시 반영되도록 전체 새로 로드
+        window.location.href = redirectUrl;
       }
     } catch (err) {
       const errorMessage =

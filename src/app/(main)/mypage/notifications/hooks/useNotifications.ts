@@ -42,14 +42,17 @@ function createEmptyNotificationResponse(page: number, size: number): Notificati
  * 전체 알림 목록 조회 훅
  */
 export function useGlobalNotifications(page: number = 1, size: number = 20) {
-  const { isLoggedIn, hasHydrated } = useAuthStore();
+  const { isLoggedIn, hasHydrated, accessToken } = useAuthStore();
+  const hasToken =
+    !!accessToken ||
+    (typeof window !== 'undefined' && !!localStorage.getItem('kmaAccessToken'));
   
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'global', page, size],
     queryFn: async () => {
       return await getGlobalNotifications(page, size);
     },
-    enabled: hasHydrated && isLoggedIn, // 스토어가 로드되고 로그인 상태일 때만 호출
+    enabled: hasHydrated && (isLoggedIn || hasToken), // 스토어와 토큰 상태를 함께 확인
     staleTime: 1 * 60 * 1000, // 1분
     retry: false, // 에러 발생 시 재시도 안 함
   });
@@ -59,14 +62,17 @@ export function useGlobalNotifications(page: number = 1, size: number = 20) {
  * 대회 알림 목록 조회 훅
  */
 export function useEventNotifications(page: number = 1, size: number = 20) {
-  const { isLoggedIn, hasHydrated } = useAuthStore();
+  const { isLoggedIn, hasHydrated, accessToken } = useAuthStore();
+  const hasToken =
+    !!accessToken ||
+    (typeof window !== 'undefined' && !!localStorage.getItem('kmaAccessToken'));
   
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'event', page, size],
     queryFn: async () => {
       return await getEventNotifications(page, size);
     },
-    enabled: hasHydrated && isLoggedIn, // 스토어가 로드되고 로그인 상태일 때만 호출
+    enabled: hasHydrated && (isLoggedIn || hasToken), // 스토어와 토큰 상태를 함께 확인
     staleTime: 1 * 60 * 1000, // 1분
     retry: false, // 에러 발생 시 재시도 안 함
   });

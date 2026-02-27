@@ -133,59 +133,68 @@ export default function AuthInitializer() {
           } else {
             // 토큰은 있는데 스토어 user가 비어 있을 수 있으므로 보정
             const state = useAuthStore.getState();
-            if (!state.user) {
-              const at =
-                typeof window !== 'undefined'
-                  ? localStorage.getItem('kmaAccessToken')
-                  : null;
-              if (at) {
-                try {
-                  const decoded = decodeToken(at) as {
-                    sub?: string;
-                    name?: string;
-                    role?: Array<{ authority?: string } | string>;
-                    roles?: Array<string>;
-                  } | null;
+            const at =
+              typeof window !== 'undefined'
+                ? localStorage.getItem('kmaAccessToken')
+                : null;
 
-                  const normalizeRoleName = (role?: unknown): string | null => {
-                    if (typeof role !== 'string') return null;
-                    const upper = role.toUpperCase();
-                    return upper.startsWith('ROLE_')
-                      ? upper.replace(/^ROLE_/i, '')
-                      : upper;
-                  };
+            // 토큰이 살아있으면 로그인 플래그/토큰을 스토어에도 강제 동기화
+            if (at && (!state.isLoggedIn || state.accessToken !== at)) {
+              useAuthStore.setState({
+                isLoggedIn: true,
+                accessToken: at,
+              });
+            }
 
-                  const extractedRoles: string[] = [];
-                  if (Array.isArray(decoded?.role)) {
-                    for (const r of decoded!.role) {
-                      const n =
-                        typeof r === 'string'
-                          ? normalizeRoleName(r)
-                          : normalizeRoleName(
-                              (r as { authority?: string })?.authority
-                            );
-                      if (n) extractedRoles.push(n);
-                    }
+            if (!state.user && at) {
+              try {
+                const decoded = decodeToken(at) as {
+                  sub?: string;
+                  name?: string;
+                  role?: Array<{ authority?: string } | string>;
+                  roles?: Array<string>;
+                } | null;
+
+                const normalizeRoleName = (role?: unknown): string | null => {
+                  if (typeof role !== 'string') return null;
+                  const upper = role.toUpperCase();
+                  return upper.startsWith('ROLE_')
+                    ? upper.replace(/^ROLE_/i, '')
+                    : upper;
+                };
+
+                const extractedRoles: string[] = [];
+                if (Array.isArray(decoded?.role)) {
+                  for (const r of decoded!.role) {
+                    const n =
+                      typeof r === 'string'
+                        ? normalizeRoleName(r)
+                        : normalizeRoleName(
+                            (r as { authority?: string })?.authority
+                          );
+                    if (n) extractedRoles.push(n);
                   }
-                  if (Array.isArray(decoded?.roles)) {
-                    for (const r of decoded!.roles) {
-                      const n = normalizeRoleName(r);
-                      if (n) extractedRoles.push(n);
-                    }
-                  }
-                  const roles = Array.from(new Set(extractedRoles));
-
-                  useAuthStore.setState({
-                    user: {
-                      id: decoded?.sub || 'user',
-                      account: decoded?.name || 'user',
-                      role: roles[0] || 'USER',
-                      roles,
-                    },
-                  });
-                } catch {
-                  // ignore decode errors
                 }
+                if (Array.isArray(decoded?.roles)) {
+                  for (const r of decoded!.roles) {
+                    const n = normalizeRoleName(r);
+                    if (n) extractedRoles.push(n);
+                  }
+                }
+                const roles = Array.from(new Set(extractedRoles));
+
+                useAuthStore.setState({
+                  isLoggedIn: true,
+                  accessToken: at,
+                  user: {
+                    id: decoded?.sub || 'user',
+                    account: decoded?.name || 'user',
+                    role: roles[0] || 'USER',
+                    roles,
+                  },
+                });
+              } catch {
+                // ignore decode errors
               }
             }
           }
