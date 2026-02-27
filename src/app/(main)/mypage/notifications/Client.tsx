@@ -38,6 +38,9 @@ function ClientContent() {
   // 알림 목록 조회 (타입에 따라)
   const { data: globalData, isLoading: globalLoading } = useGlobalNotifications(page, pageSize)
   const { data: eventData, isLoading: eventLoading } = useEventNotifications(page, pageSize)
+  // 프로필의 미읽음 카운트는 드롭다운과 동일한 기준(page=1, size=20)으로 계산
+  const { data: globalCountData } = useGlobalNotifications(1, 20)
+  const { data: eventCountData } = useEventNotifications(1, 20)
   
   const notificationsData = notificationType === 'GLOBAL' ? globalData : eventData
   const isLoading = notificationType === 'GLOBAL' ? globalLoading : eventLoading
@@ -52,12 +55,12 @@ function ClientContent() {
 
   // 미읽음 알림 개수 계산
   const globalUnreadCount =
-    globalData?.content
-      ? globalData.content.filter((n) => isUnreadNotification(n)).length
+    globalCountData?.content
+      ? globalCountData.content.filter((n) => isUnreadNotification(n)).length
       : 0
   const eventUnreadCount =
-    eventData?.content
-      ? eventData.content.filter((n) => isUnreadNotification(n)).length
+    eventCountData?.content
+      ? eventCountData.content.filter((n) => isUnreadNotification(n)).length
       : 0
 
   useEffect(() => {
@@ -251,7 +254,7 @@ function ClientContent() {
                               {n.title}
                             </h3>
                             <div className="mt-1.5 flex items-center gap-2 min-w-0">
-                              <span className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0" aria-hidden="true" />
+                              <span className="text-gray-300 text-[11px] leading-none flex-shrink-0" aria-hidden="true">|</span>
                               <p className="text-[11px] sm:text-xs text-gray-500 truncate">
                                 {n.body}
                               </p>

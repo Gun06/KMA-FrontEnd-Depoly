@@ -118,8 +118,12 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
       {notificationOpen && (
         <div
           data-notification-dropdown
-          className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-[200]"
+          className="absolute -right-2 mt-7 w-80 z-[200]"
         >
+          {/* 말풍선 꼬리 */}
+          <div className="absolute -top-1.5 right-5 w-3 h-3 rotate-45 bg-white border-l border-t border-gray-200" />
+
+          <div className="bg-white rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.14)] border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900">
               읽지 않은 알림{' '}
@@ -238,13 +242,16 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
                       <p className="text-xs text-gray-400 mb-1">
                         {formatNotificationDate(notification.sentAt || notification.createdAt)}
                       </p>
-                      <p className="text-sm text-gray-800 font-medium mb-1 truncate">
+                      <p className={`text-sm font-semibold tracking-[-0.01em] truncate ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
                         {notification.title}
                       </p>
                       {notification.body && (
-                        <p className="text-xs text-gray-800 line-clamp-1">
-                          {notification.body}
-                        </p>
+                        <div className="mt-1 flex items-center gap-1.5 min-w-0">
+                          <span className="text-gray-300 text-[11px] leading-none flex-shrink-0" aria-hidden="true">|</span>
+                          <p className="text-[11px] text-gray-500 leading-[1.45] line-clamp-1">
+                            {notification.body}
+                          </p>
+                        </div>
                       )}
                     </li>
                   );
@@ -259,10 +266,11 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
           <Link
             href="/mypage/notifications"
             onClick={() => setNotificationOpen(false)}
-            className="block w-full px-4 py-2.5 text-xs text-center text-gray-500 hover:bg-gray-50 rounded-b-xl"
+            className="block w-full px-4 py-2.5 text-xs text-center text-gray-500 hover:bg-gray-50"
           >
             알림 전체 보기
           </Link>
+          </div>
         </div>
       )}
     </div>
