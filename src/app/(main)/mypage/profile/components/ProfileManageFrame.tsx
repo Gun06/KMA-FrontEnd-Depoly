@@ -23,6 +23,8 @@ export default function ProfileManageFrame({ children }: { children: ReactNode }
           <ProfileInfoPanel
             name={data?.name || user?.account}
             account={data?.account || user?.account}
+            birth={data?.birth}
+            gender={data?.gender}
             role={user?.role}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
