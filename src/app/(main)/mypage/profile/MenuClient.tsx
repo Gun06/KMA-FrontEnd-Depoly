@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import ProfileManageFrame from './components/ProfileManageFrame'
 
@@ -27,12 +28,14 @@ const menuItems = [
   },
   {
     href: '/mypage/profile/password-reset',
-    title: '비밀번호 변경 신청',
-    description: '비밀번호를 잊은 경우 재설정 요청을 진행합니다.',
+    title: '비밀번호 초기화 신청',
+    description: '비밀번호를 잊은 경우 초기화 요청을 진행합니다.',
   },
 ]
 
 export default function MenuClient() {
+  const router = useRouter()
+
   return (
     <ProfileManageFrame>
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -49,6 +52,15 @@ export default function MenuClient() {
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </Link>
         ))}
+      </div>
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => router.push('/mypage/applications')}
+          className="ml-1 text-sm text-gray-600 hover:text-gray-900"
+        >
+          {'< 뒤로가기'}
+        </button>
       </div>
     </ProfileManageFrame>
   )

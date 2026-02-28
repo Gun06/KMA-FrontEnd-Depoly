@@ -1,14 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { userApi } from '@/hooks/api.presets'
+import ErrorModal from '@/components/common/Modal/ErrorModal'
 import ProfileManageFrame from '../components/ProfileManageFrame'
 import { useMyProfile } from '../shared'
 
 export default function Client() {
+  const router = useRouter()
   const { data } = useMyProfile()
   const [pushAlarmAble, setPushAlarmAble] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '알림',
+    message: '',
+  })
 
   useEffect(() => {
     setPushAlarmAble(data?.pushAlarmAble ?? true)
@@ -18,13 +26,21 @@ export default function Client() {
     setIsSaving(true)
     try {
       await userApi.authPatch('/api/v1/user/setting', { pushAlarmAble })
-      alert('설정이 저장되었습니다.')
+      setModal({
+        isOpen: true,
+        title: '저장 완료',
+        message: '설정이 저장되었습니다.',
+      })
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String(error.message)
           : '설정 저장에 실패했습니다.'
-      alert(message)
+      setModal({
+        isOpen: true,
+        title: '저장 실패',
+        message,
+      })
     } finally {
       setIsSaving(false)
     }
@@ -50,17 +66,30 @@ export default function Client() {
             {pushAlarmAble ? 'ON' : 'OFF'}
           </button>
         </div>
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
-          >
-            {isSaving ? '저장 중...' : '설정 저장'}
-          </button>
-        </div>
       </section>
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => router.push('/mypage/profile')}
+          className="ml-1 text-sm text-gray-600 hover:text-gray-900"
+        >
+          {'< 뒤로가기'}
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+        >
+          {isSaving ? '저장 중...' : '설정 저장'}
+        </button>
+      </div>
+      <ErrorModal
+        isOpen={modal.isOpen}
+        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+        title={modal.title}
+        message={modal.message}
+      />
     </ProfileManageFrame>
   )
 }

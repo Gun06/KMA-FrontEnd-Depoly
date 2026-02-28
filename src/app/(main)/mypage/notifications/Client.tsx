@@ -11,7 +11,7 @@ import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
 import { useGlobalNotifications, useEventNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from './hooks/useNotifications'
 import type { NotificationItem } from './types/notification'
-import { useAuthStore } from '@/stores/authStore'
+import { useMyProfile } from '../profile/shared'
 
 // 알림 미읽음 여부 확인 함수 (read 또는 isRead 속성 확인)
 function isUnreadNotification(notification: NotificationItem): boolean {
@@ -29,7 +29,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 
 function ClientContent() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, data: profile } = useMyProfile()
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [notificationType, setNotificationType] = useState<'GLOBAL' | 'EVENT'>('GLOBAL')
@@ -130,8 +130,10 @@ function ClientContent() {
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
           <ProfileInfoPanel
-            name={user?.account}
-            account={user?.account}
+            name={profile?.name || user?.account}
+            account={profile?.account || user?.account}
+            birth={profile?.birth}
+            gender={profile?.gender}
             role={user?.role}
             statusText="활성"
             unreadCountText={`${globalUnreadCount + eventUnreadCount}건`}

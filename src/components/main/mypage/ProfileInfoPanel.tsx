@@ -3,6 +3,8 @@
 interface ProfileInfoPanelProps {
   name?: string
   account?: string
+  birth?: string
+  gender?: string
   role?: string
   statusText?: string
   unreadCountText?: string
@@ -12,11 +14,17 @@ interface ProfileInfoPanelProps {
 export default function ProfileInfoPanel({
   name,
   account,
+  birth,
+  gender,
   role,
   statusText = '활성',
   unreadCountText = '0건',
   onEditClick,
 }: ProfileInfoPanelProps) {
+  const displayBirth = birth ? birth.replace(/-/g, '.') : '-'
+  const displayGender =
+    gender === 'M' ? '남성' : gender === 'F' ? '여성' : gender || '-'
+
   return (
     <aside className="order-1">
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -32,6 +40,14 @@ export default function ProfileInfoPanel({
           <div className="flex items-center justify-between gap-3">
             <span className="text-gray-500">아이디</span>
             <span className="text-gray-800 font-medium text-right break-all">{account || '-'}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-gray-500">생년월일</span>
+            <span className="text-gray-800 font-medium text-right break-all">{displayBirth}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-gray-500">성별</span>
+            <span className="text-gray-800 font-medium text-right break-all">{displayGender}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-gray-500">권한</span>

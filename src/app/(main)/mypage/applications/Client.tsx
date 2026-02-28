@@ -10,13 +10,13 @@ import { ChevronDown, CalendarX, X } from 'lucide-react'
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
 import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
-import { useAuthStore } from '@/stores/authStore'
 import { useApplications } from './hooks/useApplications'
 import { useGlobalNotifications, useEventNotifications } from '../notifications/hooks/useNotifications'
 import type { NotificationItem } from '../notifications/types/notification'
 import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
 import type { ApplicationItem } from './types/application'
+import { useMyProfile } from '../profile/shared'
 
 // 상태 매핑 함수
 // 백엔드 응답: '신청 취소', '참가 완료', '신청 완료' 3가지
@@ -115,7 +115,7 @@ function getStartDateByPeriod(period: string): string | null {
 
 export default function Client() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, data: profile } = useMyProfile()
   const [selectedPeriod, setSelectedPeriod] = useState('3개월')
   const [startDate, setStartDate] = useState<string>(getStartDateByPeriod('3개월') || '')
   const [endDate, setEndDate] = useState(getTodayDate())
@@ -214,8 +214,10 @@ export default function Client() {
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
           <ProfileInfoPanel
-            name={user?.account}
-            account={user?.account}
+            name={profile?.name || user?.account}
+            account={profile?.account || user?.account}
+            birth={profile?.birth}
+            gender={profile?.gender}
             role={user?.role}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}

@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { userApi } from '@/hooks/api.presets'
+import ErrorModal from '@/components/common/Modal/ErrorModal'
 import ProfileManageFrame from '../components/ProfileManageFrame'
 
 export default function Client() {
+  const router = useRouter()
   const [accountPassword, setAccountPassword] = useState('')
   const [previousPassword, setPreviousPassword] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '알림',
+    message: '',
+  })
 
   const handleSave = async () => {
     if (!accountPassword.trim() || !previousPassword.trim()) {
-      alert('새 비밀번호와 현재 비밀번호를 입력해 주세요.')
+      setModal({
+        isOpen: true,
+        title: '입력 확인',
+        message: '새 비밀번호와 현재 비밀번호를 입력해 주세요.',
+      })
       return
     }
     setIsSaving(true)
@@ -20,7 +32,11 @@ export default function Client() {
         accountPassword,
         previousPassword,
       })
-      alert('비밀번호가 변경되었습니다.')
+      setModal({
+        isOpen: true,
+        title: '변경 완료',
+        message: '비밀번호가 변경되었습니다.',
+      })
       setAccountPassword('')
       setPreviousPassword('')
     } catch (error) {
@@ -28,7 +44,11 @@ export default function Client() {
         error && typeof error === 'object' && 'message' in error
           ? String(error.message)
           : '비밀번호 변경에 실패했습니다.'
-      alert(message)
+      setModal({
+        isOpen: true,
+        title: '변경 실패',
+        message,
+      })
     } finally {
       setIsSaving(false)
     }
@@ -60,18 +80,30 @@ export default function Client() {
             />
           </div>
         </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
-          >
-            {isSaving ? '변경 중...' : '비밀번호 변경'}
-          </button>
-        </div>
       </section>
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => router.push('/mypage/profile')}
+          className="ml-1 text-sm text-gray-600 hover:text-gray-900"
+        >
+          {'< 뒤로가기'}
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+        >
+          {isSaving ? '변경 중...' : '비밀번호 변경'}
+        </button>
+      </div>
+      <ErrorModal
+        isOpen={modal.isOpen}
+        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+        title={modal.title}
+        message={modal.message}
+      />
     </ProfileManageFrame>
   )
 }

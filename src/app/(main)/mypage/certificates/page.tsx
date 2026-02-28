@@ -7,9 +7,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
-import { useAuthStore } from '@/stores/authStore'
 import { useGlobalNotifications, useEventNotifications } from '../notifications/hooks/useNotifications'
 import type { NotificationItem } from '../notifications/types/notification'
+import { useMyProfile } from '../profile/shared'
 
 interface CertificateData {
   id: string
@@ -45,7 +45,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 
 function MyCertificatesPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, data: profile } = useMyProfile()
   const { data: globalCountData } = useGlobalNotifications(1, 20)
   const { data: eventCountData } = useEventNotifications(1, 20)
   const [selectedPeriod, setSelectedPeriod] = useState('1주일')
@@ -82,8 +82,10 @@ function MyCertificatesPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
           <ProfileInfoPanel
-            name={user?.account}
-            account={user?.account}
+            name={profile?.name || user?.account}
+            account={profile?.account || user?.account}
+            birth={profile?.birth}
+            gender={profile?.gender}
             role={user?.role}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
