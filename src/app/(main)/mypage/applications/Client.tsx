@@ -3,6 +3,7 @@
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { ChevronDown, CalendarX, X } from 'lucide-react'
 
@@ -113,6 +114,7 @@ function getStartDateByPeriod(period: string): string | null {
 }
 
 export default function Client() {
+  const router = useRouter()
   const { user } = useAuthStore()
   const [selectedPeriod, setSelectedPeriod] = useState('3개월')
   const [startDate, setStartDate] = useState<string>(getStartDateByPeriod('3개월') || '')
@@ -217,7 +219,7 @@ export default function Client() {
             role={user?.role}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
-            onEditClick={() => alert('서비스 준비중입니다!')}
+            onEditClick={() => router.push('/mypage/profile')}
           />
 
           {/* 오른쪽 컨텐츠 영역 */}

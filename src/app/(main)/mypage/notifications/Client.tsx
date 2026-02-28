@@ -4,6 +4,7 @@ import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
 import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import ConfirmModal from '@/components/common/Modal/ConfirmModal'
 import Pagination from '@/components/common/Pagination/Pagination'
@@ -27,6 +28,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 }
 
 function ClientContent() {
+  const router = useRouter()
   const { user } = useAuthStore()
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -133,7 +135,7 @@ function ClientContent() {
             role={user?.role}
             statusText="활성"
             unreadCountText={`${globalUnreadCount + eventUnreadCount}건`}
-            onEditClick={() => alert('서비스 준비중입니다!')}
+            onEditClick={() => router.push('/mypage/profile')}
           />
 
           {/* 오른쪽 알림 목록 영역 */}

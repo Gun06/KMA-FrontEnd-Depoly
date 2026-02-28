@@ -4,6 +4,7 @@ import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import MypageTabs from '@/components/main/mypage/MypageTabs'
 import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import SegmentedControl from '@/components/main/mypage/SegmentedControl'
 import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
 import { useAuthStore } from '@/stores/authStore'
@@ -43,6 +44,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 }
 
 function MyCertificatesPage() {
+  const router = useRouter()
   const { user } = useAuthStore()
   const { data: globalCountData } = useGlobalNotifications(1, 20)
   const { data: eventCountData } = useEventNotifications(1, 20)
@@ -85,7 +87,7 @@ function MyCertificatesPage() {
             role={user?.role}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
-            onEditClick={() => alert('서비스 준비중입니다!')}
+            onEditClick={() => router.push('/mypage/profile')}
           />
 
           {/* 오른쪽 컨텐츠 영역 */}
