@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Eye, EyeOff } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import DatePicker from '@/app/(main)/signup/step3/DatePicker'
 import PostalCodeSearch from '@/app/(main)/signup/step4/PostalCodeSearch'
@@ -23,7 +23,6 @@ interface FormData {
   address: string
   addressDetail: string
   zipCode: string
-  previousPassword: string
 }
 
 interface ModifyProfileResponse {
@@ -56,7 +55,20 @@ export default function Client() {
   const [showPostalCodeSearch, setShowPostalCodeSearch] = useState(false)
   const [showEmailDomainDropdown, setShowEmailDomainDropdown] = useState(false)
   const [isCustomDomain, setIsCustomDomain] = useState(false)
+  const [isPhoneEditMode, setIsPhoneEditMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [passwordModalAction, setPasswordModalAction] = useState<'save' | 'phoneOtp'>('save')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [phoneOtpNumber, setPhoneOtpNumber] = useState('')
+  const [otpTimeLeft, setOtpTimeLeft] = useState(0)
+  const [originalPhone, setOriginalPhone] = useState('')
+  const [pendingOtpInfo, setPendingOtpInfo] = useState<{
+    phone: string
+    token?: string
+    expiresInSecond?: number
+  } | null>(null)
   const [modal, setModal] = useState({
     isOpen: false,
     title: '알림',
@@ -74,13 +86,14 @@ export default function Client() {
     address: '',
     addressDetail: '',
     zipCode: '',
-    previousPassword: '',
   })
 
   useEffect(() => {
     if (!data) return
     const emailParts = (data.email ?? '').split('@')
     const phoneParts = (data.phNum ?? '').split('-')
+    setOriginalPhone(data.phNum ?? '')
+    setIsPhoneEditMode(false)
     setFormData(prev => ({
       ...prev,
       name: data.name ?? '',
@@ -94,10 +107,26 @@ export default function Client() {
       address: data.address ?? '',
       addressDetail: data.addressDetail ?? '',
       zipCode: data.zipCode ?? '',
-      previousPassword: '',
     }))
     setIsCustomDomain(Boolean(emailParts[1] && !emailDomains.includes(emailParts[1])))
   }, [data])
+
+  useEffect(() => {
+    if (!pendingOtpInfo) {
+      setOtpTimeLeft(0)
+      return
+    }
+    const initial = pendingOtpInfo.expiresInSecond ?? 180
+    setOtpTimeLeft(initial)
+  }, [pendingOtpInfo])
+
+  useEffect(() => {
+    if (otpTimeLeft <= 0) return
+    const timer = window.setInterval(() => {
+      setOtpTimeLeft(prev => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [otpTimeLeft])
 
   const handleChange =
     (key: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,12 +136,13 @@ export default function Client() {
   const handlePhoneChange =
     (key: 'phonePrefix' | 'phoneMiddle' | 'phoneLast') =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isPhoneEditMode) return
       const value = e.target.value.replace(/[^0-9]/g, '')
       setFormData(prev => ({ ...prev, [key]: value }))
     }
 
-  const handleSave = async () => {
-    if (!formData.previousPassword.trim()) {
+  const executeProfileUpdate = async (action: 'save' | 'phoneOtp') => {
+    if (!confirmPassword.trim()) {
       setModal({
         isOpen: true,
         title: '입력 확인',
@@ -122,11 +152,14 @@ export default function Client() {
     }
     setIsSaving(true)
     try {
+      const nextPhone = `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`
+      const isPhoneChanged = nextPhone !== (originalPhone || '')
+
       const response = await userApi.authPatch<ModifyProfileResponse>('/api/v1/user/modify-profile', {
         patchedProfile: {
           birth: formData.birthDate.replace(/\./g, '-'),
           name: formData.name,
-          phNum: `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`,
+          phNum: nextPhone,
           email: `${formData.emailLocal}@${formData.emailDomain}`,
           gender: formData.gender === 'female' ? 'F' : 'M',
         },
@@ -135,7 +168,7 @@ export default function Client() {
           zipCode: formData.zipCode,
           addressDetail: formData.addressDetail,
         },
-        previousPassword: formData.previousPassword,
+        previousPassword: confirmPassword,
       })
 
       const isOtpNeeded =
@@ -144,24 +177,39 @@ export default function Client() {
 
       if (isOtpNeeded) {
         const expiresInSecond = response?.issueOtpTokenResponse?.expiresInSecond
+        setPendingOtpInfo({
+          phone: nextPhone,
+          token: response?.issueOtpTokenResponse?.token,
+          expiresInSecond,
+        })
         const expireText =
           typeof expiresInSecond === 'number' && expiresInSecond > 0
             ? ` (유효시간 ${expiresInSecond}초)`
             : ''
         setModal({
           isOpen: true,
-          title: '인증 필요',
-          message: `전화번호 변경으로 추가 인증이 필요합니다.${expireText}\n인증 완료 후 최종 반영됩니다.`,
+          title: 'OTP 인증 필요',
+          message: `전화번호 변경으로 OTP 인증이 필요합니다.${expireText}\n전화번호 아래 OTP 입력란에 인증번호를 입력해 주세요.`,
         })
+        setIsPhoneEditMode(false)
       } else {
+        setPendingOtpInfo(null)
+        setIsPhoneEditMode(false)
+        if (isPhoneChanged) {
+          setOriginalPhone(nextPhone)
+        }
         setModal({
           isOpen: true,
-          title: '수정 완료',
-          message: '회원정보가 수정되었습니다.',
+          title: action === 'phoneOtp' ? '처리 완료' : '수정 완료',
+          message:
+            action === 'phoneOtp'
+              ? '전화번호 변경 요청이 처리되었습니다.'
+              : '회원정보가 수정되었습니다.',
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
       }
-      setFormData(prev => ({ ...prev, previousPassword: '' }))
+      setConfirmPassword('')
+      setIsPasswordModalOpen(false)
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error
@@ -177,6 +225,71 @@ export default function Client() {
     }
   }
 
+  const handleSave = async () => {
+    await executeProfileUpdate('save')
+  }
+
+  const handlePhoneOtpRequest = () => {
+    if (!isPhoneEditMode) {
+      setModal({
+        isOpen: true,
+        title: '안내',
+        message: '전화번호 변경 버튼을 눌러 편집 모드로 전환해 주세요.',
+      })
+      return
+    }
+    const nextPhone = `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`
+    if (nextPhone === (originalPhone || '')) {
+      setModal({
+        isOpen: true,
+        title: '안내',
+        message: '전화번호를 변경한 뒤 OTP 인증 요청을 진행해 주세요.',
+      })
+      return
+    }
+    setPasswordModalAction('phoneOtp')
+    setIsPasswordModalOpen(true)
+  }
+
+  const formatOtpTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+
+  const handlePhoneOtpConfirm = () => {
+    if (!pendingOtpInfo) {
+      setModal({
+        isOpen: true,
+        title: '안내',
+        message: '먼저 OTP 인증 요청을 진행해 주세요.',
+      })
+      return
+    }
+    if (otpTimeLeft <= 0) {
+      setModal({
+        isOpen: true,
+        title: '시간 만료',
+        message: 'OTP 유효 시간이 만료되었습니다. OTP 인증 요청을 다시 진행해 주세요.',
+      })
+      return
+    }
+    if (!phoneOtpNumber.trim()) {
+      setModal({
+        isOpen: true,
+        title: '입력 확인',
+        message: 'OTP 인증번호를 입력해 주세요.',
+      })
+      return
+    }
+    setModal({
+      isOpen: true,
+      title: 'OTP 확인 완료',
+      message:
+        'OTP 인증번호 입력은 확인되었습니다.\n최종 전화번호 반영은 OTP 검증(커밋) API 연동 후 완료됩니다.',
+    })
+  }
+
   return (
     <ProfileManageFrame>
       <section className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
@@ -190,7 +303,7 @@ export default function Client() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">이름</label>
-                  <input className="w-full h-11 px-3 rounded-xl border border-gray-200" value={formData.name} onChange={handleChange('name')} />
+                  <input className="w-[200px] h-11 px-3 rounded-xl border border-gray-200" value={formData.name} onChange={handleChange('name')} />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">성별</label>
@@ -254,13 +367,97 @@ export default function Client() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">전화번호</label>
-                  <div className="flex items-center gap-2 max-w-md">
-                    <input className="w-20 h-11 px-3 rounded-xl border border-gray-200 text-center" value={formData.phonePrefix} onChange={handlePhoneChange('phonePrefix')} />
+                  <div className="flex items-center gap-2 max-w-2xl">
+                    <input
+                      className={`w-20 h-11 px-3 rounded-xl border border-gray-200 text-center ${
+                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
+                      }`}
+                      value={formData.phonePrefix}
+                      onChange={handlePhoneChange('phonePrefix')}
+                      readOnly={!isPhoneEditMode}
+                    />
                     <span>-</span>
-                    <input className="w-24 h-11 px-3 rounded-xl border border-gray-200 text-center" value={formData.phoneMiddle} onChange={handlePhoneChange('phoneMiddle')} />
+                    <input
+                      className={`w-24 h-11 px-3 rounded-xl border border-gray-200 text-center ${
+                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
+                      }`}
+                      value={formData.phoneMiddle}
+                      onChange={handlePhoneChange('phoneMiddle')}
+                      readOnly={!isPhoneEditMode}
+                    />
                     <span>-</span>
-                    <input className="w-24 h-11 px-3 rounded-xl border border-gray-200 text-center" value={formData.phoneLast} onChange={handlePhoneChange('phoneLast')} />
+                    <input
+                      className={`w-24 h-11 px-3 rounded-xl border border-gray-200 text-center ${
+                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
+                      }`}
+                      value={formData.phoneLast}
+                      onChange={handlePhoneChange('phoneLast')}
+                      readOnly={!isPhoneEditMode}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPhoneEditMode(prev => !prev)
+                        if (isPhoneEditMode) {
+                          const phoneParts = (originalPhone ?? '').split('-')
+                          setFormData(prev => ({
+                            ...prev,
+                            phonePrefix: phoneParts[0] ?? '010',
+                            phoneMiddle: phoneParts[1] ?? '',
+                            phoneLast: phoneParts[2] ?? '',
+                          }))
+                        }
+                      }}
+                      className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                    >
+                      {isPhoneEditMode ? '변경 취소' : '전화번호 변경'}
+                    </button>
+                    {isPhoneEditMode && (
+                      <button
+                        type="button"
+                        onClick={handlePhoneOtpRequest}
+                        className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                      >
+                        OTP 인증 요청
+                      </button>
+                    )}
                   </div>
+                  {(isPhoneEditMode || pendingOtpInfo) && (
+                    <div className="mt-3 max-w-md">
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">OTP 인증번호</label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            className="w-full h-11 px-3 pr-24 rounded-xl border border-gray-200"
+                            placeholder="인증번호를 입력해 주세요"
+                            value={phoneOtpNumber}
+                            onChange={e => setPhoneOtpNumber(e.target.value)}
+                          />
+                          {pendingOtpInfo && (
+                            <span
+                              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold ${
+                                otpTimeLeft > 0 ? 'text-blue-600' : 'text-red-500'
+                              }`}
+                            >
+                              {formatOtpTime(otpTimeLeft)}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handlePhoneOtpConfirm}
+                          className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
+                          확인
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {!isPhoneEditMode && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      전화번호는 수정하기 버튼이 아닌 &apos;전화번호 변경&apos; 버튼을 눌러야 수정할 수 있습니다.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -280,7 +477,11 @@ export default function Client() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">주소</label>
-                  <input className="w-full max-w-3xl h-11 px-3 rounded-xl border border-gray-200" value={formData.address} onChange={handleChange('address')} />
+                  <input
+                    className="w-full max-w-3xl h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500"
+                    value={formData.address}
+                    readOnly
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">상세주소</label>
@@ -291,20 +492,22 @@ export default function Client() {
 
             <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
               <p className="text-sm font-semibold text-gray-900 mb-4">본인 확인</p>
-              <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-3 items-end">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">현재 비밀번호</label>
-                  <input type="password" className="w-full h-11 px-3 rounded-xl border border-gray-200" value={formData.previousPassword} onChange={handleChange('previousPassword')} />
+              <p className="text-xs text-gray-600">
+                하단의 수정하기 버튼을 누르면 현재 비밀번호 확인 모달이 열립니다.
+              </p>
+              {pendingOtpInfo && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  전화번호 {pendingOtpInfo.phone} 변경 건이 인증 대기 중입니다.
+                  {typeof pendingOtpInfo.expiresInSecond === 'number' &&
+                    pendingOtpInfo.expiresInSecond > 0 &&
+                    ` OTP 유효시간은 ${pendingOtpInfo.expiresInSecond}초입니다.`}
                 </div>
-                <button type="button" onClick={handleSave} disabled={isSaving} className="h-11 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60">
-                  {isSaving ? '저장 중...' : '수정하기'}
-                </button>
-              </div>
+              )}
             </div>
           </div>
         )}
       </section>
-      <div className="mt-4">
+      <div className="mt-4 flex items-center justify-between">
         <button
           type="button"
           onClick={() => router.push('/mypage/profile')}
@@ -312,7 +515,81 @@ export default function Client() {
         >
           {'< 뒤로가기'}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setPasswordModalAction('save')
+            setIsPasswordModalOpen(true)
+          }}
+          disabled={isSaving}
+          className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+        >
+          수정하기
+        </button>
       </div>
+
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              if (isSaving) return
+              setIsPasswordModalOpen(false)
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl mx-4 p-6">
+            <h3 className="text-base font-bold text-gray-900">비밀번호 확인</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              {passwordModalAction === 'phoneOtp'
+                ? '현재 비밀번호를 입력 후 OTP 인증 요청을 진행해 주세요.'
+                : '현재 비밀번호를 입력 후 수정하기를 눌러주세요.'}
+            </p>
+            <div className="mt-4">
+              <label className="block text-sm font-semibold text-gray-800 mb-2">현재 비밀번호</label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="w-full h-11 px-3 pr-11 rounded-xl border border-gray-200"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(false)}
+                disabled={isSaving}
+                className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (passwordModalAction === 'phoneOtp') {
+                    void executeProfileUpdate('phoneOtp')
+                    return
+                  }
+                  void handleSave()
+                }}
+                disabled={isSaving}
+                className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+              >
+                {isSaving ? '저장 중...' : passwordModalAction === 'phoneOtp' ? 'OTP 인증 요청' : '수정하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPostalCodeSearch && (
         <PostalCodeSearch

@@ -21,10 +21,14 @@ export default function DatePicker({ value, onChange, placeholder = "날짜를 �
     
     const parts = dateString.split('.')
     if (parts.length === 3) {
+      const parsedYear = Number.parseInt(parts[0], 10)
+      const parsedMonth = Number.parseInt(parts[1], 10)
+      const parsedDay = Number.parseInt(parts[2], 10)
+
       return {
-        year: parseInt(parts[0]) || new Date().getFullYear(),
-        month: parseInt(parts[1]) - 1 || new Date().getMonth(),
-        day: parseInt(parts[2]) || new Date().getDate()
+        year: Number.isNaN(parsedYear) ? new Date().getFullYear() : parsedYear,
+        month: Number.isNaN(parsedMonth) ? new Date().getMonth() : parsedMonth - 1,
+        day: Number.isNaN(parsedDay) ? new Date().getDate() : parsedDay
       }
     }
     
