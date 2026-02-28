@@ -34,10 +34,17 @@ export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSear
           detailedAddress: data.bname + ' ' + data.buildingName
         })
         onClose()
+        // 팝업에서 선택 후 부모 창으로 포커스 복귀
+        window.setTimeout(() => {
+          window.focus()
+        }, 0)
       },
       onclose: function() {
         isOpeningRef.current = false
         onClose()
+        window.setTimeout(() => {
+          window.focus()
+        }, 0)
       }
     }).open()
   }, [onComplete, onClose])
