@@ -80,9 +80,15 @@ export default function LoginForm() {
         window.location.href = redirectUrl;
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : '로그인에 실패했습니다.';
-      setError(errorMessage);
+      const rawMessage = err instanceof Error ? err.message : '';
+      const normalizedMessage =
+        rawMessage.includes('400') ||
+        rawMessage.includes('401') ||
+        rawMessage.toLowerCase().includes('invalid') ||
+        rawMessage.toLowerCase().includes('unauthorized')
+          ? '아이디 또는 비밀번호를 다시 확인해 주세요.'
+          : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      setError(normalizedMessage);
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +226,7 @@ export default function LoginForm() {
                   href="/find-password"
                   className="text-gray-600 hover:text-kma-blue transition-colors font-medium"
                 >
-                  비밀번호 찾기
+                  비밀번호 변경
                 </a>
                 <div className="w-px h-4 bg-gray-300"></div>
                 <a

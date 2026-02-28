@@ -26,11 +26,6 @@ const menuItems = [
     title: '비밀번호 변경',
     description: '현재 비밀번호 확인 후 새 비밀번호로 변경합니다.',
   },
-  {
-    href: '/mypage/profile/password-reset',
-    title: '비밀번호 초기화 신청',
-    description: '비밀번호를 잊은 경우 초기화 요청을 진행합니다.',
-  },
 ]
 
 export default function MenuClient() {

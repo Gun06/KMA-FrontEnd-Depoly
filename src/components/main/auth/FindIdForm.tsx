@@ -17,11 +17,9 @@ export default function FindIdForm() {
   const [foundId, setFoundId] = useState<string>('')
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     phone: ''
   })
-  const [errors, setErrors] = useState<{ name?: string; email?: string; phone?: string }>({})
-  const [searchMethod, setSearchMethod] = useState<'email' | 'phone'>('email')
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({})
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -54,24 +52,16 @@ export default function FindIdForm() {
     e.preventDefault()
     
     // 유효성 검사
-    const newErrors: { name?: string; email?: string; phone?: string } = {}
+    const newErrors: { name?: string; phone?: string } = {}
     
     if (!formData.name.trim()) {
       newErrors.name = '이름을 입력해주세요.'
     }
     
-    if (searchMethod === 'email') {
-      if (!formData.email.trim()) {
-        newErrors.email = '이메일을 입력해주세요.'
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = '올바른 이메일 형식을 입력해주세요.'
-      }
-    } else {
-      if (!formData.phone.trim()) {
-        newErrors.phone = '휴대폰 번호를 입력해주세요.'
-      } else if (!/^01[0-9]-\d{3,4}-\d{4}$/.test(formData.phone)) {
-        newErrors.phone = '올바른 휴대폰 번호 형식을 입력해주세요. (예: 010-1234-5678)'
-      }
+    if (!formData.phone.trim()) {
+      newErrors.phone = '휴대폰 번호를 입력해주세요.'
+    } else if (!/^01[0-9]-\d{3,4}-\d{4}$/.test(formData.phone)) {
+      newErrors.phone = '올바른 휴대폰 번호 형식을 입력해주세요. (예: 010-1234-5678)'
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -94,8 +84,7 @@ export default function FindIdForm() {
     try {
       const response = await authService.findId({
         name: formData.name,
-        email: searchMethod === 'email' ? formData.email : undefined,
-        phone: searchMethod === 'phone' ? formData.phone : undefined
+        phone: formData.phone
       })
       
       if (response.id) {
@@ -118,7 +107,7 @@ export default function FindIdForm() {
   }
 
   const handleReset = () => {
-    setFormData({ name: '', email: '', phone: '' })
+    setFormData({ name: '', phone: '' })
     setErrors({})
     setError(null)
     setSuccess(false)
@@ -221,35 +210,6 @@ export default function FindIdForm() {
               </p>
             </div>
 
-            {/* 검색 방법 선택 */}
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-gray-700">검색 방법을 선택해주세요</p>
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setSearchMethod('email')}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors ${
-                    searchMethod === 'email'
-                      ? 'border-kma-blue bg-blue-50 text-kma-blue'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  이메일로 찾기
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSearchMethod('phone')}
-                  className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors ${
-                    searchMethod === 'phone'
-                      ? 'border-kma-blue bg-blue-50 text-kma-blue'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  휴대폰으로 찾기
-                </button>
-              </div>
-            </div>
-
             {/* 아이디 찾기 폼 */}
             <div className="mt-6">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -265,30 +225,16 @@ export default function FindIdForm() {
                   {errors.name && <p className="text-xs text-kma-red mt-1">{errors.name}</p>}
                 </div>
 
-                {/* 이메일 또는 휴대폰 입력 필드 */}
-                {searchMethod === 'email' ? (
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="이메일"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
-                    />
-                    {errors.email && <p className="text-xs text-kma-red mt-1">{errors.email}</p>}
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="tel"
-                      placeholder="휴대폰 번호 (예: 010-1234-5678)"
-                      value={formData.phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
-                    />
-                    {errors.phone && <p className="text-xs text-kma-red mt-1">{errors.phone}</p>}
-                  </div>
-                )}
+                <div>
+                  <input
+                    type="tel"
+                    placeholder="휴대폰 번호 (예: 010-1234-5678)"
+                    value={formData.phone}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
+                  />
+                  {errors.phone && <p className="text-xs text-kma-red mt-1">{errors.phone}</p>}
+                </div>
 
                 {/* 전역 에러 메시지 */}
                 {error && (

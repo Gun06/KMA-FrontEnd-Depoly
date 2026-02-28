@@ -28,6 +28,8 @@ interface FormData {
 interface ModifyProfileResponse {
   isNeededOtpCertification?: boolean
   neededOtpCertification?: boolean
+  checkNeededOtpCertification?: boolean
+  successCode?: string
   issueOtpTokenResponse?: {
     token?: string
     expiresInSecond?: number
@@ -47,7 +49,6 @@ const emailDomains = [
 const toBirthDisplay = (birth?: string) => (birth ? birth.replace(/-/g, '.') : '')
 const toGenderValue = (gender?: string): '' | 'male' | 'female' =>
   gender === 'F' ? 'female' : gender === 'M' ? 'male' : ''
-
 export default function Client() {
   const router = useRouter()
   const { data, isLoading } = useMyProfile()
@@ -55,10 +56,10 @@ export default function Client() {
   const [showPostalCodeSearch, setShowPostalCodeSearch] = useState(false)
   const [showEmailDomainDropdown, setShowEmailDomainDropdown] = useState(false)
   const [isCustomDomain, setIsCustomDomain] = useState(false)
-  const [isPhoneEditMode, setIsPhoneEditMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isOtpReissuing, setIsOtpReissuing] = useState(false)
+  const [isOtpCommitting, setIsOtpCommitting] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
-  const [passwordModalAction, setPasswordModalAction] = useState<'save' | 'phoneOtp'>('save')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [phoneOtpNumber, setPhoneOtpNumber] = useState('')
@@ -66,7 +67,7 @@ export default function Client() {
   const [originalPhone, setOriginalPhone] = useState('')
   const [pendingOtpInfo, setPendingOtpInfo] = useState<{
     phone: string
-    token?: string
+    token: string
     expiresInSecond?: number
   } | null>(null)
   const [modal, setModal] = useState({
@@ -93,7 +94,6 @@ export default function Client() {
     const emailParts = (data.email ?? '').split('@')
     const phoneParts = (data.phNum ?? '').split('-')
     setOriginalPhone(data.phNum ?? '')
-    setIsPhoneEditMode(false)
     setFormData(prev => ({
       ...prev,
       name: data.name ?? '',
@@ -136,12 +136,11 @@ export default function Client() {
   const handlePhoneChange =
     (key: 'phonePrefix' | 'phoneMiddle' | 'phoneLast') =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!isPhoneEditMode) return
       const value = e.target.value.replace(/[^0-9]/g, '')
       setFormData(prev => ({ ...prev, [key]: value }))
     }
 
-  const executeProfileUpdate = async (action: 'save' | 'phoneOtp') => {
+  const executeProfileUpdate = async () => {
     if (!confirmPassword.trim()) {
       setModal({
         isOpen: true,
@@ -173,15 +172,21 @@ export default function Client() {
 
       const isOtpNeeded =
         response?.isNeededOtpCertification === true ||
-        response?.neededOtpCertification === true
+        response?.neededOtpCertification === true ||
+        response?.checkNeededOtpCertification === true
 
       if (isOtpNeeded) {
+        const issuedToken = response?.issueOtpTokenResponse?.token
+        if (!issuedToken) {
+          throw new Error('OTP 토큰이 발급되지 않았습니다. 다시 시도해 주세요.')
+        }
         const expiresInSecond = response?.issueOtpTokenResponse?.expiresInSecond
         setPendingOtpInfo({
           phone: nextPhone,
-          token: response?.issueOtpTokenResponse?.token,
+          token: issuedToken,
           expiresInSecond,
         })
+        setPhoneOtpNumber('')
         const expireText =
           typeof expiresInSecond === 'number' && expiresInSecond > 0
             ? ` (유효시간 ${expiresInSecond}초)`
@@ -189,22 +194,17 @@ export default function Client() {
         setModal({
           isOpen: true,
           title: 'OTP 인증 필요',
-          message: `전화번호 변경으로 OTP 인증이 필요합니다.${expireText}\n전화번호 아래 OTP 입력란에 인증번호를 입력해 주세요.`,
+          message: `전화번호 변경으로 OTP 인증이 필요합니다.${expireText}\n변경된 전화번호로 수신한 OTP를 입력 후 확인을 눌러주세요.`,
         })
-        setIsPhoneEditMode(false)
       } else {
         setPendingOtpInfo(null)
-        setIsPhoneEditMode(false)
         if (isPhoneChanged) {
           setOriginalPhone(nextPhone)
         }
         setModal({
           isOpen: true,
-          title: action === 'phoneOtp' ? '처리 완료' : '수정 완료',
-          message:
-            action === 'phoneOtp'
-              ? '전화번호 변경 요청이 처리되었습니다.'
-              : '회원정보가 수정되었습니다.',
+          title: '수정 완료',
+          message: '회원정보가 수정되었습니다.',
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
       }
@@ -226,35 +226,70 @@ export default function Client() {
   }
 
   const handleSave = async () => {
-    await executeProfileUpdate('save')
+    await executeProfileUpdate()
   }
 
-  const handlePhoneOtpRequest = () => {
-    if (!isPhoneEditMode) {
+  const handlePhoneOtpReissue = async () => {
+    if (!pendingOtpInfo) {
       setModal({
         isOpen: true,
         title: '안내',
-        message: '전화번호 변경 버튼을 눌러 편집 모드로 전환해 주세요.',
+        message: '먼저 OTP 인증 요청을 진행해 주세요.',
       })
       return
     }
-    const nextPhone = `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`
-    if (nextPhone === (originalPhone || '')) {
+
+    setIsOtpReissuing(true)
+    try {
+      const response = await userApi.authPost<ModifyProfileResponse>(
+        '/api/v1/user/modify-profile/otp/reissue',
+        {
+          token: pendingOtpInfo.token,
+          phNum: pendingOtpInfo.phone,
+        }
+      )
+      const token = response?.issueOtpTokenResponse?.token
+      if (!token) {
+        throw new Error('OTP 재발급 토큰을 받지 못했습니다.')
+      }
+      setPendingOtpInfo({
+        phone: pendingOtpInfo.phone,
+        token,
+        expiresInSecond: response?.issueOtpTokenResponse?.expiresInSecond,
+      })
+      setPhoneOtpNumber('')
       setModal({
         isOpen: true,
-        title: '안내',
-        message: '전화번호를 변경한 뒤 OTP 인증 요청을 진행해 주세요.',
+        title: '재발급 완료',
+        message: 'OTP가 재발급되었습니다. 수신한 인증번호를 입력해 주세요.',
       })
-      return
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'OTP 재발급에 실패했습니다.'
+      setModal({
+        isOpen: true,
+        title: '재발급 실패',
+        message,
+      })
+    } finally {
+      setIsOtpReissuing(false)
     }
-    setPasswordModalAction('phoneOtp')
-    setIsPasswordModalOpen(true)
   }
 
   const formatOtpTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+
+  const commitPhoneOtp = async (payload: {
+    token: string
+    otpNumber: string
+    phNum: string
+  }) => {
+    await userApi.authPost('/api/v1/user/modify-profile/commit', payload)
   }
 
   const handlePhoneOtpConfirm = () => {
@@ -282,12 +317,37 @@ export default function Client() {
       })
       return
     }
-    setModal({
-      isOpen: true,
-      title: 'OTP 확인 완료',
-      message:
-        'OTP 인증번호 입력은 확인되었습니다.\n최종 전화번호 반영은 OTP 검증(커밋) API 연동 후 완료됩니다.',
-    })
+    void (async () => {
+      setIsOtpCommitting(true)
+      try {
+        await commitPhoneOtp({
+          token: pendingOtpInfo.token,
+          otpNumber: phoneOtpNumber.trim(),
+          phNum: pendingOtpInfo.phone,
+        })
+        setOriginalPhone(pendingOtpInfo.phone)
+        setPendingOtpInfo(null)
+        setPhoneOtpNumber('')
+        setModal({
+          isOpen: true,
+          title: '인증 완료',
+          message: 'OTP 인증이 완료되어 전화번호 변경 내역이 적용되었습니다.',
+        })
+        await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
+      } catch (error) {
+        const message =
+          error && typeof error === 'object' && 'message' in error
+            ? String(error.message)
+            : 'OTP 인증 확인에 실패했습니다.'
+        setModal({
+          isOpen: true,
+          title: '인증 실패',
+          message,
+        })
+      } finally {
+        setIsOtpCommitting(false)
+      }
+    })()
   }
 
   return (
@@ -369,60 +429,24 @@ export default function Client() {
                   <label className="block text-sm font-semibold text-gray-800 mb-2">전화번호</label>
                   <div className="flex items-center gap-2 max-w-2xl">
                     <input
-                      className={`w-20 h-11 px-3 rounded-xl border border-gray-200 text-center ${
-                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
-                      }`}
+                      className="w-20 h-11 px-3 rounded-xl border border-gray-200 text-center bg-white"
                       value={formData.phonePrefix}
                       onChange={handlePhoneChange('phonePrefix')}
-                      readOnly={!isPhoneEditMode}
                     />
                     <span>-</span>
                     <input
-                      className={`w-24 h-11 px-3 rounded-xl border border-gray-200 text-center ${
-                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
-                      }`}
+                      className="w-24 h-11 px-3 rounded-xl border border-gray-200 text-center bg-white"
                       value={formData.phoneMiddle}
                       onChange={handlePhoneChange('phoneMiddle')}
-                      readOnly={!isPhoneEditMode}
                     />
                     <span>-</span>
                     <input
-                      className={`w-24 h-11 px-3 rounded-xl border border-gray-200 text-center ${
-                        isPhoneEditMode ? 'bg-white' : 'bg-gray-50 text-gray-500 cursor-not-allowed'
-                      }`}
+                      className="w-24 h-11 px-3 rounded-xl border border-gray-200 text-center bg-white"
                       value={formData.phoneLast}
                       onChange={handlePhoneChange('phoneLast')}
-                      readOnly={!isPhoneEditMode}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPhoneEditMode(prev => !prev)
-                        if (isPhoneEditMode) {
-                          const phoneParts = (originalPhone ?? '').split('-')
-                          setFormData(prev => ({
-                            ...prev,
-                            phonePrefix: phoneParts[0] ?? '010',
-                            phoneMiddle: phoneParts[1] ?? '',
-                            phoneLast: phoneParts[2] ?? '',
-                          }))
-                        }
-                      }}
-                      className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-                    >
-                      {isPhoneEditMode ? '변경 취소' : '전화번호 변경'}
-                    </button>
-                    {isPhoneEditMode && (
-                      <button
-                        type="button"
-                        onClick={handlePhoneOtpRequest}
-                        className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-                      >
-                        OTP 인증 요청
-                      </button>
-                    )}
                   </div>
-                  {(isPhoneEditMode || pendingOtpInfo) && (
+                  {pendingOtpInfo && (
                     <div className="mt-3 max-w-md">
                       <label className="block text-xs font-semibold text-gray-700 mb-2">OTP 인증번호</label>
                       <div className="flex items-center gap-2">
@@ -446,17 +470,21 @@ export default function Client() {
                         <button
                           type="button"
                           onClick={handlePhoneOtpConfirm}
-                          className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                          disabled={isOtpCommitting}
+                          className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
                         >
-                          확인
+                          {isOtpCommitting ? '확인 중...' : '확인'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handlePhoneOtpReissue()}
+                          disabled={isOtpReissuing}
+                          className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
+                        >
+                          {isOtpReissuing ? '재발급 중...' : '재발급'}
                         </button>
                       </div>
                     </div>
-                  )}
-                  {!isPhoneEditMode && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      전화번호는 수정하기 버튼이 아닌 &apos;전화번호 변경&apos; 버튼을 눌러야 수정할 수 있습니다.
-                    </p>
                   )}
                 </div>
               </div>
@@ -518,7 +546,6 @@ export default function Client() {
         <button
           type="button"
           onClick={() => {
-            setPasswordModalAction('save')
             setIsPasswordModalOpen(true)
           }}
           disabled={isSaving}
@@ -540,9 +567,7 @@ export default function Client() {
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl mx-4 p-6">
             <h3 className="text-base font-bold text-gray-900">비밀번호 확인</h3>
             <p className="mt-1 text-sm text-gray-600">
-              {passwordModalAction === 'phoneOtp'
-                ? '현재 비밀번호를 입력 후 OTP 인증 요청을 진행해 주세요.'
-                : '현재 비밀번호를 입력 후 수정하기를 눌러주세요.'}
+              현재 비밀번호를 입력 후 수정하기를 눌러주세요.
             </p>
             <div className="mt-4">
               <label className="block text-sm font-semibold text-gray-800 mb-2">현재 비밀번호</label>
@@ -574,17 +599,11 @@ export default function Client() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  if (passwordModalAction === 'phoneOtp') {
-                    void executeProfileUpdate('phoneOtp')
-                    return
-                  }
-                  void handleSave()
-                }}
+                onClick={() => void handleSave()}
                 disabled={isSaving}
                 className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
               >
-                {isSaving ? '저장 중...' : passwordModalAction === 'phoneOtp' ? 'OTP 인증 요청' : '수정하기'}
+                {isSaving ? '저장 중...' : '수정하기'}
               </button>
             </div>
           </div>

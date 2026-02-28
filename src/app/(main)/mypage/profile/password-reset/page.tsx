@@ -1,7 +1,14 @@
 'use client'
 
-import Client from './Client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Page() {
-  return <Client />
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/find-password')
+  }, [router])
+
+  return null
 }

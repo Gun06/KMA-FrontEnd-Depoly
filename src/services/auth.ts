@@ -780,6 +780,46 @@ export const authService = {
     }
   },
 
+  async requestUserPasswordReset(
+    accountId: string
+  ): Promise<{ token: string; expiresInSecond: number }> {
+    const response = await api.post<unknown>('user', '/api/v1/public/user/change-password', {
+      accountId,
+    });
+
+    const body = (response ?? {}) as Record<string, unknown>;
+    const token =
+      getString(body.token) ||
+      (isRecord(body.issueOtpTokenResponse)
+        ? getString((body.issueOtpTokenResponse as Record<string, unknown>).token)
+        : undefined);
+    const expiresInSecond =
+      (isRecord(body.issueOtpTokenResponse)
+        ? (body.issueOtpTokenResponse as Record<string, unknown>).expiresInSecond
+        : undefined) ?? body.expiresInSecond;
+    const expires =
+      typeof expiresInSecond === 'number' && Number.isFinite(expiresInSecond)
+        ? expiresInSecond
+        : 180;
+
+    if (!token) {
+      throw new Error('초기화 토큰을 받지 못했습니다.');
+    }
+    return { token, expiresInSecond: expires };
+  },
+
+  async completeUserPasswordReset(data: {
+    token: string;
+    otp: string;
+    newPassword: string;
+  }): Promise<void> {
+    await api.patch('user', '/api/v1/public/user/change-password', {
+      token: data.token,
+      otpNumber: data.otp,
+      newPassword: data.newPassword,
+    });
+  },
+
   /** 회원가입 전화번호 인증 OTP 발급 */
   async requestSignupPhoneOtp(phNum: string): Promise<{ token: string; expiresInSecond: number }> {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
