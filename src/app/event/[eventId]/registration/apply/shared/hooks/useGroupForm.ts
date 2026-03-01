@@ -6,7 +6,11 @@ import { isFormValid, getGroupFormValidationErrors } from '../utils/validation';
 import { handleGroupInputChange, handleParticipantChange, handleGroupAddressSelect, handleGroupNameCheck, handleGroupIdCheck } from '../utils/handlers';
 import { transformGroupFormDataToApi, transformGroupFormDataToUpdateApi } from '../utils/transformers';
 import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
+import { updateOwnedRegistration, OwnedRegistrationUpdatePayload } from '../api/owned';
 import { formatError } from '../utils/errorHandler';
+import { formatEmail } from '../utils/formatters';
+import { parseCategoryWithDistance } from '@/components/event/GroupRegistration/utils/participantHelpers';
+import { CategorySouvenir } from '../types/common';
 import { useRouter } from 'next/navigation';
 
 export const useGroupForm = (eventId: string, eventInfo: any) => {
@@ -288,26 +292,106 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
             throw new Error('수정할 신청 정보를 찾을 수 없습니다. 다시 시도해주세요.');
           }
 
-          // 수정 모드: PATCH API 호출
-          const registrationId = currentEditData.innerUserRegistrationList?.[0]?.registrationId;
+          // 소유 신청자 확인
+          const ownedParticipants = formData.participants.filter(p => p.checkOwned === true && p.registrationId);
+          const regularParticipants = formData.participants.filter(p => !p.checkOwned || !p.registrationId);
 
-          if (!registrationId) {
-            throw new Error('수정할 신청 정보를 찾을 수 없습니다. registrationId가 없습니다.');
+          // 소유 신청자가 있으면 각각 updateOwnedRegistration API 호출
+          if (ownedParticipants.length > 0) {
+            if (!eventInfo) {
+              throw new Error('이벤트 정보가 없습니다.');
+            }
+
+            // 소유 신청자 수정 처리
+            const ownedResponses = await Promise.all(
+              ownedParticipants.map(async (participant) => {
+                if (!participant.registrationId) {
+                  throw new Error('소유 신청자의 registrationId가 없습니다.');
+                }
+
+                // 카테고리 찾기
+                const { distance, categoryName } = parseCategoryWithDistance(participant.category);
+                const selectedCategory = eventInfo.categorySouvenirList.find(
+                  (c: CategorySouvenir) => {
+                    if (distance) {
+                      return c.categoryName === categoryName && c.distance === distance;
+                    }
+                    return c.categoryName === categoryName;
+                  }
+                );
+
+                if (!selectedCategory) {
+                  throw new Error(`소유 신청자 ${participant.name}의 카테고리를 찾을 수 없습니다.`);
+                }
+
+                // 기념품 처리
+                const souvenirs = participant.selectedSouvenirs && participant.selectedSouvenirs.length > 0
+                  ? participant.selectedSouvenirs.map(s => ({
+                      souvenirId: s.souvenirId,
+                      selectedSize: s.size
+                    }))
+                  : [];
+
+                // 생년월일 포맷팅
+                const birth = `${participant.birthYear}-${participant.birthMonth.padStart(2, '0')}-${participant.birthDay.padStart(2, '0')}`;
+
+                // 소유 신청자 수정 데이터 변환
+                const checkAddressIsBasedOnOrganization = currentEditData?.addressIsBasedOnOrganization || false;
+                const updatePayload: OwnedRegistrationUpdatePayload = {
+                  registrationPersonalInfo: {
+                    registerMustInfo: {
+                      personalInfo: {
+                        birth: birth,
+                        name: participant.name,
+                        phNum: `${participant.phone1}-${participant.phone2}-${participant.phone3}`,
+                        email: formatEmail(formData.email1, formData.emailDomain),
+                        gender: participant.gender === 'male' ? 'M' : 'F'
+                      },
+                      registrationInfo: {
+                        eventCategoryId: selectedCategory.categoryId,
+                        souvenir: souvenirs,
+                        note: participant.note || ''
+                      }
+                    },
+                    checkAddressIsBasedOnOrganization: checkAddressIsBasedOnOrganization,
+                    address: checkAddressIsBasedOnOrganization
+                      ? null
+                      : {
+                          address: formData.address || '',
+                          zipCode: formData.postalCode || '',
+                          addressDetail: formData.detailedAddress || ''
+                        }
+                  },
+                  registrationPw: participant.registrationPw || formData.groupPassword,
+                  note: participant.note || ''
+                };
+
+                return await updateOwnedRegistration(
+                  eventId,
+                  participant.registrationId,
+                  updatePayload
+                );
+              })
+            );
+
+            // 첫 번째 소유 신청자의 응답 사용 (OTP는 첫 번째 소유 신청자 기준)
+            response = ownedResponses[0];
           }
 
-          // 수정용 API 데이터 구조 생성 (원본 데이터 전달)
-          const requestData = transformGroupFormDataToUpdateApi(formData, eventInfo, currentEditData);
-          response = await updateGroupRegistration(eventId, registrationId, requestData);
+          // 일반 참가자가 있으면 기존 방식으로 수정
+          if (regularParticipants.length > 0 || ownedParticipants.length === 0) {
+            const registrationId = currentEditData.innerUserRegistrationList?.[0]?.registrationId;
+
+            if (!registrationId) {
+              throw new Error('수정할 신청 정보를 찾을 수 없습니다. registrationId가 없습니다.');
+            }
+
+            // 수정용 API 데이터 구조 생성 (원본 데이터 전달)
+            const requestData = transformGroupFormDataToUpdateApi(formData, eventInfo, currentEditData);
+            response = await updateGroupRegistration(eventId, registrationId, requestData);
+          }
 
           // 성공 후 sessionStorage에서 삭제 (보안)
-          if (orgAccount) {
-            try {
-              const storageKey = `group_edit_data_${eventId}_${decodeURIComponent(orgAccount)}`;
-              sessionStorage.removeItem(storageKey);
-            } catch (e) {
-              // 무시
-            }
-          }
           if (orgAccount) {
             try {
               const storageKey = `group_edit_data_${eventId}_${decodeURIComponent(orgAccount)}`;

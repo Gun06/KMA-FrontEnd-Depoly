@@ -34,6 +34,41 @@ export interface IndividualGroupRegistrationData {
   paymenterName: string;
   paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
   note?: string;
+  checkOwned?: boolean; // 소유 신청 여부
+}
+
+// 소유 신청 인증 요청 타입
+export interface OwnedRegistrationAuthRequest {
+  name: string;
+  phNum: string;
+  birth: string;
+  eventPw: string; // 비밀번호
+}
+
+// 소유 신청 인증 응답 타입 (수정 화면 구성용)
+export interface OwnedRegistrationViewData {
+  registrationId: string;
+  personalAccount: string;
+  name: string;
+  gender: "M" | "F";
+  birth: string;
+  phNum: string;
+  email: string;
+  eventCategoryId: string;
+  eventCategoryName: string;
+  souvenir: Array<{
+    souvenirId: string;
+    souvenirName: string;
+    souvenirSize: string;
+  }>;
+  amount: number;
+  checkAddressBasedOnOrganization: boolean; // 단체 주소 위탁 여부
+  checkOwned: boolean; // 소유 신청 여부
+  address: {
+    address: string;
+    zipCode: string;
+    addressDetail: string;
+  } | null; // checkAddressBasedOnOrganization이 true일 경우 null일 수 있음
 }
 
 

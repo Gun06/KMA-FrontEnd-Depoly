@@ -93,7 +93,8 @@ export const createEditData = (data: GroupRegistrationConfirmData) => {
         paymentStatus: participant.paymentStatus || 'UNPAID',
         registrationId: participant.registrationId,
         note: (participant as any).note || '',
-        originalAmount: participant.amount
+        originalAmount: participant.amount,
+        checkOwned: participant.checkOwned || false
       };
     }),
     totalParticipants: data.organizationHeadCount,

@@ -26,8 +26,12 @@ export interface ParticipantData {
   registrationId?: string; // 수정 모드에서 사용
   // 참가 대표자 여부
   isLeader?: boolean;
+  // 소유 신청 여부
+  checkOwned?: boolean;
   // 원본 금액 (결제완료 상태에서 동일 금액 체크용)
   originalAmount?: number;
+  // 소유 신청자 비밀번호 (소유 신청 수정 시 사용)
+  registrationPw?: string;
 }
 
 // 단체신청 폼 데이터 타입

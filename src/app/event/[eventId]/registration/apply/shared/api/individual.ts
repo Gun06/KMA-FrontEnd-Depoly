@@ -65,14 +65,15 @@ export const commitStagedRegistration = async (
 
   if (!response.ok) {
     const errorText = await response.text();
+    let message = `커밋 실패: ${response.status}`;
     try {
       const errorJson = JSON.parse(errorText);
-      const message =
-        errorJson?.message || errorJson?.error || `커밋 실패: ${response.status}`;
-      throw new Error(message);
+      if (errorJson?.message) message = errorJson.message;
+      else if (errorJson?.error) message = errorJson.error;
     } catch {
-      throw new Error(errorText || `커밋 실패: ${response.status}`);
+      // JSON 파싱 실패 시 기본 메시지 사용
     }
+    throw new Error(message);
   }
 
   return (await response.json()) as StagedCommitResponse;
@@ -103,16 +104,15 @@ export const reissueStagedOtp = async (
 
   if (!response.ok) {
     const errorText = await response.text();
+    let message = `OTP 재발급 실패: ${response.status}`;
     try {
       const errorJson = JSON.parse(errorText);
-      const message =
-        errorJson?.message ||
-        errorJson?.error ||
-        `OTP 재발급 실패: ${response.status}`;
-      throw new Error(message);
+      if (errorJson?.message) message = errorJson.message;
+      else if (errorJson?.error) message = errorJson.error;
     } catch {
-      throw new Error(errorText || `OTP 재발급 실패: ${response.status}`);
+      // JSON 파싱 실패 시 기본 메시지 사용
     }
+    throw new Error(message);
   }
 
   return (await response.json()) as ReissueOtpResponse;

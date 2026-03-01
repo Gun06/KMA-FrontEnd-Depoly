@@ -36,10 +36,14 @@ export default function RegistrationOtpModal({
   const [timeLeft, setTimeLeft] = useState(OTP_TIMEOUT);
   const [error, setError] = useState<string | null>(null);
   const [reissueMessage, setReissueMessage] = useState<string | null>(null);
+  const [reissueSuccess, setReissueSuccess] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // onRequestOtp을 ref로 저장해서 의존성 문제 방지
+  const onRequestOtpRef = useRef(onRequestOtp);
+  useEffect(() => { onRequestOtpRef.current = onRequestOtp; }, [onRequestOtp]);
 
-  // 모달이 열릴 때 초기화
+  // 모달이 열릴 때 초기화 (isOpen 변화에만 반응)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -52,7 +56,7 @@ export default function RegistrationOtpModal({
     // 모달이 처음 열릴 때 자동으로 OTP 전송 시도
     const sendOtp = async () => {
       try {
-        await onRequestOtp();
+        await onRequestOtpRef.current();
         setOtpRequested(true);
       } catch (e) {
         const msg =
@@ -62,7 +66,8 @@ export default function RegistrationOtpModal({
     };
 
     sendOtp();
-  }, [isOpen, onRequestOtp]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // 타이머 실행
   useEffect(() => {
@@ -113,15 +118,16 @@ export default function RegistrationOtpModal({
   const handleReissue = async () => {
     try {
       await onReissue();
-      setError(null);
-       setReissueMessage(null);
       setOtp("");
       setTimeLeft(OTP_TIMEOUT);
       setOtpRequested(true);
+      setError(null);
+      setReissueSuccess(true);
+      setReissueMessage("OTP가 재발급되었습니다.");
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "인증번호 재발급에 실패했습니다.";
-      // 재발급 관련 에러는 남은 시간 영역 아래에 표시
+      setReissueSuccess(false);
       setReissueMessage(msg);
       setError(null);
     }
@@ -202,7 +208,7 @@ export default function RegistrationOtpModal({
                 </div>
               )}
             {reissueMessage && (
-              <p className="mt-2 text-xs text-red-600 text-center">
+              <p className={`mt-2 text-xs text-center ${reissueSuccess ? 'text-green-600' : 'text-red-600'}`}>
                 {reissueMessage}
               </p>
             )}

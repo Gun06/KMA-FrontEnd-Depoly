@@ -405,6 +405,11 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 </div>
                 <p className="text-xs text-gray-600 ml-8">
                   새로운 참가자를 추가할 수 있습니다. 기존 참가자는 삭제할 수 없습니다.
+                  {isEditMode && participants.some(p => p.checkOwned) && (
+                    <span className="block mt-1 text-orange-600">
+                      * 소유 신청한 참가자는 단체장이 수정할 수 없습니다.
+                    </span>
+                  )}
                 </p>
               </div>
               <button
@@ -450,13 +455,17 @@ const ParticipantsSection = memo(function ParticipantsSection({
               const isNewParticipant = isEditMode && !participant.registrationId;
               const paymentStatus = participant.paymentStatus?.toUpperCase();
               
-              // 전체 행 블락 상태: 확인필요, 환불요청(전액/차액), 환불완료 상태
+              // 소유 신청 여부 확인
+              const isOwned = participant.checkOwned === true;
+              
+              // 전체 행 블락 상태: 확인필요, 환불요청(전액/차액), 환불완료 상태, 소유 신청
               // 이 상태에서는 모든 필드 수정 불가, 입력 클릭 차단, 행 전체 비활성화
               const isRowBlocked = (
                 paymentStatus === 'MUST_CHECK' ||
                 paymentStatus === 'NEED_REFUND' ||
                 paymentStatus === 'NEED_PARTITIAL_REFUND' ||
-                paymentStatus === 'REFUNDED'
+                paymentStatus === 'REFUNDED' ||
+                isOwned // 소유 신청인 경우 수정 불가
               );
               
               // 미결제 상태: 모든 필드 수정 가능
@@ -502,22 +511,30 @@ const ParticipantsSection = memo(function ParticipantsSection({
               <tr
                 className={`border-b border-gray-200 ${
                   isDisabled
-                    ? 'bg-gray-50 opacity-75 cursor-not-allowed'
+                    ? 'bg-gray-50 cursor-not-allowed'
                     : ''
                 }`}
-                style={isDisabled ? { pointerEvents: 'none' } : {}}
+                style={{
+                  ...(isDisabled ? { pointerEvents: 'none' } : {}),
+                  ...(isOwned ? { opacity: 0.6 } : {})
+                }}
               >
-                <td className="px-3 py-3 text-center text-sm w-20 border-r border-gray-200">
+                <td className="px-3 py-3 text-center text-sm w-20 border-r border-gray-200 relative">
+                  {isOwned && (
+                    <span 
+                      className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold leading-none absolute left-2 top-1/2 -translate-y-1/2 z-[9999]" 
+                      style={{ opacity: 1.67 }}
+                    >
+                      소유
+                    </span>
+                  )}
                   <div className="flex items-center justify-center gap-1.5">
                     {isNewParticipant && (
                       <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold leading-none">
                         신규
                       </span>
                     )}
-                    {index + 1}.
-                    {isDisabled && (
-                      <span className="text-xs text-orange-600 font-semibold" title="수정불가">🔒</span>
-                    )}
+                    <span style={isOwned ? { marginLeft: '20px' } : {}}>{index + 1}.</span>
                   </div>
                 </td>
                 <td className="px-3 py-3 w-32 border-r border-gray-200">
@@ -531,7 +548,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       if (isDisabled) return;
                       handleParticipantChange(index, 'name', e.target.value);
                     }}
-                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   />
                 </td>
                 <td className="px-3 py-3 w-80 border-r border-gray-200">
@@ -598,7 +615,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       }
                     }}
                     maxLength={10}
-                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   />
                 </td>
                 <td className="px-3 py-3 w-48 border-r border-gray-200">
@@ -614,7 +631,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                         if (isDisabled) return;
                         handleParticipantChange(index, 'phone2', e.target.value.replace(/[^0-9]/g, ''));
                       }}
-                      className={`w-16 px-1 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      className={`w-16 px-1 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       maxLength={4}
                     />
                     <span className="text-sm text-gray-400">-</span>
@@ -627,7 +644,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                         if (isDisabled) return;
                         handleParticipantChange(index, 'phone3', e.target.value.replace(/[^0-9]/g, ''));
                       }}
-                      className={`w-16 px-1 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      className={`w-16 px-1 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       maxLength={4}
                     />
                   </div>
@@ -642,7 +659,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     }}
                     className={`w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none text-center ${
                       isDisabled 
-                        ? 'bg-gray-100 cursor-not-allowed opacity-75' 
+                        ? 'bg-gray-50 cursor-not-allowed' 
                         : 'bg-white hover:bg-gray-50 cursor-pointer'
                     }`}
                     style={{
@@ -673,7 +690,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     style={isCategorySouvenirChangeDisabled ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}
                     className={`w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 hover:bg-blue-100 transition-colors text-center font-medium ${
                       isCategorySouvenirChangeDisabled 
-                        ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300' 
+                        ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-300' 
                         : 'cursor-pointer hover:border-blue-400'
                     }`}
                   >
@@ -707,7 +724,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                         style={isDisabledField ? { pointerEvents: 'none', cursor: 'not-allowed' } : {}}
                         className={`w-full px-3 py-2 border-2 border-dashed rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-center font-medium ${
                           isDisabledField
-                            ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300'
+                            ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-300'
                             : isSouvenirSelected
                             ? 'bg-blue-50 border-blue-300 hover:bg-blue-100 hover:border-blue-400 cursor-pointer'
                             : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'

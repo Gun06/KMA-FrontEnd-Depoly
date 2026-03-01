@@ -306,3 +306,125 @@ export const changeGroupPassword = async (
     throw error;
   }
 };
+
+// 소유 신청 비밀번호 초기화 요청 (OTP 발급) - 단체 내 개별 신청
+export interface OwnedPasswordResetRequest {
+  name: string;
+  phNum: string; // 전화번호 (예: "010-1234-5678")
+  birth: string; // 생년월일 (예: "1990-01-01")
+}
+
+export const requestOwnedPasswordReset = async (
+  eventId: string,
+  data: OwnedPasswordResetRequest
+): Promise<PasswordResetResponse> => {
+  try {
+    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/owned/change-password`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      try {
+        const errorJson = JSON.parse(errorText);
+        throw new Error(`비밀번호 초기화 요청 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+      } catch {
+        throw new Error(`비밀번호 초기화 요청 실패: ${response.status} - ${errorText}`);
+      }
+    }
+    
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 소유 신청 OTP 재발급
+export const reissueOwnedOtp = async (
+  eventId: string,
+  data: OtpReissueRequest
+): Promise<PasswordResetResponse> => {
+  try {
+    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/owned/otp-reissue`;
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      try {
+        const errorJson = JSON.parse(errorText);
+        // MAX_REQUESTED 에러 체크
+        if (errorJson.code === 'MAX_REQUESTED') {
+          throw { code: 'MAX_REQUESTED', message: errorJson.message || 'OTP 재발급 횟수를 초과했습니다.' };
+        }
+        throw new Error(`OTP 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'MAX_REQUESTED') {
+          throw error;
+        }
+        throw new Error(`OTP 재발급 실패: ${response.status} - ${errorText}`);
+      }
+    }
+    
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 소유 신청 비밀번호 변경 (OTP 검증 후)
+export interface OwnedPasswordChangeRequest {
+  token: string;
+  otp: string;
+  newPassword: string;
+}
+
+export const changeOwnedPassword = async (
+  eventId: string,
+  data: OwnedPasswordChangeRequest
+): Promise<void> => {
+  try {
+    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/owned/change-password`;
+    
+    // API 스펙에 맞게 otp를 otpNumber로 변환
+    const requestBody = {
+      token: data.token,
+      otpNumber: data.otp,
+      newPassword: data.newPassword
+    };
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      try {
+        const errorJson = JSON.parse(errorText);
+        throw new Error(`비밀번호 변경 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+      } catch {
+        throw new Error(`비밀번호 변경 실패: ${response.status} - ${errorText}`);
+      }
+    }
+  } catch (error) {
+    throw error;
+  }
+};

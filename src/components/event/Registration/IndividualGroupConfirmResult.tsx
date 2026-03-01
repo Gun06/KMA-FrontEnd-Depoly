@@ -68,6 +68,11 @@ export default function IndividualGroupConfirmResult({ data }: IndividualGroupCo
                   <span className="px-2 py-0.5 bg-white border border-gray-200 text-gray-600 text-xs rounded-full">
                     {getGenderLabel(data.gender)}
                   </span>
+                  {data.checkOwned && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                      소유
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">개별 신청 정보</p>
               </div>
@@ -94,6 +99,22 @@ export default function IndividualGroupConfirmResult({ data }: IndividualGroupCo
         </div>
 
         <div className="p-5 sm:p-7 space-y-10">
+          {/* 소유 신청 설명문 */}
+          {data.checkOwned && (
+            <section>
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">소유 신청 안내</h4>
+                <div className="text-xs sm:text-sm text-gray-700 leading-relaxed space-y-1">
+                  <p>• 단체 내 개별 신청에 대해 비밀번호가 재발급되어 관리 및 소유권을 이전받은 신청은 소유 신청으로 명명합니다.</p>
+                  <p>• 소유 신청으로 전환된 신청은, 단체장이 아닌 본인이 신청 내역의 수정 책임을 담당합니다.</p>
+                  <p>• 소유 신청은 개인정보와 참여 정보, 기념품 배송 주소를 수정 가능합니다.</p>
+                  <p>• 소유 신청은 결제 정보를 수정할 수 없습니다.</p>
+                  <p>• 결제 후 종목 변경 시도 등의 동작을 위한 환불 신청이나, 단순 환불 신청은 단체장에게 문의바랍니다.</p>
+                </div>
+              </div>
+            </section>
+          )}
+
           <section>
             <h4 className="text-base font-semibold text-gray-900 mb-3">기본 정보</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">

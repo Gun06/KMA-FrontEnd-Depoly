@@ -22,6 +22,7 @@ export interface InnerUserRegistration {
   amount: number;
   paymentStatus?: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED"; // 개인별 결제 상태
   checkLeader?: boolean; // 참가 대표자 여부
+  checkOwned?: boolean; // 소유 신청 여부
 }
 
 // 단체신청 확인 데이터 타입

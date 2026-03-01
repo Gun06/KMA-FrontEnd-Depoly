@@ -1097,6 +1097,11 @@ export default function GroupApplicationConfirmResultPage() {
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                             {getGenderLabel(detailedParticipant.gender)}
                           </span>
+                          {detailedParticipant.checkOwned && (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                              소유 신청
+                            </span>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="text-base font-medium text-blue-600">

@@ -5,7 +5,7 @@ import { GroupRegistrationResponse } from "../../../app/event/[eventId]/registra
 import { fetchIndividualGroupRegistration } from "../../../app/event/[eventId]/registration/confirm/group/api";
 import PasswordResetRequestModal from "./PasswordResetRequestModal";
 import PasswordResetOtpModal from "./PasswordResetOtpModal";
-import { requestGroupPasswordReset, reissueGroupOtp } from "../../../app/event/[eventId]/registration/apply/shared/api/passwordReset";
+import { requestGroupPasswordReset, reissueGroupOtp, requestOwnedPasswordReset, reissueOwnedOtp, changeOwnedPassword } from "../../../app/event/[eventId]/registration/apply/shared/api/passwordReset";
 
 // API 함수 (현재 API와 새로운 스키마 모두 지원)
 const verifyGroupRegistration = async (eventId: string, data: { groupName: string; password: string }): Promise<GroupRegistrationResponse> => {
@@ -64,13 +64,21 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
   const [individualError, setIndividualError] = useState<string | null>(null);
   const [individualLoading, setIndividualLoading] = useState(false);
   
-  // 비밀번호 초기화 모달 상태
+  // 비밀번호 초기화 모달 상태 (단체 신청용)
   const [showPasswordResetRequestModal, setShowPasswordResetRequestModal] = useState(false);
   const [showPasswordResetOtpModal, setShowPasswordResetOtpModal] = useState(false);
   const [passwordResetToken, setPasswordResetToken] = useState<string | null>(null);
   const [passwordResetOrganizationAccount, setPasswordResetOrganizationAccount] = useState<string | null>(null);
   const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
   const [isOtpReissuing, setIsOtpReissuing] = useState(false);
+
+  // 비밀번호 초기화 모달 상태 (소유 신청용 - 개별 확인 탭)
+  const [showOwnedPasswordResetRequestModal, setShowOwnedPasswordResetRequestModal] = useState(false);
+  const [showOwnedPasswordResetOtpModal, setShowOwnedPasswordResetOtpModal] = useState(false);
+  const [ownedPasswordResetToken, setOwnedPasswordResetToken] = useState<string | null>(null);
+  const [ownedPasswordResetUniqueInfo, setOwnedPasswordResetUniqueInfo] = useState<{ name: string; phNum: string; birth: string } | null>(null);
+  const [isOwnedPasswordResetLoading, setIsOwnedPasswordResetLoading] = useState(false);
+  const [isOwnedOtpReissuing, setIsOwnedOtpReissuing] = useState(false);
 
   const [formData, setFormData] = useState({
     groupName: "",
@@ -308,6 +316,81 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
     router.push(`/event/${eventId}/registration/confirm/group`);
   };
 
+  // 소유 신청 비밀번호 초기화 요청 핸들러 (개별 확인 탭용)
+  const handleOwnedPasswordResetRequest = async (data: { name?: string; phNum?: string; birth?: string }) => {
+    setIsOwnedPasswordResetLoading(true);
+    try {
+      if (!data.name || !data.phNum || !data.birth) {
+        throw new Error('이름, 전화번호, 생년월일을 모두 입력해주세요.');
+      }
+      
+      const result = await requestOwnedPasswordReset(eventId, {
+        name: data.name,
+        phNum: data.phNum,
+        birth: data.birth
+      });
+      
+      if (result.token) {
+        // 이전 타이머 정보 초기화 (새로운 요청이므로)
+        sessionStorage.removeItem('passwordResetTimer');
+        sessionStorage.removeItem('passwordResetTimerStart');
+        sessionStorage.removeItem('passwordResetReissueCount');
+        
+        setOwnedPasswordResetToken(result.token);
+        // uniqueInfo 저장 (OTP 재발급 시 필요)
+        setOwnedPasswordResetUniqueInfo({
+          name: data.name,
+          phNum: data.phNum,
+          birth: data.birth
+        });
+        setShowOwnedPasswordResetRequestModal(false);
+        setShowOwnedPasswordResetOtpModal(true);
+      } else {
+        throw new Error('토큰을 받지 못했습니다.');
+      }
+    } catch (err) {
+      throw err;
+    } finally {
+      setIsOwnedPasswordResetLoading(false);
+    }
+  };
+
+  // 소유 신청 OTP 재전송 핸들러
+  const handleOwnedOtpReissue = async () => {
+    if (!ownedPasswordResetToken || !ownedPasswordResetUniqueInfo) {
+      throw new Error('토큰 또는 인증 정보가 없습니다.');
+    }
+    setIsOwnedOtpReissuing(true);
+    try {
+      await reissueOwnedOtp(eventId, {
+        token: ownedPasswordResetToken,
+        uniqueInfo: ownedPasswordResetUniqueInfo
+      });
+    } finally {
+      setIsOwnedOtpReissuing(false);
+    }
+  };
+
+  // 소유 신청 비밀번호 변경 핸들러
+  const handleOwnedPasswordChange = async (otp: string, newPassword: string) => {
+    if (!ownedPasswordResetToken) {
+      throw new Error('토큰이 없습니다.');
+    }
+    await changeOwnedPassword(eventId, {
+      token: ownedPasswordResetToken,
+      otp,
+      newPassword
+    });
+  };
+
+  // 소유 신청 비밀번호 변경 성공 핸들러
+  const handleOwnedPasswordResetSuccess = () => {
+    setOwnedPasswordResetToken(null);
+    setOwnedPasswordResetUniqueInfo(null);
+    // 개별 확인 페이지로 이동 (비밀번호 재발급 후 소유 신청으로 전환됨)
+    router.push(`/event/${eventId}/registration/confirm/group`);
+  };
+
   const [activeTab, setActiveTab] = useState<'group' | 'individual'>('group');
 
   return (
@@ -462,7 +545,8 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
           <div className="mb-10 sm:mb-14 text-left">
             <div className="pl-3 border-l-2 border-gray-200">
               <p className="text-sm sm:text-base text-black leading-relaxed font-thin">
-                개별 참가자의 신청 내역을 확인하기 위해 정보를 입력한 후, 확인하기를 클릭하세요.
+                개별 참가자의 신청 내역을 확인하기 위해 정보를 입력한 후, 확인하기를 클릭하세요.<br />
+                상세조회에서 비밀번호 발급 후 수정이 가능합니다.
               </p>
             </div>
           </div>
@@ -680,31 +764,39 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
           )}
 
           {/* 개별 확인 제출 버튼 */}
-          <div className="mt-6 sm:mt-8 text-center">
-          <button
-            onClick={handleIndividualSubmit}
-            disabled={individualLoading}
-            className={`w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg ${
-              individualLoading 
-                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
-          >
-            {individualLoading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>확인 중...</span>
-              </div>
-            ) : (
-              '확인하기'
-            )}
-          </button>
-        </div>
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => setShowOwnedPasswordResetRequestModal(true)}
+              type="button"
+              className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg text-black hover:bg-[#C0C0C0]"
+              style={{ backgroundColor: '#D9D9D9' }}
+            >
+              비밀번호 초기화
+            </button>
+            <button
+              onClick={handleIndividualSubmit}
+              disabled={individualLoading}
+              className={`w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg ${
+                individualLoading 
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
+            >
+              {individualLoading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>확인 중...</span>
+                </div>
+              ) : (
+                '확인하기'
+              )}
+            </button>
+          </div>
 
         </>
       )}
 
-      {/* 비밀번호 초기화 요청 모달 */}
+      {/* 비밀번호 초기화 요청 모달 (단체 신청용) */}
       <PasswordResetRequestModal
         isOpen={showPasswordResetRequestModal}
         onClose={() => {
@@ -717,7 +809,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
         type="group"
       />
 
-      {/* OTP 인증 및 비밀번호 변경 모달 */}
+      {/* OTP 인증 및 비밀번호 변경 모달 (단체 신청용) */}
       <PasswordResetOtpModal
         isOpen={showPasswordResetOtpModal}
         onClose={() => {
@@ -737,6 +829,42 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
         isLoading={isPasswordResetLoading}
         isReissuing={isOtpReissuing}
         onSuccess={handlePasswordResetSuccess}
+      />
+
+      {/* 비밀번호 초기화 요청 모달 (소유 신청용 - 개별 확인 탭) */}
+      <PasswordResetRequestModal
+        isOpen={showOwnedPasswordResetRequestModal}
+        onClose={() => {
+          setShowOwnedPasswordResetRequestModal(false);
+          setOwnedPasswordResetToken(null);
+          setOwnedPasswordResetUniqueInfo(null);
+        }}
+        onSubmit={handleOwnedPasswordResetRequest}
+        isLoading={isOwnedPasswordResetLoading}
+        type="individual"
+        isOwned={true}
+      />
+
+      {/* OTP 인증 및 비밀번호 변경 모달 (소유 신청용 - 개별 확인 탭) */}
+      <PasswordResetOtpModal
+        isOpen={showOwnedPasswordResetOtpModal}
+        onClose={() => {
+          setShowOwnedPasswordResetOtpModal(false);
+          setOwnedPasswordResetToken(null);
+          setOwnedPasswordResetUniqueInfo(null);
+          sessionStorage.removeItem('passwordResetTimer');
+          sessionStorage.removeItem('passwordResetTimerStart');
+          sessionStorage.removeItem('passwordResetReissueCount');
+        }}
+        onBack={() => {
+          setShowOwnedPasswordResetOtpModal(false);
+          setShowOwnedPasswordResetRequestModal(true);
+        }}
+        onSubmit={handleOwnedPasswordChange}
+        onReissue={handleOwnedOtpReissue}
+        isLoading={isOwnedPasswordResetLoading}
+        isReissuing={isOwnedOtpReissuing}
+        onSuccess={handleOwnedPasswordResetSuccess}
       />
     </div>
   );

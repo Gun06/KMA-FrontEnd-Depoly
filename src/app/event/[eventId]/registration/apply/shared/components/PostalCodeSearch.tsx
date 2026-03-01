@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 interface PostalCodeSearchProps {
   onAddressSelect: (postalCode: string, address: string) => void;
+  disabled?: boolean;
 }
 
 declare global {
@@ -12,7 +13,7 @@ declare global {
   }
 }
 
-export default function PostalCodeSearch({ onAddressSelect }: PostalCodeSearchProps) {
+export default function PostalCodeSearch({ onAddressSelect, disabled = false }: PostalCodeSearchProps) {
   useEffect(() => {
     // 다음 우편번호 스크립트 로드
     const script = document.createElement('script');
@@ -75,7 +76,12 @@ export default function PostalCodeSearch({ onAddressSelect }: PostalCodeSearchPr
     <button
       type="button"
       onClick={handlePostalCodeSearch}
-      className="px-4 py-3 sm:py-3 bg-blue-600 text-sm sm:text-base text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap flex items-center justify-center"
+      disabled={disabled}
+      className={`px-4 py-3 sm:py-3 text-sm sm:text-base text-white rounded-lg transition-colors whitespace-nowrap flex items-center justify-center ${
+        disabled
+          ? 'bg-gray-400 cursor-not-allowed'
+          : 'bg-blue-600 hover:bg-blue-700'
+      }`}
     >
       우편번호 찾기 →
     </button>

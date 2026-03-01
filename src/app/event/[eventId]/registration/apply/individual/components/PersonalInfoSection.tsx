@@ -1,5 +1,6 @@
 // 개인정보 섹션 컴포넌트
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import FormField from '../../shared/components/FormField';
 import PasswordField from '../../shared/components/PasswordField';
 import PasswordConfirmField from '../../shared/components/PasswordConfirmField';
@@ -7,6 +8,7 @@ import AddressField from '../../shared/components/AddressField';
 import Dropdown from '../../shared/components/Dropdown';
 import { IndividualFormData, IdCheckResult, OpenDropdown } from '../../shared/types/individual';
 import { genderOptions, generateYearOptions, generateMonthOptions, generateDayOptions } from '../../shared/types/constants';
+import { isPasswordValid } from '../../shared/utils/validation';
 
 interface PersonalInfoSectionProps {
   formData: IndividualFormData;
@@ -19,6 +21,8 @@ interface PersonalInfoSectionProps {
   onOpenIdPasswordModal: () => void;
   onLoadInfo?: () => void;
   isLoadingInfo?: boolean;
+  hideAddress?: boolean; // 주소 필드 숨기기 (소유 신청용)
+  hideLoadInfo?: boolean; // 정보 불러오기 버튼 숨기기 (소유 신청용)
   refs: {
     yearRef: React.RefObject<HTMLDivElement>;
     monthRef: React.RefObject<HTMLDivElement>;
@@ -28,17 +32,21 @@ interface PersonalInfoSectionProps {
 
 export default function PersonalInfoSection({
   formData,
-  idCheckResult,
+  idCheckResult: _idCheckResult,
   openDropdown,
   onInputChange,
-  onIdCheck,
+  onIdCheck: _onIdCheck,
   onAddressSelect,
   onDropdownToggle,
   onOpenIdPasswordModal,
   onLoadInfo,
   isLoadingInfo = false,
+  hideAddress = false,
+  hideLoadInfo = false,
   refs
 }: PersonalInfoSectionProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="mb-8">
@@ -57,26 +65,28 @@ export default function PersonalInfoSection({
               readOnly
               className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-gray-50 cursor-not-allowed"
             />
-            <button
-              type="button"
-              onClick={onLoadInfo || onOpenIdPasswordModal}
-              disabled={isLoadingInfo}
-              className={`w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${
-                isLoadingInfo ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              {isLoadingInfo ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  불러오는 중...
-                </span>
-              ) : (
-                '정보 불러오기 →'
-              )}
-            </button>
+            {!hideLoadInfo && (
+              <button
+                type="button"
+                onClick={onLoadInfo || onOpenIdPasswordModal}
+                disabled={isLoadingInfo}
+                className={`w-full sm:w-auto px-4 py-3 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLoadingInfo ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoadingInfo ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    불러오는 중...
+                  </span>
+                ) : (
+                  '정보 불러오기 →'
+                )}
+              </button>
+            )}
           </div>
         </FormField>
         <hr className="border-gray-200" />
@@ -151,23 +161,61 @@ export default function PersonalInfoSection({
         <hr className="border-gray-200" />
         
         {/* 비밀번호 */}
-        <FormField label="비밀번호" required>
-          <PasswordField
-            value={formData.password}
-            onChange={(value) => onInputChange('password', value)}
-          />
-        </FormField>
-        <hr className="border-gray-200" />
-        
-        {/* 비밀번호 확인 */}
-        <FormField label="비밀번호 확인" required>
-          <PasswordConfirmField
-            password={formData.password}
-            confirmPassword={formData.confirmPassword}
-            onChange={(value) => onInputChange('confirmPassword', value)}
-          />
-        </FormField>
-        <hr className="border-gray-200" />
+        {hideLoadInfo ? (
+          // 소유 신청 수정: 단일 비밀번호 필드 + 눈 아이콘
+          <>
+            <FormField label="비밀번호" required>
+              <div className="flex-1 max-w-md">
+                <div className="relative w-full sm:w-96">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="비밀번호 초기화에서 진행한 비밀번호를 입력해주세요."
+                    value={formData.password}
+                    onChange={(e) => onInputChange('password', e.target.value)}
+                    autoComplete="new-password"
+                    name="no-autofill-password"
+                    className={`w-full px-3 sm:px-4 py-3 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base pr-10 ${
+                      formData.password
+                        ? isPasswordValid(formData.password)
+                          ? 'border-green-500 focus:ring-green-500'
+                          : 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">비밀번호는 최소 6자리, 공백 없이 입력해주세요.</p>
+              </div>
+            </FormField>
+            <hr className="border-gray-200" />
+          </>
+        ) : (
+          // 일반 신청: 기존 비밀번호 + 비밀번호 확인 필드
+          <>
+            <FormField label="비밀번호" required>
+              <PasswordField
+                value={formData.password}
+                onChange={(value) => onInputChange('password', value)}
+              />
+            </FormField>
+            <hr className="border-gray-200" />
+            <FormField label="비밀번호 확인" required>
+              <PasswordConfirmField
+                password={formData.password}
+                confirmPassword={formData.confirmPassword}
+                onChange={(value) => onInputChange('confirmPassword', value)}
+              />
+            </FormField>
+            <hr className="border-gray-200" />
+          </>
+        )}
         
         {/* 성별 */}
         <FormField label="성별" required>
@@ -189,19 +237,23 @@ export default function PersonalInfoSection({
         </FormField>
         <hr className="border-gray-200" />
         
-        {/* 주소 */}
-        <FormField label="주소" required>
-          <AddressField
-            postalCode={formData.postalCode}
-            address={formData.address}
-            detailedAddress={formData.detailedAddress}
-            onPostalCodeChange={(value) => onInputChange('postalCode', value)}
-            onAddressChange={(value) => onInputChange('address', value)}
-            onDetailedAddressChange={(value) => onInputChange('detailedAddress', value)}
-            onAddressSelect={onAddressSelect}
-          />
-        </FormField>
-        <hr className="border-gray-200" />
+        {/* 주소 - hideAddress가 true이면 숨김 */}
+        {!hideAddress && (
+          <>
+            <FormField label="주소" required>
+              <AddressField
+                postalCode={formData.postalCode}
+                address={formData.address}
+                detailedAddress={formData.detailedAddress}
+                onPostalCodeChange={(value) => onInputChange('postalCode', value)}
+                onAddressChange={(value) => onInputChange('address', value)}
+                onDetailedAddressChange={(value) => onInputChange('detailedAddress', value)}
+                onAddressSelect={onAddressSelect}
+              />
+            </FormField>
+            <hr className="border-gray-200" />
+          </>
+        )}
       </div>
     </div>
   );

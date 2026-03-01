@@ -1,5 +1,5 @@
 // 단체 신청 개별 확인 API 함수
-import { IndividualGroupVerifyRequest, IndividualGroupRegistrationData } from './types';
+import { IndividualGroupVerifyRequest, IndividualGroupRegistrationData, OwnedRegistrationAuthRequest, OwnedRegistrationViewData } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
@@ -40,6 +40,59 @@ export const fetchIndividualGroupRegistration = async (
           throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
         throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+      } catch (_parseError) {
+        // JSON 파싱 실패 시 기본 메시지
+        if (response.status >= 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+      }
+    }
+    
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 소유 신청 인증 및 수정 화면 구성 데이터 조회
+export const fetchOwnedRegistrationView = async (
+  eventId: string,
+  request: OwnedRegistrationAuthRequest
+): Promise<OwnedRegistrationViewData> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/view-registration-info/owned`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: request.name.trim(),
+          phNum: request.phNum,
+          birth: request.birth,
+          eventPw: request.eventPw,
+        }),
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      // 에러 메시지 파싱 시도
+      try {
+        const errorJson = JSON.parse(errorText);
+        const status = response.status;
+
+        if (status === 400 || status === 404) {
+          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+        }
+        if (status >= 500) {
+          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+        throw new Error(errorJson.message || '신청정보 또는 비밀번호가 다릅니다.');
       } catch (_parseError) {
         // JSON 파싱 실패 시 기본 메시지
         if (response.status >= 500) {

@@ -9,6 +9,7 @@ interface PasswordResetRequestModalProps {
   onSubmit: (data: { name?: string; phNum?: string; birth?: string; organizationAccount?: string }) => Promise<{ token: string } | void>;
   isLoading?: boolean;
   type: 'individual' | 'group'; // 개인 또는 단체
+  isOwned?: boolean; // 소유 신청 여부 (단체 내 개별 신청)
   initialOrganizationAccount?: string; // 단체 신청 시 초기 organizationAccount 값
   initialName?: string; // 사용 안 함 (하위 호환성)
   initialPhNum?: string; // 사용 안 함 (하위 호환성)
@@ -21,6 +22,7 @@ export default function PasswordResetRequestModal({
   onSubmit, 
   isLoading = false,
   type,
+  isOwned = false,
   initialOrganizationAccount = '',
   initialName = '',
   initialPhNum = '',
@@ -177,6 +179,17 @@ export default function PasswordResetRequestModal({
           <h3 className="mb-4 sm:mb-6 text-lg sm:text-xl font-extrabold text-gray-900">
             비밀번호 초기화
           </h3>
+
+          {/* 소유 신청 안내 문구 */}
+          {isOwned && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-gray-700 leading-relaxed text-center">
+                비밀번호 재발급 후 본인이 신청 내역을 직접 관리하게 됩니다.
+                <br />
+                <span className="text-xs text-gray-600"><span className="text-red-500">*</span> 단체장이 아닌 본인이 수정 권한을 가지게 됩니다.</span>
+              </p>
+            </div>
+          )}
 
           {/* 폼 */}
           <form onSubmit={handleSubmit} className="space-y-4">
