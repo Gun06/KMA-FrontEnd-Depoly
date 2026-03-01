@@ -30,9 +30,13 @@ interface ModifyProfileResponse {
   neededOtpCertification?: boolean
   checkNeededOtpCertification?: boolean
   successCode?: string
+  token?: string
+  otpExpiresInSecond?: number
+  expiresInSecond?: number
   issueOtpTokenResponse?: {
     token?: string
     expiresInSecond?: number
+    otpExpiresInSecond?: number
   }
 }
 
@@ -63,6 +67,8 @@ export default function Client() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [phoneOtpNumber, setPhoneOtpNumber] = useState('')
+  const [phoneOtpInlineError, setPhoneOtpInlineError] = useState('')
+  const [phoneOtpInlineSuccess, setPhoneOtpInlineSuccess] = useState('')
   const [otpTimeLeft, setOtpTimeLeft] = useState(0)
   const [originalPhone, setOriginalPhone] = useState('')
   const [pendingOtpInfo, setPendingOtpInfo] = useState<{
@@ -154,6 +160,8 @@ export default function Client() {
     if (isOtpCommitting || isOtpReissuing) return
     setPendingOtpInfo(null)
     setPhoneOtpNumber('')
+    setPhoneOtpInlineError('')
+    setPhoneOtpInlineSuccess('')
     restorePhoneToOriginal()
     setIsPasswordModalOpen(false)
   }
@@ -205,6 +213,7 @@ export default function Client() {
           expiresInSecond,
         })
         setPhoneOtpNumber('')
+        setPhoneOtpInlineError('')
         setConfirmPassword('')
       } else {
         setPendingOtpInfo(null)
@@ -250,6 +259,8 @@ export default function Client() {
     }
 
     setIsOtpReissuing(true)
+    setPhoneOtpInlineError('')
+    setPhoneOtpInlineSuccess('')
     try {
       const response = await userApi.authPost<ModifyProfileResponse>(
         '/api/v1/user/modify-profile/otp/reissue',
@@ -258,31 +269,31 @@ export default function Client() {
           phNum: pendingOtpInfo.phone,
         }
       )
-      const token = response?.issueOtpTokenResponse?.token
+      const token =
+        response?.token ||
+        response?.issueOtpTokenResponse?.token
       if (!token) {
         throw new Error('OTP 재발급 토큰을 받지 못했습니다.')
       }
+      const expiresInSecond =
+        response?.otpExpiresInSecond ??
+        response?.expiresInSecond ??
+        response?.issueOtpTokenResponse?.otpExpiresInSecond ??
+        response?.issueOtpTokenResponse?.expiresInSecond
       setPendingOtpInfo({
         phone: pendingOtpInfo.phone,
         token,
-        expiresInSecond: response?.issueOtpTokenResponse?.expiresInSecond,
+        expiresInSecond,
       })
       setPhoneOtpNumber('')
-      setModal({
-        isOpen: true,
-        title: '재발급 완료',
-        message: 'OTP가 재발급되었습니다. 수신한 인증번호를 입력해 주세요.',
-      })
+      setPhoneOtpInlineError('')
+      setPhoneOtpInlineSuccess('OTP가 재발급되었습니다. 수신한 인증번호를 입력해 주세요.')
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String(error.message)
           : 'OTP 재발급에 실패했습니다.'
-      setModal({
-        isOpen: true,
-        title: '재발급 실패',
-        message,
-      })
+      setPhoneOtpInlineError(message)
     } finally {
       setIsOtpReissuing(false)
     }
@@ -338,6 +349,8 @@ export default function Client() {
         setOriginalPhone(pendingOtpInfo.phone)
         setPendingOtpInfo(null)
         setPhoneOtpNumber('')
+        setPhoneOtpInlineError('')
+        setPhoneOtpInlineSuccess('')
         setIsPasswordModalOpen(false)
         setModal({
           isOpen: true,
@@ -629,11 +642,25 @@ export default function Client() {
                     className="w-full h-11 px-3 rounded-xl border border-gray-200"
                     placeholder="OTP를 입력해 주세요"
                     value={phoneOtpNumber}
-                    onChange={e => setPhoneOtpNumber(e.target.value)}
+                    onChange={e => {
+                      setPhoneOtpNumber(e.target.value)
+                      if (phoneOtpInlineError) setPhoneOtpInlineError('')
+                      if (phoneOtpInlineSuccess) setPhoneOtpInlineSuccess('')
+                    }}
                   />
                   <p className="mt-2 text-xs text-gray-500">
                     OTP는 숫자 6자리입니다. 문자메시지를 확인해 주세요.
                   </p>
+                  {phoneOtpInlineSuccess && (
+                    <p className="mt-2 text-xs font-medium text-blue-600">
+                      {phoneOtpInlineSuccess}
+                    </p>
+                  )}
+                  {phoneOtpInlineError && (
+                    <p className="mt-2 text-xs font-medium text-red-600">
+                      {phoneOtpInlineError}
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-5 flex items-center justify-end gap-2">
