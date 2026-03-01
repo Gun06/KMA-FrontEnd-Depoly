@@ -12,6 +12,7 @@ import PaginationBar from '@/components/common/Pagination/PaginationBar'
 import { useGlobalNotifications, useEventNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from './hooks/useNotifications'
 import type { NotificationItem } from './types/notification'
 import { useMyProfile } from '../profile/shared'
+import { useAuthStore } from '@/stores/authStore'
 
 // 알림 미읽음 여부 확인 함수 (read 또는 isRead 속성 확인)
 function isUnreadNotification(notification: NotificationItem): boolean {
@@ -30,6 +31,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 function ClientContent() {
   const router = useRouter()
   const { user, data: profile, isLoading: isProfileLoading } = useMyProfile()
+  const { isLoggedIn, accessToken } = useAuthStore()
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [notificationType, setNotificationType] = useState<'GLOBAL' | 'EVENT'>('GLOBAL')
@@ -120,6 +122,9 @@ function ClientContent() {
     }
   }
 
+  const isAuthenticated = isLoggedIn && Boolean(accessToken)
+  const showLoginGuide = !isAuthenticated
+
   return (
     <SubmenuLayout
       breadcrumb={{
@@ -135,7 +140,7 @@ function ClientContent() {
             birth={profile?.birth}
             gender={profile?.gender}
             role={user?.role}
-            isLoading={isProfileLoading}
+            isLoading={isAuthenticated && isProfileLoading}
             statusText="활성"
             unreadCountText={`${globalUnreadCount + eventUnreadCount}건`}
             onEditClick={() => router.push('/mypage/profile')}
@@ -145,6 +150,24 @@ function ClientContent() {
           <div className="order-2 min-w-0">
             {/* 탭 네비게이션 */}
             <MypageTabs />
+            {showLoginGuide ? (
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-8 text-center">
+                <p className="text-lg font-semibold text-gray-900">
+                  로그인 후 이용할 수 있습니다.
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  알림 내역은 로그인 후 확인 가능합니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="mt-5 h-11 px-6 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                >
+                  로그인하러 가기
+                </button>
+              </div>
+            ) : (
+              <>
 
             {/* 알림 타입 탭 */}
             <div className="mt-4 mb-4">
@@ -315,6 +338,8 @@ function ClientContent() {
                   activeColor="blue"
                 />
               </div>
+            )}
+              </>
             )}
           </div>
         </div>

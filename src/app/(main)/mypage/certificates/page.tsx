@@ -10,6 +10,7 @@ import DateRangeInputs from '@/components/main/mypage/DateRangeInputs'
 import { useGlobalNotifications, useEventNotifications } from '../notifications/hooks/useNotifications'
 import type { NotificationItem } from '../notifications/types/notification'
 import { useMyProfile } from '../profile/shared'
+import { useAuthStore } from '@/stores/authStore'
 
 interface CertificateData {
   id: string
@@ -78,6 +79,7 @@ function getStartDateByPeriod(period: string): string {
 function MyCertificatesPage() {
   const router = useRouter()
   const { user, data: profile, isLoading: isProfileLoading } = useMyProfile()
+  const { isLoggedIn, accessToken } = useAuthStore()
   const { data: globalCountData } = useGlobalNotifications(1, 20)
   const { data: eventCountData } = useEventNotifications(1, 20)
   const [selectedPeriod, setSelectedPeriod] = useState('3개월')
@@ -104,6 +106,9 @@ function MyCertificatesPage() {
       ? eventCountData.content.filter((n) => isUnreadNotification(n)).length
       : 0)
 
+  const isAuthenticated = isLoggedIn && Boolean(accessToken)
+  const showLoginGuide = !isAuthenticated
+
   return (
     <SubmenuLayout
       breadcrumb={{
@@ -119,7 +124,7 @@ function MyCertificatesPage() {
             birth={profile?.birth}
             gender={profile?.gender}
             role={user?.role}
-            isLoading={isProfileLoading}
+            isLoading={isAuthenticated && isProfileLoading}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
             onEditClick={() => router.push('/mypage/profile')}
@@ -129,6 +134,24 @@ function MyCertificatesPage() {
           <div className="order-2 min-w-0">
             {/* 탭 네비게이션 */}
             <MypageTabs />
+            {showLoginGuide ? (
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-8 text-center">
+                <p className="text-lg font-semibold text-gray-900">
+                  로그인 후 이용할 수 있습니다.
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  기록증 메뉴는 로그인 후 확인 가능합니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="mt-5 h-11 px-6 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                >
+                  로그인하러 가기
+                </button>
+              </div>
+            ) : (
+              <>
 
         {/* 필터 섹션 */}
         <div className="bg-white border border-gray-200 p-4 sm:p-6 rounded-2xl mt-4 mb-4">
@@ -317,6 +340,8 @@ function MyCertificatesPage() {
             </div>
           </div>
         )}
+              </>
+            )}
           </div>
         </div>
       </div>

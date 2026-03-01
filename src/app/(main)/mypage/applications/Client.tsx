@@ -17,6 +17,7 @@ import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
 import type { ApplicationItem } from './types/application'
 import { useMyProfile } from '../profile/shared'
+import { useAuthStore } from '@/stores/authStore'
 
 // 상태 매핑 함수
 // 백엔드 응답: '신청 취소', '참가 완료', '신청 완료' 3가지
@@ -116,6 +117,7 @@ function getStartDateByPeriod(period: string): string | null {
 export default function Client() {
   const router = useRouter()
   const { user, data: profile, isLoading: isProfileLoading } = useMyProfile()
+  const { isLoggedIn, accessToken } = useAuthStore()
   const [selectedPeriod, setSelectedPeriod] = useState('3개월')
   const [startDate, setStartDate] = useState<string>(getStartDateByPeriod('3개월') || '')
   const [endDate, setEndDate] = useState(getTodayDate())
@@ -204,6 +206,9 @@ export default function Client() {
     setShowDetailModal(true)
   }, [])
 
+  const isAuthenticated = isLoggedIn && Boolean(accessToken)
+  const showLoginGuide = !isAuthenticated
+
   return (
     <SubmenuLayout
       breadcrumb={{
@@ -219,7 +224,7 @@ export default function Client() {
             birth={profile?.birth}
             gender={profile?.gender}
             role={user?.role}
-            isLoading={isProfileLoading}
+            isLoading={isAuthenticated && isProfileLoading}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
             onEditClick={() => router.push('/mypage/profile')}
@@ -229,6 +234,24 @@ export default function Client() {
           <div className="order-2 min-w-0">
             {/* 탭 네비게이션 */}
             <MypageTabs />
+            {showLoginGuide ? (
+              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-8 text-center">
+                <p className="text-lg font-semibold text-gray-900">
+                  로그인 후 이용할 수 있습니다.
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  마라톤 신청내역은 로그인 후 확인 가능합니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="mt-5 h-11 px-6 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                >
+                  로그인하러 가기
+                </button>
+              </div>
+            ) : (
+              <>
 
         {/* 필터 섹션 */}
         <div className="bg-white border border-gray-200 p-4 sm:p-6 rounded-2xl mt-4 mb-4">
@@ -560,6 +583,8 @@ export default function Client() {
             </div>
           </div>
         )}
+              </>
+            )}
           </div>
         </div>
       </div>
