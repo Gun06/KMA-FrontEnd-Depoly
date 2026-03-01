@@ -133,7 +133,7 @@ function ClientContent() {
       }}
     >
       <div className="max-w-6xl mx-auto">
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6 relative">
           <ProfileInfoPanel
             name={profile?.name || user?.account}
             account={profile?.account || user?.account}
@@ -150,24 +150,7 @@ function ClientContent() {
           <div className="order-2 min-w-0">
             {/* 탭 네비게이션 */}
             <MypageTabs />
-            {showLoginGuide ? (
-              <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-8 text-center">
-                <p className="text-lg font-semibold text-gray-900">
-                  로그인 후 이용할 수 있습니다.
-                </p>
-                <p className="mt-2 text-sm text-gray-600">
-                  알림 내역은 로그인 후 확인 가능합니다.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => router.push('/login')}
-                  className="mt-5 h-11 px-6 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
-                >
-                  로그인하러 가기
-                </button>
-              </div>
-            ) : (
-              <>
+            <>
 
             {/* 알림 타입 탭 */}
             <div className="mt-4 mb-4">
@@ -339,9 +322,27 @@ function ClientContent() {
                 />
               </div>
             )}
-              </>
-            )}
+            </>
           </div>
+          {showLoginGuide && (
+            <div className="fixed inset-x-0 bottom-0 top-[92px] sm:top-[108px] z-30 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="mx-4 w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-8 text-center shadow-sm">
+                <p className="text-lg font-semibold text-gray-900">
+                  로그인 후 이용할 수 있습니다.
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  알림 내역은 로그인 후 확인 가능합니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push('/login')}
+                  className="mt-5 h-11 px-6 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                >
+                  로그인하러 가기
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 삭제 확인 모달 */}
