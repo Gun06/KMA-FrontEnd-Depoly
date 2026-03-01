@@ -1,7 +1,6 @@
 // src/stores/authStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { getRememberLogin } from '@/utils/jwt';
 
 interface User {
   id: string;
@@ -64,9 +63,9 @@ export const useAuthStore = create<AuthState>()(
             removeItem: () => {},
           } as unknown as Storage;
         }
-        const remember = getRememberLogin();
-        // true → localStorage, false → sessionStorage, null(초기) → localStorage 기본
-        return remember === false ? sessionStorage : localStorage;
+        // 저장소를 고정해서 로그인 직후 remember 플래그 변경으로 인한
+        // hydrate 불일치(첫 로그인 후 재로그인 필요 현상)를 방지합니다.
+        return localStorage;
       }),
       // 영속화 대상에서 isLoggedIn 제외(파생 값)
       partialize: state => ({

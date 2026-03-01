@@ -121,9 +121,13 @@ export default function AuthInitializer() {
         } else if (!isLoginPath && !isAdminPath) {
           // 일반 페이지인 경우 사용자 인증 확인
           const isUserAuthed = await bootstrapAuth();
+          const localToken =
+            typeof window !== 'undefined'
+              ? localStorage.getItem('kmaAccessToken')
+              : null;
           if (!isUserAuthed) {
             // 로그인이 필요한 페이지인지 확인 (예: 마이페이지)
-            if (currentPath.startsWith('/mypage')) {
+            if (currentPath.startsWith('/mypage') && !localToken) {
               await navigationGuard.safeNavigate(() => {
                 router.replace(
                   `/login?returnUrl=${encodeURIComponent(currentPath)}`
@@ -197,6 +201,15 @@ export default function AuthInitializer() {
                 // ignore decode errors
               }
             }
+          }
+          
+          // 토큰은 존재하지만 bootstrapAuth가 false를 반환한 케이스 보정
+          // (토큰 형식/만료판단 타이밍 이슈로 로그인 직후 재로그인되는 현상 방지)
+          if (localToken && !useAuthStore.getState().isLoggedIn) {
+            useAuthStore.setState({
+              isLoggedIn: true,
+              accessToken: localToken,
+            });
           }
         }
       } catch (error) {}

@@ -155,6 +155,7 @@ export const tokenService = {
     }
 
     const refreshToken = tokenService.getRefreshToken();
+    const currentAccessToken = tokenService.getAccessToken();
     if (!refreshToken) {
       return false;
     }
@@ -173,7 +174,7 @@ export const tokenService = {
         headers: {
           Accept: 'application/json',
           // 서버 요구사항: 헤더로 전달
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${currentAccessToken ?? ''}`,
           RefreshToken: `Bearer ${refreshToken}`,
         },
       });

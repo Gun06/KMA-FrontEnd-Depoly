@@ -298,6 +298,9 @@ export const loginWithHeaders = async (
     if (accessToken) localStorage.setItem('kmaAccessToken', accessToken);
     if (refreshToken) localStorage.setItem('kmaRefreshToken', refreshToken);
   }
+  if (accessToken) {
+    tokenService.setAccessToken(accessToken);
+  }
 
   // 본문 파싱 (현재 서버는 "LOGIN_SUCCESS" 문자열이지만, 타 환경 대비)
   const body = await safeParseJson(response);
@@ -308,6 +311,9 @@ export const loginWithHeaders = async (
     if (typeof window !== 'undefined') {
       if (accessToken) localStorage.setItem('kmaAccessToken', accessToken);
       if (refreshToken) localStorage.setItem('kmaRefreshToken', refreshToken);
+    }
+    if (accessToken) {
+      tokenService.setAccessToken(accessToken);
     }
   }
 
@@ -433,7 +439,17 @@ export const authService = {
     const result = await loginWithHeaders(credentials);
 
     try {
-      const token = result.accessToken || result.token;
+      const token =
+        result.accessToken ||
+        result.token ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('kmaAccessToken') || undefined
+          : undefined);
+      const refreshToken =
+        result.refreshToken ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('kmaRefreshToken') || undefined
+          : undefined);
       if (typeof window !== 'undefined' && token) {
         // JWT에서 사용자 정보 및 역할 추출
         const decoded = decodeToken(token) as {
@@ -448,7 +464,7 @@ export const authService = {
         useAuthStore.getState().login(
           {
             accessToken: token,
-            refreshToken: result.refreshToken,
+            refreshToken,
           },
           {
             id: decoded?.sub || 'user',
@@ -760,7 +776,7 @@ export const authService = {
       token?: string;
       expiresInSecond?: number;
       otpExpiresInSecond?: number;
-    }>('user', '/api/v1/public/registration/staged/otp/reissue', {
+    }>('user', '/api/v1/public/user/find/account/otp/reissue', {
       token: data.token,
       phNum: data.phNum,
     });
