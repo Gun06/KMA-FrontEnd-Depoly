@@ -463,44 +463,50 @@ export default function Client() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">이메일</label>
-                  <div className="flex items-center gap-2 w-full max-w-xl">
-                    <input className="w-[200px] h-11 px-3 rounded-xl border border-gray-200" value={formData.emailLocal} onChange={handleChange('emailLocal')} />
-                    <span className="text-gray-500">@</span>
-                    <div className="relative w-[230px]">
-                      <div className="flex gap-2">
-                        <input
-                          className={`flex-1 h-11 px-3 rounded-xl border ${isCustomDomain ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 text-gray-500'}`}
-                          value={formData.emailDomain}
-                          onChange={handleChange('emailDomain')}
-                          disabled={!isCustomDomain}
-                        />
-                        <button type="button" onClick={() => setShowEmailDomainDropdown(prev => !prev)} className="h-11 min-w-[88px] px-3 border border-gray-200 rounded-xl bg-white text-sm flex items-center justify-center gap-1">
-                          <span className="text-xs">선택</span>
-                          <ChevronDown className="w-4 h-4 text-gray-500" />
-                        </button>
-                      </div>
-                      {showEmailDomainDropdown && (
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                          {emailDomains.map(domain => (
-                            <button key={domain} type="button" onClick={() => {
-                              setFormData(prev => ({ ...prev, emailDomain: domain }))
-                              setIsCustomDomain(false)
-                              setShowEmailDomainDropdown(false)
-                            }} className="w-full px-4 py-3 text-sm text-left hover:bg-blue-50">
-                              {domain}
-                            </button>
-                          ))}
-                          <div className="border-t border-gray-200">
-                            <button type="button" onClick={() => {
-                              setIsCustomDomain(true)
-                              setFormData(prev => ({ ...prev, emailDomain: '' }))
-                              setShowEmailDomainDropdown(false)
-                            }} className="w-full px-4 py-3 text-sm text-left text-blue-600 hover:bg-blue-50 font-medium">
-                              직접 입력
-                            </button>
-                          </div>
+                  <div className="w-full max-w-xl space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
+                    <input
+                      className="w-full sm:w-[200px] h-11 px-3 rounded-xl border border-gray-200 min-w-0"
+                      value={formData.emailLocal}
+                      onChange={handleChange('emailLocal')}
+                    />
+                    <div className="flex items-center gap-2 w-full sm:w-[230px] min-w-0">
+                      <span className="text-gray-500 shrink-0">@</span>
+                      <div className="relative flex-1 min-w-0">
+                        <div className="flex gap-2">
+                          <input
+                            className={`flex-1 min-w-0 h-11 px-3 rounded-xl border ${isCustomDomain ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50 text-gray-500'}`}
+                            value={formData.emailDomain}
+                            onChange={handleChange('emailDomain')}
+                            disabled={!isCustomDomain}
+                          />
+                          <button type="button" onClick={() => setShowEmailDomainDropdown(prev => !prev)} className="h-11 min-w-[88px] px-3 border border-gray-200 rounded-xl bg-white text-sm flex items-center justify-center gap-1 shrink-0">
+                            <span className="text-xs">선택</span>
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          </button>
                         </div>
-                      )}
+                        {showEmailDomainDropdown && (
+                          <div className="absolute top-full right-0 mt-2 w-full sm:w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                            {emailDomains.map(domain => (
+                              <button key={domain} type="button" onClick={() => {
+                                setFormData(prev => ({ ...prev, emailDomain: domain }))
+                                setIsCustomDomain(false)
+                                setShowEmailDomainDropdown(false)
+                              }} className="w-full px-4 py-3 text-sm text-left hover:bg-blue-50">
+                                {domain}
+                              </button>
+                            ))}
+                            <div className="border-t border-gray-200">
+                              <button type="button" onClick={() => {
+                                setIsCustomDomain(true)
+                                setFormData(prev => ({ ...prev, emailDomain: '' }))
+                                setShowEmailDomainDropdown(false)
+                              }} className="w-full px-4 py-3 text-sm text-left text-blue-600 hover:bg-blue-50 font-medium">
+                                직접 입력
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
