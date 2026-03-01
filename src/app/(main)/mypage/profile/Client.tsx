@@ -419,6 +419,7 @@ export default function Client() {
             name={user?.account}
             account={user?.account}
             role={user?.role}
+            isLoading={isLoading}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
             onEditClick={() => {}}
@@ -426,7 +427,32 @@ export default function Client() {
 
           <div className="order-2 min-w-0">
             {isLoading ? (
-              <div className="py-16 text-center text-gray-500">불러오는 중...</div>
+              <div className="space-y-6 animate-pulse">
+                <section className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5 sm:p-6">
+                  <div className="h-5 w-24 rounded bg-gray-200" />
+                  <div className="mt-2 h-3 w-48 rounded bg-gray-200" />
+                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={`profile-basic-skeleton-${index}`}>
+                        <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                        <div className="h-11 w-full rounded-xl bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+                <section className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5 sm:p-6">
+                  <div className="h-5 w-24 rounded bg-gray-200" />
+                  <div className="mt-2 h-3 w-56 rounded bg-gray-200" />
+                  <div className="mt-5 space-y-5">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <div key={`profile-contact-skeleton-${index}`}>
+                        <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                        <div className="h-11 w-full rounded-xl bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
             ) : (
               <div className="space-y-6">
                 <section className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5 sm:p-6">

@@ -115,7 +115,7 @@ function getStartDateByPeriod(period: string): string | null {
 
 export default function Client() {
   const router = useRouter()
-  const { user, data: profile } = useMyProfile()
+  const { user, data: profile, isLoading: isProfileLoading } = useMyProfile()
   const [selectedPeriod, setSelectedPeriod] = useState('3개월')
   const [startDate, setStartDate] = useState<string>(getStartDateByPeriod('3개월') || '')
   const [endDate, setEndDate] = useState(getTodayDate())
@@ -219,6 +219,7 @@ export default function Client() {
             birth={profile?.birth}
             gender={profile?.gender}
             role={user?.role}
+            isLoading={isProfileLoading}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
             onEditClick={() => router.push('/mypage/profile')}

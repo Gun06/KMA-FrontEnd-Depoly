@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Eye, EyeOff } from 'lucide-react'
+import { ChevronDown, Clock3, Eye, EyeOff, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import DatePicker from '@/app/(main)/signup/step3/DatePicker'
 import PostalCodeSearch from '@/app/(main)/signup/step4/PostalCodeSearch'
@@ -81,7 +81,7 @@ export default function Client() {
     gender: '',
     emailLocal: '',
     emailDomain: '',
-    phonePrefix: '010',
+    phonePrefix: '',
     phoneMiddle: '',
     phoneLast: '',
     address: '',
@@ -101,7 +101,7 @@ export default function Client() {
       gender: toGenderValue(data.gender),
       emailLocal: emailParts[0] ?? '',
       emailDomain: emailParts[1] ?? '',
-      phonePrefix: phoneParts[0] ?? '010',
+      phonePrefix: phoneParts[0] ?? '',
       phoneMiddle: phoneParts[1] ?? '',
       phoneLast: phoneParts[2] ?? '',
       address: data.address ?? '',
@@ -139,6 +139,24 @@ export default function Client() {
       const value = e.target.value.replace(/[^0-9]/g, '')
       setFormData(prev => ({ ...prev, [key]: value }))
     }
+
+  const restorePhoneToOriginal = () => {
+    const phoneParts = (originalPhone ?? '').split('-')
+    setFormData(prev => ({
+      ...prev,
+      phonePrefix: phoneParts[0] ?? '',
+      phoneMiddle: phoneParts[1] ?? '',
+      phoneLast: phoneParts[2] ?? '',
+    }))
+  }
+
+  const closePhoneOtpModal = () => {
+    if (isOtpCommitting || isOtpReissuing) return
+    setPendingOtpInfo(null)
+    setPhoneOtpNumber('')
+    restorePhoneToOriginal()
+    setIsPasswordModalOpen(false)
+  }
 
   const executeProfileUpdate = async () => {
     if (!confirmPassword.trim()) {
@@ -187,15 +205,7 @@ export default function Client() {
           expiresInSecond,
         })
         setPhoneOtpNumber('')
-        const expireText =
-          typeof expiresInSecond === 'number' && expiresInSecond > 0
-            ? ` (유효시간 ${expiresInSecond}초)`
-            : ''
-        setModal({
-          isOpen: true,
-          title: 'OTP 인증 필요',
-          message: `전화번호 변경으로 OTP 인증이 필요합니다.${expireText}\n변경된 전화번호로 수신한 OTP를 입력 후 확인을 눌러주세요.`,
-        })
+        setConfirmPassword('')
       } else {
         setPendingOtpInfo(null)
         if (isPhoneChanged) {
@@ -207,9 +217,9 @@ export default function Client() {
           message: '회원정보가 수정되었습니다.',
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
+        setIsPasswordModalOpen(false)
+        setConfirmPassword('')
       }
-      setConfirmPassword('')
-      setIsPasswordModalOpen(false)
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error
@@ -328,6 +338,7 @@ export default function Client() {
         setOriginalPhone(pendingOtpInfo.phone)
         setPendingOtpInfo(null)
         setPhoneOtpNumber('')
+        setIsPasswordModalOpen(false)
         setModal({
           isOpen: true,
           title: '인증 완료',
@@ -355,7 +366,62 @@ export default function Client() {
       <section className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
         <h3 className="text-base font-bold text-gray-900">회원정보 수정</h3>
         {isLoading ? (
-          <div className="py-12 text-center text-gray-500">불러오는 중...</div>
+          <div className="mt-5 space-y-6 animate-pulse">
+            <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-[200px] rounded-xl bg-gray-200" />
+                </div>
+                <div>
+                  <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-40 rounded-xl bg-gray-200" />
+                </div>
+              </div>
+              <div className="mt-5">
+                <div className="h-3 w-20 rounded bg-gray-200 mb-2" />
+                <div className="h-11 w-full max-w-sm rounded-xl bg-gray-200" />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+              <div className="h-4 w-24 rounded bg-gray-200" />
+              <div className="mt-4 space-y-5">
+                <div>
+                  <div className="h-3 w-12 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-full max-w-xl rounded-xl bg-gray-200" />
+                </div>
+                <div>
+                  <div className="h-3 w-14 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-[280px] rounded-xl bg-gray-200" />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+              <div className="h-4 w-20 rounded bg-gray-200" />
+              <div className="mt-4 space-y-5">
+                <div>
+                  <div className="h-3 w-14 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-full max-w-md rounded-xl bg-gray-200" />
+                </div>
+                <div>
+                  <div className="h-3 w-10 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-full max-w-3xl rounded-xl bg-gray-200" />
+                </div>
+                <div>
+                  <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                  <div className="h-11 w-full max-w-3xl rounded-xl bg-gray-200" />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+              <div className="h-4 w-16 rounded bg-gray-200 mb-3" />
+              <div className="h-3 w-64 rounded bg-gray-200" />
+            </div>
+          </div>
         ) : (
           <div className="mt-5 space-y-6">
             <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
@@ -446,46 +512,6 @@ export default function Client() {
                       onChange={handlePhoneChange('phoneLast')}
                     />
                   </div>
-                  {pendingOtpInfo && (
-                    <div className="mt-3 max-w-md">
-                      <label className="block text-xs font-semibold text-gray-700 mb-2">OTP 인증번호</label>
-                      <div className="flex items-center gap-2">
-                        <div className="relative flex-1">
-                          <input
-                            className="w-full h-11 px-3 pr-24 rounded-xl border border-gray-200"
-                            placeholder="인증번호를 입력해 주세요"
-                            value={phoneOtpNumber}
-                            onChange={e => setPhoneOtpNumber(e.target.value)}
-                          />
-                          {pendingOtpInfo && (
-                            <span
-                              className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold ${
-                                otpTimeLeft > 0 ? 'text-blue-600' : 'text-red-500'
-                              }`}
-                            >
-                              {formatOtpTime(otpTimeLeft)}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handlePhoneOtpConfirm}
-                          disabled={isOtpCommitting}
-                          className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
-                        >
-                          {isOtpCommitting ? '확인 중...' : '확인'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handlePhoneOtpReissue()}
-                          disabled={isOtpReissuing}
-                          className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
-                        >
-                          {isOtpReissuing ? '재발급 중...' : '재발급'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -523,14 +549,6 @@ export default function Client() {
               <p className="text-xs text-gray-600">
                 하단의 수정하기 버튼을 누르면 현재 비밀번호 확인 모달이 열립니다.
               </p>
-              {pendingOtpInfo && (
-                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  전화번호 {pendingOtpInfo.phone} 변경 건이 인증 대기 중입니다.
-                  {typeof pendingOtpInfo.expiresInSecond === 'number' &&
-                    pendingOtpInfo.expiresInSecond > 0 &&
-                    ` OTP 유효시간은 ${pendingOtpInfo.expiresInSecond}초입니다.`}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -560,52 +578,136 @@ export default function Client() {
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => {
-              if (isSaving) return
+              if (isSaving || isOtpCommitting || isOtpReissuing) return
+              if (pendingOtpInfo) {
+                closePhoneOtpModal()
+                return
+              }
               setIsPasswordModalOpen(false)
             }}
           />
           <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl mx-4 p-6">
-            <h3 className="text-base font-bold text-gray-900">비밀번호 확인</h3>
-            <p className="mt-1 text-sm text-gray-600">
-              현재 비밀번호를 입력 후 수정하기를 눌러주세요.
-            </p>
-            <div className="mt-4">
-              <label className="block text-sm font-semibold text-gray-800 mb-2">현재 비밀번호</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="w-full h-11 px-3 pr-11 rounded-xl border border-gray-200"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(prev => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  aria-label={showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsPasswordModalOpen(false)}
-                disabled={isSaving}
-                className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSave()}
-                disabled={isSaving}
-                className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
-              >
-                {isSaving ? '저장 중...' : '수정하기'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (pendingOtpInfo) {
+                  closePhoneOtpModal()
+                  return
+                }
+                setIsPasswordModalOpen(false)
+              }}
+              disabled={isSaving || isOtpCommitting || isOtpReissuing}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 disabled:opacity-60"
+              aria-label="수정 모달 닫기"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            {pendingOtpInfo ? (
+              <>
+                <h3 className="text-lg font-bold text-gray-900">OTP 인증 및 전화번호 변경</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  비밀번호 검증이 완료되었습니다.
+                  <br />
+                  변경된 번호로 수신한 OTP 6자리를 입력해 주세요.
+                </p>
+
+                <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
+                  <p className="text-xs text-blue-700">인증 대상 전화번호: {pendingOtpInfo.phone}</p>
+                  <p
+                    className={`mt-1 inline-flex items-center gap-1 text-sm font-semibold ${
+                      otpTimeLeft > 0 ? 'text-blue-700' : 'text-red-600'
+                    }`}
+                  >
+                    <Clock3 className="h-4 w-4" />
+                    남은 시간: {formatOtpTime(otpTimeLeft)}
+                  </p>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">OTP</label>
+                  <input
+                    className="w-full h-11 px-3 rounded-xl border border-gray-200"
+                    placeholder="OTP를 입력해 주세요"
+                    value={phoneOtpNumber}
+                    onChange={e => setPhoneOtpNumber(e.target.value)}
+                  />
+                  <p className="mt-2 text-xs text-gray-500">
+                    OTP는 숫자 6자리입니다. 문자메시지를 확인해 주세요.
+                  </p>
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closePhoneOtpModal}
+                    disabled={isOtpCommitting || isOtpReissuing}
+                    className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handlePhoneOtpReissue()}
+                    disabled={isOtpReissuing || isOtpCommitting}
+                    className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
+                  >
+                    {isOtpReissuing ? 'OTP 재전송 중...' : 'OTP 재전송'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePhoneOtpConfirm}
+                    disabled={isOtpCommitting}
+                    className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+                  >
+                    {isOtpCommitting ? '인증 중...' : '전화번호 변경'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-base font-bold text-gray-900">비밀번호 확인</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  현재 비밀번호를 입력 후 수정하기를 눌러주세요.
+                </p>
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">현재 비밀번호</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      className="w-full h-11 px-3 pr-11 rounded-xl border border-gray-200"
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      aria-label={showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordModalOpen(false)}
+                    disabled={isSaving}
+                    className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSave()}
+                    disabled={isSaving}
+                    className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
+                  >
+                    {isSaving ? '저장 중...' : '수정하기'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

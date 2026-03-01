@@ -29,7 +29,7 @@ function isUnreadNotification(notification: NotificationItem): boolean {
 
 function ClientContent() {
   const router = useRouter()
-  const { user, data: profile } = useMyProfile()
+  const { user, data: profile, isLoading: isProfileLoading } = useMyProfile()
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [notificationType, setNotificationType] = useState<'GLOBAL' | 'EVENT'>('GLOBAL')
@@ -135,6 +135,7 @@ function ClientContent() {
             birth={profile?.birth}
             gender={profile?.gender}
             role={user?.role}
+            isLoading={isProfileLoading}
             statusText="활성"
             unreadCountText={`${globalUnreadCount + eventUnreadCount}건`}
             onEditClick={() => router.push('/mypage/profile')}
@@ -204,7 +205,25 @@ function ClientContent() {
             {/* 알림 리스트 */}
             <div className="mt-2">
               {isLoading ? (
-                <div className="py-16 text-center text-lg text-gray-500">로딩 중...</div>
+                <div className="bg-white animate-pulse">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      key={`notification-skeleton-${index}`}
+                      className="px-2 sm:px-3 py-4 sm:py-5 border-b border-gray-200"
+                    >
+                      <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1fr)_auto] gap-3 items-start">
+                        <div className="pt-0.5 flex items-center justify-center">
+                          <div className="h-4 w-6 rounded bg-gray-200" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="h-4 w-56 rounded bg-gray-200" />
+                          <div className="mt-2 h-3 w-72 max-w-full rounded bg-gray-200" />
+                        </div>
+                        <div className="pt-0.5 h-3 w-20 rounded bg-gray-200" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="bg-white">
                   {paginated.map((n, index) => {

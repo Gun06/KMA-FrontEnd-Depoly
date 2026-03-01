@@ -8,7 +8,7 @@ import { useMyProfile, useUnreadCount } from '../shared'
 
 export default function ProfileManageFrame({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { user, data } = useMyProfile()
+  const { user, data, isLoading } = useMyProfile()
   const unreadCount = useUnreadCount()
 
   return (
@@ -26,6 +26,7 @@ export default function ProfileManageFrame({ children }: { children: ReactNode }
             birth={data?.birth}
             gender={data?.gender}
             role={user?.role}
+            isLoading={isLoading}
             statusText="활성"
             unreadCountText={`${unreadCount}건`}
             onEditClick={() => router.push('/mypage/profile/modify-profile')}

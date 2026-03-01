@@ -189,8 +189,16 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
 
           <ul className="max-h-80 overflow-y-auto">
             {notificationsLoading ? (
-              <li className="px-4 py-8 text-center text-sm text-gray-500">
-                로딩 중...
+              <li className="px-4 py-4">
+                <div className="animate-pulse space-y-3">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={`dropdown-skeleton-${index}`} className="py-2">
+                      <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                      <div className="h-4 w-44 rounded bg-gray-200 mb-2" />
+                      <div className="h-3 w-56 rounded bg-gray-200" />
+                    </div>
+                  ))}
+                </div>
               </li>
             ) : notificationsData?.content && notificationsData.content.length > 0 ? (
               (() => {
