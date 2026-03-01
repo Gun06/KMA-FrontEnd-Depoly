@@ -725,16 +725,80 @@ export const authService = {
 
   async findId(data: {
     name: string;
-    email?: string;
-    phone?: string;
-  }): Promise<{ id: string }> {
+    birth: string;
+    phNum: string;
+  }): Promise<{ id?: string; token?: string; otpExpiresInSecond?: number }> {
     try {
-      const endpoint = '/api/v1/public/find-id';
-      const response = await api.post<{ id: string }>('user', endpoint, data);
-      return response ?? { id: '' };
+      const endpoint = '/api/v1/public/user/find/account';
+      const response = await api.patch<{
+        id?: string;
+        accountId?: string;
+        token?: string;
+        otpExpiresInSecond?: number;
+      }>('user', endpoint, {
+        name: data.name,
+        birth: data.birth,
+        phNum: data.phNum,
+      });
+
+      if (!response) return {};
+      return {
+        id: response.id || response.accountId,
+        token: response.token,
+        otpExpiresInSecond: response.otpExpiresInSecond,
+      };
     } catch (error: unknown) {
       throw error;
     }
+  },
+
+  async reissueFindIdOtp(data: {
+    token: string;
+    phNum: string;
+  }): Promise<{ token: string; otpExpiresInSecond: number }> {
+    const response = await api.post<{
+      token?: string;
+      expiresInSecond?: number;
+      otpExpiresInSecond?: number;
+    }>('user', '/api/v1/public/registration/staged/otp/reissue', {
+      token: data.token,
+      phNum: data.phNum,
+    });
+
+    const token = response?.token;
+    const otpExpiresInSecond =
+      response?.otpExpiresInSecond ?? response?.expiresInSecond ?? 180;
+
+    if (!token) {
+      throw new Error('OTP 재발급 토큰을 받지 못했습니다.');
+    }
+
+    return { token, otpExpiresInSecond };
+  },
+
+  async verifyFindIdOtp(data: {
+    token: string;
+    otp: string;
+    phNum: string;
+  }): Promise<{ id: string }> {
+    const payload = {
+      token: data.token,
+      otpNumber: data.otp,
+      phNum: data.phNum,
+    };
+
+    const commitResponse = await api.post<{
+      id?: string;
+      account?: string;
+      accountId?: string;
+    }>('user', '/api/v1/public/user/find/account/commit', payload);
+
+    const id = commitResponse?.id || commitResponse?.account || commitResponse?.accountId;
+    if (!id) {
+      throw new Error('아이디 조회 결과를 받지 못했습니다.');
+    }
+
+    return { id };
   },
 
   async findPassword(data: {
