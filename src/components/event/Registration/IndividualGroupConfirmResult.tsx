@@ -134,14 +134,18 @@ export default function IndividualGroupConfirmResult({ data }: IndividualGroupCo
                 <span className="text-gray-500">이메일</span>
                 <span className="font-semibold text-gray-900">{data.email || "없음"}</span>
               </div>
-              {data.filteredAddress && (
-                <div className="sm:col-span-2 flex items-center justify-between py-2 border-b border-gray-100">
-                  <span className="text-gray-500">주소</span>
+              <div className="sm:col-span-2 flex items-center justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-500">주소</span>
+                {data.checkAddressBasedOnOrganization ? (
+                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full border border-gray-200">단체 주소 사용 중</span>
+                ) : data.filteredAddress ? (
                   <span className="font-semibold text-gray-900 text-right break-all">
                     ({data.filteredAddress.zipCode}) {data.filteredAddress.address} {data.filteredAddress.addressDetail}
                   </span>
-                </div>
-              )}
+                ) : (
+                  <span className="font-semibold text-gray-900">없음</span>
+                )}
+              </div>
             </div>
           </section>
 

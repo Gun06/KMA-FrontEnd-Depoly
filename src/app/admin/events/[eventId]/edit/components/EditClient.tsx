@@ -449,9 +449,9 @@ export default function EditClient({
         setInfoModalMessage('저장할 종목이 없습니다.');
         setInfoModalOpen(true);
       }
-    } catch {
+    } catch (error) {
       setInfoModalType('error');
-      setInfoModalMessage('종목 저장에 실패했습니다. 다시 시도해주세요.');
+      setInfoModalMessage(error instanceof Error ? error.message : '종목 저장에 실패했습니다. 다시 시도해주세요.');
       setInfoModalOpen(true);
     }
   };

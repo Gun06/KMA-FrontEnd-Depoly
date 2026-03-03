@@ -35,6 +35,7 @@ export interface IndividualGroupRegistrationData {
   paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
   note?: string;
   checkOwned?: boolean; // 소유 신청 여부
+  checkAddressBasedOnOrganization?: boolean; // 단체 주소 위탁 여부
 }
 
 // 소유 신청 인증 요청 타입

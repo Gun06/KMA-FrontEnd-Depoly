@@ -8,14 +8,16 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
   const router = useRouter();
   const searchParams = useSearchParams();
   const customerName = searchParams.get('name') || '고객';
-  const isEditMode = searchParams.get('mode') === 'edit';
+  const mode = searchParams.get('mode');
+  const isEditMode = mode === 'edit';
+  const isOwnedEditMode = mode === 'owned-edit';
 
   return (
     <SubmenuLayout 
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
-        subMenu: "개인신청"
+        subMenu: isOwnedEditMode ? "소유신청 수정" : "개인신청"
       }}
     >
       <div className="container mx-auto px-4 py-4 sm:py-8">
@@ -36,7 +38,7 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
             
             {/* 신청 완료 메시지 */}
             <p className="text-xl sm:text-2xl font-bold text-black mb-6">
-              {isEditMode ? '마라톤 신청이 수정되었습니다.' : '마라톤 신청이 완료되었습니다.'}
+              {isOwnedEditMode ? '소유 신청이 수정되었습니다.' : isEditMode ? '마라톤 신청이 수정되었습니다.' : '마라톤 신청이 완료되었습니다.'}
             </p>
             
             {/* 안내 메시지 1 */}

@@ -332,7 +332,6 @@ export default function EditForm({
           <InlineLabelPairRow
             leftLabel="공개여부"
             rightLabel="셔틀 운행여부"
-            reserveTailAction
             leftField={
               <div
                 className={cn(

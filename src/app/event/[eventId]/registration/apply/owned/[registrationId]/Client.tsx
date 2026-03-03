@@ -312,8 +312,8 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
         otpPhoneNumber
       );
 
-      // 성공 시 개인신청 수정완료 페이지로 이동
-      router.push(`/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}&mode=edit`);
+      // 성공 시 완료 페이지로 이동
+      router.push(`/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}&mode=owned-edit`);
     } catch (_err) {
       throw _err;
     } finally {
@@ -442,19 +442,21 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
                     </label>
                   </div>
                   
-                  {/* 주소 필드 - 항상 표시, 체크 상태에 따라 데이터만 표시/숨김 */}
-                  <FormField label="주소" required={!addressIsBasedOnOrganization}>
-                    <AddressField
-                      postalCode={addressIsBasedOnOrganization ? (originalAddress?.postalCode || '') : formData.postalCode}
-                      address={addressIsBasedOnOrganization ? (originalAddress?.address || '') : formData.address}
-                      detailedAddress={addressIsBasedOnOrganization ? (originalAddress?.detailedAddress || '') : formData.detailedAddress}
-                      onPostalCodeChange={(value) => handlers.handleInputChange('postalCode', value)}
-                      onAddressChange={(value) => handlers.handleInputChange('address', value)}
-                      onDetailedAddressChange={(value) => handlers.handleInputChange('detailedAddress', value)}
-                      onAddressSelect={handlers.handleAddressSelect}
-                      disabled={addressIsBasedOnOrganization}
-                    />
-                  </FormField>
+                  {/* 주소 필드 - 체크박스 해제 시에만 표시 */}
+                  {!addressIsBasedOnOrganization && (
+                    <FormField label="주소" required>
+                      <AddressField
+                        postalCode={formData.postalCode}
+                        address={formData.address}
+                        detailedAddress={formData.detailedAddress}
+                        onPostalCodeChange={(value) => handlers.handleInputChange('postalCode', value)}
+                        onAddressChange={(value) => handlers.handleInputChange('address', value)}
+                        onDetailedAddressChange={(value) => handlers.handleInputChange('detailedAddress', value)}
+                        onAddressSelect={handlers.handleAddressSelect}
+                        disabled={false}
+                      />
+                    </FormField>
+                  )}
                   <hr className="border-gray-200" />
                 </div>
               </div>
