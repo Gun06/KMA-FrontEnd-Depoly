@@ -98,6 +98,11 @@ export default function SignupStep4Page() {
     
     try {
       // 회원가입 데이터 준비
+      const email =
+        formData.personal.emailLocal && formData.personal.emailDomain
+          ? `${formData.personal.emailLocal}@${formData.personal.emailDomain}`
+          : ''
+
       const signupData = {
         account: {
           accountId: formData.account.account,
@@ -107,7 +112,7 @@ export default function SignupStep4Page() {
           birth: formData.personal.birthDate.replace(/\./g, '-'), // YYYY.MM.DD -> YYYY-MM-DD
           name: formData.personal.name,
           phNum: `${formData.personal.phonePrefix}-${formData.personal.phoneMiddle}-${formData.personal.phoneLast}`,
-          email: `${formData.personal.emailLocal}@${formData.personal.emailDomain}`, // email 조합
+          email, // 선택 이메일 조합 (없으면 빈 문자열)
           gender: (formData.personal.gender === 'male' ? 'M' : formData.personal.gender === 'female' ? 'F' : 'M') as 'M' | 'F' // M/F 형식으로 변경
         },
         consents: {

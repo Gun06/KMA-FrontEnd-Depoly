@@ -144,16 +144,14 @@ export default function SignupStep3Page() {
   // 전화번호 인증 완료 여부 확인
   const isPhoneVerified = formData.personal?.phNumValidateToken ? true : false
   
-  // 전화번호 인증 완료 필수
+  // 전화번호 인증 완료 필수 (이메일은 선택)
   const canProceed = formDataLocal.name && formDataLocal.birthDate && formDataLocal.gender && 
-                    formDataLocal.emailLocal && formDataLocal.emailDomain &&
                     formDataLocal.phoneMiddle && formDataLocal.phoneLast &&
                     isPhoneVerified
 
   const handleNext = () => {
-    // 필수 필드 검증
+    // 필수 필드 검증 (이메일 제외)
     if (!formDataLocal.name || !formDataLocal.birthDate || !formDataLocal.gender || 
-        !formDataLocal.emailLocal || !formDataLocal.emailDomain ||
         !formDataLocal.phoneMiddle || !formDataLocal.phoneLast) {
       return
     }
@@ -334,10 +332,10 @@ export default function SignupStep3Page() {
           </div>
         </div>
 
-        {/* 이메일 입력 */}
+        {/* 이메일 입력 (선택) */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            이메일 <span className="text-red-500">*</span>
+            이메일 <span className="text-gray-400 text-xs">(선택)</span>
           </label>
           <div className="flex items-center space-x-1 sm:space-x-2">
             <input

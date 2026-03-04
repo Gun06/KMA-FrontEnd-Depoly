@@ -237,8 +237,10 @@ const validatePersonal = (personal: PersonalInfo): { isValid: boolean; errors: s
   if (!personal.name) errors.push(SIGNUP_ERROR_MESSAGES.NAME_REQUIRED);
   if (!personal.birthDate) errors.push(SIGNUP_ERROR_MESSAGES.BIRTH_REQUIRED);
   if (!personal.gender) errors.push(SIGNUP_ERROR_MESSAGES.GENDER_REQUIRED);
-  
-  if (!personal.emailLocal || !personal.emailDomain) {
+
+  // 이메일은 선택 항목이지만, 일부만 입력된 경우는 에러 처리
+  const hasAnyEmail = !!(personal.emailLocal || personal.emailDomain);
+  if (hasAnyEmail && (!personal.emailLocal || !personal.emailDomain)) {
     errors.push(SIGNUP_ERROR_MESSAGES.EMAIL_REQUIRED);
   }
   
@@ -522,8 +524,11 @@ export const useSignupStore = create<SignupState & SignupActions>()(
         // 전화번호 형식 변환 (하이픈 포함)
         const phoneNumber = `${formData.personal.phonePrefix}-${formData.personal.phoneMiddle}-${formData.personal.phoneLast}`;
         
-        // 이메일 조합
-        const email = `${formData.personal.emailLocal}@${formData.personal.emailDomain}`;
+        // 이메일 조합 (선택)
+        const email =
+          formData.personal.emailLocal && formData.personal.emailDomain
+            ? `${formData.personal.emailLocal}@${formData.personal.emailDomain}`
+            : '';
         
         // 주소 파싱은 더 이상 필요하지 않음 (address 필드로 직접 전송)
         
