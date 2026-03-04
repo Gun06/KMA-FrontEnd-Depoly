@@ -483,11 +483,9 @@ export default function SignupStep3Page() {
           
           {/* 전화번호 인증 완료 표시 */}
           {isPhoneVerified && (
-            <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-700">
-                ✓ 전화번호 인증이 완료되었습니다.
-              </p>
-            </div>
+            <p className="mt-2 text-xs sm:text-sm text-green-600">
+              전화번호 인증이 완료되었습니다.
+            </p>
           )}
         </div>
 

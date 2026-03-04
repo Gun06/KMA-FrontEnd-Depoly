@@ -238,9 +238,10 @@ const validatePersonal = (personal: PersonalInfo): { isValid: boolean; errors: s
   if (!personal.birthDate) errors.push(SIGNUP_ERROR_MESSAGES.BIRTH_REQUIRED);
   if (!personal.gender) errors.push(SIGNUP_ERROR_MESSAGES.GENDER_REQUIRED);
 
-  // 이메일은 선택 항목이지만, 일부만 입력된 경우는 에러 처리
-  const hasAnyEmail = !!(personal.emailLocal || personal.emailDomain);
-  if (hasAnyEmail && (!personal.emailLocal || !personal.emailDomain)) {
+  // 이메일은 선택 항목이지만, 로컬 파트만 입력된 경우는 에러 처리
+  // - 로컬만 있고 도메인이 없으면 에러
+  // - 도메인만 있는 경우는 "입력 안 한 것"으로 간주
+  if (personal.emailLocal && !personal.emailDomain) {
     errors.push(SIGNUP_ERROR_MESSAGES.EMAIL_REQUIRED);
   }
   
