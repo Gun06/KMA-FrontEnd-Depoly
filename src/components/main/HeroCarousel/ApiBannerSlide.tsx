@@ -60,6 +60,11 @@ export default function ApiBannerSlide({
   const dateLabel = date?.trim() ? toDFormat(date) : '';
   const hasAnyText = dateLabel || (title?.trim()) || (subtitle?.trim());
 
+  const safeIndex =
+    typeof currentIndex === 'number' && Number.isFinite(currentIndex) && currentIndex >= 0 && currentIndex < total
+      ? currentIndex
+      : 0;
+
   return (
     <SlideWrapper
       {...wrapperProps}
@@ -233,11 +238,13 @@ export default function ApiBannerSlide({
       )}
 
       {/* KMA-Mobile 스타일: 우하단 "1 / N" 인디케이터 (bg black/40, rounded-2xl) */}
-      <div className="absolute right-5 bottom-5 z-10">
-        <div className="px-3 py-1.5 rounded-[20px] bg-black/40 text-white text-xs font-medium">
-          {currentIndex + 1} / {total}
+      {total > 0 && (
+        <div className="absolute right-5 bottom-5 z-10">
+          <div className="px-3 py-1.5 rounded-[20px] bg-black/40 text-white text-xs font-medium">
+            {safeIndex + 1} / {total}
+          </div>
         </div>
-      </div>
+      )}
     </SlideWrapper>
   );
 }

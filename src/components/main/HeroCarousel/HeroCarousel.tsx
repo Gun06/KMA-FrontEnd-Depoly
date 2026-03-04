@@ -96,7 +96,12 @@ export default function MarathonHeroCarousel() {
         centeredSlides
         spaceBetween={0}
         className="h-full"
-        onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+        onSlideChange={(swiper) => {
+          const idx = typeof swiper.realIndex === 'number' && Number.isFinite(swiper.realIndex)
+            ? swiper.realIndex
+            : 0;
+          setActiveIndex(idx);
+        }}
       >
         {/* API 배너들 */}
         {bannerData.map((banner, index) => {
