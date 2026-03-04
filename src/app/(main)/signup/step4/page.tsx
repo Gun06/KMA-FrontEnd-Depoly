@@ -239,6 +239,25 @@ export default function SignupStep4Page() {
           {isSubmitting ? '회원가입 중...' : '회원가입'}
         </button>
       </div>
+      {/* 회원가입 진행 중 오버레이 */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 sm:px-10 sm:py-8 flex flex-col items-center gap-4">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
+              <div className="absolute inset-2 rounded-full bg-gradient-to-r from-blue-500 to-green-500 flex items-center justify-center animate-pulse">
+                <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 text-white animate-bounce" />
+              </div>
+            </div>
+            <p className="text-sm sm:text-base font-semibold text-gray-900">
+              회원가입을 진행하고 있습니다.
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500">
+              달리는 전마협과 함께 정보를 저장 중이에요. 잠시만 기다려 주세요.
+            </p>
+          </div>
+        </div>
+      )}
     </SignupLayout>
   )
 }

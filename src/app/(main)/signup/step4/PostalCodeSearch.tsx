@@ -27,10 +27,18 @@ export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSear
     new window.daum.Postcode({
       oncomplete: function(data: any) {
         isOpeningRef.current = false
-        // 우편번호 정보를 해당 필드에 넣는다.
+        // 사용자가 선택한 타입에 따라 도로명/지번 주소를 구분해서 사용
+        const selectedAddress =
+          data.userSelectedType === 'R'
+            ? data.roadAddress
+            : data.userSelectedType === 'J'
+              ? data.jibunAddress
+              : data.address
+
+        // 우편번호 정보를 콜백으로 전달
         onComplete({
           postalCode: data.zonecode,
-          address: data.address,
+          address: selectedAddress,
           detailedAddress: data.bname + ' ' + data.buildingName
         })
         onClose()
