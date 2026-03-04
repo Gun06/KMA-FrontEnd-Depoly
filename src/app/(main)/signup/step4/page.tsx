@@ -73,6 +73,7 @@ export default function SignupStep4Page() {
   }
 
   const canProceed = formDataLocal.postalCode && formDataLocal.address && formDataLocal.detailedAddress
+  const isSubmitting = signupMutation.isPending
 
   const handlePrev = () => {
     setCurrentStep(3)
@@ -80,6 +81,9 @@ export default function SignupStep4Page() {
   }
 
   const handleSignup = async () => {
+    if (signupMutation.isPending) {
+      return
+    }
     if (!validateStep(4)) {
       return
     }
@@ -218,14 +222,14 @@ export default function SignupStep4Page() {
         </button>
         <button 
           onClick={handleSignup}
-          disabled={!canProceed}
+          disabled={!canProceed || isSubmitting}
           className={`flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-            canProceed 
-              ? 'bg-blue-600 text-white hover:bg-blue-700' 
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            !canProceed || isSubmitting
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
-          회원가입
+          {isSubmitting ? '회원가입 중...' : '회원가입'}
         </button>
       </div>
     </SignupLayout>
