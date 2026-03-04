@@ -70,13 +70,13 @@ export default function DatePicker({ value, onChange, placeholder = "날짜를 �
   }, [])
 
   return (
-    <div className="flex items-center space-x-1">
+    <div className="flex items-center gap-2 sm:gap-3">
       {/* 년도 선택 */}
       <div className="relative" ref={yearRef}>
         <button
           type="button"
           onClick={() => setOpenDropdown(openDropdown === 'year' ? null : 'year')}
-          className="w-20 px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
+          className="w-24 sm:w-28 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
         >
           <span>{currentDate.year}</span>
           <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -100,14 +100,14 @@ export default function DatePicker({ value, onChange, placeholder = "날짜를 �
       </div>
       
       {/* 구분자 */}
-      <span className="text-gray-400 text-sm mx-1">.</span>
+      <span className="text-gray-400 text-sm">.</span>
       
       {/* 월 선택 */}
       <div className="relative" ref={monthRef}>
         <button
           type="button"
           onClick={() => setOpenDropdown(openDropdown === 'month' ? null : 'month')}
-          className="w-16 px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
+          className="w-18 sm:w-20 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
         >
           <span>{String(currentDate.month + 1).padStart(2, '0')}</span>
           <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -131,14 +131,14 @@ export default function DatePicker({ value, onChange, placeholder = "날짜를 �
       </div>
       
       {/* 구분자 */}
-      <span className="text-gray-400 text-sm mx-1">.</span>
+      <span className="text-gray-400 text-sm">.</span>
       
       {/* 일 선택 */}
       <div className="relative" ref={dayRef}>
         <button
           type="button"
           onClick={() => setOpenDropdown(openDropdown === 'day' ? null : 'day')}
-          className="w-16 px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
+          className="w-18 sm:w-20 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center bg-white hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1"
         >
           <span>{String(currentDate.day).padStart(2, '0')}</span>
           <ChevronDown className="w-4 h-4 text-gray-500" />

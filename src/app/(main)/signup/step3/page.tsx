@@ -143,7 +143,8 @@ export default function SignupStep3Page() {
 
   // 전화번호 인증 완료 여부 확인
   const isPhoneVerified = formData.personal?.phNumValidateToken ? true : false
-  
+  const genderError = validation.step3.errors.includes('성별을 선택해주세요.')
+
   // 전화번호 인증 완료 필수 (이메일은 선택)
   const canProceed = formDataLocal.name && formDataLocal.birthDate && formDataLocal.gender && 
                     formDataLocal.phoneMiddle && formDataLocal.phoneLast &&
@@ -294,11 +295,13 @@ export default function SignupStep3Page() {
           <label className="block text-sm font-medium text-gray-700">
             생년월일 <span className="text-red-500">*</span>
           </label>
-          <DatePicker
-            value={formDataLocal.birthDate}
-            onChange={(value) => handleInputChange('birthDate', value)}
-            placeholder="YYYY.MM.DD"
-          />
+          <div className="max-w-md">
+            <DatePicker
+              value={formDataLocal.birthDate}
+              onChange={(value) => handleInputChange('birthDate', value)}
+              placeholder="YYYY.MM.DD"
+            />
+          </div>
         </div>
 
         {/* 성별 선택 */}
@@ -306,30 +309,33 @@ export default function SignupStep3Page() {
           <label className="block text-sm font-medium text-gray-700">
             성별 <span className="text-red-500">*</span>
           </label>
-          <div className="flex space-x-4">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name="gender"
-                value="male"
-                checked={formDataLocal.gender === 'male'}
-                onChange={(e) => handleInputChange('gender', e.target.value)}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">남성</span>
-            </label>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                name="gender"
-                value="female"
-                checked={formDataLocal.gender === 'female'}
-                onChange={(e) => handleInputChange('gender', e.target.value)}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">여성</span>
-            </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleInputChange('gender', 'male')}
+              className={`h-12 sm:h-14 rounded-xl border text-sm sm:text-base font-medium transition-colors ${
+                formDataLocal.gender === 'male'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+              }`}
+            >
+              남성
+            </button>
+            <button
+              type="button"
+              onClick={() => handleInputChange('gender', 'female')}
+              className={`h-12 sm:h-14 rounded-xl border text-sm sm:text-base font-medium transition-colors ${
+                formDataLocal.gender === 'female'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm'
+                  : 'border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+              }`}
+            >
+              여성
+            </button>
           </div>
+          {genderError && (
+            <p className="text-xs text-red-500 mt-1">성별을 선택해주세요.</p>
+          )}
         </div>
 
         {/* 이메일 입력 (선택) */}
@@ -337,68 +343,77 @@ export default function SignupStep3Page() {
           <label className="block text-sm font-medium text-gray-700">
             이메일 <span className="text-gray-400 text-xs">(선택)</span>
           </label>
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <input
-              type="text"
-              value={formDataLocal.emailLocal}
-              onChange={(e) => handleInputChange('emailLocal', e.target.value)}
-              placeholder="이메일 입력"
-              className="w-32 sm:w-40 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
-            <span className="text-gray-500 text-lg font-medium">@</span>
-            <div className="relative email-domain-dropdown flex-1">
-              <div className="flex space-x-2">
-                                 <input
-                   ref={domainInputRef}
-                   type="text"
-                  name="emailDomain"
-                  value={formDataLocal.emailDomain}
-                  onChange={(e) => handleInputChange('emailDomain', e.target.value)}
-                  placeholder={isCustomDomain ? "직접 입력" : "도메인을 선택하세요"}
-                  disabled={!isCustomDomain}
-                   className={`flex-1 w-32 sm:w-40 px-2 sm:px-3 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition-all duration-200 ${
-                     isCustomDomain 
-                       ? 'border-blue-300 bg-blue-50 cursor-text shadow-sm' 
-                       : 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed'
-                   }`}
-                 />
-                <button
-                  type="button"
-                  onClick={() => setShowEmailDomainDropdown(!showEmailDomainDropdown)}
-                  className="px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white text-gray-900 hover:bg-gray-50 transition-colors flex items-center justify-center space-x-1 min-w-[80px]"
-                >
-                  <span className="text-xs">선택</span>
-                  <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
-                </button>
-              </div>
-              
-              {showEmailDomainDropdown && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  {['gmail.com', 'naver.com', 'daum.net', 'hanmail.net', 'hotmail.com', 'outlook.com', 'yahoo.com'].map(domain => (
-                    <button
-                      key={domain}
-                                             onClick={() => handleDomainSelection(domain)}
-                      className={`w-full px-3 py-2 text-sm text-left hover:bg-blue-50 transition-colors ${
-                        formDataLocal.emailDomain === domain ? 'bg-blue-100 text-blue-600 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {domain}
-                    </button>
-                  ))}
-                  <div className="border-t border-gray-200">
-                                         <button
-                       onClick={() => {
-                         handleCustomDomainToggle()
-                         setShowEmailDomainDropdown(false)
-                       }}
-                       className="w-full px-3 py-2 text-sm text-left text-blue-600 hover:bg-blue-50 transition-colors font-medium"
-                     >
-                       직접 입력
-                     </button>
-                  </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={formDataLocal.emailLocal}
+                onChange={(e) => handleInputChange('emailLocal', e.target.value)}
+                placeholder="이메일 입력"
+                className="flex-1 min-w-0 px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+              <span className="text-gray-500 text-lg font-medium">@</span>
+              <div className="relative email-domain-dropdown flex-[1.2] min-w-0">
+                <div className="flex gap-2">
+                  <input
+                    ref={domainInputRef}
+                    type="text"
+                    name="emailDomain"
+                    value={formDataLocal.emailDomain}
+                    onChange={(e) => handleInputChange('emailDomain', e.target.value)}
+                    placeholder={isCustomDomain ? '직접 입력' : '도메인을 선택하세요'}
+                    disabled={!isCustomDomain}
+                    className={`flex-1 min-w-0 px-3 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition-all duration-200 ${
+                      isCustomDomain
+                        ? 'border-blue-300 bg-blue-50 cursor-text shadow-sm'
+                        : 'border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailDomainDropdown(!showEmailDomainDropdown)}
+                    className="px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white text-gray-900 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1 whitespace-nowrap"
+                  >
+                    <span className="text-xs sm:text-sm">선택</span>
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
+                  </button>
                 </div>
-              )}
+
+                {showEmailDomainDropdown && (
+                  <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    {['gmail.com', 'naver.com', 'daum.net', 'hanmail.net', 'hotmail.com', 'outlook.com', 'yahoo.com'].map(
+                      (domain) => (
+                        <button
+                          key={domain}
+                          onClick={() => handleDomainSelection(domain)}
+                          className={`w-full px-3 py-2 text-sm text-left hover:bg-blue-50 transition-colors ${
+                            formDataLocal.emailDomain === domain
+                              ? 'bg-blue-100 text-blue-600 font-medium'
+                              : 'text-gray-700'
+                          }`}
+                        >
+                          {domain}
+                        </button>
+                      ),
+                    )}
+                    <div className="border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          handleCustomDomainToggle()
+                          setShowEmailDomainDropdown(false)
+                        }}
+                        className="w-full px-3 py-2 text-sm text-left text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+                      >
+                        직접 입력
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+            <p className="text-xs text-gray-500">
+              선택 항목입니다. 연락받을 이메일이 있다면 입력해 주세요.
+            </p>
           </div>
         </div>
 
@@ -407,8 +422,8 @@ export default function SignupStep3Page() {
           <label className="block text-sm font-medium text-gray-700">
             전화번호 <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 sm:items-center">
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={formDataLocal.phonePrefix}
@@ -417,7 +432,7 @@ export default function SignupStep3Page() {
                 maxLength={3}
                 inputMode="numeric"
                 readOnly={isPhoneVerified}
-                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                className={`w-20 sm:w-24 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
                   isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -430,7 +445,7 @@ export default function SignupStep3Page() {
                 maxLength={4}
                 inputMode="numeric"
                 readOnly={isPhoneVerified}
-                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                className={`w-20 sm:w-24 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
                   isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -443,7 +458,7 @@ export default function SignupStep3Page() {
                 maxLength={4}
                 inputMode="numeric"
                 readOnly={isPhoneVerified}
-                className={`w-16 sm:w-20 px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
+                className={`w-20 sm:w-24 px-3 py-2.5 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base ${
                   isPhoneVerified ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
               />
@@ -454,7 +469,7 @@ export default function SignupStep3Page() {
               type="button"
               onClick={handlePhoneVerificationClick}
               disabled={!getPhoneNumber() || isPhoneVerified}
-              className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors flex items-center justify-center whitespace-nowrap text-sm sm:text-base ${
+              className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl transition-colors flex items-center justify-center whitespace-nowrap text-sm sm:text-base ${
                 isPhoneVerified 
                   ? 'bg-gray-300 text-gray-700 cursor-default' 
                   : (!formDataLocal.phoneMiddle || !formDataLocal.phoneLast)
