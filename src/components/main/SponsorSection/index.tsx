@@ -84,7 +84,8 @@ export default function SponsorSection() {
     let animationFrameId: number
     let offset = 0
     let listWidth = listRef.current.scrollWidth
-    const speed = 1.6
+    // 메인 사이트 스폰서 섹션 스크롤 속도 (값이 작을수록 느림)
+    const speed = 0.7
 
     const updateWidth = () => {
       if (!listRef.current) return
