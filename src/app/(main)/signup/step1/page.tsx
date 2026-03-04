@@ -123,6 +123,16 @@ export default function SignupStep1Page() {
     }
   }
 
+  const getRowClassName = (checked: boolean) =>
+    `flex items-center justify-between p-3 sm:p-4 rounded-xl border transition-colors ${
+      checked ? 'border-blue-500 bg-transparent' : 'border-gray-200 bg-transparent'
+    }`
+
+  const getCheckButtonClassName = (checked: boolean) =>
+    `w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full border transition-colors ${
+      checked ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-gray-400'
+    }`
+
   return (
     <SignupLayout currentStep={1}>
       {/* 이용약관 섹션 */}
@@ -130,45 +140,39 @@ export default function SignupStep1Page() {
         <h2 className="text-lg sm:text-xl font-bold text-gray-900">이용약관</h2>
         
         {/* 전체 동의 체크박스 */}
-        <div className="border-t-2 border-gray-600 pb-0 mb-0">
-          <div className="flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 border-b border-gray-200">
-            <button
-              onClick={() => handleAgreementChange('all', !agreements.all)}
-              className={`w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center transition-colors ${
-                agreements.all 
-                  ? 'text-blue-600' 
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="sm:w-5 sm:h-5">
-                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
-              </svg>
-            </button>
-            <label 
-              htmlFor="all-agree" 
-              className="text-sm sm:text-base md:text-lg font-medium text-gray-900 cursor-pointer"
-              onClick={() => handleAgreementChange('all', !agreements.all)}
-            >
-              아래 내용에 모두 동의합니다.
-            </label>
+        <div className="border-t-2 border-gray-600 pt-3 pb-0 mb-0">
+          <div className={getRowClassName(agreements.all)}>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <button
+                onClick={() => handleAgreementChange('all', !agreements.all)}
+                className={getCheckButtonClassName(agreements.all)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
+                </svg>
+              </button>
+              <label 
+                htmlFor="all-agree" 
+                className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 cursor-pointer"
+                onClick={() => handleAgreementChange('all', !agreements.all)}
+              >
+                아래 내용에 모두 동의합니다.
+              </label>
+            </div>
           </div>
         </div>
         
         {/* 개별 약관 목록 */}
         <div className="space-y-2">
           {/* 필수 약관들 */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between p-2 sm:p-3">
+          <div className="space-y-2">
+            <div className={getRowClassName(agreements.terms)}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 <button
                   onClick={() => handleAgreementChange('terms', !agreements.terms)}
-                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
-                    agreements.terms 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={getCheckButtonClassName(agreements.terms)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
                   </svg>
                 </button>
@@ -184,17 +188,13 @@ export default function SignupStep1Page() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2 sm:p-3">
+            <div className={getRowClassName(agreements.privacy)}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 <button
                   onClick={() => handleAgreementChange('privacy', !agreements.privacy)}
-                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
-                    agreements.privacy 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={getCheckButtonClassName(agreements.privacy)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
                   </svg>
                 </button>
@@ -210,17 +210,13 @@ export default function SignupStep1Page() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2 sm:p-3">
+            <div className={getRowClassName(agreements.personalInfo)}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 <button
                   onClick={() => handleAgreementChange('personalInfo', !agreements.personalInfo)}
-                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
-                    agreements.personalInfo 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={getCheckButtonClassName(agreements.personalInfo)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
                   </svg>
                 </button>
@@ -237,17 +233,13 @@ export default function SignupStep1Page() {
             </div>
 
             {/* 비회원 신청 내역 연동 동의 */}
-            <div className="flex items-center justify-between p-2 sm:p-3">
+            <div className={getRowClassName(agreements.irreversibleConfirmed)}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 <button
                   onClick={() => handleAgreementChange('irreversibleConfirmed', !agreements.irreversibleConfirmed)}
-                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
-                    agreements.irreversibleConfirmed 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={getCheckButtonClassName(agreements.irreversibleConfirmed)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
                   </svg>
                 </button>
@@ -264,19 +256,15 @@ export default function SignupStep1Page() {
             </div>
           </div>
           
-          {/* 선택 약관 */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between p-2 sm:p-3">
+          {/* 선택 약관 - 마케팅 동의 (상위 항목만 노출) */}
+          <div className="space-y-2">
+            <div className={getRowClassName(agreements.marketing)}>
               <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
                 <button
                   onClick={() => handleAgreementChange('marketing', !agreements.marketing)}
-                  className={`w-4 h-4 flex items-center justify-center transition-colors flex-shrink-0 ${
-                    agreements.marketing 
-                      ? 'text-blue-600' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className={getCheckButtonClassName(agreements.marketing)}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 sm:w-4 sm:h-4">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
                   </svg>
                 </button>
@@ -290,54 +278,6 @@ export default function SignupStep1Page() {
               >
                 약관보기
               </button>
-            </div>
-
-            {/* 마케팅 하위 옵션 */}
-            <div className="ml-8 space-y-1">
-              <div className="flex items-center p-2 bg-gray-50">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleAgreementChange('email', !agreements.email)}
-                    className={`w-4 h-4 flex items-center justify-center transition-colors ${
-                      agreements.email 
-                        ? 'text-blue-600' 
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
-                    </svg>
-                  </button>
-                  <span className="text-sm text-gray-700">E-Mail</span>
-                  <span className="text-xs text-gray-500">(이메일을 통한 마케팅 정보 수신)</span>
-                </div>
-              </div>
-
-              <div className="flex items-center p-2 bg-gray-50">
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => handleAgreementChange('sms', !agreements.sms)}
-                    className={`w-4 h-4 flex items-center justify-center transition-colors ${
-                      agreements.sms 
-                        ? 'text-blue-600' 
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" stroke="currentColor" strokeWidth="0.5"/>
-                    </svg>
-                  </button>
-                  <span className="text-sm text-gray-700">SMS</span>
-                  <span className="text-xs text-gray-500">(문자메시지를 통한 마케팅 정보 수신)</span>
-                </div>
-              </div>
-              
-              {/* 안내 메시지 */}
-              <div className="px-2 py-1">
-                <p className="text-xs text-gray-500">
-                  마케팅 활용 동의를 체크하시면 E-Mail과 SMS가 함께 선택됩니다.
-                </p>
-              </div>
             </div>
           </div>
         </div>
