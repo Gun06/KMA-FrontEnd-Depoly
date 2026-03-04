@@ -204,7 +204,7 @@ export default function Client() {
       if (isOtpNeeded) {
         const issuedToken = response?.issueOtpTokenResponse?.token
         if (!issuedToken) {
-          throw new Error('OTP 토큰이 발급되지 않았습니다. 다시 시도해 주세요.')
+          throw new Error('전화번호 인증 토큰이 발급되지 않았습니다. 다시 시도해 주세요.')
         }
         const expiresInSecond = response?.issueOtpTokenResponse?.expiresInSecond
         setPendingOtpInfo({
@@ -253,7 +253,7 @@ export default function Client() {
       setModal({
         isOpen: true,
         title: '안내',
-        message: '먼저 OTP 인증 요청을 진행해 주세요.',
+        message: '먼저 전화번호 인증 요청을 진행해 주세요.',
       })
       return
     }
@@ -273,7 +273,7 @@ export default function Client() {
         response?.token ||
         response?.issueOtpTokenResponse?.token
       if (!token) {
-        throw new Error('OTP 재발급 토큰을 받지 못했습니다.')
+        throw new Error('전화번호 인증 재발급 토큰을 받지 못했습니다.')
       }
       const expiresInSecond =
         response?.otpExpiresInSecond ??
@@ -287,12 +287,12 @@ export default function Client() {
       })
       setPhoneOtpNumber('')
       setPhoneOtpInlineError('')
-      setPhoneOtpInlineSuccess('OTP가 재발급되었습니다. 수신한 인증번호를 입력해 주세요.')
+      setPhoneOtpInlineSuccess('인증번호가 재발급되었습니다. 수신한 인증번호를 입력해 주세요.')
     } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error
           ? String(error.message)
-          : 'OTP 재발급에 실패했습니다.'
+          : '인증번호 재발급에 실패했습니다.'
       setPhoneOtpInlineError(message)
     } finally {
       setIsOtpReissuing(false)
@@ -318,7 +318,7 @@ export default function Client() {
       setModal({
         isOpen: true,
         title: '안내',
-        message: '먼저 OTP 인증 요청을 진행해 주세요.',
+        message: '먼저 전화번호 인증 요청을 진행해 주세요.',
       })
       return
     }
@@ -326,7 +326,7 @@ export default function Client() {
       setModal({
         isOpen: true,
         title: '시간 만료',
-        message: 'OTP 유효 시간이 만료되었습니다. OTP 인증 요청을 다시 진행해 주세요.',
+        message: '인증번호 유효 시간이 만료되었습니다. 전화번호 인증 요청을 다시 진행해 주세요.',
       })
       return
     }
@@ -334,7 +334,7 @@ export default function Client() {
       setModal({
         isOpen: true,
         title: '입력 확인',
-        message: 'OTP 인증번호를 입력해 주세요.',
+        message: '전화번호 인증번호를 입력해 주세요.',
       })
       return
     }
@@ -355,14 +355,14 @@ export default function Client() {
         setModal({
           isOpen: true,
           title: '인증 완료',
-          message: 'OTP 인증이 완료되어 전화번호 변경 내역이 적용되었습니다.',
+          message: '전화번호 인증이 완료되어 전화번호 변경 내역이 적용되었습니다.',
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
       } catch (error) {
         const message =
           error && typeof error === 'object' && 'message' in error
             ? String(error.message)
-            : 'OTP 인증 확인에 실패했습니다.'
+            : '전화번호 인증 확인에 실패했습니다.'
         setModal({
           isOpen: true,
           title: '인증 실패',
@@ -623,11 +623,11 @@ export default function Client() {
             </button>
             {pendingOtpInfo ? (
               <>
-                <h3 className="text-lg font-bold text-gray-900">OTP 인증 및 전화번호 변경</h3>
+                <h3 className="text-lg font-bold text-gray-900">전화번호 인증 및 전화번호 변경</h3>
                 <p className="mt-2 text-sm text-gray-600">
                   비밀번호 검증이 완료되었습니다.
                   <br />
-                  변경된 번호로 수신한 OTP 6자리를 입력해 주세요.
+                  변경된 번호로 수신한 인증번호 6자리를 입력해 주세요.
                 </p>
 
                 <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-3">
@@ -643,10 +643,10 @@ export default function Client() {
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">OTP</label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">인증번호</label>
                   <input
                     className="w-full h-11 px-3 rounded-xl border border-gray-200"
-                    placeholder="OTP를 입력해 주세요"
+                    placeholder="인증번호를 입력해 주세요"
                     value={phoneOtpNumber}
                     onChange={e => {
                       setPhoneOtpNumber(e.target.value)
@@ -655,7 +655,7 @@ export default function Client() {
                     }}
                   />
                   <p className="mt-2 text-xs text-gray-500">
-                    OTP는 숫자 6자리입니다. 문자메시지를 확인해 주세요.
+                    인증번호는 숫자 6자리입니다. 문자메시지를 확인해 주세요.
                   </p>
                   {phoneOtpInlineSuccess && (
                     <p className="mt-2 text-xs font-medium text-blue-600">
@@ -684,7 +684,7 @@ export default function Client() {
                     disabled={isOtpReissuing || isOtpCommitting}
                     className="h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 disabled:opacity-60"
                   >
-                    {isOtpReissuing ? 'OTP 재전송 중...' : 'OTP 재전송'}
+                    {isOtpReissuing ? '인증번호 재전송 중...' : '인증번호 재전송'}
                   </button>
                   <button
                     type="button"

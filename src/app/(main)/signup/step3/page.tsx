@@ -215,7 +215,7 @@ export default function SignupStep3Page() {
   // OTP 재발급
   const handleReissueOtp = async () => {
     if (!otpToken) {
-      throw new Error('OTP 토큰이 없습니다.')
+      throw new Error('전화번호 인증 토큰이 없습니다.')
     }
 
     const phNum = getPhoneNumber()
@@ -235,7 +235,7 @@ export default function SignupStep3Page() {
   // OTP 인증 및 토큰 발급
   const handleVerifyOtp = async (otp: string) => {
     if (!otpToken) {
-      throw new Error('OTP 토큰이 없습니다.')
+      throw new Error('전화번호 인증 토큰이 없습니다.')
     }
 
     const phNum = getPhoneNumber()

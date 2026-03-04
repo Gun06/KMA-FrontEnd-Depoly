@@ -120,14 +120,14 @@ export const reissueIndividualOtp = async (
         const errorJson = JSON.parse(errorText);
         // MAX_REQUESTED 에러 체크
         if (errorJson.code === 'MAX_REQUESTED') {
-          throw { code: 'MAX_REQUESTED', message: errorJson.message || 'OTP 재발급 횟수를 초과했습니다.' };
+          throw { code: 'MAX_REQUESTED', message: errorJson.message || '인증번호 재발급 횟수를 초과했습니다.' };
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
       } catch (error) {
         if (error && typeof error === 'object' && 'code' in error && error.code === 'MAX_REQUESTED') {
           throw error;
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${errorText}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${errorText}`);
       }
     }
     
@@ -191,14 +191,14 @@ export const reissueGroupOtp = async (
         const errorJson = JSON.parse(errorText);
         // MAX_REQUESTED 에러 체크
         if (errorJson.code === 'MAX_REQUESTED') {
-          throw { code: 'MAX_REQUESTED', message: errorJson.message || 'OTP 재발급 횟수를 초과했습니다.' };
+          throw { code: 'MAX_REQUESTED', message: errorJson.message || '인증번호 재발급 횟수를 초과했습니다.' };
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
       } catch (error) {
         if (error && typeof error === 'object' && 'code' in error && error.code === 'MAX_REQUESTED') {
           throw error;
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${errorText}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${errorText}`);
       }
     }
     
@@ -368,14 +368,14 @@ export const reissueOwnedOtp = async (
         const errorJson = JSON.parse(errorText);
         // MAX_REQUESTED 에러 체크
         if (errorJson.code === 'MAX_REQUESTED') {
-          throw { code: 'MAX_REQUESTED', message: errorJson.message || 'OTP 재발급 횟수를 초과했습니다.' };
+          throw { code: 'MAX_REQUESTED', message: errorJson.message || '인증번호 재발급 횟수를 초과했습니다.' };
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
       } catch (error) {
         if (error && typeof error === 'object' && 'code' in error && error.code === 'MAX_REQUESTED') {
           throw error;
         }
-        throw new Error(`OTP 재발급 실패: ${response.status} - ${errorText}`);
+        throw new Error(`인증번호 재발급 실패: ${response.status} - ${errorText}`);
       }
     }
     

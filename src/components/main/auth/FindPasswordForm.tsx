@@ -77,11 +77,11 @@ export default function FindPasswordForm() {
   const handleCompleteReset = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.otp.trim()) {
-      setError('OTP 인증번호를 입력해 주세요.')
+      setError('전화번호 인증번호를 입력해 주세요.')
       return
     }
     if (otpTimeLeft <= 0) {
-      setError('OTP 유효 시간이 만료되었습니다. 초기화 신청을 다시 진행해 주세요.')
+      setError('인증번호 유효 시간이 만료되었습니다. 초기화 신청을 다시 진행해 주세요.')
       return
     }
     const passwordError = validatePassword(formData.newPassword)
@@ -175,7 +175,7 @@ export default function FindPasswordForm() {
               비밀번호 변경을 위해 아이디를 입력해 주세요
             </p>
             <p className="text-[#898989] font-pretendard text-[15px]">
-              해당 아이디에 등록된 휴대전화 번호로 OTP 인증이 진행됩니다.
+              해당 아이디에 등록된 휴대전화 번호로 전화번호 인증이 진행됩니다.
             </p>
           </div>
 
@@ -201,7 +201,7 @@ export default function FindPasswordForm() {
                 </div>
                 <input
                   type="text"
-                  placeholder="OTP 6자리"
+                  placeholder="인증번호 6자리"
                   value={formData.otp}
                   onChange={e => handleInputChange('otp', e.target.value)}
                   className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
