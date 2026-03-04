@@ -55,7 +55,8 @@ export default function SignupStep4Page() {
     const newFormData = {
       postalCode: data.postalCode,
       address: data.address,
-      detailedAddress: data.detailedAddress
+      // 상세주소는 사용자가 직접 입력하도록 항상 비워둔다
+      detailedAddress: ''
     }
     
     setFormDataLocal(newFormData)
@@ -72,7 +73,8 @@ export default function SignupStep4Page() {
     setShowPostalCodeSearch(false)
   }
 
-  const canProceed = formDataLocal.postalCode && formDataLocal.address && formDataLocal.detailedAddress
+  // 상세주소는 선택 항목이므로, 우편번호와 기본주소만 있어도 진행 가능
+  const canProceed = formDataLocal.postalCode && formDataLocal.address
   const isSubmitting = signupMutation.isPending
 
   const handlePrev = () => {

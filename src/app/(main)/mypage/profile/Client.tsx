@@ -210,7 +210,8 @@ export default function Client() {
       ...prev,
       zipCode: postal.postalCode,
       address: postal.address,
-      addressDetail: prev.addressDetail || postal.detailedAddress || '',
+      // 상세주소는 자동 채우지 않고, 사용자가 직접 입력한 값만 유지
+      addressDetail: prev.addressDetail || '',
     }))
     setShowPostalCodeSearch(false)
   }

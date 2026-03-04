@@ -351,11 +351,11 @@ export default function SignupStep3Page() {
                                  <input
                    ref={domainInputRef}
                    type="text"
-                   name="emailDomain"
-                   value={formDataLocal.emailDomain}
-                   onChange={(e) => handleInputChange('emailDomain', e.target.value)}
-                   placeholder={isCustomDomain ? "도메인을 입력하세요" : "도메인을 선택하세요"}
-                   disabled={!isCustomDomain}
+                  name="emailDomain"
+                  value={formDataLocal.emailDomain}
+                  onChange={(e) => handleInputChange('emailDomain', e.target.value)}
+                  placeholder={isCustomDomain ? "직접 입력" : "도메인을 선택하세요"}
+                  disabled={!isCustomDomain}
                    className={`flex-1 w-32 sm:w-40 px-2 sm:px-3 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition-all duration-200 ${
                      isCustomDomain 
                        ? 'border-blue-300 bg-blue-50 cursor-text shadow-sm' 

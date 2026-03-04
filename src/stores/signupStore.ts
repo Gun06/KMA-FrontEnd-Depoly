@@ -137,17 +137,17 @@ const initialState: SignupState = {
       password: '',
       passwordConfirm: '',
     },
-      personal: {
+    personal: {
       name: '',
       birthDate: '',
       gender: '',
       emailLocal: '',
-      emailDomain: EMAIL_DOMAINS[0],
+      emailDomain: '', // 기본값은 직접 입력
       phonePrefix: PHONE_PREFIXES[0],
       phoneMiddle: '',
       phoneLast: '',
       isPhoneVerified: false,
-      isCustomDomain: false,
+      isCustomDomain: true, // 처음에는 직접 입력 모드
       phNumValidateToken: undefined,
     },
     address: {
@@ -261,7 +261,7 @@ const validateAddress = (address: AddressInfo): { isValid: boolean; errors: stri
   
   if (!address.postalCode) errors.push(SIGNUP_ERROR_MESSAGES.POSTAL_CODE_REQUIRED);
   if (!address.address) errors.push(SIGNUP_ERROR_MESSAGES.ADDRESS_REQUIRED);
-  if (!address.addressDetail) errors.push(SIGNUP_ERROR_MESSAGES.ADDRESS_DETAIL_REQUIRED);
+  // 상세주소(addressDetail)는 선택 항목이므로 필수 검사에서 제외
   
   return {
     isValid: errors.length === 0,
