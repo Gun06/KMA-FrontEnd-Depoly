@@ -123,7 +123,7 @@ export default function RegistrationOtpModal({
       setOtpRequested(true);
       setError(null);
       setReissueSuccess(true);
-      setReissueMessage("OTP가 재발급되었습니다.");
+      setReissueMessage("인증번호가 재발급되었습니다.");
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "인증번호 재발급에 실패했습니다.";
@@ -159,7 +159,7 @@ export default function RegistrationOtpModal({
           {/* 제목 */}
           <div className="mb-4 sm:mb-6">
             <h3 className="text-lg sm:text-xl font-extrabold text-gray-900">
-              전화번호 OTP 인증
+              전화번호 인증
             </h3>
           </div>
 
@@ -167,17 +167,17 @@ export default function RegistrationOtpModal({
           <div className="mb-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-gray-700 text-center">
               {isEditMode
-                ? "수정 시 입력한 휴대폰 번호로 OTP 인증을 진행합니다."
-                : "신청 시 입력한 휴대폰 번호로 OTP 인증을 진행합니다."}
+                ? "수정 시 입력한 휴대폰 번호로 전화번호 인증을 진행합니다."
+                : "신청 시 입력한 휴대폰 번호로 전화번호 인증을 진행합니다."}
             </p>
             <p className="mt-1 text-xs text-gray-600 text-center">
               {phoneNumber ? (
                 <>
                   기입한 내역이 맞을 경우 신청에 사용된 전화번호(
-                  <strong>{phoneNumber}</strong>)로 OTP가 전송되었습니다.
+                  <strong>{phoneNumber}</strong>)로 인증번호가 전송되었습니다.
                 </>
               ) : (
-                <>기입한 내역이 맞을 경우 신청에 사용된 전화번호로 OTP가 전송되었습니다.</>
+                <>기입한 내역이 맞을 경우 신청에 사용된 전화번호로 인증번호가 전송되었습니다.</>
               )}
             </p>
           </div>
@@ -201,9 +201,9 @@ export default function RegistrationOtpModal({
                     </div>
                   </div>
                   <p className="mt-1 text-sm text-red-600 text-center">
-                    OTP 유효 시간이 만료되었습니다.
+                    인증번호 유효 시간이 만료되었습니다.
                     <br />
-                    아래 &apos;OTP 재전송&apos; 버튼을 눌러주세요.
+                    아래 &apos;인증번호 재전송&apos; 버튼을 눌러주세요.
                   </p>
                 </div>
               )}
@@ -217,23 +217,23 @@ export default function RegistrationOtpModal({
 
           {/* 폼 */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* OTP 입력 */}
+            {/* 인증번호 입력 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                OTP <span className="text-red-500">*</span>
+                인증번호 <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={otp}
                 onChange={handleOtpChange}
-                placeholder="OTP를 입력해주세요"
+                placeholder="인증번호를 입력해주세요"
                 maxLength={6}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                OTP는 숫자 6자리로 발급되며, 문자로 전송됩니다.
+                인증번호는 숫자 6자리로 발급되며, 문자로 전송됩니다.
               </p>
             </div>
 
@@ -252,7 +252,7 @@ export default function RegistrationOtpModal({
                 disabled={isReissuing}
                 className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
-                {isReissuing ? "재발급 중..." : "OTP 재전송"}
+                {isReissuing ? "재발급 중..." : "인증번호 재전송"}
               </button>
               <button
                 type="submit"

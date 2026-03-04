@@ -22,13 +22,13 @@ const getErrorCode = (error: unknown): string | undefined => {
 const getReadableFindIdError = (error: unknown, fallback: string): string => {
   const code = getErrorCode(error)
   if (code === 'NOT_FOUND') {
-    return '유효하지 않거나 만료된 인증번호입니다. OTP 재전송 후 다시 시도해 주세요.'
+    return '유효하지 않거나 만료된 인증번호입니다. 인증번호 재전송 후 다시 시도해 주세요.'
   }
   if (code === 'INVALID_OTP' || code === 'OTP_MISMATCH') {
     return '인증번호가 일치하지 않습니다. 다시 확인해 주세요.'
   }
   if (code === 'EXPIRED_OTP') {
-    return '인증번호 유효시간이 만료되었습니다. OTP를 재전송해 주세요.'
+    return '인증번호 유효시간이 만료되었습니다. 인증번호를 다시 전송해 주세요.'
   }
   if (error instanceof Error && error.message) return error.message
   return fallback
@@ -186,11 +186,11 @@ export default function FindIdForm() {
     e.preventDefault()
     if (!otpToken) return
     if (!otpNumber.trim()) {
-      setError('OTP 인증번호를 입력해 주세요.')
+      setError('전화번호 인증번호를 입력해 주세요.')
       return
     }
     if (otpTimeLeft <= 0) {
-      setError('OTP 유효 시간이 만료되었습니다. OTP 재전송을 진행해 주세요.')
+      setError('인증번호 유효 시간이 만료되었습니다. 인증번호 재전송을 진행해 주세요.')
       return
     }
 
@@ -210,7 +210,7 @@ export default function FindIdForm() {
       setOtpExpiresInSecond(0)
       setOtpTimeLeft(0)
     } catch (err) {
-      const errorMessage = getReadableFindIdError(err, 'OTP 인증에 실패했습니다.')
+      const errorMessage = getReadableFindIdError(err, '전화번호 인증에 실패했습니다.')
       setError(errorMessage)
     } finally {
       setIsOtpVerifying(false)
@@ -231,7 +231,7 @@ export default function FindIdForm() {
       setOtpTimeLeft(response.otpExpiresInSecond)
       setOtpNumber('')
     } catch (err) {
-      const errorMessage = getReadableFindIdError(err, 'OTP 재전송에 실패했습니다.')
+      const errorMessage = getReadableFindIdError(err, '인증번호 재전송에 실패했습니다.')
       setError(errorMessage)
     } finally {
       setIsOtpReissuing(false)
@@ -334,7 +334,7 @@ export default function FindIdForm() {
                   </div>
                 </div>
                 <p className="text-[#898989] font-pretendard text-[15px]">
-                  등록된 휴대폰 번호로 OTP가 발송되었습니다
+                  등록된 휴대폰 번호로 인증번호가 발송되었습니다
                 </p>
               </div>
 
@@ -351,7 +351,7 @@ export default function FindIdForm() {
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
-                    placeholder="OTP 6자리를 입력해 주세요"
+                    placeholder="인증번호 6자리를 입력해 주세요"
                     value={otpNumber}
                     onChange={(e) => setOtpNumber(e.target.value.replace(/[^0-9]/g, ''))}
                     className="w-full h-[60px] px-4 text-lg border border-[#DFE0E4] rounded-[5px] outline-none focus:border-kma-blue transition-colors"
@@ -373,7 +373,7 @@ export default function FindIdForm() {
                     disabled={isOtpReissuing || isOtpVerifying}
                     onClick={() => void handleOtpReissue()}
                   >
-                    {isOtpReissuing ? '재전송 중...' : 'OTP 재전송'}
+                    {isOtpReissuing ? '재전송 중...' : '인증번호 재전송'}
                   </Button>
                   <Button
                     type="submit"
@@ -383,7 +383,7 @@ export default function FindIdForm() {
                     disabled={isOtpVerifying}
                     className="bg-gradient-to-r from-blue-400 to-green-500 hover:from-blue-500 hover:to-green-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
-                    {isOtpVerifying ? '확인 중...' : 'OTP 확인'}
+                    {isOtpVerifying ? '확인 중...' : '인증번호 확인'}
                   </Button>
                 </div>
               </form>

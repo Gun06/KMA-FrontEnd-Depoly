@@ -37,7 +37,7 @@ export const submitIndividualRegistration = async (eventId: string, data: ApiSub
   }
 };
 
-// 스테이징된 신청을 실제로 커밋 (OTP 인증 후)
+// 스테이징된 신청을 실제로 커밋 (전화번호 인증 후)
 export interface StagedCommitResponse {
   stagedType: 'PERSONAL_CREATE' | 'PERSONAL_PATCH' | 'ORG_CREATE' | 'ORG_PATCH';
   resultIdOrNull: string | null;
@@ -79,7 +79,7 @@ export const commitStagedRegistration = async (
   return (await response.json()) as StagedCommitResponse;
 };
 
-// 스테이징된 신청의 OTP 재발급
+// 스테이징된 신청의 전화번호 인증번호 재발급
 export interface ReissueOtpResponse {
   token: string;
   expiresInSecond: number;
@@ -104,7 +104,7 @@ export const reissueStagedOtp = async (
 
   if (!response.ok) {
     const errorText = await response.text();
-    let message = `OTP 재발급 실패: ${response.status}`;
+    let message = `전화번호 인증번호 재발급 실패: ${response.status}`;
     try {
       const errorJson = JSON.parse(errorText);
       if (errorJson?.message) message = errorJson.message;

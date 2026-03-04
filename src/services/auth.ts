@@ -786,7 +786,7 @@ export const authService = {
       response?.otpExpiresInSecond ?? response?.expiresInSecond ?? 180;
 
     if (!token) {
-      throw new Error('OTP 재발급 토큰을 받지 못했습니다.');
+      throw new Error('전화번호 인증번호 재발급 토큰을 받지 못했습니다.');
     }
 
     return { token, otpExpiresInSecond };
@@ -900,7 +900,7 @@ export const authService = {
     });
   },
 
-  /** 회원가입 전화번호 인증 OTP 발급 */
+  /** 회원가입 전화번호 인증번호 발급 */
   async requestSignupPhoneOtp(phNum: string): Promise<{ token: string; expiresInSecond: number }> {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
     if (!API_BASE_URL) {
@@ -922,25 +922,25 @@ export const authService = {
 
     if (!response.ok) {
       await response.text().catch(() => '');
-      throw new Error(`OTP 발급 실패: ${response.status}`);
+      throw new Error(`전화번호 인증번호 발급 실패: ${response.status}`);
     }
 
     const body = await safeParseJson(response);
     if (!body || !isRecord(body)) {
-      throw new Error('OTP 발급 응답 형식이 올바르지 않습니다.');
+      throw new Error('전화번호 인증번호 발급 응답 형식이 올바르지 않습니다.');
     }
 
     const token = getString(body.token);
     const expiresInSecond = typeof body.expiresInSecond === 'number' ? body.expiresInSecond : 180;
 
     if (!token) {
-      throw new Error('OTP 토큰을 받지 못했습니다.');
+      throw new Error('전화번호 인증 토큰을 받지 못했습니다.');
     }
 
     return { token, expiresInSecond };
   },
 
-  /** 회원가입 전화번호 인증 OTP 재발급 */
+  /** 회원가입 전화번호 인증번호 재발급 */
   async reissueSignupPhoneOtp(token: string, phNum: string): Promise<{ token: string; expiresInSecond: number }> {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
     if (!API_BASE_URL) {
@@ -963,12 +963,12 @@ export const authService = {
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
-      let errorMessage = `OTP 재발급 실패: ${response.status}`;
+      let errorMessage = `전화번호 인증번호 재발급 실패: ${response.status}`;
       
       try {
         const errorJson = JSON.parse(errorText);
         if (errorJson.code === 'MAX_REQUESTED') {
-          throw { code: 'MAX_REQUESTED', message: 'OTP 재발급 횟수를 초과했습니다.' };
+          throw { code: 'MAX_REQUESTED', message: '전화번호 인증번호 재발급 횟수를 초과했습니다.' };
         }
         errorMessage = errorJson.message || errorMessage;
       } catch {
@@ -980,14 +980,14 @@ export const authService = {
 
     const body = await safeParseJson(response);
     if (!body || !isRecord(body)) {
-      throw new Error('OTP 재발급 응답 형식이 올바르지 않습니다.');
+      throw new Error('전화번호 인증번호 재발급 응답 형식이 올바르지 않습니다.');
     }
 
     const newToken = getString(body.token);
     const expiresInSecond = typeof body.expiresInSecond === 'number' ? body.expiresInSecond : 180;
 
     if (!newToken) {
-      throw new Error('OTP 토큰을 받지 못했습니다.');
+      throw new Error('전화번호 인증 토큰을 받지 못했습니다.');
     }
 
     return { token: newToken, expiresInSecond };

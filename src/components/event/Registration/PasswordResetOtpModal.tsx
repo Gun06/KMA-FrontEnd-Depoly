@@ -127,7 +127,7 @@ export default function PasswordResetOtpModal({
     setError(null);
 
     if (!otp.trim()) {
-      setError('OTP를 입력해주세요.');
+      setError('전화번호 인증번호를 입력해주세요.');
       return;
     }
 
@@ -147,7 +147,7 @@ export default function PasswordResetOtpModal({
     }
 
     if (timeLeft <= 0) {
-      setError('OTP 유효 시간이 만료되었습니다. 다시 요청해주세요.');
+      setError('인증번호 유효 시간이 만료되었습니다. 다시 요청해주세요.');
       return;
     }
 
@@ -181,7 +181,7 @@ export default function PasswordResetOtpModal({
       setError(null);
       
       // 성공 메시지 표시
-      setReissueSuccessMessage('OTP가 재전송되었습니다.');
+      setReissueSuccessMessage('인증번호가 재전송되었습니다.');
       
       // 3초 후 메시지 자동 제거
       if (reissueSuccessTimerRef.current) {
@@ -198,10 +198,10 @@ export default function PasswordResetOtpModal({
     } catch (err: any) {
       if (err?.code === 'MAX_REQUESTED') {
         setIsMaxRequested(true);
-        setError('OTP 재발급 횟수를 초과했습니다. 처음부터 다시 진행해주세요.');
+        setError('인증번호 재발급 횟수를 초과했습니다. 처음부터 다시 진행해주세요.');
       } else {
         // 에러 메시지 파싱 및 사용자 친화적 메시지로 변환
-        let errorMessage = 'OTP 재발급에 실패했습니다.';
+        let errorMessage = '인증번호 재발급에 실패했습니다.';
         
         if (err?.message) {
           // 500 에러인 경우
@@ -210,7 +210,7 @@ export default function PasswordResetOtpModal({
           }
           // 다른 에러인 경우 원본 메시지 사용 (너무 길면 요약)
           else if (err.message.length > 100) {
-            errorMessage = 'OTP 재발급에 실패했습니다. 잠시 후 다시 시도해주세요.';
+            errorMessage = '인증번호 재발급에 실패했습니다. 잠시 후 다시 시도해주세요.';
           } else {
             errorMessage = err.message;
           }
@@ -302,7 +302,7 @@ export default function PasswordResetOtpModal({
                   </button>
                 )}
                 <h3 className="text-lg sm:text-xl font-extrabold text-gray-900">
-                  OTP 인증 및 비밀번호 변경
+                  전화번호 인증 및 비밀번호 변경
                 </h3>
               </div>
 
@@ -312,10 +312,10 @@ export default function PasswordResetOtpModal({
                   비밀번호 재설정 요청이 진행 중입니다.
                   <br />
                   {phoneNumber && (
-                    <>기입한 내역이 맞을 경우 신청에 사용된 전화번호(<strong>{phoneNumber}</strong>)로 OTP가 전송되었습니다.</>
+                    <>기입한 내역이 맞을 경우 신청에 사용된 전화번호(<strong>{phoneNumber}</strong>)로 인증번호가 전송되었습니다.</>
                   )}
                   {!phoneNumber && (
-                    <>기입한 내역이 맞을 경우 신청에 사용된 전화번호로 OTP가 전송되었습니다.</>
+                    <>기입한 내역이 맞을 경우 신청에 사용된 전화번호로 인증번호가 전송되었습니다.</>
                   )}
                 </p>
               </div>
@@ -337,8 +337,8 @@ export default function PasswordResetOtpModal({
                         시간 만료
                       </div>
                     </div>
-                    <p className="text-sm text-red-600 mt-1">
-                      OTP 유효 시간이 만료되었습니다. 아래 &apos;OTP 재전송&apos; 버튼을 눌러주세요.
+                  <p className="text-sm text-red-600 mt-1">
+                      인증번호 유효 시간이 만료되었습니다. 아래 &apos;인증번호 재전송&apos; 버튼을 눌러주세요.
                     </p>
                   </div>
                 )}
@@ -354,30 +354,30 @@ export default function PasswordResetOtpModal({
               {isMaxRequested && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700 font-semibold">
-                    OTP 재발급 횟수를 초과했습니다. 비밀번호 재발급 신청을 처음부터 다시 진행해주세요.
+                    인증번호 재발급 횟수를 초과했습니다. 비밀번호 재발급 신청을 처음부터 다시 진행해주세요.
                   </p>
                 </div>
               )}
 
               {/* 폼 */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* OTP 입력 */}
+                {/* 인증번호 입력 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    OTP <span className="text-red-500">*</span>
+                    인증번호 <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
                     value={otp}
                     onChange={handleOtpChange}
-                    placeholder="OTP를 입력해주세요"
+                    placeholder="인증번호를 입력해주세요"
                     maxLength={6}
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    OTP는 숫자 6자리로 발급되며, 문자로 전송됩니다.
+                    인증번호는 숫자 6자리로 발급되며, 문자로 전송됩니다.
                   </p>
                 </div>
 
@@ -475,7 +475,7 @@ export default function PasswordResetOtpModal({
                     disabled={isReissuing || isMaxRequested}
                     className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
-                    {isReissuing ? '재발급 중...' : 'OTP 재전송'}
+                    {isReissuing ? '재발급 중...' : '인증번호 재전송'}
                   </button>
                   <button
                     type="submit"
