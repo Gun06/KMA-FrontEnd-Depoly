@@ -1,19 +1,22 @@
 'use client';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
+import type { Swiper as SwiperType } from 'swiper';
 import { Navigation, Autoplay } from 'swiper/modules';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MainBannerItem } from '@/types/event';
 import ApiBannerSlide from './ApiBannerSlide';
-// Swiper 스타일
 import 'swiper/css';
 import 'swiper/css/navigation';
+
+const RESIZE_DEBOUNCE_MS = 180;
 
 export default function MarathonHeroCarousel() {
   const [bannerData, setBannerData] = useState<MainBannerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const swiperRef = useRef<SwiperType | null>(null);
 
   // API에서 메인 배너 데이터 가져오기
   useEffect(() => {
@@ -46,26 +49,31 @@ export default function MarathonHeroCarousel() {
     fetchBannerData();
   }, []);
 
-  // API 배너들만 사용
   const total = bannerData.length;
-  // 스켈레톤은 로딩 중이거나 데이터가 없을 때 표시 (기본값: true)
   const showSkeleton = isLoading || bannerData.length === 0;
 
+  // 리사이즈 시 Swiper는 디바운스로만 갱신 (실제 사이트처럼 버벅임 방지)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onResize = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        swiperRef.current?.update();
+        timer = null;
+      }, RESIZE_DEBOUNCE_MS);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
   return (
-    <div
-      className="relative w-full hero-section"
-      style={{
-        height: 'var(--heroH, 480px)',
-        minHeight: 'var(--heroH, 480px)',
-        contain: 'layout',
-      }}
-    >
-      {/* KMA-Mobile 스타일: 단순 스켈레톤 (ShimmerSkeleton과 유사) */}
+    <div className="relative w-full hero-section">
       <div
         className="absolute inset-0 w-full h-full overflow-hidden transition-opacity duration-300"
         style={{
-          height: '100%',
-          minHeight: 'var(--heroH, 480px)',
           opacity: showSkeleton ? 1 : 0,
           zIndex: showSkeleton ? 20 : 0,
           pointerEvents: showSkeleton ? 'auto' : 'none',
@@ -74,18 +82,12 @@ export default function MarathonHeroCarousel() {
         <div className="w-full h-full bg-gray-200 animate-pulse" />
       </div>
 
-      {/* 실제 콘텐츠 - 항상 렌더링하되 조건부로 표시 */}
-      <div 
-        className={`relative w-full h-full transition-opacity duration-300 ${
-          showSkeleton ? 'opacity-0' : 'opacity-100'
-        }`}
-        style={{ 
-          height: '100%', 
-          minHeight: 'var(--heroH, 480px)'
-        }}
+      <div
+        className={`relative w-full h-full transition-opacity duration-300 ${showSkeleton ? 'opacity-0' : 'opacity-100'}`}
       >
       <Swiper
         modules={[Navigation, Autoplay]}
+        onSwiper={(swiper) => { swiperRef.current = swiper; }}
         navigation={{
           nextEl: '.swiper-button-next-custom',
           prevEl: '.swiper-button-prev-custom',
@@ -96,6 +98,7 @@ export default function MarathonHeroCarousel() {
         slidesPerView={1}
         centeredSlides
         spaceBetween={0}
+        updateOnWindowResize={false}
         className="h-full"
         onSlideChange={(swiper) => {
           const idx = typeof swiper.realIndex === 'number' && Number.isFinite(swiper.realIndex)
@@ -157,13 +160,21 @@ export default function MarathonHeroCarousel() {
         </div>
       </div>
 
-      {/* 리사이즈 시 깜빡임 방지: vw 대신 브레이크포인트 고정 높이 사용 */}
+      {/* 실제 사이트 방식: aspect-ratio로 높이 결정 (리사이즈 시 한 번에 계산, 버벅임 방지) */}
       <style jsx global>{`
-        .hero-section { --heroH: 560px; }
-        @media (max-width: 1279px) { .hero-section { --heroH: 480px; } }
-        @media (max-width: 1023px) { .hero-section { --heroH: 400px; } }
-        @media (max-width: 767px) { .hero-section { --heroH: 320px; } }
-        @media (max-width: 639px) { .hero-section { --heroH: 240px; } }
+        .hero-section {
+          width: 100%;
+          aspect-ratio: 21/9;
+          min-height: 240px;
+          max-height: 560px;
+          contain: layout;
+        }
+        .hero-section > div,
+        .hero-section .swiper,
+        .hero-section .swiper-wrapper,
+        .hero-section .swiper-slide {
+          height: 100%;
+        }
         .swiper-slide .hero-anim {
           opacity: 0;
           transform: translateY(12px);
