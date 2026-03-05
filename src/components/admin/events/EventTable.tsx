@@ -30,7 +30,7 @@ const mapStatus = (v: string): RegStatus | '' => {
   if (v === '접수중' || v === 'ing') return '접수중';
   if (v === '접수마감' || v === 'done') return '접수마감';
   if (v === '비접수' || v === 'none') return '비접수';
-  if (v === '내부마감' || v === 'final_closed') return '내부마감';
+  if (v === '최종마감' || v === 'final_closed') return '최종마감';
   return '';
 };
 

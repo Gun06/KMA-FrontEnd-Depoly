@@ -29,7 +29,7 @@ const mapStatus = (v: string): RegStatus | '' => {
   if (v === '접수중' || v === 'ing') return '접수중';
   if (v === '접수마감' || v === 'done') return '접수마감';
   if (v === '비접수' || v === 'none') return '비접수';
-  if (v === '내부마감' || v === 'final_closed') return '내부마감';
+  if (v === '최종마감' || v === 'final_closed') return '최종마감';
   return '';
 };
 
@@ -98,7 +98,7 @@ export const BoardEventList = ({
     if (status === '접수중') params.set('status', 'ing');
     else if (status === '접수마감') params.set('status', 'done');
     else if (status === '비접수') params.set('status', 'none');
-    else if (status === '내부마감') params.set('status', 'final_closed');
+    else if (status === '최종마감') params.set('status', 'final_closed');
     
     // pub을 URL 파라미터로 변환 (open, test, closed)
     if (pub === '공개') params.set('pub', 'open');
@@ -147,7 +147,7 @@ export const BoardEventList = ({
       case '접수중': return 'OPEN';
       case '접수마감': return 'CLOSED';
       case '비접수': return 'PENDING';
-      case '내부마감': return 'FINAL_CLOSED';
+      case '최종마감': return 'FINAL_CLOSED';
       default: return undefined;
     }
   }, [status]);

@@ -49,7 +49,7 @@ export class EventDataTransformer {
         ? 'OPEN'
         : data.applyStatus === '접수마감'
           ? 'CLOSED'
-          : data.applyStatus === '내부마감'
+          : data.applyStatus === '최종마감'
             ? 'FINAL_CLOSED'
             : 'PENDING';
 

@@ -9,6 +9,7 @@ import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
 import type { Editor } from '@tiptap/react';
 import { useCreateHomepageFaq, faqKeys } from '@/hooks/useFaqs';
+import { compressHtml } from '@/components/common/TextEditor/utils/compressHtml';
 
 export default function Page() {
   const router = useRouter();
@@ -42,10 +43,10 @@ export default function Page() {
     let finalAnswerContent = answerContent;
     
     if (questionEditorRef.current) {
-      finalQuestionContent = questionEditorRef.current.getHTML();
+      finalQuestionContent = compressHtml(questionEditorRef.current.getHTML(), false);
     }
     if (answerEditorRef.current) {
-      finalAnswerContent = answerEditorRef.current.getHTML();
+      finalAnswerContent = compressHtml(answerEditorRef.current.getHTML(), false);
     }
 
     // 내용 검증: HTML 태그 제거 후 실제 텍스트가 있는지 확인
@@ -135,6 +136,8 @@ export default function Page() {
                   placeholder="질문 내용을 입력하세요..."
                   onChange={setQuestionContent}
                   onEditorReady={handleQuestionEditorReady}
+                  defaultTextColor="#1F2937"
+                  defaultFontSize="16px"
                 />
               </div>
             </div>
@@ -154,6 +157,8 @@ export default function Page() {
                   placeholder="답변 내용을 입력하세요..."
                   onChange={setAnswerContent}
                   onEditorReady={handleAnswerEditorReady}
+                  defaultTextColor="#4B5563"
+                  defaultFontSize="15px"
                 />
               </div>
             </div>

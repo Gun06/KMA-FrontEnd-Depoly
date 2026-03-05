@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Users, FileText, Plus, ArrowRight, Clock, Image, Bell } from 'lucide-react';
+import { Calendar, Users, FileText, Plus, ArrowRight, Clock, Image, Bell, BarChart } from 'lucide-react';
 import { useAdminEventList, transformAdminEventToEventRow } from '@/services/admin';
 import { useAllInquiries } from '@/hooks/useInquiries';
 import type { AdminEventItem } from '@/types/Admin';
@@ -85,6 +85,13 @@ export default function AdminHomePage() {
       color: 'blue' as const,
     },
     {
+      title: '통계확인',
+      description: '대회 통계 확인',
+      href: '/admin/events/statistics',
+      icon: BarChart,
+      color: 'purple' as const,
+    },
+    {
       title: '스폰서 관리',
       description: '스폰서 배너 운영',
       href: '/admin/banners/sponsors',
@@ -104,13 +111,6 @@ export default function AdminHomePage() {
       href: '/admin/events/management',
       icon: Calendar,
       color: 'purple' as const,
-    },
-    {
-      title: '공지사항 관리',
-      description: '공지 작성 및 노출 관리',
-      href: '/admin/boards/notice',
-      icon: FileText,
-      color: 'indigo' as const,
     },
     {
       title: '회원 관리',

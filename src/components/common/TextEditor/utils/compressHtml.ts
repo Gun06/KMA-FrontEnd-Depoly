@@ -180,6 +180,27 @@ export const compressHtml = (html: string, skipEmptyP: boolean = false): string 
       });
       }
       
+      // Tiptap이 자동으로 추가하는 불필요한 스타일 속성 제거 (white-space: pre-wrap 등)
+      // 이 속성들은 매번 저장할 때마다 누적되어 HTML이 커지는 원인
+      doc.body.querySelectorAll('[style]').forEach((element) => {
+        const style = element.getAttribute('style');
+        if (style) {
+          // white-space: pre-wrap 제거 (Tiptap이 자동 추가)
+          const cleanedStyle = style
+            .replace(/white-space\s*:\s*pre-wrap\s*;?/gi, '')
+            .replace(/;\s*;/g, ';') // 연속된 세미콜론 정리
+            .trim()
+            .replace(/^;|;$/g, ''); // 앞뒤 세미콜론 제거
+          
+          if (cleanedStyle) {
+            element.setAttribute('style', cleanedStyle);
+          } else {
+            // 스타일이 모두 제거되면 style 속성 자체를 제거
+            element.removeAttribute('style');
+          }
+        }
+      });
+      
       result = doc.body.innerHTML;
     } catch (e) {
       // 파싱 실패 시 정규식 방식으로 폴백
@@ -203,6 +224,16 @@ export const compressHtml = (html: string, skipEmptyP: boolean = false): string 
         result = result.replace(/<p[^>]*>\s*<\/p>/gi, '<p><br></p>');
         // &nbsp;만 있는 경우는 색상 span이 있을 수 있으므로 처리하지 않음 (DOM 파서에서 처리)
       }
+      
+      // Tiptap이 자동으로 추가하는 불필요한 스타일 속성 제거 (정규식 방식)
+      result = result.replace(/\s+style\s*=\s*["']([^"']*)["']/gi, (match, styleContent) => {
+        const cleanedStyle = styleContent
+          .replace(/white-space\s*:\s*pre-wrap\s*;?/gi, '')
+          .replace(/;\s*;/g, ';')
+          .trim()
+          .replace(/^;|;$/g, '');
+        return cleanedStyle ? ` style="${cleanedStyle}"` : '';
+      });
     }
   } else {
     // 서버 사이드에서는 정규식 방식 사용
@@ -224,6 +255,16 @@ export const compressHtml = (html: string, skipEmptyP: boolean = false): string 
       result = result.replace(/<p[^>]*>\s*<\/p>/gi, '<p><br></p>');
       // &nbsp;만 있는 경우는 색상 span이 있을 수 있으므로 처리하지 않음
     }
+    
+    // Tiptap이 자동으로 추가하는 불필요한 스타일 속성 제거 (서버 사이드)
+    result = result.replace(/\s+style\s*=\s*["']([^"']*)["']/gi, (match, styleContent) => {
+      const cleanedStyle = styleContent
+        .replace(/white-space\s*:\s*pre-wrap\s*;?/gi, '')
+        .replace(/;\s*;/g, ';')
+        .trim()
+        .replace(/^;|;$/g, '');
+      return cleanedStyle ? ` style="${cleanedStyle}"` : '';
+    });
   }
   
   return result;

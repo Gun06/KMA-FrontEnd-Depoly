@@ -20,8 +20,7 @@ export default function AssociationPage() {
       <EventSection />
 
       {/* 갤러리 섹션 */}
-      <div className="mt-[0px] h-[20px] md:h-[40px] bg-gray-50" />
-      <GallerySection />
+       <GallerySection />
 
       {/* 공지사항 및 매거진 섹션 */}
       <NoticeMagazineSection />

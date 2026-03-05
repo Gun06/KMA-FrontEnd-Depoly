@@ -239,7 +239,7 @@ export default function Header() {
 
   const hasTopBanner = isBannerVisible;
   const panelTopClass = hasTopBanner ? 'top-[120px] md:top-32' : 'top-16';
-  const mobileToggleTopClass = hasTopBanner ? 'top-[4.1rem]' : 'top-3';
+  const mobileToggleTopClass = hasTopBanner ? 'top-[4.25rem] md:top-[4.75rem]' : 'top-3';
 
 
   return (

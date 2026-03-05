@@ -46,7 +46,7 @@ export function mapEventStatusToRegStatus(eventStatus: EventStatus | string): Re
     case 'CLOSED':
       return '접수마감';
     case 'FINAL_CLOSED':
-      return '내부마감';
+      return '최종마감';
     case 'PENDING':
     case 'NOT_OPEN': // 호환성을 위해 NOT_OPEN도 처리 (일부 API에서 사용 가능)
       return '비접수';

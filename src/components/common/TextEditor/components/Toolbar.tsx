@@ -28,6 +28,7 @@ interface ToolbarProps {
   showFontSize?: boolean;
   showTextColor?: boolean;
   showImageUpload?: boolean;
+  defaultTextColor?: string;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -41,6 +42,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   showFontSize = true,
   showTextColor = true,
   showImageUpload = true,
+  defaultTextColor = '#374151',
 }) => {
   return (
     <div className="border-b border-gray-100 bg-gray-50/50 px-4 py-3">
@@ -178,6 +180,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <option value="default">기본 (14px)</option>
                 <option value="12px">12px</option>
                 <option value="14px">14px</option>
+                <option value="15px">15px</option>
                 <option value="16px">16px</option>
                 <option value="18px">18px</option>
                 <option value="20px">20px</option>
@@ -207,10 +210,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 }}
                 className="px-3 py-2 pr-8 pl-8 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[110px]"
                 style={{
-                  color: textColor !== 'default' ? textColor : '#374151'
+                  color: textColor !== 'default' ? textColor : defaultTextColor
                 }}
               >
-                <option value="default">기본 (검정)</option>
+                <option value="default">기본</option>
                 <option value="#000000">검정</option>
                 <option value="#ef4444">빨강</option>
                 <option value="#3b82f6">파랑</option>
@@ -224,7 +227,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <div 
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-gray-300 pointer-events-none"
                 style={{
-                  backgroundColor: textColor !== 'default' ? textColor : '#374151'
+                  backgroundColor: textColor !== 'default' ? textColor : defaultTextColor
                 }}
               />
               {/* 드롭다운 화살표 */}

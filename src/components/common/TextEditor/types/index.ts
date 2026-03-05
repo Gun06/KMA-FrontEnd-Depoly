@@ -23,4 +23,8 @@ export interface TextEditorProps {
   onChange?: (content: string) => void;
   /** 에디터가 준비되었을 때 콜백 */
   onEditorReady?: (editor: ReturnType<typeof useEditor>) => void;
+  /** 기본 텍스트 색상 - 전달 시 "기본" 선택 시 해당 색상 인라인 저장 (FAQ 전용) */
+  defaultTextColor?: string;
+  /** 기본 폰트 크기 - 전달 시 에디터 초기화 시 해당 크기로 설정 (FAQ 전용: 질문 14px, 답변 15px) */
+  defaultFontSize?: string;
 }

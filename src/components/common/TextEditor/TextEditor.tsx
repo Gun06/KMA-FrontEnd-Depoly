@@ -18,6 +18,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
   placeholder = "내용을 작성해주세요...",
   onChange,
   onEditorReady,
+  defaultTextColor,
+  defaultFontSize,
 }) => {
   const {
     editor,
@@ -34,6 +36,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
     onEditorReady,
     imageDomainType,
     imageServerType,
+    defaultTextColor,
+    defaultFontSize,
   });
 
   // 클라이언트 사이드에서만 에디터 렌더링
@@ -63,6 +67,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         showFontSize={showFontSize}
         showTextColor={showTextColor}
         showImageUpload={showImageUpload}
+        defaultTextColor={defaultTextColor}
       />
 
       {/* 에디터 영역 */}

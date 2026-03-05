@@ -82,7 +82,7 @@ export default function EventSection() {
   }, []);
 
   return (
-    <section className="bg-white pt-8 pb-5">
+    <section className="bg-white pt-8 pb-8">
       {/* 타이틀 위치: 공지사항과 동일 (32/36/40px) */}
       <div className="max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10">
         <div className="flex items-end justify-between">
@@ -96,6 +96,7 @@ export default function EventSection() {
           더보기 &gt;
         </Link>
       </div>
+       </div>
 
       <div className="mt-4">
         {/* 가로 스크롤 리스트 (이미지 영역 드래그로 스크롤) */}
@@ -113,7 +114,7 @@ export default function EventSection() {
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
         >
-          <ul className="flex gap-3 px-8 md:px-9 lg:px-10 pb-2 w-max min-w-full list-none">
+          <ul className="flex gap-3 px-0 pb-2 w-max min-w-full list-none pl-[18px] md:pl-[82px]">
             {isLoading || error ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
@@ -155,7 +156,6 @@ export default function EventSection() {
             </ul>
           </div>
         </div>
-      </div>
     </section>
   );
 }

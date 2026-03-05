@@ -16,10 +16,12 @@ export const useTextEditor = (props: TextEditorProps) => {
     onEditorReady,
     imageDomainType = 'NOTICE',
     imageServerType = 'admin',
+    defaultTextColor,
+    defaultFontSize,
   } = props;
 
   const [isMounted, setIsMounted] = useState(false);
-  const [fontSize, setFontSize] = useState("default");
+  const [fontSize, setFontSize] = useState(defaultFontSize || "default");
   const [textColor, setTextColor] = useState("default");
   const isColorChangingRef = useRef(false);
 
@@ -98,6 +100,14 @@ export const useTextEditor = (props: TextEditorProps) => {
         onChange?.(compressedHtml);
       }
     },
+    onCreate: ({ editor }) => {
+      // defaultFontSize가 있으면 에디터 초기화 시 해당 크기로 설정
+      // onCreate는 에디터가 생성될 때 한 번만 호출되므로 포커스 문제 없음
+      if (defaultFontSize && defaultFontSize !== "default") {
+        // 다음에 입력할 텍스트에 적용될 기본 마크 설정 (포커스 없이)
+        editor.chain().setMark("textStyle", { fontSize: defaultFontSize }).run();
+      }
+    },
     // SSR 오류 방지를 위한 설정
     immediatelyRender: false,
   });
@@ -130,14 +140,21 @@ export const useTextEditor = (props: TextEditorProps) => {
   // 선택 상태와 UI 동기화
   useEffect(() => {
     if (!editor) return;
+
+    // 브라우저가 CSS 색상을 rgb() 형식으로 정규화하므로 hex로 변환
+    const rgbToHex = (color: string): string => {
+      const match = color.match(/^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)$/);
+      if (!match) return color;
+      const [, r, g, b] = match;
+      return `#${Number(r).toString(16).padStart(2, '0')}${Number(g).toString(16).padStart(2, '0')}${Number(b).toString(16).padStart(2, '0')}`;
+    };
     
     const updateUI = () => {
       const attrs = editor.getAttributes("textStyle");
       setFontSize(attrs.fontSize ?? "default");
-      
-      // color는 별도로 확인
-      const colorMark = editor.getAttributes("color");
-      setTextColor(colorMark.color ?? "default");
+      // Color extension은 textStyle 마크 안에 color를 저장, rgb() → hex 정규화
+      const rawColor = attrs.color;
+      setTextColor(rawColor ? rgbToHex(rawColor) : "default");
     };
     
     editor.on("selectionUpdate", updateUI);
@@ -249,12 +266,12 @@ export const useTextEditor = (props: TextEditorProps) => {
       // 1. 선택된 텍스트가 있으면 해당 영역에 색상만 적용 (개행 유지)
       // 2. 선택된 텍스트가 없으면 다음에 입력할 텍스트에 색상 적용
       if (color === "default") {
-        if (hasSelection) {
-          // 선택된 텍스트가 있으면 색상만 제거 (선택 영역은 그대로 유지)
-          editor.chain().focus().unsetColor().run();
+        if (defaultTextColor) {
+          // defaultTextColor가 전달된 경우(FAQ 전용): 해당 색상을 인라인 저장
+          editor.chain().focus().setColor(defaultTextColor).run();
         } else {
-          // 선택된 텍스트가 없으면 다음 입력에 기본 색상 적용
-        editor.chain().focus().unsetColor().run();
+          // 기본: 기존 동작 유지 (인라인 색상 제거)
+          editor.chain().focus().unsetColor().run();
         }
       } else {
         if (hasSelection) {
@@ -277,7 +294,7 @@ export const useTextEditor = (props: TextEditorProps) => {
         onChange?.(compressedHtml);
       }, 200);
     },
-    [editor, onChange],
+    [editor, onChange, defaultTextColor],
   );
 
   return {

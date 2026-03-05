@@ -30,7 +30,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "비접수", value: "none" },
             { label: "접수중", value: "ing" },
             { label: "접수마감", value: "done" },
-            { label: "내부마감", value: "final_closed" },
+            { label: "최종마감", value: "final_closed" },
           ],
         },
         {
@@ -129,7 +129,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "접수중", value: "ing" },
             { label: "비접수", value: "none" },
             { label: "접수마감", value: "done" },
-            { label: "내부마감", value: "final_closed" },
+            { label: "최종마감", value: "final_closed" },
           ],
         },
         {

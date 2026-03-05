@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import SectionPanel from '@/components/main/SectionPanel';
 import GallerySkeleton from './components/GallerySkeleton';
 import GalleryList from './components/GalleryList';
 import MoreButton from './components/MoreButton';
@@ -58,24 +57,21 @@ export default function GallerySection({ className }: GallerySectionProps) {
 
   return (
     <>
-      <SectionPanel
-        title="대회사진 갤러리"
-        showChevron={false}
-        fullBleed
-        containerClassName={`bg-gray-50 ${className || ''}`}
-        contentClassName="pt-2"
-      >
-        <div className="relative">
-          <div className="absolute right-8 md:right-9 lg:right-10 -top-12 md:-top-16 z-20 flex items-center gap-6">
+      <div className={`bg-gray-50 pt-8 ${className || ''}`}>
+        <div className="max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10">
+          <div className="flex items-end justify-between">
+            <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
+              대회사진 갤러리
+            </h2>
             <Link
               href={GALLERY_PAGE_PATH}
-              className="text-sm md:text-base text-gray-700 hover:text-gray-900 transition-colors duration-200"
+              className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
             >
               더보기 &gt;
             </Link>
           </div>
         </div>
-      </SectionPanel>
+      </div>
 
       <div className="relative w-screen left-1/2 -translate-x-1/2 h-[330px] md:h-[405px] flex items-center justify-center bg-gray-50">
         <div className="w-full max-w-6xl px-4 md:px-6">
@@ -118,6 +114,9 @@ export default function GallerySection({ className }: GallerySectionProps) {
           </div>
         </div>
       </div>
+
+      {/* 카드 섹션 하단 패딩 (타이틀 상단 pt-8과 동일) */}
+      <div className="w-screen left-1/2 -translate-x-1/2 relative bg-gray-50 pb-8" />
     </>
   );
 }
