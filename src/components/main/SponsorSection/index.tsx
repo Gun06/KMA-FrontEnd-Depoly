@@ -87,12 +87,30 @@ export default function SponsorSection() {
     // 메인 사이트 스폰서 섹션 스크롤 속도 (값이 작을수록 느림)
     const speed = 0.7
 
+    const RESIZE_THROTTLE_MS = 120
+    let lastResizeAt = 0
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null
     const updateWidth = () => {
       if (!listRef.current) return
       listWidth = listRef.current.scrollWidth
     }
+    const throttledUpdateWidth = () => {
+      const now = Date.now()
+      if (now - lastResizeAt < RESIZE_THROTTLE_MS) {
+        if (resizeTimer == null) {
+          resizeTimer = setTimeout(() => {
+            updateWidth()
+            lastResizeAt = Date.now()
+            resizeTimer = null
+          }, RESIZE_THROTTLE_MS)
+        }
+        return
+      }
+      lastResizeAt = now
+      updateWidth()
+    }
 
-    const resizeObserver = new ResizeObserver(updateWidth)
+    const resizeObserver = new ResizeObserver(throttledUpdateWidth)
     resizeObserver.observe(listRef.current)
 
     const animate = () => {
@@ -114,6 +132,7 @@ export default function SponsorSection() {
 
     return () => {
       cancelAnimationFrame(animationFrameId)
+      if (resizeTimer != null) clearTimeout(resizeTimer)
       resizeObserver.disconnect()
     }
   }, [banners.length])

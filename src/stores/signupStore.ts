@@ -137,7 +137,7 @@ const initialState: SignupState = {
       password: '',
       passwordConfirm: '',
     },
-    personal: {
+      personal: {
       name: '',
       birthDate: '',
       gender: '',

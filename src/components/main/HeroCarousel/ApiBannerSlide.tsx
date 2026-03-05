@@ -68,8 +68,8 @@ export default function ApiBannerSlide({
   return (
     <SlideWrapper
       {...wrapperProps}
-      className="relative block w-full hero-slide overflow-hidden motion-safe:transition-all motion-safe:duration-300"
-      style={{ height: 'var(--heroH, clamp(220px, 48vw, 680px))' }}
+      className="relative block w-full hero-slide overflow-hidden"
+      style={{ height: 'var(--heroH, 480px)' }}
     >
       <Image
         src={imageUrl || '/placeholder.svg'}

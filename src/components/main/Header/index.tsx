@@ -225,9 +225,15 @@ export default function Header() {
     };
 
     updateMainOffset();
-    window.addEventListener('resize', updateMainOffset);
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateMainOffset, 100);
+    };
+    window.addEventListener('resize', debouncedResize);
     return () => {
-      window.removeEventListener('resize', updateMainOffset);
+      window.removeEventListener('resize', debouncedResize);
+      if (resizeTimer) clearTimeout(resizeTimer);
     };
   }, [isBannerVisible]);
 

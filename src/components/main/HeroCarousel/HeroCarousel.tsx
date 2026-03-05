@@ -53,10 +53,11 @@ export default function MarathonHeroCarousel() {
 
   return (
     <div
-      className="relative w-full hero-section motion-safe:transition-all motion-safe:duration-300"
+      className="relative w-full hero-section"
       style={{
-        height: 'var(--heroH, clamp(220px, 48vw, 680px))',
-        minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))',
+        height: 'var(--heroH, 480px)',
+        minHeight: 'var(--heroH, 480px)',
+        contain: 'layout',
       }}
     >
       {/* KMA-Mobile 스타일: 단순 스켈레톤 (ShimmerSkeleton과 유사) */}
@@ -64,7 +65,7 @@ export default function MarathonHeroCarousel() {
         className="absolute inset-0 w-full h-full overflow-hidden transition-opacity duration-300"
         style={{
           height: '100%',
-          minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))',
+          minHeight: 'var(--heroH, 480px)',
           opacity: showSkeleton ? 1 : 0,
           zIndex: showSkeleton ? 20 : 0,
           pointerEvents: showSkeleton ? 'auto' : 'none',
@@ -80,7 +81,7 @@ export default function MarathonHeroCarousel() {
         }`}
         style={{ 
           height: '100%', 
-          minHeight: 'var(--heroH, clamp(220px, 48vw, 680px))' // fallback 추가
+          minHeight: 'var(--heroH, 480px)'
         }}
       >
       <Swiper
@@ -156,11 +157,12 @@ export default function MarathonHeroCarousel() {
         </div>
       </div>
 
-      {/* KMA-Mobile 스타일: 높이 및 텍스트 애니메이션 */}
+      {/* 리사이즈 시 깜빡임 방지: vw 대신 브레이크포인트 고정 높이 사용 */}
       <style jsx global>{`
-        .hero-section { --heroH: clamp(220px, 48vw, 680px); }
-        @media (max-width: 1023px) { .hero-section { --heroH: clamp(200px, 44vw, 560px); } }
-        /* 모바일: KMA-Mobile 240.h에 맞춘 고정 높이감 */
+        .hero-section { --heroH: 560px; }
+        @media (max-width: 1279px) { .hero-section { --heroH: 480px; } }
+        @media (max-width: 1023px) { .hero-section { --heroH: 400px; } }
+        @media (max-width: 767px) { .hero-section { --heroH: 320px; } }
         @media (max-width: 639px) { .hero-section { --heroH: 240px; } }
         .swiper-slide .hero-anim {
           opacity: 0;

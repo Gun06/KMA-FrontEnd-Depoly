@@ -2,10 +2,44 @@
 
 import React, { useEffect, useState } from 'react';
 import Image, { StaticImageData } from 'next/image';
-import ActionButtons from './ActionButtons';
-import { TopSectionConfig, getTopSectionConfig } from './topSectionConfig';
+import { TopSectionConfig } from './topSectionConfig';
 import { EventTopSectionInfo } from '@/types/event';
 import { formatDate } from '@/utils/formatDate';
+
+/** mainpage-images API 응답을 EventTopSectionInfo로 정규화 (camelCase / snake_case 모두 처리) */
+function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): EventTopSectionInfo | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const get = (camel: string, snake: string): string => {
+    const v = (raw[camel] ?? raw[snake]) as string | undefined;
+    return typeof v === 'string' ? v : '';
+  };
+  const id = get('id', 'id');
+  const nameKr = get('nameKr', 'name_kr');
+  const nameEng = get('nameEng', 'name_eng');
+  const startDate = get('startDate', 'start_date');
+  const region = get('region', 'region');
+  const mainBannerColor = get('mainBannerColor', 'main_banner_color');
+  const mainBannerPcImageUrl = get('mainBannerPcImageUrl', 'main_banner_pc_image_url');
+  const mainBannerMobileImageUrl = get('mainBannerMobileImageUrl', 'main_banner_mobile_image_url');
+  const resolvedId = typeof id === 'string' && id ? id : String(raw?.id ?? '');
+  return {
+    id: resolvedId,
+    nameKr,
+    nameEng,
+    startDate,
+    region,
+    mainBannerColor,
+    mainBannerPcImageUrl,
+    mainBannerMobileImageUrl,
+  };
+}
+
+function hasBannerImages(info: EventTopSectionInfo | null): boolean {
+  if (!info) return false;
+  const pc = (info.mainBannerPcImageUrl ?? '').trim();
+  const mobile = (info.mainBannerMobileImageUrl ?? '').trim();
+  return pc.length > 0 || mobile.length > 0;
+}
 
 interface TopSectionProps {
   eventId?: string;
@@ -25,14 +59,15 @@ export default function TopSection({
   config,
   eventInfo: propEventInfo,
 }: TopSectionProps) {
-  // 캐시된 데이터를 즉시 복구
+  // 캐시된 데이터를 즉시 복구 (정규화하여 반환)
   const getCachedEventInfo = (): EventTopSectionInfo | null => {
     if (typeof window === 'undefined' || !eventId) return null;
     try {
       const raw = localStorage.getItem(`hero_main_${eventId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      return parsed?.data || null;
+      const data = parsed?.data;
+      return normalizeMainPageImagesResponse(data && typeof data === 'object' ? data : null);
     } catch {
       return null;
     }
@@ -43,7 +78,7 @@ export default function TopSection({
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // 컴포넌트 마운트 후 데이터 로드
+  // 컴포넌트 마운트 후 데이터 로드 (캐시는 정규화된 형태로 적용)
   useEffect(() => {
     setIsMounted(true);
     if (propEventInfo) {
@@ -56,47 +91,41 @@ export default function TopSection({
     }
   }, [propEventInfo]);
 
-  // 설정 데이터 가져오기 (config prop 또는 eventId로 조회)
-  const sectionConfig =
-    config ||
-    (eventId
-      ? getTopSectionConfig(eventId)
-      : getTopSectionConfig('marathon2025'));
-
-  // API에서 이벤트 정보 가져오기 (마운트 후 캐시가 없을 때만)
+  // API에서 이벤트 정보 가져오기 (캐시 없거나 캐시에 배너 이미지가 없을 때 재요청)
   useEffect(() => {
     if (!isMounted || propEventInfo || !eventId) return;
 
     const fetchEventInfo = async () => {
-      // 캐시가 있으면 로딩하지 않음
-      if (getCachedEventInfo()) return;
+      const cached = getCachedEventInfo();
+      // 캐시에 배너 이미지가 있으면 스킵 (이미지 없으면 더미처럼 보이므로 재요청)
+      if (cached && hasBannerImages(cached)) return;
 
       setIsLoading(true);
       setError(null);
       try {
-        // public API 직접 호출
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-
-        // 환경 변수 체크
         if (!API_BASE_URL) {
           setError('API 서버 설정이 필요합니다.');
           return;
         }
 
         const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/mainpage-images`;
-
         const response = await fetch(API_ENDPOINT);
 
         if (response.ok) {
           const data = await response.json();
-          setEventInfo(data);
-          // 캐시에 저장
-          try {
-            localStorage.setItem(
-              `hero_main_${eventId}`,
-              JSON.stringify({ data, ts: Date.now() })
-            );
-          } catch {}
+          const normalized = normalizeMainPageImagesResponse(
+            data && typeof data === 'object' ? data : null
+          );
+          if (normalized) {
+            setEventInfo(normalized);
+            try {
+              localStorage.setItem(
+                `hero_main_${eventId}`,
+                JSON.stringify({ data: normalized, ts: Date.now() })
+              );
+            } catch {}
+          }
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -132,27 +161,19 @@ export default function TopSection({
     null;
 
   const hasImages = Boolean(desktopImage || mobileImage);
-  const useGradient = sectionConfig.useGradientBackground ?? true;
 
-  // 제목과 부제목 결정 (API 데이터 우선, 캐시 데이터도 고려)
-  // SSR/CSR 일치를 위해 마운트 전에는 config만 사용
-  const title = (isMounted && eventInfo)
-    ? {
-        korean: eventInfo.nameKr || '',
-        english: eventInfo.nameEng || '',
-      }
-    : sectionConfig.title;
+  // 제목/부제목은 API 데이터만 사용 (더미 config 제거)
+  const title = resolvedInfo
+    ? { korean: resolvedInfo.nameKr || '', english: resolvedInfo.nameEng || '' }
+    : { korean: '', english: '' };
+  const subtitle = resolvedInfo
+    ? `${formatDate(resolvedInfo.startDate || '')} • ${resolvedInfo.region || ''}`
+    : '';
 
-  const subtitle = (isMounted && eventInfo)
-    ? `${formatDate(eventInfo.startDate || '')} • ${eventInfo.region || ''}`
-    : sectionConfig.subtitle;
+  if (!eventId) return null;
 
-  // eventId가 없으면 렌더링하지 않음
-  if (!eventId) {
-    return null;
-  }
-
-  const showSkeleton = (isLoading || !isMounted) && !eventInfo && !propEventInfo;
+  // 이미지가 없으면 스켈레톤만 표시 (더미 그라데이션/텍스트 제거)
+  const showSkeleton = !hasImages || ((isLoading || !isMounted) && !eventInfo && !propEventInfo);
 
   if (error && !eventInfo) {
     return (
@@ -231,100 +252,26 @@ export default function TopSection({
         />
       )}
 
-      {/* 배경 장식 원형 요소들 (그라데이션 배경일 때만 표시, 스켈레톤이 아닐 때만) */}
-      {!showSkeleton && !hasImages && useGradient && (
-        <div className="absolute inset-0">
-          {/* 큰 원형 요소 - 우상단 */}
-          <div className="absolute -top-20 -right-20 w-96 h-96 md:w-[500px] md:h-[500px] rounded-full border-4 border-white/20" />
-          <div className="absolute -top-32 -right-32 w-80 h-80 md:w-[400px] md:h-[400px] rounded-full border-2 border-white/10" />
-
-          {/* 중간 원형 요소 - 우하단 */}
-          <div className="absolute -bottom-16 -right-16 w-64 h-64 md:w-80 md:h-80 rounded-full border-[3px] border-white/15" />
-          <div className="absolute -bottom-24 -right-24 w-48 h-48 md:w-60 md:h-60 rounded-full border-2 border-white/10" />
-
-          {/* 작은 원형 요소들 - 좌측 */}
-          <div className="absolute top-1/3 -left-8 w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-white/15" />
-          <div className="absolute bottom-1/4 -left-12 w-24 h-24 md:w-32 md:h-32 rounded-full border border-white/10" />
-        </div>
-      )}
-
-      {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 */}
-      {!showSkeleton && (
-        <div
-          className={`${
-            hasImages
-              ? 'absolute inset-0 z-10 flex items-center px-4 md:px-8'
-              : 'relative z-10 flex items-center min-h-[500px] md:min-h-[600px] px-4 md:px-8'
-          }`}
-        >
+      {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 (배너 이미지 있을 때만) */}
+      {!showSkeleton && hasImages && (
+        <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
           <div className="container mx-auto">
-            <div
-              className={`text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 ${sectionConfig.textColor || 'text-white'}`}
-            >
-              {/* 제목 */}
-              {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
-              {/* <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-                <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
+            <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 text-white">
+              {/* 배너 위 접근성/SEO용 투명 텍스트 */}
+              <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
+                <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3 opacity-0">
                   {title.english}
                 </div>
-                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
+                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core opacity-0">
                   {title.korean}
                 </div>
-              </h1> */}
-
-              {/* 날짜 */}
-              {/* 기존 코드 - 나중에 사용할 수 있으므로 주석처리 */}
-              {/* <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
+              </h1>
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium opacity-0">
                 {subtitle}
-              </p> */}
-
-              {/* 사진 부분용 투명 텍스트 */}
-              {hasImages && (
-                <>
-                  <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3 opacity-0">
-                      {title.english}
-                    </div>
-                    <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core opacity-0">
-                      {title.korean}
-                    </div>
-                  </h1>
-                  <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium opacity-0">
-                    {subtitle}
-                  </p>
-                </>
-              )}
-
-              {/* 그라데이션 배경용 기존 텍스트 */}
-              {!hasImages && (
-                <>
-                  <h1 className="font-vitro-core mb-4 md:mb-6 lg:mb-8 leading-tight">
-                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl mb-2 sm:mb-3">
-                      {title.english}
-                    </div>
-                    <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-vitro-core">
-                      {title.korean}
-                    </div>
-                  </h1>
-                  <p className="text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 md:mb-10 lg:mb-12 font-medium">
-                    {subtitle}
-                  </p>
-                </>
-              )}
-
-              {/* 버튼 그룹 - 플로팅 버튼으로 이동 */}
-              {/* <ActionButtons
-                eventId={eventId || eventInfo?.id || sectionConfig.eventId}
-                className="justify-start"
-              /> */}
+              </p>
             </div>
           </div>
         </div>
-      )}
-
-      {/* 하단 그라데이션 오버레이 (그라데이션 배경일 때만, 스켈레톤이 아닐 때만) */}
-      {!showSkeleton && !hasImages && useGradient && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-blue-900/30 to-transparent" />
       )}
     </div>
   );
