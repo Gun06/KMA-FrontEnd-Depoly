@@ -6,8 +6,8 @@ import { TopSectionConfig } from './topSectionConfig';
 import { EventTopSectionInfo } from '@/types/event';
 import { formatDate } from '@/utils/formatDate';
 
-/** mainpage-images API 응답을 EventTopSectionInfo로 정규화 (camelCase / snake_case 모두 처리) */
-function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): EventTopSectionInfo | null {
+/** mainpage-images API 응답 정규화 (camelCase / snake_case). 캐시에 메인+중간배너 모두 저장해 MiddleSection에서 사용 */
+function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): EventTopSectionInfo & { mainOutlinePcImageUrl: string; mainOutlineMobileImageUrl: string } | null {
   if (!raw || typeof raw !== 'object') return null;
   const get = (camel: string, snake: string): string => {
     const v = (raw[camel] ?? raw[snake]) as string | undefined;
@@ -21,6 +21,8 @@ function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): E
   const mainBannerColor = get('mainBannerColor', 'main_banner_color');
   const mainBannerPcImageUrl = get('mainBannerPcImageUrl', 'main_banner_pc_image_url');
   const mainBannerMobileImageUrl = get('mainBannerMobileImageUrl', 'main_banner_mobile_image_url');
+  const mainOutlinePcImageUrl = get('mainOutlinePcImageUrl', 'main_outline_pc_image_url');
+  const mainOutlineMobileImageUrl = get('mainOutlineMobileImageUrl', 'main_outline_mobile_image_url');
   const resolvedId = typeof id === 'string' && id ? id : String(raw?.id ?? '');
   return {
     id: resolvedId,
@@ -31,6 +33,8 @@ function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): E
     mainBannerColor,
     mainBannerPcImageUrl,
     mainBannerMobileImageUrl,
+    mainOutlinePcImageUrl,
+    mainOutlineMobileImageUrl,
   };
 }
 
