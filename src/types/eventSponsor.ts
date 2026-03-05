@@ -8,6 +8,7 @@ export interface EventSponsorBanner {
   providerName: string;
   bannerType: BannerType;
   static: boolean;
+  badge?: boolean; // 배지 표시 여부
 }
 
 export interface EventSponsorResponse {

@@ -55,6 +55,7 @@ export interface EventBannerInfo {
   url: string; // 배너 링크 URL
   bannerType: BannerType; // 배너 타입
   static: boolean; // 정적 배너 여부
+  badge?: boolean; // 배지 표시 여부
 }
 
 // 서버로 전송할 대회 생성 요청 데이터 (기념품/종목 제외)
@@ -78,6 +79,7 @@ export interface EventBannerUpdateInfo {
   url: string; // 배너 링크 URL
   bannerType: BannerType; // 배너 타입
   static: boolean; // 정적 배너 여부
+  badge?: boolean; // 배지 표시 여부
 }
 
 // 서버로 전송할 대회 수정 요청 데이터
@@ -211,24 +213,28 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
       link?: string;
       file?: UploadItem[];
       enabled?: boolean;
+      badge?: boolean; // 배지 표시 여부
     }>;
     organizers?: Array<{
       name?: string;
       link?: string;
       file?: UploadItem[];
       enabled?: boolean;
+      badge?: boolean; // 배지 표시 여부
     }>;
     sponsors?: Array<{
       name?: string;
       link?: string;
       file?: UploadItem[];
       enabled?: boolean;
+      badge?: boolean; // 배지 표시 여부
     }>;
     assists?: Array<{
       name?: string;
       link?: string;
       file?: UploadItem[];
       enabled?: boolean;
+      badge?: boolean; // 배지 표시 여부
     }>;
   };
   applyStatus?: RegStatus;

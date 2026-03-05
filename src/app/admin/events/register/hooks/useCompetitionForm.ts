@@ -24,6 +24,7 @@ export type PartyItem = {
   link: string;
   file: UploadItem[]; // 단일(0~1개)라도 배열로 유지
   enabled?: boolean; // 기본 true
+  badge?: boolean; // 배지 표시 여부, 기본 true
 };
 
 /** ===== 유틸 ===== */
@@ -135,24 +136,28 @@ export type UseCompetitionPrefill = Partial<
         link?: string;
         file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
+        badge?: boolean; // 배지 표시 여부
       }>;
       organizers?: Array<{
         name?: string;
         link?: string;
         file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
+        badge?: boolean; // 배지 표시 여부
       }>;
       sponsors?: Array<{
         name?: string;
         link?: string;
         file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
+        badge?: boolean; // 배지 표시 여부
       }>;
       assists?: Array<{
         name?: string;
         link?: string;
         file?: UploadItem[] | Array<{ url: string }>;
         enabled?: boolean;
+        badge?: boolean; // 배지 표시 여부
       }>;
     };
     /** 신청여부 프리필 */
@@ -302,7 +307,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [groups, setGroups] = React.useState<CourseGroup[]>([emptyGroup]);
 
   // 파티
-  const emptyParty: PartyItem = { name: '', link: '', file: [], enabled: false }; // 기본값 OFF
+  const emptyParty: PartyItem = { name: '', link: '', file: [], enabled: false, badge: false }; // 기본값 OFF, badge는 false (등록 시 기본적으로 체크 안됨)
   const [hostItems, setHostItems] = React.useState<PartyItem[]>([emptyParty]);
   const [organizerItems, setOrganizerItems] = React.useState<PartyItem[]>([
     emptyParty,
@@ -515,6 +520,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       link?: string;
       file?: UploadItem[] | Array<{ url: string }>;
       enabled?: boolean;
+      badge?: boolean; // 배지 표시 여부
     }): PartyItem => {
       // API에서 받은 URL만 있는 형태를 UploadItem 형태로 변환
       const convertFiles = (
@@ -547,6 +553,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         link: p?.link ?? '',
         file: convertFiles(p?.file),
         enabled: p?.enabled !== false,
+        badge: p?.badge !== false, // 기본값 true
       };
     };
 
@@ -563,6 +570,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
             link: '',
             file: [],
             enabled: true,
+            badge: true,
           }))
         );
       if (prefill.organizers?.length)
@@ -572,6 +580,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
             link: '',
             file: [],
             enabled: true,
+            badge: true,
           }))
         );
       if (prefill.sponsors?.length)
@@ -581,6 +590,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
             link: '',
             file: [],
             enabled: true,
+            badge: true,
           }))
         );
       if (prefill.assists?.length)
@@ -590,6 +600,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
             link: '',
             file: [],
             enabled: true,
+            badge: true,
           }))
         );
     }

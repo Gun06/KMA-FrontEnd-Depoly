@@ -179,6 +179,7 @@ export function transformApiResponseToFormPrefill(
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
         enabled: banner.static ?? false,
+        badge: banner.badge !== false, // 기본값 true
       })) || [],
     organizers: eventBanners
       ?.filter((banner) => banner.bannerType === 'ORGANIZER')
@@ -187,6 +188,7 @@ export function transformApiResponseToFormPrefill(
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
         enabled: banner.static ?? false,
+        badge: banner.badge !== false, // 기본값 true
       })) || [],
     sponsors: eventBanners
       ?.filter((banner) => banner.bannerType === 'SPONSOR')
@@ -195,6 +197,7 @@ export function transformApiResponseToFormPrefill(
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
         enabled: banner.static ?? false,
+        badge: banner.badge !== false, // 기본값 true
       })) || [],
     assists: eventBanners
       ?.filter((banner) => banner.bannerType === 'ASSIST')
@@ -203,6 +206,7 @@ export function transformApiResponseToFormPrefill(
         link: banner.url || '',
         file: banner.imageUrl ? [{ url: banner.imageUrl }] : [],
         enabled: banner.static ?? false,
+        badge: banner.badge !== false, // 기본값 true
       })) || [],
   };
 

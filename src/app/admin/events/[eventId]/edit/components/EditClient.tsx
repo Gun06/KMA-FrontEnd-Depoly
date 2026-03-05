@@ -292,6 +292,7 @@ export default function EditClient({
           providerName: banner.providerName,
           bannerType: banner.bannerType,
           static: banner.static,
+          badge: banner.badge,
         })),
         apiData?.eventInfo?.eventStatus
       );

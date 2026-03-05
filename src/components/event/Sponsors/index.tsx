@@ -12,6 +12,7 @@ type Logo = {
   width?: number
   height?: number
   isFixed?: boolean // 고정 스폰서 여부
+  badge?: boolean // 배지 표시 여부
 }
 
 interface SponsorsMarqueeProps {
@@ -38,7 +39,8 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
     src: banner.imgUrl,
     alt: banner.providerName,
     href: banner.imglinkedUrl,
-    isFixed: banner.static
+    isFixed: banner.static,
+    badge: banner.badge !== false, // 기본값 true
   });
   
   // 스폰서 데이터 분류 - 모든 배너를 합쳐서 타입별로 분류
@@ -133,11 +135,13 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
       sponsor: 'bg-amber-500',
       assist: 'bg-emerald-500',
     }
-    const badge = (
+    // 배지 표시 여부 확인 (badge가 false가 아니면 표시, 기본값 true)
+    const showBadge = entry.logo.badge !== false;
+    const badge = showBadge ? (
       <span className={`absolute left-0 top-0 inline-flex items-center px-2.5 py-1 text-[10px] md:text-[11px] font-semibold text-white rounded-tl-2xl rounded-br-xl shadow-sm ${badgeColorMap[entry.type]}`}>
         {labelMap[entry.type]}
       </span>
-    )
+    ) : null;
     const card = (
       <div className="relative h-16 w-[160px] md:h-24 md:w-[240px] rounded-2xl border border-black/10 bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
         {badge}

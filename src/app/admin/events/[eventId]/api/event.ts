@@ -58,6 +58,7 @@ export interface EventDetailApiResponse {
     providerName: string;
     bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
     static: boolean;
+    badge?: boolean; // 배지 표시 여부
   }>;
   souvenirs?: Array<{
     id: string;

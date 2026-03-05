@@ -32,6 +32,33 @@ export default function StatisticsDisplay({ data, distanceData }: StatisticsDisp
     };
   })();
 
+  // 입금률 계산
+  const paidRate = (() => {
+    const totalMatch = data.totalParticipants?.match(/(\d+)/);
+    const completedMatch = data.totalCompletedParticipants?.match(/(\d+)/);
+    const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+    const completed = completedMatch ? parseInt(completedMatch[1], 10) : 0;
+    if (!total) return 0;
+    return Math.round((completed / total) * 100);
+  })();
+
+  // 환불 처리율 계산 (환불 완료 / (환불 완료 + 환불 요청))
+  const refundProcessRate = (() => {
+    if (!data.totalRefunded) return null;
+    const refundedMatch = data.totalRefunded?.match(/(\d+)/);
+    const needRefundedMatch = data.totalNeedRefunded?.match(/(\d+)/);
+    const needPartitialRefundedMatch = data.totalNeedPartitialRefunded?.match(/(\d+)/);
+    
+    const refunded = refundedMatch ? parseInt(refundedMatch[1], 10) : 0;
+    const needRefunded = needRefundedMatch ? parseInt(needRefundedMatch[1], 10) : 0;
+    const needPartitialRefunded = needPartitialRefundedMatch ? parseInt(needPartitialRefundedMatch[1], 10) : 0;
+    
+    const totalRefundRequests = refunded + needRefunded + needPartitialRefunded;
+    if (!totalRefundRequests) return null;
+    
+    return Math.round((refunded / totalRefundRequests) * 100);
+  })();
+
   const renderParticipantCards = (
     participants: EventStatisticsResponse['eventCategoryParticipants']
   ) => {
@@ -145,6 +172,21 @@ export default function StatisticsDisplay({ data, distanceData }: StatisticsDisp
           <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-200">
             미결제 {formatNumber(data.totalUnpaidParticipants)}명
           </span>
+          {data.totalRefunded && (
+            <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-medium text-purple-200">
+              환불 완료 {formatNumber(data.totalRefunded)}명
+            </span>
+          )}
+          {data.totalNeedRefunded && (
+            <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-200">
+              전액 환불 요청 {formatNumber(data.totalNeedRefunded)}명
+            </span>
+          )}
+          {data.totalNeedPartitialRefunded && (
+            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200">
+              차액 환불 요청 {formatNumber(data.totalNeedPartitialRefunded)}명
+            </span>
+          )}
         </div>
       </div>
 
@@ -179,6 +221,30 @@ export default function StatisticsDisplay({ data, distanceData }: StatisticsDisp
                 {formatNumber(data.totalUnpaidParticipants)}명
               </span>
             </div>
+            {data.totalRefunded && (
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-slate-600">환불 완료</span>
+                <span className="text-lg font-semibold text-purple-700">
+                  {formatNumber(data.totalRefunded)}명
+                </span>
+              </div>
+            )}
+            {data.totalNeedRefunded && (
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-slate-600">전액 환불 요청</span>
+                <span className="text-lg font-semibold text-orange-700">
+                  {formatNumber(data.totalNeedRefunded)}명
+                </span>
+              </div>
+            )}
+            {data.totalNeedPartitialRefunded && (
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-slate-600">차액 환불 요청</span>
+                <span className="text-lg font-semibold text-amber-700">
+                  {formatNumber(data.totalNeedPartitialRefunded)}명
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -209,6 +275,32 @@ export default function StatisticsDisplay({ data, distanceData }: StatisticsDisp
                 />
               </div>
             </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                <span>입금률</span>
+                <span>{paidRate}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"
+                  style={{ width: `${paidRate}%` }}
+                />
+              </div>
+            </div>
+            {refundProcessRate !== null && (
+              <div>
+                <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                  <span>환불 처리율</span>
+                  <span>{refundProcessRate}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-100">
+                  <div
+                    className="h-2 rounded-full bg-purple-500"
+                    style={{ width: `${refundProcessRate}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
               <p className="text-[11px] font-medium text-slate-500">성별 비율 원문</p>
               <p className="mt-0.5 text-sm font-medium text-slate-800">

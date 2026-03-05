@@ -237,6 +237,7 @@ export class FormDataBuilder {
       url: banner.url,
       bannerType: banner.bannerType,
       static: banner.static,
+      badge: banner.badge === true ? true : (banner.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
     }));
 
     // eventCategoryUpdateInfo 생성 (기념품/종목은 나중에 별도 API로 전송 예정이므로 일단 빈 배열)
@@ -271,6 +272,7 @@ export class FormDataBuilder {
       providerName: string;
       bannerType: string;
       static: boolean;
+      badge?: boolean;
     }>
   ): Array<{
     imageUrl: string | null;
@@ -278,6 +280,7 @@ export class FormDataBuilder {
     url: string;
     bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
     static: boolean;
+    badge?: boolean;
   }> {
     // 기존 배너를 imageUrl로 매칭하기 위한 맵 생성 (서버 순서 변경과 관계없이 매칭)
     const existingBannerMap = new Map<string, {
@@ -286,6 +289,7 @@ export class FormDataBuilder {
       providerName: string;
       bannerType: string;
       static: boolean;
+      badge?: boolean;
     }>();
     (existingEventBanners || []).forEach(b => {
       // imageUrl을 키로 사용 (서버에서 순서가 바뀌어도 매칭 가능)
@@ -296,6 +300,7 @@ export class FormDataBuilder {
           providerName: b.providerName,
           bannerType: b.bannerType,
           static: b.static,
+          badge: b.badge,
         });
       }
     });
@@ -332,6 +337,7 @@ export class FormDataBuilder {
       url: string;
       bannerType: 'HOST' | 'ORGANIZER' | 'SPONSOR' | 'ASSIST';
       static: boolean;
+      badge?: boolean;
     }> = [];
 
     if (payload.partners) {
@@ -351,6 +357,7 @@ export class FormDataBuilder {
             url: h.link || '',
             bannerType: 'HOST',
             static: h.enabled === true,
+            badge: h.badge === true ? true : (h.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
           });
         });
       }
@@ -371,6 +378,7 @@ export class FormDataBuilder {
             url: o.link || '',
             bannerType: 'ORGANIZER',
             static: o.enabled === true,
+            badge: o.badge === true ? true : (o.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
           });
         });
       }
@@ -402,6 +410,7 @@ export class FormDataBuilder {
             url: s.link || '',
             bannerType: 'SPONSOR',
             static: s.enabled === true,
+            badge: s.badge === true ? true : (s.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
           });
         });
       }
@@ -433,6 +442,7 @@ export class FormDataBuilder {
             url: a.link || '',
             bannerType: 'ASSIST',
             static: a.enabled === true,
+            badge: a.badge === true ? true : (a.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
           });
         });
       }

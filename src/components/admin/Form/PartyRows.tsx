@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "@/utils/cn";
 import { useFormLayout } from "@/components/admin/Form/FormLayoutContext";
 import TextField from "@/components/common/TextField/TextField";
-import { Plus, Minus } from "lucide-react";
+import { Minus } from "lucide-react";
 import EventUploader from "@/components/common/Upload/EventUploader";
 import type { UploadItem } from "@/components/common/Upload/types";
 
@@ -54,6 +54,7 @@ export type PartyItem = {
   link: string;
   file: UploadItem[];
   enabled?: boolean;
+  badge?: boolean; // 배지 표시 여부
 };
 
 const ACTION_COL_W = 56;
@@ -67,6 +68,7 @@ type Props = {
   onChangeLink: (index: number, v: string) => void;
   onChangeFile: (index: number, files: UploadItem[]) => void;
   onToggleEnabled?: (index: number, next: boolean) => void;
+  onToggleBadge?: (index: number, next: boolean) => void;
 
   /** ✨ 읽기 모드일 때 텍스트 색만 연하게 */
   readOnly?: boolean;
@@ -79,12 +81,13 @@ type Props = {
 export default function PartyRows({
   kind,
   items,
-  onAdd,
+  onAdd: _onAdd,
   onRemove,
   onChangeName,
   onChangeLink,
   onChangeFile,
   onToggleEnabled,
+  onToggleBadge,
   readOnly = false,
   labelCellWidth,
   rowHeight,
@@ -99,16 +102,22 @@ export default function PartyRows({
   // ✅ readOnly일 때만 글씨색을 연하게
   const textCls = readOnly ? "text-[#646464]" : "text-neutral-900";
 
+  // 배지 체크박스 표시 여부 결정 (onToggleBadge가 있으면 표시)
+  const showBadgeColumn = !!onToggleBadge;
+
   return (
     <div
       className={cn("grid items-stretch", className)}
       style={{ 
-        gridTemplateColumns: `${lw}px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) ${ACTION_COL_W}px`
+        gridTemplateColumns: showBadgeColumn 
+          ? `${lw}px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 80px ${ACTION_COL_W}px`
+          : `${lw}px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) ${ACTION_COL_W}px`
       }}
     >
       {items.map((it, idx) => {
         const rowBorder = idx > 0 ? "border-t border-neutral-300" : "";
         const enabled = it.enabled !== false;
+        const badge = it.badge !== false; // 기본값 true
 
         return (
           <React.Fragment key={idx}>
@@ -177,7 +186,7 @@ export default function PartyRows({
 
             {/* 첨부 */}
             <div 
-              className={cn("bg-white flex items-center min-w-0 px-4", rowBorder)} 
+              className={cn("bg-white flex items-center min-w-0 px-4 border-r border-neutral-300", rowBorder)} 
               style={{ 
                 minHeight: effectiveRowHeight, 
                 width: '100%',
@@ -196,6 +205,30 @@ export default function PartyRows({
                 readOnly={readOnly}
               />
             </div>
+
+            {/* 배지 표시 체크박스 - 수정 페이지에서만 표시 */}
+            {showBadgeColumn && (
+              <div
+                className={cn("bg-white flex items-center justify-center border-r border-neutral-300", rowBorder)}
+                style={{ 
+                  minHeight: effectiveRowHeight, 
+                  width: '80px',
+                  minWidth: '80px',
+                  maxWidth: '80px'
+                }}
+              >
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={badge}
+                    onChange={(e) => onToggleBadge?.(idx, e.target.checked)}
+                    disabled={readOnly}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <span className={cn("text-[13px]", textCls)}>배지</span>
+                </label>
+              </div>
+            )}
 
             {/* 삭제 버튼 - 모든 행에 표시 */}
             <div

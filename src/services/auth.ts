@@ -281,8 +281,13 @@ export const loginWithHeaders = async (
   });
 
   if (!response.ok) {
-    await response.text().catch(() => '');
-    throw new Error(`로그인 실패: ${response.status}`);
+    // 에러 응답 본문 파싱하여 백엔드 메시지 추출
+    const errorBody = await safeParseJson(response);
+    const errorMessage = 
+      (isRecord(errorBody) && typeof errorBody.message === 'string')
+        ? errorBody.message
+        : `로그인 실패: ${response.status}`;
+    throw new Error(errorMessage);
   }
 
   // 헤더 우선 추출 (서버가 Expose 설정 제공)

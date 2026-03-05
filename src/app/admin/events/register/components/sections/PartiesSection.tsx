@@ -9,13 +9,15 @@ import { Plus } from "lucide-react";
 export default function PartiesSection({
   f,
   readOnly,
+  showBadge = false, // 등록 시에는 false, 수정 시에는 true
 }: {
   f: any;
   readOnly: boolean;
+  showBadge?: boolean;
 }) {
   const noop = () => {};
   const add        = (setter: any) => () =>
-    setter((p: any[]) => [...p, { name: "", link: "", file: [], enabled: false }]); // 기본값 OFF
+    setter((p: any[]) => [...p, { name: "", link: "", file: [], enabled: false, badge: false }]); // 기본값 OFF, badge는 false (등록 시 기본적으로 체크 안됨)
   const remove     = (setter: any) => (i: number) =>
     setter((p: any[]) => p.filter((_, idx) => idx !== i));
   const changeName = (setter: any) => (i: number, v: string) =>
@@ -26,6 +28,8 @@ export default function PartiesSection({
     setter((p: any[]) => p.map((it, j) => (j === i ? { ...it, file: files } : it)));
   const toggle     = (setter: any) => (i: number, v: boolean) =>
     setter((p: any[]) => p.map((it, j) => (j === i ? { ...it, enabled: v } : it)));
+  const toggleBadge = (setter: any) => (i: number, v: boolean) =>
+    setter((p: any[]) => p.map((it, j) => (j === i ? { ...it, badge: v } : it)));
 
   return (
     <div className="space-y-4">
@@ -59,6 +63,7 @@ export default function PartiesSection({
         onChangeLink={readOnly ? noop : changeLink(f.setHostItems)}
         onChangeFile={readOnly ? noop : changeFile(f.setHostItems)}
         onToggleEnabled={readOnly ? undefined : toggle(f.setHostItems)}
+        onToggleBadge={showBadge && !readOnly ? toggleBadge(f.setHostItems) : undefined}
         readOnly={readOnly}                                          
       />
       </FormTable>
@@ -92,6 +97,7 @@ export default function PartiesSection({
         onChangeLink={readOnly ? noop : changeLink(f.setOrganizerItems)}
         onChangeFile={readOnly ? noop : changeFile(f.setOrganizerItems)}
         onToggleEnabled={readOnly ? undefined : toggle(f.setOrganizerItems)}
+        onToggleBadge={showBadge && !readOnly ? toggleBadge(f.setOrganizerItems) : undefined}
         readOnly={readOnly}
       />
       </FormTable>
@@ -125,6 +131,7 @@ export default function PartiesSection({
         onChangeLink={readOnly ? noop : changeLink(f.setSponsorItems)}
         onChangeFile={readOnly ? noop : changeFile(f.setSponsorItems)}
         onToggleEnabled={readOnly ? undefined : toggle(f.setSponsorItems)}
+        onToggleBadge={showBadge && !readOnly ? toggleBadge(f.setSponsorItems) : undefined}
         readOnly={readOnly}
       />
       </FormTable>
@@ -158,6 +165,7 @@ export default function PartiesSection({
         onChangeLink={readOnly ? noop : changeLink(f.setAssistItems)}
         onChangeFile={readOnly ? noop : changeFile(f.setAssistItems)}
         onToggleEnabled={readOnly ? undefined : toggle(f.setAssistItems)}
+        onToggleBadge={showBadge && !readOnly ? toggleBadge(f.setAssistItems) : undefined}
         readOnly={readOnly}
       />
       </FormTable>
@@ -168,10 +176,13 @@ export default function PartiesSection({
           items={[
             { text: '※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다.' },
             {
-              text: '주최/주관/후원/협력은 대회 페이지의 Footer 상단에 위치합니다.',
+              text: '※ 주최/주관/후원/협력은 대회 페이지의 Footer 상단에 위치합니다.',
             },
             {
-              text: "고정시키고 싶은 배너는 'OFF'를, 자동 스크롤을 원하는 배너는 'ON'을 선택하세요.",
+              text: "※ 고정시키고 싶은 배너는 'OFF'를, 자동 스크롤을 원하는 배너는 'ON'을 선택하세요.",
+            },
+            {
+              text: '※ 기본적으로 배지가 표시됩니다. 배지를 숨기려면 배지 체크를 해제한 후 저장하세요.',
             },
             {
               text: '※ 항목명 앞에 "1|", "2|" 형식으로 번호를 붙이면 표시 순서를 정할 수 있습니다. 예) 1|주최명, 2|주최명',

@@ -165,6 +165,7 @@ export function transformApiDataToEventDetail(
       providerName: b.providerName,
       bannerType: b.bannerType,
       static: b.static,
+      badge: b.badge, // badge 필드 포함
     })),
   };
 }

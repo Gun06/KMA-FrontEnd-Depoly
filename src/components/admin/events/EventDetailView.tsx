@@ -67,6 +67,7 @@ export type EventDetailData = {
     providerName: string;
     bannerType: string;
     static: boolean;
+    badge?: boolean;
   }>;
 };
 
@@ -778,8 +779,10 @@ export default function EventDetailView({
                             : banner.bannerType === 'ORGANIZER'
                               ? 'bg-kma-blue'
                               : banner.bannerType === 'SPONSOR'
-                                ? 'bg-gray-600'
-                                : 'bg-gray-600'
+                                ? 'bg-amber-500'
+                                : banner.bannerType === 'ASSIST'
+                                  ? 'bg-emerald-500'
+                                  : 'bg-gray-600'
                         }`}
                       >
                         {banner.bannerType === 'HOST'
@@ -788,7 +791,9 @@ export default function EventDetailView({
                             ? '주관'
                             : banner.bannerType === 'SPONSOR'
                               ? '후원'
-                              : banner.bannerType}
+                              : banner.bannerType === 'ASSIST'
+                                ? '협력'
+                                : banner.bannerType}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -803,6 +808,20 @@ export default function EventDetailView({
                         }`}
                       >
                         {banner.static ? '고정' : '회전'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-pretendard font-medium text-gray-700">
+                        배지표시여부
+                      </span>
+                      <span
+                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 ${
+                          banner.badge !== false
+                            ? 'bg-green-600 text-white'
+                            : 'bg-red-600 text-white'
+                        }`}
+                      >
+                        {banner.badge !== false ? '공개' : '비공개'}
                       </span>
                     </div>
                     {banner.url && (

@@ -380,7 +380,7 @@ export default function EditForm({
         </FormTable>
 
         {/* 2. 배너 */}
-        <PartiesSection f={f} readOnly={readOnly} />
+        <PartiesSection f={f} readOnly={readOnly} showBadge={true} />
 
         {/* 3. 각 페이지별 이미지 등록 */}
         <UploadsSection f={f} readOnly={readOnly} />

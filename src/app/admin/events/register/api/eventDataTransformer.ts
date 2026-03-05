@@ -130,7 +130,7 @@ export class EventDataTransformer {
     const buildList = (
       type: EventBannerInfo['bannerType'],
       names: string[] | undefined,
-      partners?: Array<{ name?: string; link?: string; enabled?: boolean }>
+      partners?: Array<{ name?: string; link?: string; enabled?: boolean; badge?: boolean }>
     ) => {
       const count = Math.max(names?.length ?? 0, partners?.length ?? 0);
       for (let i = 0; i < count; i++) {
@@ -142,6 +142,7 @@ export class EventDataTransformer {
           url: p?.link ?? '',
           bannerType: type,
           static: p?.enabled === true, // ON이 고정, OFF가 고정 아님
+          // 등록 시에는 badge 필드를 보내지 않음 (백엔드가 기본값 true로 처리)
         });
       }
     };

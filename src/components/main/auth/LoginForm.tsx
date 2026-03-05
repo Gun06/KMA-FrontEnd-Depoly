@@ -81,13 +81,20 @@ export default function LoginForm() {
       }
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : '';
-      const normalizedMessage =
-        rawMessage.includes('400') ||
-        rawMessage.includes('401') ||
-        rawMessage.toLowerCase().includes('invalid') ||
-        rawMessage.toLowerCase().includes('unauthorized')
-          ? '아이디 또는 비밀번호를 다시 확인해 주세요.'
-          : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      // 백엔드에서 보낸 메시지가 있으면 우선 사용
+      // 백엔드 메시지가 일반적인 에러 형식이 아닌 경우에만 기본 메시지 사용
+      const normalizedMessage = 
+        rawMessage && 
+        !rawMessage.includes('로그인 실패:') && 
+        !rawMessage.includes('400') && 
+        !rawMessage.includes('401')
+          ? rawMessage // 백엔드 메시지 사용
+          : rawMessage.includes('400') ||
+            rawMessage.includes('401') ||
+            rawMessage.toLowerCase().includes('invalid') ||
+            rawMessage.toLowerCase().includes('unauthorized')
+            ? '아이디 또는 비밀번호를 다시 확인해 주세요.'
+            : '로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
       setError(normalizedMessage);
     } finally {
       setIsLoading(false);
