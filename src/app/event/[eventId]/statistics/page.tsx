@@ -7,7 +7,7 @@
 import React from 'react';
 import StatisticsDisplay from '@/app/admin/events/statistics/components/StatisticsDisplay';
 import StatisticsSkeleton from './components/StatisticsSkeleton';
-import { usePublicEventStatistics } from './hooks/usePublicStatistics';
+import { usePublicEventDistanceStatistics } from './hooks/usePublicStatistics';
 
 export default function PublicStatisticsPage({
   params,
@@ -17,10 +17,10 @@ export default function PublicStatisticsPage({
   const { eventId } = params;
   
   const {
-    data: statisticsData,
+    data: distanceStatisticsData,
     isLoading,
     error,
-  } = usePublicEventStatistics(eventId);
+  } = usePublicEventDistanceStatistics(eventId);
 
   return (
     <div className="min-h-screen bg-white">
@@ -41,8 +41,15 @@ export default function PublicStatisticsPage({
           </div>
         )}
 
-        {statisticsData && (
-          <StatisticsDisplay data={statisticsData} />
+        {distanceStatisticsData && (
+          <StatisticsDisplay 
+            data={{
+              ...distanceStatisticsData,
+              eventCategoryParticipants: [], // 카테고리별 통계 숨김
+            }} 
+            distanceData={distanceStatisticsData}
+            defaultDistanceExpanded={true}
+          />
         )}
       </div>
     </div>

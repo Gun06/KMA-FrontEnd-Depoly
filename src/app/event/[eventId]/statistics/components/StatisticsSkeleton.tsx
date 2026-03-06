@@ -7,78 +7,118 @@ import React from 'react';
 
 export default function StatisticsSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
-      {/* 대회명 스켈레톤 */}
-      <div className="bg-gradient-to-r from-gray-100 to-gray-200 p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="h-9 bg-gray-200 rounded w-2/5"></div>
-      </div>
-
-      {/* 주요 통계 카드 스켈레톤 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white p-5 rounded-lg shadow-md border-l-4 border-gray-300">
-            <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-            <div className="h-10 bg-gray-200 rounded w-32"></div>
-          </div>
-        ))}
-      </div>
-
-      {/* 추가 통계 정보 스켈레톤 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-            <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
-            <div className="h-6 bg-gray-200 rounded w-40"></div>
-          </div>
-        ))}
-      </div>
-
-      {/* 카테고리별 통계 스켈레톤 */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
+    <div className="space-y-5 animate-pulse">
+      {/* EVENT OVERVIEW 스켈레톤 */}
+      <div className="rounded-3xl border border-slate-900/10 bg-slate-900 px-5 py-5 shadow-xl shadow-slate-900/10 md:px-6">
+        <div className="h-3 w-32 bg-slate-700 rounded"></div>
+        <div className="mt-3 h-8 w-64 bg-slate-700 rounded md:h-9"></div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="border border-gray-200 rounded-lg p-5 bg-gray-50"
-            >
-              {/* 카테고리명 스켈레톤 */}
-              <div className="mb-4 pb-3 border-b border-gray-200">
-                <div className="h-5 bg-gray-200 rounded w-64"></div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 총 참가자 */}
-                <div className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-24"></div>
-                </div>
+              className="h-6 w-20 bg-slate-700/50 rounded-full"
+            ></div>
+          ))}
+        </div>
+      </div>
 
-                {/* 성별 정보 */}
-                <div className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="h-3 bg-gray-200 rounded w-16 mb-2"></div>
-                  <div className="space-y-1">
-                    <div className="h-4 bg-gray-200 rounded w-20"></div>
-                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+      {/* 핵심 지표 + 인사이트 스켈레톤 */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        {/* 핵심 지표 스켈레톤 */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-8">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="h-4 w-20 bg-slate-200 rounded"></div>
+            <div className="h-3 w-24 bg-slate-200 rounded"></div>
+          </div>
+          <div className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3">
+                <div className="h-4 w-24 bg-slate-200 rounded"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 인사이트 스켈레톤 */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-4">
+          <div className="h-4 w-16 bg-slate-200 rounded"></div>
+          <div className="mt-4 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i}>
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="h-3 w-12 bg-slate-200 rounded"></div>
+                  <div className="h-3 w-8 bg-slate-200 rounded"></div>
+                </div>
+                <div className="h-2 rounded-full bg-slate-100">
+                  <div className="h-2 w-1/2 rounded-full bg-slate-200"></div>
+                </div>
+              </div>
+            ))}
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="h-3 w-20 bg-slate-200 rounded"></div>
+              <div className="mt-2 h-4 w-32 bg-slate-200 rounded"></div>
+            </div>
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="h-3 w-16 bg-slate-200 rounded"></div>
+              <div className="mt-2 h-6 w-12 bg-slate-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 종목별 참가자 통계 스켈레톤 (열린 상태) */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex w-full items-center justify-between bg-slate-900 px-4 py-3">
+          <div>
+            <div className="h-4 w-32 bg-slate-700 rounded"></div>
+            <div className="mt-1 h-3 w-24 bg-slate-700/70 rounded"></div>
+          </div>
+          <div className="h-3 w-8 bg-slate-700/70 rounded"></div>
+        </div>
+
+        <div className="border-t border-slate-200 bg-slate-50/40 px-4 pb-4 pt-3">
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                {/* 카테고리명 및 배지 스켈레톤 */}
+                <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
+                  <div className="h-4 w-24 bg-slate-200 rounded"></div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="h-5 w-16 bg-emerald-100 rounded-full"></div>
+                    <div className="h-5 w-20 bg-rose-100 rounded-full"></div>
                   </div>
                 </div>
 
-                {/* 입금 완료 */}
-                <div className="bg-gray-100 rounded-lg p-4 border-2 border-gray-200">
-                  <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-20 mb-1"></div>
-                  <div className="h-3 bg-gray-200 rounded w-12"></div>
+                {/* 통계 카드 그리드 스켈레톤 */}
+                <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div
+                      key={j}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                    >
+                      <div className="h-3 w-16 bg-slate-200 rounded"></div>
+                      <div className="mt-1 h-5 w-12 bg-slate-200 rounded"></div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* 미입금 */}
-                <div className="bg-gray-100 rounded-lg p-4 border-2 border-gray-200">
-                  <div className="h-3 bg-gray-200 rounded w-16 mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded w-20 mb-1"></div>
-                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                {/* 입금 진행률 스켈레톤 */}
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between">
+                    <div className="h-3 w-20 bg-slate-200 rounded"></div>
+                    <div className="h-3 w-8 bg-slate-200 rounded"></div>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-2 w-1/3 rounded-full bg-slate-200"></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

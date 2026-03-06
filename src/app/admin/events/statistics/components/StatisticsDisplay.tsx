@@ -10,10 +10,11 @@ import { formatNumber, formatGenderPercentage, parseCategoryParticipants } from 
 interface StatisticsDisplayProps {
   data: EventStatisticsResponse;
   distanceData?: EventStatisticsResponse;
+  defaultDistanceExpanded?: boolean;
 }
 
-export default function StatisticsDisplay({ data, distanceData }: StatisticsDisplayProps) {
-  const [isDistanceExpanded, setIsDistanceExpanded] = useState(false);
+export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false }: StatisticsDisplayProps) {
+  const [isDistanceExpanded, setIsDistanceExpanded] = useState(defaultDistanceExpanded);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
   const distanceParticipants = distanceData?.eventCategoryParticipants ?? [];
 
