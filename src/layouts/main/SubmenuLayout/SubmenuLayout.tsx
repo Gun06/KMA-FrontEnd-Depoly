@@ -1,5 +1,4 @@
 import React from 'react'
-import MainHeader from '@/components/main/Header'
 import Image from 'next/image'
 import menubanner from '@/assets/images/main/menubanner.png'
 import homeIcon from '@/assets/icons/main/home.svg'
@@ -20,12 +19,6 @@ export default function SubmenuLayout({
 }: SubmenuLayoutProps) {
   return (
     <div className="min-h-[50vh] sm:min-h-screen flex flex-col">
-      {/* 헤더 */}
-      <MainHeader />
-      
-      {/* 헤더 아래 여유 공간 */}
-      <div className="pt-0 sm:pt-0 md:pt-0"></div>
-      
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
@@ -90,17 +83,11 @@ interface SubmenuLayoutThemedProps extends SubmenuLayoutProps {
 export function SubmenuLayoutThemed({ 
   children, 
   breadcrumb,
-  headerBgClass, 
-  accentColor 
+  headerBgClass: _headerBgClass, 
+  accentColor: _accentColor 
 }: SubmenuLayoutThemedProps) {
   return (
     <div className="flex flex-col">
-      {/* 헤더 */}
-      <MainHeader />
-      
-      {/* 헤더 아래 여유 공간 */}
-      <div className="pt-4 sm:pt-6 md:pt-8"></div>
-      
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}

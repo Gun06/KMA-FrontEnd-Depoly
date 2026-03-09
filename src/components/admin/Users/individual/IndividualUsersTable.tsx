@@ -196,7 +196,7 @@ export default function IndividualUsersTable({
       renderFilters={null}
       renderSearch={null}
       renderActions={Actions}
-      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
+      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center', bar: { totalTextFormatter: (t) => <><b>{t.toLocaleString()}</b>명의 회원</> } }}
       minWidth={1240}   // 1200으로 내려도 됨. 컬럼 폭은 1200 안에 들어가게 맞춰둠.
       allowTextSelection={true}
     />

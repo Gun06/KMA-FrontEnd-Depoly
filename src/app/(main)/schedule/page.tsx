@@ -7,7 +7,6 @@ import { useQueries } from '@tanstack/react-query';
 import MarathonCalendar from '@/components/common/MarathonCalendar';
 import Button from '@/components/common/Button/Button';
 import EventCard from '@/components/main/EventSection/EventCard';
-import MainHeader from '@/components/main/Header';
 import Image from 'next/image';
 import Link from 'next/link';
 import menubanner from '@/assets/images/main/menubanner.png';
@@ -235,12 +234,6 @@ export default function SchedulePage() {
 
   return (
     <div className="min-h-[50vh] sm:min-h-screen">
-      {/* 헤더 */}
-      <MainHeader />
-      
-      {/* 헤더 아래 여유 공간 */}
-      <div className="pt-0 sm:pt-0 md:pt-0"></div>
-      
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
@@ -289,10 +282,13 @@ export default function SchedulePage() {
         
         {/* 탭 버튼 + 날짜 선택 컨트롤 - 모바일 전용, 하나로 묶어서 상단 고정 */}
         {/* 배너가 스크롤되면 헤더 바로 아래에 고정되도록 스크롤 이벤트로 fixed 전환 */}
-        <div className={clsx(
-          "sm:hidden z-[100] bg-white shadow-sm",
-          isStickyFixed ? "fixed top-16 left-0 right-0" : "relative"
-        )}>
+        <div 
+          className={clsx(
+            "sm:hidden z-[100] bg-white shadow-sm",
+            isStickyFixed ? "fixed left-0 right-0" : "relative"
+          )}
+          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 64px)' } : undefined}
+        >
           {/* 탭 버튼들 */}
           <div className="px-2 pt-2 pb-2">
             <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
@@ -368,16 +364,26 @@ export default function SchedulePage() {
         {/* 페이지 콘텐츠 - 헤더와 동일한 너비로 맞춤 */}
         {/* 배너와 일정 사이 간격 줄이기 */}
         {/* 데스크탑에서 fixed로 전환될 때 컨텐츠가 겹치지 않도록 padding-top 추가 */}
-        <div className="w-full py-2 sm:py-4 lg:py-6" style={{ paddingTop: isStickyFixed ? 'calc(1rem + 64px)' : undefined }}>
+        <div 
+          className="w-full py-2 sm:py-4 lg:py-6" 
+          style={{ 
+            paddingTop: isStickyFixed 
+              ? 'calc(1rem + var(--kma-main-header-offset, 64px))' 
+              : undefined 
+          }}
+        >
           <div className="flex flex-col mx-auto w-full max-w-[1920px]">
 
         {/* 날짜 선택 컨트롤 - 데스크탑/태블릿 */}
         {/* 배너가 스크롤되면 헤더 바로 아래에 고정되도록 스크롤 이벤트로 fixed 전환 */}
         {/* 헤더와 정확히 맞추기 위해 헤더와 동일한 패딩 적용, 639px~1299px: px-12, 1299px 이상: px-20 */}
-        <div className={clsx(
-          "hidden sm:block mb-6 py-2 px-4 sm:px-12 min-[1299px]:px-20 border-t border-b border-l-0 border-r-0 border-[0.5px] border-gray-800 bg-white z-20",
-          isStickyFixed ? "fixed top-16 left-0 right-0" : "relative"
-        )}>
+        <div 
+          className={clsx(
+            "hidden sm:block mb-6 py-2 px-4 sm:px-12 min-[1299px]:px-20 border-t border-b border-l-0 border-r-0 border-[0.5px] border-gray-800 bg-white z-20",
+            isStickyFixed ? "fixed left-0 right-0" : "relative"
+          )}
+          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 64px)' } : undefined}
+        >
           <div className="flex flex-row gap-4 items-center justify-between">
           {/* 연도 선택 */}
           <div className="flex items-center gap-3">

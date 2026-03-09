@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import MainHeader from '@/components/main/Header';
 import Image from 'next/image';
 import Link from 'next/link';
 import menubanner from '@/assets/images/main/menubanner.png';
@@ -63,12 +62,6 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-[50vh] sm:min-h-screen flex flex-col">
-      {/* 헤더 */}
-      <MainHeader />
-      
-      {/* 헤더 아래 여유 공간 */}
-      <div className="pt-0 sm:pt-0 md:pt-0"></div>
-      
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}

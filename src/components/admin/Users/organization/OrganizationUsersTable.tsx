@@ -173,7 +173,7 @@ export default function OrganizationUsersTable({
       renderFilters={null}
       renderSearch={null}
       renderActions={Actions}
-      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
+      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center', bar: { totalTextFormatter: (t) => <><b>{t.toLocaleString()}</b>개의 단체</> } }}
       minWidth={1200}
       allowTextSelection={true}
     />

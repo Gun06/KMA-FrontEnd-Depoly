@@ -38,10 +38,10 @@ export function useHomepageInquiries(params: InquirySearchParams = {}, options: 
     'admin',
     {
       enabled,
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      placeholderData: (previousData) => previousData,
     },
     true // withAuth
   );
@@ -61,11 +61,11 @@ export function useHomepageInquiries(params: InquirySearchParams = {}, options: 
     `/api/v1/homepage/question/search?${queryParamsSearch.toString()}`,
     'admin',
     {
-      enabled: enabled && !!(keyword || questionSearchKey || questionSortKey || isAnswered !== undefined), // 검색 조건이 있을 때만 활성화
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
+      enabled: enabled && !!(keyword || questionSearchKey || questionSortKey || isAnswered !== undefined),
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      placeholderData: (previousData) => previousData,
     },
     true // withAuth
   );
@@ -93,10 +93,10 @@ export function useEventInquiries(eventId: string, params: InquirySearchParams =
     'admin',
     {
       enabled: enabled && !!eventId,
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      placeholderData: (previousData) => previousData,
     },
     true // withAuth
   );
@@ -116,11 +116,11 @@ export function useEventInquiries(eventId: string, params: InquirySearchParams =
     `/api/v1/${eventId}/question/search?${queryParamsSearch.toString()}`,
     'admin',
     {
-      enabled: enabled && !!(eventId && (keyword || questionSearchKey || questionSortKey || isAnswered !== undefined)), // 검색 조건이 있을 때만 활성화
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
+      enabled: enabled && !!(eventId && (keyword || questionSearchKey || questionSortKey || isAnswered !== undefined)),
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      placeholderData: (previousData) => previousData,
     },
     true // withAuth
   );
@@ -152,10 +152,10 @@ export function useAllInquiries(params: InquirySearchParams = {}, options: Query
     'admin',
     {
       enabled,
-      staleTime: 10 * 60 * 1000,
-      gcTime: 15 * 60 * 1000,
+      staleTime: 0,
+      refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      refetchOnMount: false,
+      placeholderData: (previousData) => previousData,
     },
     true
   );

@@ -20,9 +20,16 @@ const QuestionSection = React.memo(({ detail }: { detail: Inquiry }) => {
   return (
     <article className="rounded-xl border bg-white">
       <header className="px-6 pt-6 pb-2">
-        <h1 className="text-xl font-semibold flex items-center">
-          {detail.secret && <Lock className="w-5 h-5 text-gray-500 mr-2" />}
-          {detail.title}
+        <h1 className="text-xl font-semibold">
+          <span className="flex items-start gap-2">
+            {detail.secret && <Lock className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />}
+            <span 
+              className="min-w-0 flex-1 break-words line-clamp-3"
+              title={detail.title}
+            >
+              {detail.title}
+            </span>
+          </span>
         </h1>
         <p className="mt-1 text-sm text-gray-500">
           작성자 {detail.author} · 작성일 {detail.date}
@@ -159,7 +166,12 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
       {/* 답변 보기 */}
       {detail.answer && !editing && (
         <section className="rounded-xl border bg-white p-6">
-          <h2 className="text-lg font-semibold mb-2">{detail.answer.title || "답변"}</h2>
+          <h2 
+            className="text-lg font-semibold mb-2 break-words line-clamp-2"
+            title={detail.answer.title || "답변"}
+          >
+            {detail.answer.title || "답변"}
+          </h2>
           <p className="text-sm text-gray-500 mb-4">
             작성자 {detail.answer.author} · {detail.answer.date}
           </p>

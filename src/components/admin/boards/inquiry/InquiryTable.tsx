@@ -12,6 +12,7 @@ type ViewRow = Inquiry & { __replyOf?: string; __answerId?: string; secret?: boo
 
 type Props = {
   rows?: ViewRow[];
+  isLoading?: boolean;
   linkForRow?: (row: ViewRow) => string | undefined;
   showEventNameColumn?: boolean;
   onDelete?: (id: string) => void;
@@ -27,7 +28,7 @@ type Props = {
   };
 };
 
-function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, onResetPassword, pagination, showEventNameColumn }: Props) {
+function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteAnswer, onResetPassword, pagination, showEventNameColumn }: Props) {
   const data: ViewRow[] = Array.isArray(rows) ? rows : [];
 
   // 페이지 정보는 pagination 객체에서 직접 사용
@@ -58,24 +59,25 @@ function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, onResetPassw
 
         // 제목 앞에 [RE]가 이미 있으면 한 번만 보이도록 제거
         const safeTitle = isReply(r) ? r.title.replace(/^\s*\[RE\]\s*/i, "") : r.title;
+        const displayTitle = safeTitle.length > 100 ? safeTitle.slice(0, 80) + '…' : safeTitle;
 
         return (
           <div className="max-w-[820px]">
-            <div className="flex items-center">
+            <div className="flex items-start">
               {isReply(r) && (
                 <>
-                  <span className="text-[#1E5EFF] mr-1">➥</span>
-                  <span className="text-gray-500 mr-2">[RE]</span>
+                  <span className="text-[#1E5EFF] mr-1 mt-0.5">➥</span>
+                  <span className="text-gray-500 mr-2 mt-0.5">[RE]</span>
                 </>
               )}
-              {!isReply(r) && r.secret && <Lock className="w-4 h-4 text-gray-500 mr-1" />}
+              {!isReply(r) && r.secret && <Lock className="w-4 h-4 text-gray-500 mr-1 mt-0.5 flex-shrink-0" />}
               {href ? (
-                <Link href={href} className="hover:underline truncate" title={safeTitle}>
-                  {safeTitle}
+                <Link href={href} className="hover:underline" title={safeTitle}>
+                  {displayTitle}
                 </Link>
               ) : (
-                <span className="truncate" title={safeTitle}>
-                  {safeTitle}
+                <span title={safeTitle}>
+                  {displayTitle}
                 </span>
               )}
             </div>
@@ -195,6 +197,7 @@ function InquiryTable({ rows, linkForRow, onDelete, onDeleteAnswer, onResetPassw
       renderSearch={null}
       renderActions={null}
       minWidth={1200}
+      loadingMessage={isLoading ? "문의사항을 불러오는 중입니다" : undefined}
       {...tableProps}
     />
   );

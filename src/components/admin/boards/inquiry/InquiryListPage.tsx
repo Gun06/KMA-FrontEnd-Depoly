@@ -461,21 +461,16 @@ export default function InquiryListPage({
 
       {filterControls}
 
-      {/* 로딩 상태 - 테이블 영역에만 표시 */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-8 border border-gray-200 rounded-lg">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <div className="text-gray-500 text-sm">문의사항을 불러오는 중...</div>
-          </div>
-        </div>
-      ) : error ? (
+      {error ? (
         <div className="flex items-center justify-center py-8 border border-red-200 rounded-lg bg-red-50">
           <div className="text-red-500">문의사항을 불러오는데 실패했습니다.</div>
         </div>
       ) : (
+        // 개인 회원관리와 동일한 방식: 데이터가 있으면(placeholderData 포함) 테이블 유지
+        // isLoading은 InquiryTable 내부로 전달해 첫 로드 시에만 스켈레톤 표시
         <InquiryTable
           rows={finalRows}
+          isLoading={isLoading && finalRows.length === 0}
           linkForRow={composeLinkWithPage}
           showEventNameColumn={showEventName}
           pagination={{ page, pageSize, total: finalTotal, onChange: handlePageChange, align: "right" }}

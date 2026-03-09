@@ -326,7 +326,10 @@ function MyCertificatesPage() {
             </>
           </div>
           {showLoginGuide && (
-            <div className="fixed inset-x-0 bottom-0 top-[92px] sm:top-[108px] z-30 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+            <div 
+              className="fixed inset-x-0 bottom-0 z-30 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4"
+              style={{ top: 'var(--kma-main-header-offset, 64px)' }}
+            >
               <div className="mx-4 w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-8 text-center shadow-sm">
                 <p className="text-lg font-semibold text-gray-900">
                   로그인 후 이용할 수 있습니다.

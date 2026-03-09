@@ -75,6 +75,7 @@ export default function NoticeTable({
       width: 80,
       align: "center",
       className: "align-middle whitespace-nowrap",
+      headerClassName: "whitespace-nowrap",
       render: (row) => {
         const isPinned = row.pinned;
         // 문의사항인지 확인 (category가 '문의' 또는 '답변'이거나, originalQuestionId/answerHeaderId가 있는 경우)
@@ -116,7 +117,7 @@ export default function NoticeTable({
       key: "title",
       header: "제목",
       align: "left",
-      className: "text-left",
+      className: "text-left max-w-0 w-full",
       render: (row) => {
         const isPinned = row.pinned;
         const clickable = !(isPinned && !pinnedClickable);
@@ -127,7 +128,9 @@ export default function NoticeTable({
           <div className="flex min-w-0 items-center gap-2">
             {/* 문의사항인 경우: 제목 앞에 태그 표시 */}
             {isInquiry && row.category && (
-              <CategoryBadge category={row.category} size="md" />
+              <span className="flex-shrink-0">
+                <CategoryBadge category={row.category} size="md" />
+              </span>
             )}
             <span
               className={`text-[15px] text-[#0F1113] truncate ${clickable ? 'cursor-pointer hover:underline' : ''}`}
@@ -146,6 +149,7 @@ export default function NoticeTable({
       width: 110,
       align: "center",
       className: "text-[#6B7280] whitespace-nowrap",
+      headerClassName: "whitespace-nowrap",
     },
     {
       key: "date",
@@ -153,6 +157,7 @@ export default function NoticeTable({
       width: 120,
       align: "center",
       className: "text-[#6B7280] whitespace-nowrap",
+      headerClassName: "whitespace-nowrap",
     },
     {
       key: "views",
@@ -160,6 +165,7 @@ export default function NoticeTable({
       width: 100,
       align: "center",
       className: "text-[#6B7280]",
+      headerClassName: "whitespace-nowrap",
       render: (row) => <span className="font-medium">{row.views.toLocaleString()}</span>,
     },
   ];
