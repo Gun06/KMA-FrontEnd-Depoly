@@ -47,12 +47,14 @@ export default function MiddleSection({
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
+  const CACHE_TTL = 15 * 60 * 1000;
   const getCachedEventInfo = (): MainPageImagesInfo | null => {
     if (typeof window === 'undefined' || !eventId) return null;
     try {
       const raw = localStorage.getItem(`hero_main_${eventId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
+      if (!parsed?.ts || Date.now() - parsed.ts > CACHE_TTL) return null;
       const data = parsed?.data;
       if (!data || typeof data !== 'object') return null;
       const outline = normalizeOutlineFromRaw(data as Record<string, unknown>);

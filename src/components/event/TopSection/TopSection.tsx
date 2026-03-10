@@ -63,13 +63,15 @@ export default function TopSection({
   config,
   eventInfo: propEventInfo,
 }: TopSectionProps) {
-  // 캐시된 데이터를 즉시 복구 (정규화하여 반환)
+  // 캐시된 데이터를 즉시 복구 (정규화하여 반환, 30분 만료)
+  const CACHE_TTL = 15 * 60 * 1000;
   const getCachedEventInfo = (): EventTopSectionInfo | null => {
     if (typeof window === 'undefined' || !eventId) return null;
     try {
       const raw = localStorage.getItem(`hero_main_${eventId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
+      if (!parsed?.ts || Date.now() - parsed.ts > CACHE_TTL) return null;
       const data = parsed?.data;
       return normalizeMainPageImagesResponse(data && typeof data === 'object' ? data : null);
     } catch {

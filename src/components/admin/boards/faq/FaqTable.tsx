@@ -114,13 +114,15 @@ export default function FaqTable({
     },
   ];
 
-  const tableProps = pagination
-    ? { pagination: { align: "center", ...pagination } }
-    : {};
+  // 초기 로딩(데이터 없음) vs 검색 중(데이터 있음) 구분
+  const isInitialLoading = isLoading && data.length === 0;
+  const isSearching = isLoading && data.length > 0;
+
+  const showPagination = pagination && !isInitialLoading;
 
   return (
     <div className="relative">
-      {isLoading && (
+      {isSearching && (
         <div className="absolute top-0 left-0 right-0 bg-white bg-opacity-50 flex items-center justify-center z-10 rounded-t-lg py-4">
           <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm border">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -136,7 +138,8 @@ export default function FaqTable({
         renderSearch={null}
         renderActions={null}
         minWidth={960}
-        {...(tableProps as any)}
+        loadingMessage={isInitialLoading ? "FAQ를 불러오는 중입니다" : undefined}
+        pagination={showPagination ? { align: "center", ...pagination } : false}
       />
     </div>
   );

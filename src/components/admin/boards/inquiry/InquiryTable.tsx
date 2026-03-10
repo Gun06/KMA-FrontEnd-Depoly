@@ -178,15 +178,7 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
     }
   );
 
-  const tableProps = pagination
-    ? {
-        pagination: {
-          align: "right" as const,
-          ...pagination,
-        },
-        contentMinHeight: data.length >= (pagination?.pageSize ?? 0) ? "100vh" : "auto",
-      }
-    : {};
+  const showPagination = pagination && !(isLoading && data.length === 0);
 
   return (
     <AdminTable<ViewRow>
@@ -197,8 +189,12 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
       renderSearch={null}
       renderActions={null}
       minWidth={1200}
-      loadingMessage={isLoading ? "문의사항을 불러오는 중입니다" : undefined}
-      {...tableProps}
+      loadingMessage={isLoading && data.length === 0 ? "문의사항을 불러오는 중입니다" : undefined}
+      pagination={showPagination ? {
+        align: "right" as const,
+        ...pagination,
+      } : false}
+      contentMinHeight={data.length >= (pagination?.pageSize ?? 0) ? "100vh" : "auto"}
     />
   );
 }

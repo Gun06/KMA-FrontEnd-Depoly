@@ -25,13 +25,15 @@ export default function HeroSection({
   className = '',
   eventInfo: propEventInfo,
 }: HeroSectionProps) {
-  // CSR 전용 캐시 리더
+  // CSR 전용 캐시 리더 (30분 만료)
+  const CACHE_TTL = 15 * 60 * 1000;
   const readCachedMain = () => {
     if (typeof window === 'undefined') return null;
     try {
       const raw = localStorage.getItem(`hero_main_${eventId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
+      if (!parsed?.ts || Date.now() - parsed.ts > CACHE_TTL) return null;
       return parsed?.data || null;
     } catch {
       return null;
@@ -70,9 +72,7 @@ export default function HeroSection({
       return null;
     }
   };
-  const [sideBannerImageUrl, setSideBannerImageUrl] = useState<string | null>(
-    readCachedSideBanner()
-  );
+  const [sideBannerImageUrl, setSideBannerImageUrl] = useState<string | null>(null);
   const [isLoadingSideBanner, setIsLoadingSideBanner] = useState<boolean>(false);
 
   // CSR 시 로컬 캐시 우선 반영
@@ -171,6 +171,12 @@ export default function HeroSection({
     if (!readCachedMain()) fetchEventData();
   }, [eventId, propEventInfo]);
 
+  // 마운트 후 사이드배너 캐시 즉시 적용 (hydration 에러 방지용: useState 초기값 대신 useEffect 사용)
+  useEffect(() => {
+    const cached = readCachedSideBanner();
+    if (cached) setSideBannerImageUrl(cached);
+  }, [eventId]);
+
   // 사이드메뉴배너 이미지 조회
   useEffect(() => {
     const fetchSideBanner = async () => {
@@ -186,7 +192,18 @@ export default function HeroSection({
         if (response.ok) {
           const data = await response.json();
           if (data?.sideBannerImgUrl) {
-            setSideBannerImageUrl(data.sideBannerImgUrl);
+            // URL이 달라졌을 때만 상태 업데이트 (깜빡임 방지)
+            setSideBannerImageUrl(prev => {
+              if (prev === data.sideBannerImgUrl) return prev;
+              return data.sideBannerImgUrl;
+            });
+            // 캐시 저장 (다음 방문 시 즉시 표시용)
+            try {
+              localStorage.setItem(
+                `hero_side_banner_${eventId}`,
+                JSON.stringify({ url: data.sideBannerImgUrl, ts: Date.now() })
+              );
+            } catch {}
           }
         }
       } catch (error) {

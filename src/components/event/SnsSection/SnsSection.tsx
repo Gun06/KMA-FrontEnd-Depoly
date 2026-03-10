@@ -25,13 +25,15 @@ export default function SnsSection({
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // 캐시된 데이터를 가져오는 함수
+  // 캐시된 데이터를 가져오는 함수 (30분 만료)
+  const CACHE_TTL = 15 * 60 * 1000;
   const getCachedEventInfo = (): PromotionBannerInfo | null => {
     if (typeof window === 'undefined' || !eventId) return null;
     try {
       const raw = localStorage.getItem(`sns_section_${eventId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
+      if (!parsed?.ts || Date.now() - parsed.ts > CACHE_TTL) return null;
       return parsed?.data || null;
     } catch { return null; }
   };

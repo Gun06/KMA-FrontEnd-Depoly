@@ -98,7 +98,7 @@ export default function AdminTableShell<T>({
           {...(minWidth ? { minWidth } : {})}
         />
         {loadingMessage && rows.length === 0 && (
-          <div className="absolute top-12 left-0 right-0 bottom-0 flex items-start justify-center bg-white pt-20">
+          <div className="flex items-center justify-center pt-20 pb-32">
             <div className="text-gray-500 text-base">{loadingMessage}</div>
           </div>
         )}
