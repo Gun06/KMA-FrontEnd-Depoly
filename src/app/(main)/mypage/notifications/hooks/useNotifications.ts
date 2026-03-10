@@ -4,7 +4,6 @@ import {
   getEventNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
-  deleteNotification,
 } from '../api/notificationApi';
 import type {
   NotificationListResponse,
@@ -120,26 +119,3 @@ export function useMarkAllNotificationsAsRead() {
   });
 }
 
-/**
- * 알림 삭제 훅
- */
-export function useDeleteNotification() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (notificationId: string) => deleteNotification(notificationId),
-    onSuccess: () => {
-      // 알림 목록 쿼리 무효화하여 재조회
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'global'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications', 'event'] });
-    },
-    onError: (error: unknown) => {
-      // 에러 메시지 표시 (필요시 토스트 추가)
-      const errorMessage =
-        error && typeof error === 'object' && 'message' in error
-          ? String(error.message)
-          : '알림 삭제에 실패했습니다.';
-      alert(errorMessage);
-    },
-  });
-}

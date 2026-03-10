@@ -6,10 +6,9 @@ import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel'
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
-import ConfirmModal from '@/components/common/Modal/ConfirmModal'
 import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
-import { useGlobalNotifications, useEventNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification } from './hooks/useNotifications'
+import { useGlobalNotifications, useEventNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from './hooks/useNotifications'
 import type { NotificationItem } from './types/notification'
 import { useMyProfile } from '../profile/shared'
 import { useAuthStore } from '@/stores/authStore'
@@ -35,8 +34,6 @@ function ClientContent() {
   const [page, setPage] = useState(1)
   const pageSize = 10
   const [notificationType, setNotificationType] = useState<'GLOBAL' | 'EVENT'>('GLOBAL')
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null)
 
@@ -52,7 +49,6 @@ function ClientContent() {
 
   const markAsRead = useMarkNotificationAsRead()
   const markAllAsRead = useMarkAllNotificationsAsRead()
-  const deleteNotification = useDeleteNotification()
 
   const totalPages = notificationsData?.totalPages || 1
   const totalElements = notificationsData?.totalElements || 0
@@ -91,9 +87,9 @@ function ClientContent() {
     const displayHours = hours % 12 || 12
     
     return {
-      datePart: `${year}. ${month}. ${day}.`,
+      datePart: `${year}. ${month}. ${day}`,
       timePart: `${ampm} ${displayHours}:${minutes}`,
-      full: `${year}. ${month}. ${day}. ${ampm} ${displayHours}:${minutes}`
+      full: `${year}. ${month}. ${day} ${ampm} ${displayHours}:${minutes}`
     }
   }
 
@@ -106,20 +102,6 @@ function ClientContent() {
     }
     setSelectedNotification(notification)
     setShowDetailModal(true)
-  }
-
-  const handleDeleteClick = (e: React.MouseEvent, notificationId: string) => {
-    e.stopPropagation()
-    setDeleteTargetId(notificationId)
-    setShowDeleteModal(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (deleteTargetId) {
-      await deleteNotification.mutateAsync(deleteTargetId)
-      setShowDeleteModal(false)
-      setDeleteTargetId(null)
-    }
   }
 
   const isAuthenticated = isLoggedIn && Boolean(accessToken)
@@ -202,7 +184,7 @@ function ClientContent() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1fr)_auto] gap-3 px-2 sm:px-3 py-2 border-y border-gray-200 mb-1 text-[11px] tracking-[0.12em] text-gray-400">
+            <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 px-2 sm:px-3 py-2 border-y border-gray-200 mb-1 text-[11px] tracking-[0.12em] text-gray-400">
               <span className="text-center">NO</span>
               <span className="text-center">TITLE / MESSAGE</span>
               <span className="text-center">DATE</span>
@@ -217,7 +199,7 @@ function ClientContent() {
                       key={`notification-skeleton-${index}`}
                       className="px-2 sm:px-3 py-4 sm:py-5 border-b border-gray-200"
                     >
-                      <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1fr)_auto] gap-3 items-start">
+                      <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
                         <div className="pt-0.5 flex items-center justify-center">
                           <div className="h-4 w-6 rounded bg-gray-200" />
                         </div>
@@ -225,7 +207,7 @@ function ClientContent() {
                           <div className="h-4 w-56 rounded bg-gray-200" />
                           <div className="mt-2 h-3 w-72 max-w-full rounded bg-gray-200" />
                         </div>
-                        <div className="pt-0.5 h-3 w-20 rounded bg-gray-200" />
+                        <div className="pt-0.5 h-3 w-20 rounded bg-gray-200 mx-auto" />
                       </div>
                     </div>
                   ))}
@@ -245,7 +227,7 @@ function ClientContent() {
                         }`}
                         onClick={() => handleNotificationClick(n)}
                       >
-                        <div className="grid grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[56px_minmax(0,1fr)_auto] gap-3 items-start">
+                        <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
                           <div className="pt-0.5 text-xs sm:text-sm text-gray-500 tabular-nums flex items-center justify-center gap-1">
                             <span>{displayNo}</span>
                             {isUnread && (
@@ -263,18 +245,9 @@ function ClientContent() {
                               </p>
                             </div>
                           </div>
-                          <p className="pt-0.5 text-[11px] sm:text-xs text-gray-400 tabular-nums whitespace-nowrap text-right">
+                          <p className="pt-0.5 text-[11px] sm:text-xs text-gray-400 tabular-nums whitespace-nowrap text-center">
                             {formatted === '-' ? '-' : formatted.datePart}
                           </p>
-                          {notificationType === 'EVENT' && (
-                            <button
-                              onClick={(e) => handleDeleteClick(e, n.id)}
-                              className="flex-shrink-0 inline-flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 transition-colors ml-2"
-                              aria-label="삭제"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     )
@@ -347,23 +320,6 @@ function ClientContent() {
             </div>
           )}
         </div>
-
-        {/* 삭제 확인 모달 */}
-        <ConfirmModal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false)
-            setDeleteTargetId(null)
-          }}
-          onConfirm={handleDeleteConfirm}
-          title="알림 삭제"
-          message="알림을 삭제하시겠습니까?"
-          confirmText="삭제하기"
-          cancelText="취소"
-          isLoading={deleteNotification.isPending}
-          variant="danger"
-          centerAlign={true}
-        />
 
         {/* 알림 상세 모달 */}
         {showDetailModal && selectedNotification && (

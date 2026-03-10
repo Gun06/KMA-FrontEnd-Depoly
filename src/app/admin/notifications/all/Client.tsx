@@ -6,17 +6,21 @@ import React from 'react';
 import Button from '@/components/common/Button/Button';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import type { Column } from '@/components/common/Table/BaseTable';
-import { useGlobalNotifications, convertNotificationApiToRow } from '../hooks/useNotifications';
+import { useGlobalNotifications, useDeleteGlobalNotification, convertNotificationApiToRow } from '../hooks/useNotifications';
 import type { NotificationRow } from '../types/notification';
 import NotificationDetailModal from '../components/NotificationDetailModal';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
 
 export default function Client() {
   const router = useRouter();
   const [selectedNotification, setSelectedNotification] = React.useState<NotificationRow | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | number | null>(null);
 
   // 전체 유저 알림 목록 조회
   const { data: notificationData, isLoading } = useGlobalNotifications(1, 100);
+  const { mutate: deleteNotification, isPending: isDeleting } = useDeleteGlobalNotification();
 
   const notifications = React.useMemo<NotificationRow[]>(() => {
     if (!notificationData?.content) return [];
@@ -82,7 +86,7 @@ export default function Client() {
             handleRowClick(r);
           }}
         >
-          {shorten(r.content, 50)}
+          {shorten(r.content, 42)}
         </span>
       ),
     },
@@ -93,6 +97,24 @@ export default function Client() {
       align: 'center',
       className: 'text-gray-600 whitespace-nowrap',
       render: (r) => formatDate(r.sentAt),
+    },
+    {
+      key: 'delete',
+      header: '삭제',
+      width: 60,
+      align: 'center',
+      render: (r) => (
+        <span
+          className="text-[13px] font-medium text-red-500 cursor-pointer hover:text-red-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPendingDeleteId(r.id);
+            setIsDeleteConfirmOpen(true);
+          }}
+        >
+          삭제
+        </span>
+      ),
     },
   ], []);
 
@@ -176,6 +198,32 @@ export default function Client() {
           setSelectedNotification(null);
         }}
         notification={selectedNotification}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setPendingDeleteId(null);
+        }}
+        onConfirm={() => {
+          if (pendingDeleteId !== null) {
+            deleteNotification(pendingDeleteId, {
+              onSuccess: () => {
+                setIsDeleteConfirmOpen(false);
+                setPendingDeleteId(null);
+              },
+            });
+          }
+        }}
+        title="알림 삭제"
+        message="해당 알림을 삭제하시겠습니까?"
+        smallMessage="푸시 알림은 삭제되지 않으며, 사용자의 알림함에서만 제거됩니다."
+        confirmText="삭제"
+        cancelText="취소"
+        isLoading={isDeleting}
+        variant="danger"
+        centerAlign={true}
       />
     </div>
   );

@@ -9,7 +9,8 @@ import type { Column } from '@/components/common/Table/BaseTable';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import Badge from '@/components/common/Badge/Badge';
 import { useEventList } from '@/hooks/useNotices';
-import { useEventNotifications, convertNotificationApiToRow } from '../../hooks/useNotifications';
+import { useEventNotifications, useDeleteEventNotification, convertNotificationApiToRow } from '../../hooks/useNotifications';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
 import type { EventListItem, EventListResponse } from '@/types/eventList';
 import type { NotificationRow } from '../../types/notification';
 import NotificationDetailModal from '../../components/NotificationDetailModal';
@@ -19,6 +20,8 @@ export default function Client() {
   const router = useRouter();
   const [selectedNotification, setSelectedNotification] = React.useState<NotificationRow | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = React.useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = React.useState<string | number | null>(null);
 
   // 대회 목록에서 해당 대회 정보 찾기
   const { data: eventListData } = useEventList(1, 100) as {
@@ -29,6 +32,7 @@ export default function Client() {
 
   // 알림 목록 조회
   const { data: notificationData, isLoading } = useEventNotifications(eventId, 1, 100);
+  const { mutate: deleteNotification, isPending: isDeleting } = useDeleteEventNotification(eventId);
 
   const notifications = React.useMemo<NotificationRow[]>(() => {
     if (!notificationData?.content) return [];
@@ -124,7 +128,7 @@ export default function Client() {
             handleRowClick(r);
           }}
         >
-          {shorten(r.content, 45)}
+          {shorten(r.content, 37)}
         </span>
       ),
     },
@@ -135,6 +139,24 @@ export default function Client() {
       align: 'center',
       className: 'text-gray-600 whitespace-nowrap',
       render: (r) => formatDate(r.sentAt),
+    },
+    {
+      key: 'delete',
+      header: '삭제',
+      width: 60,
+      align: 'center',
+      render: (r) => (
+        <span
+          className="text-[13px] font-medium text-red-500 cursor-pointer hover:text-red-700"
+          onClick={(e) => {
+            e.stopPropagation();
+            setPendingDeleteId(r.id);
+            setIsDeleteConfirmOpen(true);
+          }}
+        >
+          삭제
+        </span>
+      ),
     },
   ], []);
 
@@ -228,6 +250,32 @@ export default function Client() {
           setSelectedNotification(null);
         }}
         notification={selectedNotification}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setPendingDeleteId(null);
+        }}
+        onConfirm={() => {
+          if (pendingDeleteId !== null) {
+            deleteNotification(pendingDeleteId, {
+              onSuccess: () => {
+                setIsDeleteConfirmOpen(false);
+                setPendingDeleteId(null);
+              },
+            });
+          }
+        }}
+        title="알림 삭제"
+        message="해당 알림을 삭제하시겠습니까?"
+        smallMessage="푸시 알림은 삭제되지 않으며, 사용자의 알림함에서만 제거됩니다."
+        confirmText="삭제"
+        cancelText="취소"
+        isLoading={isDeleting}
+        variant="danger"
+        centerAlign={true}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { X, AlertCircle } from 'lucide-react';
 
 interface ConfirmModalProps {
@@ -8,6 +9,7 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   title?: string;
   message: string;
+  smallMessage?: string; // 부가 설명 (회색, 작은 글씨 14px)
   confirmText?: string;
   cancelText?: string;
   isLoading?: boolean;
@@ -22,6 +24,7 @@ export default function ConfirmModal({
   onConfirm,
   title = '확인',
   message,
+  smallMessage,
   confirmText = '확인',
   cancelText = '취소',
   isLoading = false,
@@ -30,9 +33,10 @@ export default function ConfirmModal({
   multiline = false
 }: ConfirmModalProps) {
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center">
       {/* 배경 오버레이 */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50"
@@ -66,15 +70,22 @@ export default function ConfirmModal({
 
         {/* 내용 */}
         <div className="p-6">
-          {multiline ? (
-            <div className={`text-gray-600 mb-6 whitespace-pre-line ${centerAlign ? 'text-center' : ''}`}>
-              {message}
-            </div>
-          ) : (
-            <p className={`text-gray-600 mb-6 ${centerAlign ? 'text-center' : ''}`}>
-              {message}
-            </p>
-          )}
+          <div className={`mb-6 ${centerAlign ? 'text-center' : ''}`}>
+            {multiline ? (
+              <div className="text-gray-600 whitespace-pre-line">
+                {message}
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                {message}
+              </p>
+            )}
+            {smallMessage && (
+              <p className={`mt-1 text-sm text-gray-400 ${centerAlign ? 'text-center' : ''}`}>
+                {smallMessage}
+              </p>
+            )}
+          </div>
 
           {/* 버튼들 */}
           <div className="flex gap-3">
@@ -101,7 +112,8 @@ export default function ConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

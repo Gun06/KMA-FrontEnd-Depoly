@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getGlobalNotifications,
   getEventNotifications,
+  deleteGlobalNotification,
+  deleteEventNotification,
 } from '@/app/admin/notifications/api/notificationApi';
 import type { NotificationListResponse, NotificationRow } from '@/app/admin/notifications/types/notification';
 
@@ -29,6 +31,32 @@ export function useEventNotifications(
     queryFn: () => getEventNotifications(eventId!, page, size),
     enabled: !!eventId,
     staleTime: 5 * 60 * 1000, // 5분
+  });
+}
+
+/**
+ * 전체 알림 삭제 훅
+ */
+export function useDeleteGlobalNotification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (messageId: string | number) => deleteGlobalNotification(messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'global'] });
+    },
+  });
+}
+
+/**
+ * 대회 알림 삭제 훅
+ */
+export function useDeleteEventNotification(eventId?: string | number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (messageId: string | number) => deleteEventNotification(messageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'event', eventId] });
+    },
   });
 }
 

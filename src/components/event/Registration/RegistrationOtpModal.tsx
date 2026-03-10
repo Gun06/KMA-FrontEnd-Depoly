@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, Clock } from "lucide-react";
 
 interface RegistrationOtpModalProps {
@@ -134,8 +135,9 @@ export default function RegistrationOtpModal({
   };
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* 배경 오버레이 */}
       <div
@@ -265,7 +267,8 @@ export default function RegistrationOtpModal({
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

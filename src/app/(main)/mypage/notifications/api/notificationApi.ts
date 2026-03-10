@@ -129,14 +129,3 @@ export async function markAllNotificationsAsRead(): Promise<NotificationReadResp
   ) as Promise<NotificationReadResponse>;
 }
 
-/**
- * 알림 삭제
- * DELETE /api/v1/notification/{notificationId}
- */
-export async function deleteNotification(
-  notificationId: string
-): Promise<NotificationReadResponse> {
-  return userApi.authDelete<NotificationReadResponse>(
-    `/api/v1/notification/${notificationId}`
-  ) as Promise<NotificationReadResponse>;
-}

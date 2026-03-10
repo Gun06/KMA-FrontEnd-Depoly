@@ -64,6 +64,38 @@ export async function getGlobalNotifications(
 }
 
 /**
+ * 전체 알림 삭제
+ * DELETE /api/v1/global-message/{messageId}
+ */
+export async function deleteGlobalNotification(
+  messageId: string | number
+): Promise<void> {
+  return request<void>(
+    "admin",
+    `/api/v1/global-message/${messageId}`,
+    "DELETE",
+    undefined,
+    true
+  ) as Promise<void>;
+}
+
+/**
+ * 대회 알림 삭제
+ * DELETE /api/v1/event-message/{messageId}
+ */
+export async function deleteEventNotification(
+  messageId: string | number
+): Promise<void> {
+  return request<void>(
+    "admin",
+    `/api/v1/event-message/${messageId}`,
+    "DELETE",
+    undefined,
+    true
+  ) as Promise<void>;
+}
+
+/**
  * 대회별 알림 목록 조회
  * GET /api/v1/admin/notifications/event/{eventId}
  */
