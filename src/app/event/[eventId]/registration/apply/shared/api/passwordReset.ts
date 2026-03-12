@@ -242,9 +242,12 @@ export const changeIndividualPassword = async (
       const errorText = await response.text();
       try {
         const errorJson = JSON.parse(errorText);
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
-      } catch {
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${errorText}`);
+        // 백엔드 에러 메시지만 표시
+        const errorMessage = errorJson?.message || '비밀번호 변경에 실패했습니다.';
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        // JSON 파싱 실패 시 원본 텍스트에서 메시지 추출 시도
+        throw new Error(errorText || '비밀번호 변경에 실패했습니다.');
       }
     }
   } catch (error) {
@@ -273,13 +276,6 @@ export const changeGroupPassword = async (
       newPassword: data.newPassword
     };
     
-    console.log('=== 단체 비밀번호 변경 요청 ===');
-    console.log('전송 데이터:', {
-      token: requestBody.token,
-      otpNumber: requestBody.otpNumber,
-      newPasswordLength: requestBody.newPassword.length
-    });
-    
     const response = await fetch(url, {
       method: 'PATCH',
       headers: {
@@ -288,20 +284,18 @@ export const changeGroupPassword = async (
       body: JSON.stringify(requestBody),
     });
     
-    console.log('응답 상태:', response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('에러 응답:', errorText);
       try {
         const errorJson = JSON.parse(errorText);
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
-      } catch {
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${errorText}`);
+        // 백엔드 에러 메시지만 표시
+        const errorMessage = errorJson?.message || '비밀번호 변경에 실패했습니다.';
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        // JSON 파싱 실패 시 원본 텍스트에서 메시지 추출 시도
+        throw new Error(errorText || '비밀번호 변경에 실패했습니다.');
       }
     }
-    
-    console.log('비밀번호 변경 성공!');
   } catch (error) {
     throw error;
   }
@@ -419,9 +413,12 @@ export const changeOwnedPassword = async (
       const errorText = await response.text();
       try {
         const errorJson = JSON.parse(errorText);
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${JSON.stringify(errorJson)}`);
-      } catch {
-        throw new Error(`비밀번호 변경 실패: ${response.status} - ${errorText}`);
+        // 백엔드 에러 메시지만 표시
+        const errorMessage = errorJson?.message || '비밀번호 변경에 실패했습니다.';
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        // JSON 파싱 실패 시 원본 텍스트에서 메시지 추출 시도
+        throw new Error(errorText || '비밀번호 변경에 실패했습니다.');
       }
     }
   } catch (error) {

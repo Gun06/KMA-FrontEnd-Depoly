@@ -374,7 +374,18 @@ export const transformGroupFormDataToUpdateApi = (
   }
 
   // 참가자별 기념품 정보 생성 (다중 선택 지원)
-  const registrationInfoPerUserList = formData.participants.map((participant, index) => {
+  // 단체 수정 시 소유 신청자(checkOwned === true)는 제외
+  // 참고: checkOwned가 undefined이거나 false인 경우만 포함
+  const registrationInfoPerUserList = formData.participants
+    .filter((participant) => {
+      // 소유 신청자 제외: checkOwned가 명시적으로 true인 경우만 제외
+      // undefined나 false인 경우는 포함
+      if (participant.checkOwned === true) {
+        return false; // 소유 신청자는 제외
+      }
+      return true; // 일반 참가자는 포함
+    })
+    .map((participant, index) => {
     // category가 "3km | 매니아" 또는 "half | 하프마라톤" 형식일 수 있으므로 거리와 세부종목 추출
     const { distance, categoryName } = parseCategoryWithDistance(participant.category);
     

@@ -126,6 +126,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
             // 참가자 데이터 변환
             // editData.participants가 있으면 우선 사용 (createEditData에서 이미 변환된 데이터)
             // 없으면 innerUserRegistrationList를 변환
+            // 참고: editData.participants에는 checkOwned가 포함되어 있음
             const participants = editData.participants || (editData.innerUserRegistrationList || []).map((participant: any, index: number) => {
               // 전화번호 분리
               const participantPhoneParts = (participant.phNum || '010-0000-0000').split('-') || ['010', '', ''];
@@ -157,7 +158,8 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
                 note: participant.note || '',
                 paymentStatus: participant.paymentStatus || 'UNPAID',
                 registrationId: participant.registrationId,
-                originalAmount: participant.amount
+                originalAmount: participant.amount,
+                checkOwned: participant.checkOwned === true ? true : false // 소유 신청 여부 설정 (명시적으로 true인 경우만 true)
               };
             });
 

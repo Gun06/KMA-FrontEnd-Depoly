@@ -9,6 +9,8 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
   const searchParams = useSearchParams();
   const groupName = searchParams.get('groupName') || '단체';
   const participantCount = searchParams.get('participantCount') || '0';
+  const mode = searchParams.get('mode');
+  const isEditMode = mode === 'edit';
 
   return (
     <SubmenuLayout 
@@ -36,7 +38,10 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
             
             {/* 신청 완료 메시지 */}
             <p className="text-xl sm:text-2xl font-bold text-black mb-6">
-              총 {participantCount}분의 마라톤 신청이 완료되었습니다.
+              {isEditMode 
+                ? `총 ${participantCount}분의 마라톤 신청이 수정되었습니다.`
+                : `총 ${participantCount}분의 마라톤 신청이 완료되었습니다.`
+              }
             </p>
             
             {/* 안내 메시지 1 */}

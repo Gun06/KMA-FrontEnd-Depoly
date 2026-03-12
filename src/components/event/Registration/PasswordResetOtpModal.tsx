@@ -156,7 +156,34 @@ export default function PasswordResetOtpModal({
       setIsSuccess(true);
       handleTimerExpired();
     } catch (err: any) {
-      const errorMessage = err?.message || '비밀번호 변경에 실패했습니다.';
+      let errorMessage = '비밀번호 변경에 실패했습니다.';
+      
+      // 에러 메시지 추출
+      let message: string | undefined;
+      
+      if (typeof err === 'string') {
+        message = err;
+      } else if (err?.message) {
+        message = String(err.message);
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        message = String(err.message);
+      }
+      
+      if (message) {
+        // JSON 문자열인 경우 파싱해서 message 필드만 추출
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed && typeof parsed === 'object' && 'message' in parsed) {
+            errorMessage = String(parsed.message);
+          } else {
+            errorMessage = message;
+          }
+        } catch {
+          // JSON이 아니면 그대로 사용
+          errorMessage = message;
+        }
+      }
+      
       setError(errorMessage);
     }
   };
