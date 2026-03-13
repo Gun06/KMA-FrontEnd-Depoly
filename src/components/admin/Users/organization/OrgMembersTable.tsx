@@ -135,9 +135,17 @@ export default function OrgMembersTable({
   const preset = PRESETS['관리자 / 단체 구성원']?.props;
   const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
 
-  const Actions = preset ? (
+  // 뒤로가기 버튼 제거를 위해 buttons 오버라이드
+  const presetWithoutBackButton = preset
+    ? {
+        ...preset,
+        buttons: preset.buttons?.filter((btn) => btn.label !== '뒤로가기') || [],
+      }
+    : undefined;
+
+  const Actions = presetWithoutBackButton ? (
     <FilterBar
-      {...preset}
+      {...presetWithoutBackButton}
       className="ml-auto !gap-3"
       showReset
       onFieldChange={(label, value) => {
@@ -146,9 +154,6 @@ export default function OrgMembersTable({
         else if (L === '입금여부') onPaymentStatusChange?.(value as PaymentStatus);
       }}
       onSearch={(q) => onSearch?.(q)}
-      onActionClick={(label) => {
-        if (label === '뒤로가기') onClickBack?.();
-      }}
       onReset={onResetFilters}
     />
   ) : null;

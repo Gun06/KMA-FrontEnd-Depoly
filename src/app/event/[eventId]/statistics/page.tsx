@@ -49,6 +49,7 @@ export default function PublicStatisticsPage({
             }} 
             distanceData={distanceStatisticsData}
             defaultDistanceExpanded={true}
+            showSideBanner={true}
           />
         )}
       </div>

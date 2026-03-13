@@ -7,7 +7,12 @@
 * @param value - 숫자 문자열 또는 숫자 (예: "1234", "1234명", 1234)
  * @returns 포맷팅된 문자열 (예: "1,234")
  */
-export function formatNumber(value: string | number): string {
+export function formatNumber(value: string | number | undefined | null): string {
+  // undefined, null, 빈 문자열 처리
+  if (value === undefined || value === null || value === '') {
+    return '0';
+  }
+  
   let num: number;
   
   if (typeof value === 'string') {
@@ -18,7 +23,11 @@ export function formatNumber(value: string | number): string {
     num = value;
   }
   
-  if (isNaN(num)) return value.toString();
+  if (isNaN(num)) {
+    // 숫자로 변환할 수 없는 경우 원본 값 반환 (안전하게)
+    return String(value || '0');
+  }
+  
   return num.toLocaleString('ko-KR');
 }
 
@@ -33,19 +42,32 @@ export function formatGenderPercentage(percentage: string): string {
 
 /**
  * 카테고리별 참가자 정보 문자열을 파싱
- * 예: "680명(남: 440명 / 여: 240명)[입금: 592명 / 미입금: 88명]"
+ * 예: "680명(남: 440명 / 여: 240명)[입금: 592명 / 미입금: 88명 / 환불: 3]"
  * @param participantsString - 파싱할 문자열
  * @returns 파싱된 데이터 객체
  */
 export function parseCategoryParticipants(
-  participantsString: string
+  participantsString: string | undefined | null
 ): {
   total: number;
   male: number;
   female: number;
   paid: number;
   unpaid: number;
+  refund: number;
 } {
+  // undefined, null, 빈 문자열 처리
+  if (!participantsString || typeof participantsString !== 'string') {
+    return {
+      total: 0,
+      male: 0,
+      female: 0,
+      paid: 0,
+      unpaid: 0,
+      refund: 0,
+    };
+  }
+  
   try {
     // 총 참가자 수 추출: "680명"
     const totalMatch = participantsString.match(/(\d+)명/);
@@ -67,12 +89,17 @@ export function parseCategoryParticipants(
     const unpaidMatch = participantsString.match(/미입금:\s*(\d+)명/);
     const unpaid = unpaidMatch ? parseInt(unpaidMatch[1], 10) : 0;
 
+    // 환불 수 추출: "환불: 3" 또는 "환불: 3명"
+    const refundMatch = participantsString.match(/환불:\s*(\d+)/);
+    const refund = refundMatch ? parseInt(refundMatch[1], 10) : 0;
+
     return {
       total,
       male,
       female,
       paid,
       unpaid,
+      refund,
     };
   } catch (error) {
     console.error('카테고리 참가자 정보 파싱 실패:', error);
@@ -82,6 +109,7 @@ export function parseCategoryParticipants(
       female: 0,
       paid: 0,
       unpaid: 0,
+      refund: 0,
     };
   }
 }

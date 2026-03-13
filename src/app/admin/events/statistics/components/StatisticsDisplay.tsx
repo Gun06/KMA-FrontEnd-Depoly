@@ -11,15 +11,20 @@ interface StatisticsDisplayProps {
   data: EventStatisticsResponse;
   distanceData?: EventStatisticsResponse;
   defaultDistanceExpanded?: boolean;
+  showSideBanner?: boolean; // 공개 페이지에서만 배너 표시
 }
 
-export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false }: StatisticsDisplayProps) {
+export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false, showSideBanner = false }: StatisticsDisplayProps) {
   const [isDistanceExpanded, setIsDistanceExpanded] = useState(defaultDistanceExpanded);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const distanceParticipants = distanceData?.eventCategoryParticipants ?? [];
 
   const genderRatio = (() => {
-    const ratioMatch = data.totalGenderPercentage?.match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
+    if (!data.totalGenderPercentage) {
+      return { male: 50, female: 50 };
+    }
+    const ratioMatch = data.totalGenderPercentage.match(/(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)/);
     if (!ratioMatch) {
       return { male: 50, female: 50 };
     }
@@ -43,21 +48,47 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
     return Math.round((completed / total) * 100);
   })();
 
-  // 환불 처리율 계산 (환불 완료 / (환불 완료 + 환불 요청))
-  const refundProcessRate = (() => {
-    if (!data.totalRefunded) return null;
+  // 환불률 계산 (환불요청 + 환불완료) / 총 참가자 × 100
+  const refundRate = (() => {
+    const totalMatch = data.totalParticipants?.match(/(\d+)/);
     const refundedMatch = data.totalRefunded?.match(/(\d+)/);
     const needRefundedMatch = data.totalNeedRefunded?.match(/(\d+)/);
     const needPartitialRefundedMatch = data.totalNeedPartitialRefunded?.match(/(\d+)/);
     
+    const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
     const refunded = refundedMatch ? parseInt(refundedMatch[1], 10) : 0;
     const needRefunded = needRefundedMatch ? parseInt(needRefundedMatch[1], 10) : 0;
     const needPartitialRefunded = needPartitialRefundedMatch ? parseInt(needPartitialRefundedMatch[1], 10) : 0;
     
-    const totalRefundRequests = refunded + needRefunded + needPartitialRefunded;
-    if (!totalRefundRequests) return null;
+    const totalRefunds = refunded + needRefunded + needPartitialRefunded;
+    if (!total || !totalRefunds) return 0;
     
-    return Math.round((refunded / totalRefundRequests) * 100);
+    return Math.round((totalRefunds / total) * 100);
+  })();
+
+  // 단체 규모별 비율 계산
+  const groupSizeRates = (() => {
+    if (!data.group1to19 && !data.group20to29 && !data.group30over) return null;
+    
+    const group1to19Match = data.group1to19?.match(/(\d+)/);
+    const group20to29Match = data.group20to29?.match(/(\d+)/);
+    const group30overMatch = data.group30over?.match(/(\d+)/);
+    
+    const group1to19Count = group1to19Match ? parseInt(group1to19Match[1], 10) : 0;
+    const group20to29Count = group20to29Match ? parseInt(group20to29Match[1], 10) : 0;
+    const group30overCount = group30overMatch ? parseInt(group30overMatch[1], 10) : 0;
+    
+    const totalGroups = group1to19Count + group20to29Count + group30overCount;
+    if (!totalGroups) return null;
+    
+    return {
+      group1to19: Math.round((group1to19Count / totalGroups) * 100),
+      group20to29: Math.round((group20to29Count / totalGroups) * 100),
+      group30over: Math.round((group30overCount / totalGroups) * 100),
+      group1to19Count,
+      group20to29Count,
+      group30overCount,
+    };
   })();
 
   const renderParticipantCards = (
@@ -80,7 +111,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
             >
               <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
                 <h4 className="text-sm font-semibold text-slate-900">
-                  {category.categoryName}
+                  {category.categoryName || '-'}
                 </h4>
                 <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                   <span className="rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700">
@@ -88,6 +119,9 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                   </span>
                   <span className="rounded-full bg-rose-50 px-2 py-1 font-medium text-rose-700">
                     미입금 {formatNumber(parsed.unpaid)}명
+                  </span>
+                  <span className="rounded-full bg-purple-50 px-2 py-1 font-medium text-purple-700">
+                    환불 {formatNumber(parsed.refund)}명
                   </span>
                 </div>
               </div>
@@ -155,39 +189,29 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
 
   return (
     <div className="space-y-5">
-      <div className="rounded-3xl border border-slate-900/10 bg-slate-900 px-5 py-5 text-white shadow-xl shadow-slate-900/10 md:px-6">
-        <p className="text-xs font-medium text-slate-300">EVENT OVERVIEW</p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
-          {data.eventName}
-        </h2>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-100">
-            총 참가 {formatNumber(data.totalParticipants)}명
-          </span>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-100">
-            오늘 +{formatNumber(data.todayParticipants)}명
-          </span>
-          <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-200">
-            완료 {formatNumber(data.totalCompletedParticipants)}명
-          </span>
-          <span className="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-200">
-            미결제 {formatNumber(data.totalUnpaidParticipants)}명
-          </span>
-          {data.totalRefunded && (
-            <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-medium text-purple-200">
-              환불 완료 {formatNumber(data.totalRefunded)}명
-            </span>
-          )}
-          {data.totalNeedRefunded && (
-            <span className="rounded-full bg-orange-500/20 px-3 py-1 text-xs font-medium text-orange-200">
-              전액 환불 요청 {formatNumber(data.totalNeedRefunded)}명
-            </span>
-          )}
-          {data.totalNeedPartitialRefunded && (
-            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-200">
-              차액 환불 요청 {formatNumber(data.totalNeedPartitialRefunded)}명
-            </span>
-          )}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-900/10 bg-slate-900 px-5 py-5 text-white shadow-xl shadow-slate-900/10 md:px-6">
+        {/* 콘텐츠 */}
+        <div className="relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <p className="text-xs font-medium text-slate-300">EVENT OVERVIEW</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+                {data.eventName || '-'}
+              </h2>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {data.todayParticipants && (
+                  <span className="rounded-full bg-blue-500/20 px-4 py-1.5 text-sm font-medium text-blue-200">
+                    오늘 참가자 +{formatNumber(data.todayParticipants)}명
+                  </span>
+                )}
+                {data.todayRefundRequest && (
+                  <span className="rounded-full bg-purple-500/20 px-4 py-1.5 text-sm font-medium text-purple-200">
+                    오늘 환불자 +{formatNumber(data.todayRefundRequest)}명
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -204,27 +228,29 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                 {formatNumber(data.totalParticipants)}명
               </span>
             </div>
+            {data.todayRefundRequest && (
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm text-slate-600">오늘 환불자</span>
+                <span className="text-lg font-semibold text-purple-700">
+                  +{formatNumber(data.todayRefundRequest)}명
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">오늘 참가자</span>
-              <span className="text-lg font-semibold text-blue-700">
-                +{formatNumber(data.todayParticipants)}명
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">입금 완료</span>
+              <span className="text-sm text-slate-600">입금</span>
               <span className="text-lg font-semibold text-emerald-700">
                 {formatNumber(data.totalCompletedParticipants)}명
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">미결제</span>
+              <span className="text-sm text-slate-600">미입금</span>
               <span className="text-lg font-semibold text-rose-700">
                 {formatNumber(data.totalUnpaidParticipants)}명
               </span>
             </div>
             {data.totalRefunded && (
               <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-slate-600">환불 완료</span>
+                <span className="text-sm text-slate-600">환불</span>
                 <span className="text-lg font-semibold text-purple-700">
                   {formatNumber(data.totalRefunded)}명
                 </span>
@@ -252,30 +278,18 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-4">
           <h3 className="text-sm font-semibold text-slate-900">인사이트</h3>
           <div className="mt-4 space-y-4">
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
-                <span>남성</span>
-                <span>{genderRatio.male}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-100">
-                <div
-                  className="h-2 rounded-full bg-blue-500"
-                  style={{ width: `${genderRatio.male}%` }}
+            {/* 사이드 배너 - 인사이트 섹션 상단에 배치 */}
+            {showSideBanner && data.sideBannerImageUrl && (
+              <div className="flex justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.sideBannerImageUrl}
+                  alt="이벤트 배너"
+                  className="max-h-40 w-full rounded-lg object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setIsBannerModalOpen(true)}
                 />
               </div>
-            </div>
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
-                <span>여성</span>
-                <span>{genderRatio.female}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-100">
-                <div
-                  className="h-2 rounded-full bg-pink-500"
-                  style={{ width: `${genderRatio.female}%` }}
-                />
-              </div>
-            </div>
+            )}
             <div>
               <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
                 <span>입금률</span>
@@ -288,32 +302,69 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                 />
               </div>
             </div>
-            {refundProcessRate !== null && (
-              <div>
-                <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
-                  <span>환불 처리율</span>
-                  <span>{refundProcessRate}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-purple-500"
-                    style={{ width: `${refundProcessRate}%` }}
-                  />
-                </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                <span>환불률</span>
+                <span>{refundRate}%</span>
               </div>
-            )}
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-purple-500"
+                  style={{ width: `${refundRate}%` }}
+                />
+              </div>
+            </div>
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
               <p className="text-[11px] font-medium text-slate-500">성별 비율 원문</p>
               <p className="mt-0.5 text-sm font-medium text-slate-800">
                 {formatGenderPercentage(data.totalGenderPercentage)}
               </p>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                    <span>남성</span>
+                    <span>{genderRatio.male}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-blue-500"
+                      style={{ width: `${genderRatio.male}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                    <span>여성</span>
+                    <span>{genderRatio.female}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-pink-500"
+                      style={{ width: `${genderRatio.female}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-              <p className="text-[11px] font-medium text-slate-500">총 단체 수</p>
-              <p className="mt-0.5 text-lg font-semibold text-slate-900">
-                {formatNumber(data.totalOrganizations)}팀
-              </p>
-            </div>
+            {groupSizeRates && (
+              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                <p className="text-[11px] font-medium text-slate-500">단체 규모별</p>
+                <div className="mt-0.5 space-y-1">
+                  <div className="flex items-center justify-between text-sm font-medium text-slate-800">
+                    <span>1~19인</span>
+                    <span>{formatNumber(groupSizeRates.group1to19Count)}팀</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-medium text-slate-800">
+                    <span>20~29인</span>
+                    <span>{formatNumber(groupSizeRates.group20to29Count)}팀</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm font-medium text-slate-800">
+                    <span>30인~</span>
+                    <span>{formatNumber(groupSizeRates.group30overCount)}팀</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -371,6 +422,49 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
               {renderParticipantCards(data.eventCategoryParticipants)}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 사이드 배너 모달 */}
+      {isBannerModalOpen && data.sideBannerImageUrl && (
+        <div
+          className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setIsBannerModalOpen(false)}
+          style={{ margin: 0, padding: 0 }}
+        >
+          {/* X 버튼 - 이미지에서 20px 떨어진 위치 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsBannerModalOpen(false);
+            }}
+            className="fixed top-5 right-5 text-white hover:text-gray-300 z-[60] bg-black bg-opacity-50 rounded-full p-2 transition-colors"
+            aria-label="닫기"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          {/* 이미지 컨테이너 */}
+          <div className="relative max-w-full max-h-full w-full h-full flex items-center justify-center p-20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.sideBannerImageUrl}
+              alt="이벤트 배너 확대"
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </div>

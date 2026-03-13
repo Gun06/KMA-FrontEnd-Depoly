@@ -69,6 +69,7 @@ export default function StatisticsClient() {
         <StatisticsDisplay
           data={statisticsData}
           distanceData={distanceStatisticsData}
+          showSideBanner={true}
         />
       )}
     </div>
