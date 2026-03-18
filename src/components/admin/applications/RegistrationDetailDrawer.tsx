@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
+import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -1011,7 +1012,7 @@ export default function RegistrationDetailDrawer({
               ))}
               {line('신청일시', formatDateTime(item.registrationDate))}
               {line('금액', formatAmount(item.amount))}
-              {!isEditing ? line('입금여부', paymentStatusLabel) : editLine('입금여부', (
+              {!isEditing ? line('입금여부', <PaymentBadgeApplicants payStatus={paymentStatusLabel as '미결제' | '결제완료' | '확인필요' | '차액환불요청' | '전액환불요청' | '전액환불완료'} />) : editLine('입금여부', (
                 <SearchableSelect
                   value={form.paymentStatus}
                   options={[

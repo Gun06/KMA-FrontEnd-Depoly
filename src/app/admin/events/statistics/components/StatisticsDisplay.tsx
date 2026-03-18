@@ -48,22 +48,31 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
     return Math.round((completed / total) * 100);
   })();
 
-  // 환불률 계산 (환불요청 + 환불완료) / 총 참가자 × 100
+  // 환불률 계산 환불(요청 + 완료) / 총 참가자 × 100
   const refundRate = (() => {
     const totalMatch = data.totalParticipants?.match(/(\d+)/);
     const refundedMatch = data.totalRefunded?.match(/(\d+)/);
-    const needRefundedMatch = data.totalNeedRefunded?.match(/(\d+)/);
-    const needPartitialRefundedMatch = data.totalNeedPartitialRefunded?.match(/(\d+)/);
-    
+
     const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
     const refunded = refundedMatch ? parseInt(refundedMatch[1], 10) : 0;
+
+    if (!total || !refunded) return 0;
+
+    return Math.round((refunded / total) * 100);
+  })();
+
+  // 환불진행률 계산 전액환불완료 / (전액환불요청 + 전액환불완료) × 100
+  const refundProgressRate = (() => {
+    const refundedMatch = data.totalRefunded?.match(/(\d+)/);
+    const needRefundedMatch = data.totalNeedRefunded?.match(/(\d+)/);
+
+    const refunded = refundedMatch ? parseInt(refundedMatch[1], 10) : 0;
     const needRefunded = needRefundedMatch ? parseInt(needRefundedMatch[1], 10) : 0;
-    const needPartitialRefunded = needPartitialRefundedMatch ? parseInt(needPartitialRefundedMatch[1], 10) : 0;
-    
-    const totalRefunds = refunded + needRefunded + needPartitialRefunded;
-    if (!total || !totalRefunds) return 0;
-    
-    return Math.round((totalRefunds / total) * 100);
+
+    const totalRequests = refunded + needRefunded;
+    if (!totalRequests || !refunded) return 0;
+
+    return Math.round((refunded / totalRequests) * 100);
   })();
 
   // 단체 규모별 비율 계산
@@ -228,14 +237,6 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                 {formatNumber(data.totalParticipants)}명
               </span>
             </div>
-            {data.todayRefundRequest && (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-slate-600">오늘 환불자</span>
-                <span className="text-lg font-semibold text-purple-700">
-                  +{formatNumber(data.todayRefundRequest)}명
-                </span>
-              </div>
-            )}
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm text-slate-600">입금</span>
               <span className="text-lg font-semibold text-emerald-700">
@@ -309,8 +310,20 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
               </div>
               <div className="h-2 rounded-full bg-slate-100">
                 <div
-                  className="h-2 rounded-full bg-purple-500"
+                  className="h-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-violet-500"
                   style={{ width: `${refundRate}%` }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+                <span>환불진행률</span>
+                <span>{refundProgressRate}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-cyan-500"
+                  style={{ width: `${refundProgressRate}%` }}
                 />
               </div>
             </div>
