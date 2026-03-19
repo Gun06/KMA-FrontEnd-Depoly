@@ -280,6 +280,8 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
     memo: data.memo,
     detailMemo: data.detailMemo,
     matchingLog: data.matchingLog,
+    failedLog: data.failedLog,
+    successLog: data.successLog,
     paymenterBank: data.paymenterBank, // 환불 은행명
     accountNumber: data.accountNumber, // 환불 계좌번호
     accountHolderName: data.accountHolderName, // 예금주명

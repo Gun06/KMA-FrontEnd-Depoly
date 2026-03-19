@@ -103,6 +103,11 @@ export default function IdPasswordModal({ isOpen, onClose, onSuccess, initialAcc
           </button>
         </div>
 
+        {/* 구 홈페이지 계정 안내 */}
+        <p className="mb-3 flex items-center justify-center gap-2 text-center text-sm text-gray-900">
+          <span className="rounded-sm bg-yellow-200/70 px-1.5 py-0.5">⚠️ 구 홈페이지 계정은 연동되지 않습니다.</span>
+        </p>
+
         {/* 안내 문구 */}
         <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-gray-700 text-center">

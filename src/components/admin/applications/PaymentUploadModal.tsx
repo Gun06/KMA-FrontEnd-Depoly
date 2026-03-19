@@ -486,8 +486,8 @@ export default function PaymentUploadModal({
                                           </span>
                                         </div>
                                         <div>
-                                          <span className="text-gray-500">종목:</span>{' '}
-                                          <span className="font-medium">{reg.eventCategoryName}</span>
+                                          <span className="text-gray-500">생년월일:</span>{' '}
+                                          <span className="font-medium">{reg.birth || '-'}</span>
                                         </div>
                                         <div>
                                           <span className="text-gray-500">금액:</span>{' '}

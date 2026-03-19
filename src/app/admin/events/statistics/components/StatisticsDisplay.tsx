@@ -61,18 +61,17 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
     return Math.round((refunded / total) * 100);
   })();
 
-  // 환불진행률 계산 전액환불완료 / (전액환불요청 + 전액환불완료) × 100
+  // 환불진행률 계산 totalRefunded / totalRefundRequest × 100 (= 전액환불완료 / (전액환불요청 + 전액환불완료))
   const refundProgressRate = (() => {
     const refundedMatch = data.totalRefunded?.match(/(\d+)/);
-    const needRefundedMatch = data.totalNeedRefunded?.match(/(\d+)/);
+    const refundRequestMatch = data.totalRefundRequest?.match(/(\d+)/);
 
     const refunded = refundedMatch ? parseInt(refundedMatch[1], 10) : 0;
-    const needRefunded = needRefundedMatch ? parseInt(needRefundedMatch[1], 10) : 0;
+    const refundRequest = refundRequestMatch ? parseInt(refundRequestMatch[1], 10) : 0;
 
-    const totalRequests = refunded + needRefunded;
-    if (!totalRequests || !refunded) return 0;
+    if (!refundRequest || !refunded) return '0.0';
 
-    return Math.round((refunded / totalRequests) * 100);
+    return ((refunded / refundRequest) * 100).toFixed(1);
   })();
 
   // 단체 규모별 비율 계산

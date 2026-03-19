@@ -56,8 +56,9 @@ export default function PersonalInfoSection({
       
       <div className="space-y-4 sm:space-y-6">
         {/* 전마협 아이디 */}
-        <FormField label="전마협 아이디">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
+        <FormField label="전마협 아이디(선택)">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
             <input
               type="text"
               placeholder="전마협 아이디는 정보 불러오기로만 입력됩니다"
@@ -83,10 +84,19 @@ export default function PersonalInfoSection({
                     불러오는 중...
                   </span>
                 ) : (
-                  '정보 불러오기 →'
+                  '정보 불러오기'
                 )}
               </button>
             )}
+          </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-blue-700">
+                ※ 건너뛰기 가능 / <span className="font-semibold underline underline-offset-2">[정보 불러오기]</span>로 기존 정보를 자동 입력할 수 있습니다.
+              </p>
+              <p className="text-xs text-gray-500">
+                로그인 상태면 바로 입력되고, 비로그인 상태면 아이디·비밀번호 입력 후 불러올 수 있습니다.
+              </p>
+            </div>
           </div>
         </FormField>
         <hr className="border-gray-200" />

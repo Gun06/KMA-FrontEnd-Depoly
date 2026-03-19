@@ -39,6 +39,8 @@ export interface RegistrationItem {
   memo?: string;                  // 관리자 메모 (편집 가능)
   detailMemo?: string;            // 상세 메모
   matchingLog?: string;           // 매칭 로그
+  failedLog?: string | null;      // 실패 로그(기존)
+  successLog?: string | null;     // 성공 로그(신규)
   eventId?: string;               // 대회 ID (코스 정보 조회용)
   paymenterBank?: string;         // 환불 은행명
   accountNumber?: string;         // 환불 계좌번호

@@ -1141,9 +1141,28 @@ export default function RegistrationDetailDrawer({
 
               {/* 매칭 로그 */}
               <div className="mt-4">
-                <div className="text-sm text-gray-700 mb-1">매칭 로그</div>
+                <div className="mb-1 flex items-center gap-1.5">
+                  <div className="text-sm text-gray-700">매칭 로그</div>
+                  {item.successLog && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600">
+                      성공
+                    </span>
+                  )}
+                  {item.failedLog && (
+                    <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600">
+                      실패
+                    </span>
+                  )}
+                </div>
+
                 <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap min-h-[64px]">
-                  {item.matchingLog ? item.matchingLog : '-'}
+                  {item.matchingLog
+                    ? item.matchingLog
+                    : item.successLog || item.failedLog
+                      ? [item.successLog && `성공: ${item.successLog}`, item.failedLog && `실패: ${item.failedLog}`]
+                          .filter(Boolean)
+                          .join('\n\n')
+                      : '-'}
                 </div>
               </div>
               </div>

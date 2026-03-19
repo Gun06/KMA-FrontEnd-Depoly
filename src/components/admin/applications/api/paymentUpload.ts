@@ -6,6 +6,7 @@ export type PaymentUploadRegistration = {
   phNum: string;
   organizationName: string;
   eventCategoryName: string;
+  birth?: string; // 생년월일
   amount: number;
   paymenterName?: string; // 입금자명
   registrationDate: string;

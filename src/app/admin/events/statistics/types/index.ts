@@ -26,8 +26,9 @@ export interface EventStatisticsResponse {
   totalCompletedParticipants: string;
   totalUnpaidParticipants: string;
   totalOrganizations: string;
-  totalRefunded?: string; // 환불 완료
-  totalNeedRefunded?: string; // 전액 환불 요청
+  totalRefunded?: string; // 전액 환불 완료
+  totalRefundRequest?: string; // 전액환불요청 + 전액환불완료
+  totalNeedRefunded?: string; // @deprecated 전액 환불 요청 (totalRefundRequest 사용)
   totalNeedPartitialRefunded?: string; // 차액 환불 요청
   group1to19?: string; // 1~19인 단체 수
   group20to29?: string; // 20~29인 단체 수
