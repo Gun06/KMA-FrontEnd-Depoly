@@ -56,8 +56,8 @@ export default function GiftSelectionModal({
       {/* 모달 컨테이너 */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-          <h3 className="text-lg font-semibold text-gray-900">기념품 선택</h3>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+          <h3 className="text-[17px] font-semibold text-gray-900">기념품 선택</h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -67,9 +67,9 @@ export default function GiftSelectionModal({
         </div>
 
         {/* 내용 */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {availableGifts.length === 0 ? (
-            <div className="text-center py-8 text-sm text-neutral-500">
+            <div className="text-center py-8 text-[13px] text-neutral-500">
               등록된 기념품이 없습니다.
             </div>
           ) : (
@@ -108,7 +108,7 @@ export default function GiftSelectionModal({
                       )}
                     />
                     <span className={cn(
-                      'text-sm flex-1',
+                      'text-[13px] flex-1 leading-snug',
                       isActive ? 'text-neutral-700' : 'text-neutral-400'
                     )}>
                       {gift.name} {gift.size && `(${gift.size})`}
@@ -121,18 +121,18 @@ export default function GiftSelectionModal({
         </div>
 
         {/* 버튼들 */}
-        <div className="flex gap-3 p-6 border-t border-gray-200 flex-shrink-0">
+        <div className="flex gap-3 px-4 py-3 border-t border-gray-200 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            className="flex-1 px-4 py-2 text-[13px] font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
           >
             취소
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            className="flex-1 px-4 py-2 text-[13px] font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             확인
           </button>

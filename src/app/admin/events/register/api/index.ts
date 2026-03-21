@@ -27,7 +27,6 @@ export type {
   EventBannerInfo,
   EventCreateRequest,
   EventUpdateRequest,
-  EventCategoryUpdateInfo,
   EventBannerUpdateInfo,
   SouvenirUpdateRequest,
   EventCategoryUpdateRequest,

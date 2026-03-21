@@ -29,6 +29,12 @@ export interface EventInfo {
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
   virtualAccount?: string;
+  /** 접수 시작 자동 전환 트리거 */
+  autoStart?: boolean;
+  /** 접수 마감 자동 전환 트리거 */
+  autoDeadline?: boolean;
+  /** 최대 정원 마감 자동 전환 트리거 */
+  autoMaxRegist?: boolean;
 }
 
 // 기념품 정보
@@ -64,14 +70,6 @@ export interface EventCreateRequest {
   eventBannerInfoList: EventBannerInfo[]; // 주최/주관/후원/협력 배너 정보
 }
 
-// 대회 수정용 카테고리 업데이트 정보
-export interface EventCategoryUpdateInfo {
-  id?: string; // 기존 카테고리 ID (수정 시 필요)
-  name: string; // 카테고리명 == 참가부문명 (코스명)
-  price: number; // 참가부문 가격(참가비)
-  souvenirIds: string[]; // 기념품 ID 배열
-}
-
 // 대회 수정용 배너 업데이트 정보
 export interface EventBannerUpdateInfo {
   imageUrl?: string; // 기존 이미지 URL (수정하지 않을 경우)
@@ -82,10 +80,9 @@ export interface EventBannerUpdateInfo {
   badge?: boolean; // 배지 표시 여부
 }
 
-// 서버로 전송할 대회 수정 요청 데이터
+// 서버로 전송할 대회 수정 요청 데이터 (종목/기념품은 별도 API)
 export interface EventUpdateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
-  eventCategoryUpdateInfo: EventCategoryUpdateInfo[]; // 카테고리 및 기념품 정보 (수정용)
   eventBannerUpdateInfo: EventBannerUpdateInfo[]; // 주최/주관/후원/협력 배너 정보 (수정용)
 }
 
@@ -160,7 +157,7 @@ export type EventFormState = {
   virtualAccount?: string;
   homeUrl: string;
   eventPageUrl: string; // 대회 페이지 주소명
-  maxParticipants?: number; // 선착순 접수 인원수
+  maxParticipants?: number; // 접수 인원수
   hosts: string[];
   organizers: string[];
   sponsors: string[];
@@ -238,6 +235,12 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     }>;
   };
   applyStatus?: RegStatus;
+  /** 접수 시작 자동 전환 트리거 */
+  autoStart?: boolean;
+  /** 접수 마감 자동 전환 트리거 */
+  autoDeadline?: boolean;
+  /** 최대 정원 마감 자동 전환 트리거 */
+  autoMaxRegist?: boolean;
 };
 
 // 이벤트 상태 (대회등록에서 사용)

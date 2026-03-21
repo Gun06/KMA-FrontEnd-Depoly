@@ -9,6 +9,7 @@ import { RadioGroup } from '@/components/common/Radio/RadioGroup';
 import BirthDateInput from '@/components/common/FormField/BirthDateInput';
 import { TimeSelect } from '@/components/common/Dropdown/TimeSelect';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
+import { MiniToggle } from '@/components/admin/Form/PartyRows';
 
 // useCompetitionForm의 반환 타입을 정의
 export type CompetitionFormHandle = {
@@ -47,6 +48,12 @@ export type CompetitionFormHandle = {
   setEventPageUrl: (value: string) => void;
   maxParticipants: string;
   setMaxParticipants: (value: string) => void;
+  autoStart: boolean;
+  setAutoStart: (value: boolean) => void;
+  autoDeadline: boolean;
+  setAutoDeadline: (value: boolean) => void;
+  autoMaxRegist: boolean;
+  setAutoMaxRegist: (value: boolean) => void;
   hours: string[];
   minutes: string[];
   paymentDeadlineDate: string;
@@ -129,7 +136,18 @@ export default function BasicInfoSection({
       </FormRow>
 
       {/* 신청시작일 */}
-      <FormRow label="신청시작일" contentClassName="items-left mr-auto">
+      <FormRow
+        label="신청시작일"
+        labelAction={
+          <MiniToggle
+            value={f.autoStart}
+            onChange={readOnly ? undefined : f.setAutoStart}
+            disabled={readOnly}
+            className="shrink-0"
+          />
+        }
+        contentClassName="items-center mr-auto"
+      >
         <div
           ref={fieldRefs?.get('registStartDate') as React.RefObject<HTMLDivElement>}
           className="grid w-full items-center gap-2 mr-10"
@@ -174,7 +192,18 @@ export default function BasicInfoSection({
       </FormRow>
 
       {/* 접수마감일자 */}
-      <FormRow label="접수마감" contentClassName="items-left mr-auto">
+      <FormRow
+        label="접수마감"
+        labelAction={
+          <MiniToggle
+            value={f.autoDeadline}
+            onChange={readOnly ? undefined : f.setAutoDeadline}
+            disabled={readOnly}
+            className="shrink-0"
+          />
+        }
+        contentClassName="items-center mr-auto"
+      >
         <div
           ref={fieldRefs?.get('deadlineDate') as React.RefObject<HTMLDivElement>}
           className="grid w-full items-center gap-2 mr-10"
@@ -308,8 +337,19 @@ export default function BasicInfoSection({
         </div>
       </FormRow>
 
-      {/* 선착순 접수 인원수 */}
-      <FormRow label="선착순 접수 인원수">
+      {/* 접수 인원수 */}
+      <FormRow
+        label="접수 인원수"
+        labelAction={
+          <MiniToggle
+            value={f.autoMaxRegist}
+            onChange={readOnly ? undefined : f.setAutoMaxRegist}
+            disabled={readOnly}
+            className="shrink-0"
+          />
+        }
+        contentClassName="items-center"
+      >
         <TextField
           placeholder="최대 접수 가능 인원수를 입력하세요. (미입력시 제한없음)"
           value={f.maxParticipants}

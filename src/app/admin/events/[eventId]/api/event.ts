@@ -37,6 +37,12 @@ export interface EventDetailApiResponse {
     bank?: string;
     /** 가상계좌/입금 계좌번호 */
     virtualAccount?: string;
+    /** 접수 시작 자동 전환 트리거 */
+    autoStart?: boolean;
+    /** 접수 마감 자동 전환 트리거 */
+    autoDeadline?: boolean;
+    /** 최대 정원 마감 자동 전환 트리거 */
+    autoMaxRegist?: boolean;
   };
   eventCategories: Array<{
     id: string;

@@ -27,6 +27,12 @@ export interface EventInfo {
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
   virtualAccount?: string;
+  /** 접수 시작 자동 전환 트리거 */
+  autoStart?: boolean;
+  /** 접수 마감 자동 전환 트리거 */
+  autoDeadline?: boolean;
+  /** 최대 정원 마감 자동 전환 트리거 */
+  autoMaxRegist?: boolean;
 }
 
 // 기념품 정보
@@ -133,7 +139,7 @@ export type EventFormState = {
   virtualAccount?: string;
   homeUrl: string;
   eventPageUrl: string; // 대회 페이지 주소명
-  maxParticipants?: number; // 선착순 접수 인원수
+  maxParticipants?: number; // 접수 인원수
   hosts: string[];
   organizers: string[];
   sponsors: string[];
@@ -206,6 +212,9 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     }>;
   };
   applyStatus?: RegStatus;
+  autoStart?: boolean;
+  autoDeadline?: boolean;
+  autoMaxRegist?: boolean;
 };
 
 // ===== 관리자 이벤트 목록 조회 API 타입 =====

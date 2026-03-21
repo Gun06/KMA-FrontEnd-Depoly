@@ -155,11 +155,11 @@ export default function EditForm({
     }
   }, [step]);
 
-  // 공통 스타일
+  // 공통 스타일 (대회 등록 CreateForm과 동일: 13px, 타이트 행)
   const readOnly = !isEditing;
   const inputColorCls = readOnly ? 'text-[#646464]' : 'text-black';
   const fieldCls =
-    'w-full text-[16px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
+    'w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
   const noop = () => {};
 
   // 편집 시작
@@ -299,10 +299,13 @@ export default function EditForm({
 
   return (
     <div className="w-full">
-      <div className="max-w-[1200px] mx-auto px-4 space-y-10 pb-24">
+      <div className="max-w-[1280px] mx-auto px-3 space-y-6 pb-24">
         <FormTable
-          title={title}
+          title={
+            <h1 className="text-[17px] font-semibold">{title}</h1>
+          }
           labelWidth={200}
+          tightRows
           actions={
             <div className="flex items-center gap-3">
               <EditActionBar
@@ -328,14 +331,14 @@ export default function EditForm({
             fieldRefs={fieldRefs}
           />
 
-          {/* 공개여부 / 셔틀 */}
+          {/* 공개여부 / 셔틀 (CreateForm과 동일) */}
           <InlineLabelPairRow
             leftLabel="공개여부"
             rightLabel="셔틀 운행여부"
             leftField={
               <div
                 className={cn(
-                  'px-4 py-2',
+                  'px-3 py-1',
                   readOnly ? 'text-[#646464] pointer-events-none' : ''
                 )}
               >
@@ -343,7 +346,8 @@ export default function EditForm({
                   name={`${f.uid}-visibility`}
                   value={f.visibility}
                   onValueChange={readOnly ? noop : f.setVisibility}
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: '공개', label: '공개' },
                     { value: '테스트', label: '테스트' },
@@ -355,7 +359,7 @@ export default function EditForm({
             rightField={
               <div
                 className={cn(
-                  'px-4 py-2',
+                  'px-3 py-1',
                   readOnly ? 'text-[#646464] pointer-events-none' : ''
                 )}
               >
@@ -365,17 +369,19 @@ export default function EditForm({
                   onValueChange={
                     readOnly ? noop : v => f.setShuttle(v as Shuttle)
                   }
-                  gapPx={40}
+                  className="text-[13px]"
+                  gapPx={24}
                   options={[
                     { value: '운행', label: '운행' },
                     { value: '비운행', label: '비운행' },
                   ]}
                 />
-                <span className="text-xs text-[#646464]">
+                <span className="text-[13px] text-[#646464]">
                   (현재는 사용되지 않습니다)
                 </span>
               </div>
             }
+            rowHeight={52}
           />
         </FormTable>
 
@@ -405,8 +411,8 @@ export default function EditForm({
               {/* Tooltip */}
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
                 <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-sm">1단계: 기본 정보 저장</div>
-                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                  <div className="font-semibold mb-2 text-[13px]">1단계: 기본 정보 저장</div>
+                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                     대회명, 날짜, 장소 등 기본 정보를 입력하고 저장하세요. 기본 정보를 먼저 저장해야 다음 단계로 진행할 수 있습니다.
                   </div>
                   <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
@@ -423,17 +429,17 @@ export default function EditForm({
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-1">
+              <h3 className="text-[17px] font-semibold text-blue-900 mb-1">
                 기념품 및 종목 설정
               </h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-[13px] text-blue-700 leading-relaxed">
                 대회에 제공할 기념품과 종목을 추가해주세요. 대회 정보는 아래에서 수정할 수 있습니다.
               </p>
             </div>
             {onBack && (
               <button
                 onClick={onBack}
-                className="ml-4 px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 transition-colors"
+                className="ml-4 px-4 py-2 text-[13px] font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 transition-colors"
               >
                 나중에 설정하기
               </button>
@@ -469,8 +475,8 @@ export default function EditForm({
               {/* Tooltip */}
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
                 <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-sm">2단계: 기념품 저장</div>
-                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                  <div className="font-semibold mb-2 text-[13px]">2단계: 기념품 저장</div>
+                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                     대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다.
                   </div>
                   <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
@@ -511,8 +517,8 @@ export default function EditForm({
               {/* Tooltip */}
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
                 <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-sm">3단계: 종목 저장</div>
-                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                  <div className="font-semibold mb-2 text-[13px]">3단계: 종목 저장</div>
+                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                     참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 모든 정보가 저장되면 대회 설정이 완료됩니다.
                   </div>
                   <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>

@@ -8,8 +8,8 @@ import { Minus } from "lucide-react";
 import EventUploader from "@/components/common/Upload/EventUploader";
 import type { UploadItem } from "@/components/common/Upload/types";
 
-/** 🔘 미니 세그먼트 토글 (ON/OFF) */
-function MiniToggle({ value, onChange, disabled, className }: {
+/** 🔘 미니 세그먼트 토글 (ON/OFF) — 기본정보 등에서 재사용 */
+export function MiniToggle({ value, onChange, disabled, className }: {
   value: boolean; onChange?: (v: boolean) => void; disabled?: boolean; className?: string;
 }) {
   return (
@@ -124,10 +124,9 @@ export default function PartyRows({
             {/* 라벨 + 토글 */}
             <div
               className={cn(
-                "relative bg-[#4D4D4D] text-white flex items-center justify-center text-center border-r border-neutral-300",
+                "bg-[#4D4D4D] text-white flex items-center justify-end gap-2 px-2 border-r border-neutral-300",
                 labelTextSize,
-                rowBorder,
-                "pr-16"
+                rowBorder
               )}
               style={{ 
                 minHeight: effectiveRowHeight, 
@@ -136,8 +135,10 @@ export default function PartyRows({
                 maxWidth: `${lw}px`
               }}
             >
-              {kind} {idx + 1}
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              <span className="min-w-0 text-right leading-tight whitespace-nowrap">
+                {kind} {idx + 1}
+              </span>
+              <div className="shrink-0 flex items-center">
                 <MiniToggle value={enabled} onChange={(v) => onToggleEnabled?.(idx, v)} disabled={readOnly} />
               </div>
             </div>

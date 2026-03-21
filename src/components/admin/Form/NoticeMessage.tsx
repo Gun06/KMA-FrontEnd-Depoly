@@ -1,4 +1,4 @@
-// src/components/common/NoticeMessage.tsx
+// src/components/admin/Form/NoticeMessage.tsx
 import React from "react";
 import { cn } from "@/utils/cn";
 
@@ -14,12 +14,12 @@ interface NoticeMessageProps {
 
 export default function NoticeMessage({ items, className }: NoticeMessageProps) {
   return (
-    <div className={cn("space-y-1 text-sm leading-6", className)}>
+    <div className={cn("space-y-1 text-[13px] leading-6", className)}>
       {items.map((item, idx) => (
         <p
           key={idx}
           className={cn(
-            "whitespace-pre-line text-[14px]", // ✅ 고정 14px
+            "whitespace-pre-line text-[13px]",
             item.highlight ? "text-red-500 font-medium" : "text-gray-500"
           )}
         >

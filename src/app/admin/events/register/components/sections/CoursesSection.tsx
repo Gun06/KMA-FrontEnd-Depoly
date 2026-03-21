@@ -66,24 +66,24 @@ export default function CoursesSection({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold mb-3 text-left">종목</h1>
+        <h1 className="text-[17px] font-semibold mb-3 text-left">종목</h1>
         {courses.length === 0 ? (
           <div className="bg-white border border-neutral-300 rounded-lg overflow-hidden">
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
                 <Trophy className="w-8 h-8 text-neutral-400" />
               </div>
-              <div className="text-neutral-600 text-base font-medium mb-2">
+              <div className="text-neutral-600 text-[13px] font-medium mb-2">
                 등록된 종목이 없습니다
               </div>
-              <div className="text-neutral-500 text-sm mb-6">
+              <div className="text-neutral-500 text-[13px] mb-6">
                 첫 번째 종목을 추가해보세요
               </div>
               {!readOnly && (
                 <button
                   type="button"
                   onClick={onAddCourse}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
                   aria-label="종목 추가"
                 >
                   <Plus size={16} strokeWidth={2.25} />
@@ -105,12 +105,12 @@ export default function CoursesSection({
                 )}>
                   {/* 참가부문 및 참가비 헤더 */}
                   <div className={cn(
-                    "flex items-stretch",
+                    "flex items-stretch min-h-[52px]",
                     isCourseActive ? "bg-[#4D4D4D]" : "bg-[#4D4D4D]"
                   )}>
                     {/* 참가부문 */}
-                    <div className="flex-1 flex items-center">
-                      <div className="min-w-[140px] bg-transparent text-white text-[16px] flex items-center justify-center gap-3 px-4 py-2 border-r border-neutral-300">
+                    <div className="flex-1 flex items-stretch min-h-[52px]">
+                      <div className="min-w-[140px] bg-transparent text-white text-[13px] flex items-center justify-center gap-2 px-3 py-1 border-r border-neutral-300 shrink-0">
                         <span className="whitespace-nowrap">참가부문</span>
                         {!readOnly && onToggleCourseEnabled && (
                           <MiniToggle
@@ -120,7 +120,7 @@ export default function CoursesSection({
                           />
                         )}
                       </div>
-                      <div className="flex-1 bg-transparent px-4 py-2">
+                      <div className="flex-1 bg-transparent px-3 py-1 flex items-center min-w-0">
                   <TextField
                     placeholder="참가부문을 입력하세요. 예) 22km|짝궁마라톤"
                     value={course.name}
@@ -129,17 +129,19 @@ export default function CoursesSection({
                         ? noop()
                         : onChangeCourseName(courseIndex, e.currentTarget.value)
                     }
-                          className="w-full text-[16px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
+                          className="w-full text-[13px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
+                    fontSizePx={13}
+                    heightPx={52}
                     readOnly={readOnly || !isCourseActive}
                   />
                       </div>
                     </div>
                     {/* 참가비 */}
-                    <div className="flex items-center border-l border-neutral-300">
-                      <div className="w-[100px] bg-transparent text-white text-[16px] flex items-center justify-center px-4 py-2 border-r border-neutral-300">
+                    <div className="flex items-stretch border-l border-neutral-300 shrink-0">
+                      <div className="w-[88px] bg-transparent text-white text-[13px] flex items-center justify-center px-2 py-1 border-r border-neutral-300">
                         참가비
                 </div>
-                      <div className="w-[200px] bg-transparent px-4 py-2">
+                      <div className="w-[200px] bg-transparent px-3 py-1 flex items-center">
                 <TextField
                   inputMode="numeric"
                   placeholder="금액(숫자만)"
@@ -149,7 +151,9 @@ export default function CoursesSection({
                       ? noop()
                       : onChangeCoursePrice(courseIndex, e.currentTarget.value)
                   }
-                          className="w-full text-[16px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
+                          className="w-full text-[13px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
+                  fontSizePx={13}
+                  heightPx={52}
                   readOnly={readOnly || !isCourseActive}
                 />
                       </div>
@@ -159,13 +163,13 @@ export default function CoursesSection({
                   {/* 기념품 섹션 */}
                   <div>
                     {/* 기념품 제목 행 */}
-                    <div className="bg-[#F5F5F5] flex items-center justify-between px-4 py-1 border-b border-neutral-200">
-                      <div className="text-[16px] font-medium text-neutral-900">기념품</div>
+                    <div className="bg-[#F5F5F5] flex items-center justify-between min-h-[44px] px-3 py-1 border-b border-neutral-200">
+                      <div className="text-[13px] font-medium text-neutral-900">기념품</div>
                       {!readOnly && availableGifts.length > 0 && (
                         <button
                           type="button"
                           onClick={() => handleOpenModal(courseIndex)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-neutral-700 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
                         >
                           <Plus size={14} strokeWidth={2} />
                           기념품 추가
@@ -174,13 +178,13 @@ export default function CoursesSection({
                     </div>
 
                     {/* 선택된 기념품 표시 */}
-                    <div className="bg-white px-4 py-3">
+                    <div className="bg-white px-3 py-2.5">
                   {availableGifts.length === 0 ? (
-                        <div className="text-sm text-neutral-500">
+                        <div className="text-[13px] text-neutral-500">
                       먼저 기념품을 생성해주세요.
                         </div>
                       ) : course.selectedGifts.length === 0 ? (
-                        <div className="text-sm text-neutral-500">
+                        <div className="text-[13px] text-neutral-500">
                           기념품을 선택해주세요.
                     </div>
                   ) : (
@@ -193,7 +197,7 @@ export default function CoursesSection({
                               <div
                             key={giftIndex}
                                 className={cn(
-                                  "inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded",
+                                  "inline-flex items-center gap-2 px-3 py-1.5 text-[13px] rounded",
                                   isGiftActive
                                     ? "text-neutral-700 bg-white border border-neutral-200"
                                     : "text-neutral-400 bg-neutral-100 border border-neutral-300 opacity-60"
@@ -245,7 +249,7 @@ export default function CoursesSection({
               <button
                 type="button"
                 onClick={onAddCourse}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
                 aria-label="종목 추가"
               >
                 <Plus size={16} strokeWidth={2.25} />
@@ -255,7 +259,7 @@ export default function CoursesSection({
         )}
       </div>
 
-      <div className="flex mx-auto px-4">
+      <div className="flex mx-auto px-3">
         <NoticeMessage
           items={[
             {

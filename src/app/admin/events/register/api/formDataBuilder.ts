@@ -5,7 +5,6 @@ import type {
   EventUpdateRequest,
   EventImageFiles,
   EventCreatePayload,
-  EventCategoryUpdateInfo,
   EventBannerUpdateInfo,
 } from './types';
 import { EventDataTransformer } from './eventDataTransformer';
@@ -240,14 +239,9 @@ export class FormDataBuilder {
       badge: banner.badge === true ? true : (banner.badge === false ? false : true), // 명시적으로 true면 true, false면 false, undefined면 기본값 true
     }));
 
-    // eventCategoryUpdateInfo 생성 (기념품/종목은 나중에 별도 API로 전송 예정이므로 일단 빈 배열)
-    // TODO: 기념품/종목 API 연동 후 구현
-    const eventCategoryUpdateInfo: EventCategoryUpdateInfo[] = [];
-
-    // 1. JSON 데이터 구성 (새로운 API 스펙에 맞게)
+    // 1. JSON 데이터 구성 (새로운 API 스펙에 맞게, 종목은 별도 API)
     const eventUpdateRequest: EventUpdateRequest = {
       eventInfo,
-      eventCategoryUpdateInfo,
       eventBannerUpdateInfo,
     };
 

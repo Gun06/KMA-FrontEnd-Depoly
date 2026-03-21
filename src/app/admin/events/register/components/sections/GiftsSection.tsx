@@ -34,13 +34,13 @@ export default function GiftsSection({
   const noop = () => {};
   const textCls = readOnly ? 'text-[#646464]' : 'text-neutral-900';
   const fieldCls =
-    'w-full text-[16px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
+    'w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-lg font-semibold mb-3 text-left">기념품</h1>
-        <FormLayoutProvider labelWidth={200} tightRows={false}>
+        <h1 className="text-[17px] font-semibold mb-3 text-left">기념품</h1>
+        <FormLayoutProvider labelWidth={200} tightRows>
           <div className="w-full border border-neutral-300 rounded-sm overflow-hidden">
             {gifts.length === 0 ? (
               <div className="bg-white">
@@ -48,17 +48,17 @@ export default function GiftsSection({
                   <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
                     <Gift className="w-8 h-8 text-neutral-400" />
                   </div>
-                  <div className="text-neutral-600 text-base font-medium mb-2">
+                  <div className="text-neutral-600 text-[13px] font-medium mb-2">
                     등록된 기념품이 없습니다
                   </div>
-                  <div className="text-neutral-500 text-sm mb-6">
+                  <div className="text-neutral-500 text-[13px] mb-6">
                     첫 번째 기념품을 추가해보세요
                   </div>
                   {!readOnly && (
                     <button
                       type="button"
                       onClick={onAddGift}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
                       aria-label="기념품 추가"
                     >
                       <Plus size={16} strokeWidth={2.25} />
@@ -106,6 +106,8 @@ export default function GiftsSection({
                                   : onChangeGiftName(index, e.currentTarget.value)
                               }
                               className={cn(fieldCls, textCls)}
+                              fontSizePx={13}
+                              heightPx={52}
                               readOnly={readOnly || !isActive}
                             />
                           </div>
@@ -120,6 +122,8 @@ export default function GiftsSection({
                                   : onChangeGiftSize(index, e.currentTarget.value)
                               }
                               className={cn(fieldCls, textCls)}
+                              fontSizePx={13}
+                              heightPx={52}
                               readOnly={readOnly || !isActive}
                             />
                           </div>
@@ -151,7 +155,7 @@ export default function GiftsSection({
             <button
               type="button"
               onClick={onAddGift}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
               aria-label="기념품 추가"
             >
               <Plus size={16} strokeWidth={2.25} />

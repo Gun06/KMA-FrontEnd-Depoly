@@ -162,8 +162,11 @@ export type UseCompetitionPrefill = Partial<
     };
     /** 신청여부 프리필 */
     applyStatus?: RegStatus;
-    /** 선착순 접수 인원수 프리필 */
+    /** 접수 인원수 프리필 */
     maxParticipants?: number;
+    autoStart?: boolean;
+    autoDeadline?: boolean;
+    autoMaxRegist?: boolean;
     /** 개최일시 시각 프리필 */
     hh?: string;
     mm?: string;
@@ -239,6 +242,9 @@ export type HydrateSnapshotInput = {
   paymentDeadlineDate?: string;
   paymentDeadlineHh?: string;
   paymentDeadlineMm?: string;
+  autoStart?: boolean;
+  autoDeadline?: boolean;
+  autoMaxRegist?: boolean;
 };
 
 export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
@@ -285,8 +291,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [paymentDeadlineHh, setPaymentDeadlineHh] = React.useState('06');
   const [paymentDeadlineMm, setPaymentDeadlineMm] = React.useState('00');
 
-  // 선착순 접수 인원수
+  // 접수 인원수
   const [maxParticipants, setMaxParticipants] = React.useState('');
+  const [autoStart, setAutoStart] = React.useState(false);
+  const [autoDeadline, setAutoDeadline] = React.useState(false);
+  const [autoMaxRegist, setAutoMaxRegist] = React.useState(false);
 
   const [place, setPlace] = React.useState('');
   const [account, setAccount] = React.useState('');
@@ -419,9 +428,13 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setHomeUrl(prefill.homeUrl ?? '');
     setEventPageUrl(prefill.eventPageUrl ?? '');
 
-    // 선착순 접수 인원수 프리필
+    // 접수 인원수 프리필
     if (prefill.maxParticipants)
       setMaxParticipants(String(prefill.maxParticipants));
+
+    if (prefill.autoStart !== undefined) setAutoStart(prefill.autoStart);
+    if (prefill.autoDeadline !== undefined) setAutoDeadline(prefill.autoDeadline);
+    if (prefill.autoMaxRegist !== undefined) setAutoMaxRegist(prefill.autoMaxRegist);
 
     if (prefill.applyStatus) setApplyStatus(prefill.applyStatus);
 
@@ -938,6 +951,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       },
       /** 신청여부를 API 바디에도 포함 */
       applyStatus,
+      autoStart,
+      autoDeadline,
+      autoMaxRegist,
     } as unknown as EventCreatePayload;
 
     return payload;
@@ -1001,6 +1017,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (s.paymentDeadlineDate !== undefined) setPaymentDeadlineDate(s.paymentDeadlineDate);
     if (s.paymentDeadlineHh !== undefined) setPaymentDeadlineHh(s.paymentDeadlineHh);
     if (s.paymentDeadlineMm !== undefined) setPaymentDeadlineMm(s.paymentDeadlineMm);
+
+    if (s.autoStart !== undefined) setAutoStart(s.autoStart);
+    if (s.autoDeadline !== undefined) setAutoDeadline(s.autoDeadline);
+    if (s.autoMaxRegist !== undefined) setAutoMaxRegist(s.autoMaxRegist);
 
     // 업로드들
     setBannerHost(s.bannerHost ?? []);
@@ -1076,9 +1096,15 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     paymentDeadlineMm,
     setPaymentDeadlineMm,
 
-    // 선착순 접수 인원수
+    // 접수 인원수
     maxParticipants,
     setMaxParticipants,
+    autoStart,
+    setAutoStart,
+    autoDeadline,
+    setAutoDeadline,
+    autoMaxRegist,
+    setAutoMaxRegist,
 
     place,
     setPlace,

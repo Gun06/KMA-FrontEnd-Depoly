@@ -23,7 +23,7 @@ export type EventFormState = {
   place: string;
   account: string;
   homeUrl: string;
-  maxParticipants?: number; // 선착순 접수 인원수
+  maxParticipants?: number; // 접수 인원수
   hosts: string[];
   organizers: string[];
   sponsors: string[];
