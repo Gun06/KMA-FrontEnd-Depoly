@@ -512,17 +512,14 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
 
       {/* 제출 버튼 */}
       <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        {/* ncloud 임시 비활성화 - 비밀번호 초기화 버튼 숨김 */}
-        {false && (
-          <button
-            onClick={() => setShowPasswordResetRequestModal(true)}
-            type="button"
-            className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg text-black hover:bg-[#C0C0C0]"
-            style={{ backgroundColor: '#D9D9D9' }}
-          >
-            비밀번호 초기화
-          </button>
-        )}
+        <button
+          onClick={() => setShowPasswordResetRequestModal(true)}
+          type="button"
+          className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 rounded-lg transition-colors font-medium text-base sm:text-lg text-black hover:bg-[#C0C0C0]"
+          style={{ backgroundColor: '#D9D9D9' }}
+        >
+          비밀번호 초기화
+        </button>
         <button
           onClick={handleSubmit}
           disabled={isLoading}

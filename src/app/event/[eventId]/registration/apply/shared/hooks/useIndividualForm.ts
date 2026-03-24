@@ -10,6 +10,8 @@ import { EventRegistrationInfo, CategorySouvenir } from '../types/common';
 import { useRouter } from 'next/navigation';
 import { formatError } from '../utils/errorHandler';
 
+const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
+
 export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationInfo | null) => {
   const router = useRouter();
   const [formData, setFormData] = useState<IndividualFormData>({
@@ -310,15 +312,23 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
   // 폼 제출 처리
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isFormValid(formData)) {
+
+    const isEditMode = typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('mode') === 'edit';
+    const sanitizedFormData = isEditMode
+      ? { ...formData, password: '123456', confirmPassword: '123456' }
+      : formData;
+    const isEditPasswordSectionValid = !isEditMode || (
+      formData.password.trim() !== '' &&
+      formData.confirmPassword.trim() !== '' &&
+      formData.password === formData.confirmPassword &&
+      isEditPasswordValid(formData.password)
+    );
+
+    if (isFormValid(sanitizedFormData as IndividualFormData) && isEditPasswordSectionValid) {
       try {
         setIsSubmitted(true);
-        
-        // 수정 모드인지 확인
-        const isEditMode = typeof window !== 'undefined' && 
-          new URLSearchParams(window.location.search).get('mode') === 'edit';
-        
+
         // API 스키마에 맞는 데이터로 변환 (수정 모드에서는 souvenir 필드 제거)
         const apiData = isEditMode ? 
           transformFormDataToUpdateApi(formData, eventInfo) : 
@@ -481,8 +491,29 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
         setIsSubmitted(false);
       }
     } else {
-      // 누락된 필드 목록 가져오기 (친절한 메시지 형식)
-      const errorMessage = getIndividualFormValidationErrors(formData);
+      // 누락된 필드 목록 가져오기 (수정 모드에서는 비밀번호 규칙 별도 처리)
+      const errorMessage = (() => {
+        if (!isEditMode) return getIndividualFormValidationErrors(formData);
+
+        const pwdErrors: string[] = [];
+        if (formData.password.trim() === '') {
+          pwdErrors.push('• 비밀번호를 입력해주세요');
+        } else if (!isEditPasswordValid(formData.password)) {
+          pwdErrors.push('• 신청시 입력했던 비밀번호로 입력해주세요.');
+        }
+        if (formData.confirmPassword.trim() === '') {
+          pwdErrors.push('• 비밀번호 확인을 입력해주세요');
+        } else if (formData.password !== formData.confirmPassword) {
+          pwdErrors.push('• 비밀번호와 비밀번호 확인이 일치하지 않습니다');
+        }
+
+        const baseErrors = getIndividualFormValidationErrors(sanitizedFormData as IndividualFormData);
+        if (pwdErrors.length === 0) return baseErrors;
+        if (!baseErrors.includes('【기본 정보】')) {
+          return `다음 항목을 확인해주세요:\n\n【기본 정보】\n${pwdErrors.join('\n')}`;
+        }
+        return baseErrors.replace('【기본 정보】', `【기본 정보】\n${pwdErrors.join('\n')}`);
+      })();
       setSubmitError(errorMessage);
     }
   };
@@ -612,6 +643,16 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     setIsOtpModalOpen(false);
   };
 
+  const isCurrentEditMode = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('mode') === 'edit';
+  const isEditPasswordSectionValid = formData.password.trim() !== '' &&
+    formData.confirmPassword.trim() !== '' &&
+    formData.password === formData.confirmPassword &&
+    isEditPasswordValid(formData.password);
+  const isSubmitEnabled = isCurrentEditMode
+    ? isFormValid({ ...formData, password: '123456', confirmPassword: '123456' } as IndividualFormData) && isEditPasswordSectionValid
+    : isFormValid(formData);
+
   return {
     formData,
     setFormData,
@@ -620,7 +661,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     idCheckResult,
     setIdCheckResult,
     isSubmitted,
-    isFormValid: isFormValid(formData),
+    isFormValid: isSubmitEnabled,
     refs: {
       yearRef,
       monthRef,

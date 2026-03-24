@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { EventRegistrationInfo } from '@/app/event/[eventId]/registration/apply/shared/types/common';
 
 interface SouvenirSelectionModalProps {
@@ -23,6 +24,12 @@ export default function SouvenirSelectionModal({
   currentSelection
 }: SouvenirSelectionModalProps) {
   const [selectedSouvenirs, setSelectedSouvenirs] = useState<Array<{souvenirId: string, souvenirName: string, size: string}>>(currentSelection);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     // 모달이 열릴 때 currentSelection을 우선 사용
@@ -251,9 +258,11 @@ export default function SouvenirSelectionModal({
     });
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-[calc(100vw-2rem)] max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold">기념품 선택</h3>
           <button
@@ -421,7 +430,8 @@ export default function SouvenirSelectionModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

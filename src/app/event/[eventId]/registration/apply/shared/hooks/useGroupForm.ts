@@ -9,6 +9,8 @@ import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
 import { formatError } from '../utils/errorHandler';
 import { useRouter } from 'next/navigation';
 
+const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
+
 export const useGroupForm = (eventId: string, eventInfo: any) => {
   const router = useRouter();
   const [formData, setFormData] = useState<GroupFormData>({
@@ -242,17 +244,26 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
       return;
     }
 
-    if (isFormValid(formData)) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const dataParam = urlParams.get('data');
+    const orgAccount = urlParams.get('orgAccount');
+    const isEdit = mode === 'edit';
+
+    const sanitizedFormData = isEdit
+      ? { ...formData, groupPassword: '123456', confirmGroupPassword: '123456' }
+      : formData;
+    const isEditPasswordSectionValid = !isEdit || (
+      formData.groupPassword.trim() !== '' &&
+      formData.confirmGroupPassword.trim() !== '' &&
+      formData.groupPassword === formData.confirmGroupPassword &&
+      isEditPasswordValid(formData.groupPassword)
+    );
+
+    if (isFormValid(sanitizedFormData as GroupFormData) && isEditPasswordSectionValid) {
       setIsLoading(true);
 
       try {
-        // 수정 모드인지 확인
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode');
-        const dataParam = urlParams.get('data');
-        const orgAccount = urlParams.get('orgAccount');
-        const isEdit = mode === 'edit';
-
         // 수정 모드인 경우 state에서 editData 사용 (useEffect에서 이미 설정됨)
         let currentEditData = editData;
 
@@ -349,8 +360,29 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
         setIsLoading(false);
       }
     } else {
-      // 누락된 필드 목록 가져오기 (친절한 메시지 형식)
-      const errorMessage = getGroupFormValidationErrors(formData);
+      // 누락된 필드 목록 가져오기 (수정 모드에서는 비밀번호 규칙 별도 처리)
+      const errorMessage = (() => {
+        if (!isEdit) return getGroupFormValidationErrors(formData);
+
+        const pwdErrors: string[] = [];
+        if (formData.groupPassword.trim() === '') {
+          pwdErrors.push('• 단체 비밀번호를 입력해주세요');
+        } else if (!isEditPasswordValid(formData.groupPassword)) {
+          pwdErrors.push('• 신청시 입력했던 비밀번호로 입력해주세요.');
+        }
+        if (formData.confirmGroupPassword.trim() === '') {
+          pwdErrors.push('• 단체 비밀번호 확인을 입력해주세요');
+        } else if (formData.groupPassword !== formData.confirmGroupPassword) {
+          pwdErrors.push('• 단체 비밀번호와 비밀번호 확인이 일치하지 않습니다');
+        }
+
+        const baseErrors = getGroupFormValidationErrors(sanitizedFormData as GroupFormData);
+        if (pwdErrors.length === 0) return baseErrors;
+        if (!baseErrors.includes('【기본 정보】')) {
+          return `다음 항목을 확인해주세요:\n\n【기본 정보】\n${pwdErrors.join('\n')}`;
+        }
+        return baseErrors.replace('【기본 정보】', `【기본 정보】\n${pwdErrors.join('\n')}`);
+      })();
       setSubmitError(errorMessage);
     }
   };
@@ -408,6 +440,14 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
     setIsOtpModalOpen(false);
   };
 
+  const isEditPasswordSectionValid = formData.groupPassword.trim() !== '' &&
+    formData.confirmGroupPassword.trim() !== '' &&
+    formData.groupPassword === formData.confirmGroupPassword &&
+    isEditPasswordValid(formData.groupPassword);
+  const isSubmitEnabled = isEditMode
+    ? isFormValid({ ...formData, groupPassword: '123456', confirmGroupPassword: '123456' } as GroupFormData) && isEditPasswordSectionValid
+    : isFormValid(formData);
+
   return {
     formData,
     setFormData,
@@ -419,7 +459,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
     groupIdCheckResult,
     isEditMode,
     isLoading,
-    isFormValid: isFormValid(formData),
+    isFormValid: isSubmitEnabled,
     openDropdown,
     setOpenDropdown,
     refs: {

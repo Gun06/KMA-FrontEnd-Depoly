@@ -225,8 +225,11 @@ export default function GroupInfoSection({
           <PasswordField
             value={formData.groupPassword}
             onChange={(value) => onInputChange('groupPassword', value)}
-            placeholder="단체 비밀번호를 입력해주세요"
+            placeholder={isEditMode ? "신청시 입력했던 비밀번호를 입력해주세요." : "단체 비밀번호를 입력해주세요"}
             className="w-full sm:w-96 px-3 sm:px-4 py-3 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+            minLength={isEditMode ? 4 : 6}
+            helperText={isEditMode ? '신청시 입력했던 비밀번호로 입력해주세요.' : '비밀번호는 최소 6자리, 공백 없이 입력해주세요.'}
+            showValidationGuide={!isEditMode}
           />
         </FormField>
         <hr className="border-gray-200" />

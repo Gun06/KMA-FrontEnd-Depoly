@@ -282,15 +282,12 @@ export default function IndividualGroupConfirmResultPage() {
 
           {/* 버튼 그룹 */}
           <div className="flex flex-row justify-center gap-2 sm:gap-4 mt-8">
-            {/* ncloud 임시 비활성화 - 단체 내 개별 수정하기 버튼 숨김 */}
-            {false && (
-              <button
-                onClick={handleEditClick}
-                className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-white text-black border-2 border-black hover:bg-gray-100"
-              >
-                수정하기
-              </button>
-            )}
+            <button
+              onClick={handleEditClick}
+              className="min-w-[70px] sm:min-w-[120px] md:min-w-[140px] px-2 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg font-medium text-xs sm:text-sm md:text-base transition-colors bg-white text-black border-2 border-black hover:bg-gray-100"
+            >
+              수정하기
+            </button>
             {/* 목록으로 돌아가기 버튼 */}
             <button
               onClick={handleBackToList}

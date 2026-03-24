@@ -35,7 +35,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
     setFormData,
     openDropdown,
     setOpenDropdown,
-    isFormValid,
+    isFormValid: _isFormValid,
     refs,
     handlers,
     modal,
@@ -196,7 +196,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
   const isOwnedFormValid = (): { valid: boolean; message: string } => {
     if (!formData.name.trim()) return { valid: false, message: '이름을 입력해주세요.' };
     if (!formData.birthYear || !formData.birthMonth || !formData.birthDay) return { valid: false, message: '생년월일을 모두 선택해주세요.' };
-    if (!formData.password || formData.password.length < 6 || /\s/.test(formData.password)) return { valid: false, message: '비밀번호는 최소 6자리이며 공백을 포함할 수 없습니다.' };
+    if (!formData.password || formData.password.length < 4 || /\s/.test(formData.password)) return { valid: false, message: '신청시 입력했던 비밀번호로 입력해주세요.' };
     if (!formData.gender) return { valid: false, message: '성별을 선택해주세요.' };
     if (!addressIsBasedOnOrganization) {
       if (!formData.postalCode.trim()) return { valid: false, message: '우편번호를 입력해주세요.' };

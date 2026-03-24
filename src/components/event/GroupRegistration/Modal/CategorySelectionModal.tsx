@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { EventRegistrationInfo } from '@/app/event/[eventId]/registration/apply/shared/types/common';
 
 interface CategorySelectionModalProps {
@@ -22,6 +23,12 @@ export default function CategorySelectionModal({
 }: CategorySelectionModalProps) {
   const [selectedDistance, setSelectedDistance] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // 모달이 열릴 때 현재 선택값으로 초기화
   useEffect(() => {
@@ -99,10 +106,11 @@ export default function CategorySelectionModal({
   };
 
   if (!isOpen) return null;
+  if (!mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg shadow-xl w-[calc(100vw-2rem)] max-w-2xl max-h-[90vh] flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-bold text-gray-900">참가종목 선택</h3>
@@ -227,7 +235,8 @@ export default function CategorySelectionModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

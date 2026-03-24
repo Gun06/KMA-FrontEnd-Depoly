@@ -83,6 +83,7 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
                 onOpenIdPasswordModal={() => modal.setIsIdPasswordModalOpen(true)}
                 onLoadInfo={modal.handleLoadInfo}
                 isLoadingInfo={modal.isLoadingInfo}
+                isEditMode={isEditMode}
                 refs={refs}
               />
 

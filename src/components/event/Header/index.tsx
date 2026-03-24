@@ -108,8 +108,8 @@ export default function EventHeader({
     guide: [
       { label: '대회요강', href: `/event/${eventId}/guide/overview` },
       { label: '대회유의사항', href: `/event/${eventId}/guide/caution` },
-      { label: '대회 코스', href: `/event/${eventId}/guide/course` },
-      { label: '집결 출발', href: `/event/${eventId}/guide/gathering` },
+      { label: '대회코스', href: `/event/${eventId}/guide/course` },
+      { label: '집결 / 출발', href: `/event/${eventId}/guide/gathering` },
     ],
     apply: [
       // 참가자 동의사항 서브메뉴 제거 (이슈: 참가자 유의사항 & 약관 멘트 수정 및 유의사항 서브메뉴 없앰)
@@ -118,7 +118,7 @@ export default function EventHeader({
       //   href: `/event/${eventId}/registration/agreement`,
       // },
       { label: '신청하기', href: `/event/${eventId}/registration/apply` },
-      { label: '신청 확인', href: `/event/${eventId}/registration/confirm` },
+      { label: '신청확인', href: `/event/${eventId}/registration/confirm` },
       // 마라톤 버스예약 메뉴 제거 (현재는 별도 페이지 제공하지 않음)
     ],
     records: [

@@ -8,7 +8,6 @@ import AddressField from '../../shared/components/AddressField';
 import Dropdown from '../../shared/components/Dropdown';
 import { IndividualFormData, IdCheckResult, OpenDropdown } from '../../shared/types/individual';
 import { genderOptions, generateYearOptions, generateMonthOptions, generateDayOptions } from '../../shared/types/constants';
-import { isPasswordValid } from '../../shared/utils/validation';
 
 interface PersonalInfoSectionProps {
   formData: IndividualFormData;
@@ -23,6 +22,7 @@ interface PersonalInfoSectionProps {
   isLoadingInfo?: boolean;
   hideAddress?: boolean; // 주소 필드 숨기기 (소유 신청용)
   hideLoadInfo?: boolean; // 정보 불러오기 버튼 숨기기 (소유 신청용)
+  isEditMode?: boolean;
   refs: {
     yearRef: React.RefObject<HTMLDivElement>;
     monthRef: React.RefObject<HTMLDivElement>;
@@ -43,9 +43,11 @@ export default function PersonalInfoSection({
   isLoadingInfo = false,
   hideAddress = false,
   hideLoadInfo = false,
+  isEditMode = false,
   refs
 }: PersonalInfoSectionProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const isOwnedEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -186,7 +188,7 @@ export default function PersonalInfoSection({
                     name="no-autofill-password"
                     className={`w-full px-3 sm:px-4 py-3 sm:py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base pr-10 ${
                       formData.password
-                        ? isPasswordValid(formData.password)
+                        ? isOwnedEditPasswordValid(formData.password)
                           ? 'border-green-500 focus:ring-green-500'
                           : 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300'
@@ -201,7 +203,7 @@ export default function PersonalInfoSection({
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">비밀번호는 최소 6자리, 공백 없이 입력해주세요.</p>
+                <p className="text-xs text-gray-500 mt-2">신청시 입력했던 비밀번호로 입력해주세요.</p>
               </div>
             </FormField>
             <hr className="border-gray-200" />
@@ -213,6 +215,9 @@ export default function PersonalInfoSection({
               <PasswordField
                 value={formData.password}
                 onChange={(value) => onInputChange('password', value)}
+                minLength={isEditMode ? 4 : 6}
+                helperText={isEditMode ? '신청시 입력했던 비밀번호로 입력해주세요.' : '비밀번호는 최소 6자리, 공백 없이 입력해주세요.'}
+                showValidationGuide={!isEditMode}
               />
             </FormField>
             <hr className="border-gray-200" />
