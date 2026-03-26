@@ -109,13 +109,17 @@ export class EventDataTransformer {
             combinations,
           };
         })
-        .filter(cat => Number.isFinite(cat.price) && cat.price > 0);
+        .filter(cat => Number.isFinite(cat.price) && cat.price >= 0);
     }
 
     // 폴백: fees만 주어진 경우 → 이름/가격만으로 구성, 조합은 빈 배열
     const fees = (data.fees ?? [])
       .filter(
-        f => (f.name ?? '').trim() && typeof f.price === 'number' && f.price > 0
+        f =>
+          (f.name ?? '').trim() &&
+          typeof f.price === 'number' &&
+          Number.isFinite(f.price) &&
+          f.price >= 0
       )
       .map(f => ({ name: f.name.trim(), price: f.price, combinations: [] }));
 

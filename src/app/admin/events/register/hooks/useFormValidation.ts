@@ -50,9 +50,6 @@ export function useFormValidation() {
       if (!course.name.trim()) {
         errors.push(`종목 ${index + 1}: 종목명을 입력해주세요.`);
       }
-      if (!course.price || parseFloat(course.price.replace(/,/g, '')) <= 0) {
-        errors.push(`종목 ${index + 1}: 참가비를 올바르게 입력해주세요.`);
-      }
       if (course.selectedGifts.length === 0) {
         errors.push(`종목 ${index + 1}: 최소 하나의 기념품을 선택해주세요.`);
       }

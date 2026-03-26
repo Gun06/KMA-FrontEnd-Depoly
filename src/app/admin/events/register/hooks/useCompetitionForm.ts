@@ -837,8 +837,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       }
     }
     
-    const hasValidCoursePrice = groups.some(g => parseKRW(g.course.price) > 0);
-    if (!hasValidCoursePrice) errors.push('참가부문 참가비');
+    const hasNamedCourse = groups.some(g => g.course.name.trim());
+    if (!hasNamedCourse) errors.push('참가부문(종목명)');
     const hasGiftWithSize = groups.some(g =>
       g.gifts.some(x => x.label.trim() && x.size.trim())
     );
@@ -897,7 +897,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     // debug log removed
 
     const fees = groups
-      .filter(g => g.course.name.trim() && parseKRW(g.course.price) > 0)
+      .filter(g => g.course.name.trim())
       .map(g => ({
         name: g.course.name.trim(),
         price: parseKRW(g.course.price),

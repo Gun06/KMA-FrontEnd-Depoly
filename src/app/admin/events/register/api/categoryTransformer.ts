@@ -83,8 +83,7 @@ export function transformCategoriesToApi(
           isActive: course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
           souvenirIds,
         };
-      })
-      .filter(category => category.price > 0); // 가격이 0보다 큰 것만
+      });
 
     return result;
   }
@@ -140,8 +139,7 @@ export function transformCategoriesToApi(
         isActive: group.course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
         souvenirIds,
       };
-    })
-    .filter(category => category.price > 0); // 가격이 0보다 큰 것만
+    });
 
   return result;
 }
