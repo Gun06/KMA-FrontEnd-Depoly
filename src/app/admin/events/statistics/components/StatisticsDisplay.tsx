@@ -248,11 +248,11 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                 {formatNumber(data.totalUnpaidParticipants)}명
               </span>
             </div>
-            {data.totalRefunded && (
+            {data.totalRefundRequest && (
               <div className="flex items-center justify-between px-4 py-3">
                 <span className="text-sm text-slate-600">환불</span>
                 <span className="text-lg font-semibold text-purple-700">
-                  {formatNumber(data.totalRefunded)}명
+                  {formatNumber(data.totalRefundRequest)}명
                 </span>
               </div>
             )}

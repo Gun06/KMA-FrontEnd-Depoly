@@ -80,15 +80,22 @@ export const PRESETS: Record<string, FilterBarPreset> = {
           ],
         },
       ],
-      searchPlaceholder: "내용을 입력해주세요.",
+      searchPlaceholder: "검색어를 입력한 후 Enter를 누르세요.",
       buttons: [
-        { label: "검색", tone: "dark" },
+        { label: "검색", tone: "dark", iconOnly: true },
         {
           label: "입금 Excel",
           tone: "primary",
           menu: [
             { label: "신청자 목록 다운로드", value: "downloadApplicants" },
             { label: "입금 내역 업로드",     value: "uploadPayments" },
+          ],
+        },
+        {
+          label: "환불 Excel",
+          tone: "primary",
+          menu: [
+            { label: "환불 내역 업로드", value: "uploadRefundExcel" },
           ],
         },
         {
@@ -109,6 +116,7 @@ export const PRESETS: Record<string, FilterBarPreset> = {
         },
       ],
       showReset: true,
+      resetPosition: "afterSearch",
     },
   },
 

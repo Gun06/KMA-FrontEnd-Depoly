@@ -71,6 +71,7 @@ export class EventDataTransformer {
       // 결제 정보
       bank: data.bank || undefined,
       virtualAccount: data.virtualAccount || undefined,
+      accountHolderName: data.accountHolderName || undefined,
       autoStart: data.autoStart ?? false,
       autoDeadline: data.autoDeadline ?? false,
       autoMaxRegist: data.autoMaxRegist ?? false,

@@ -6,7 +6,6 @@ import { cn } from '@/utils/cn';
 
 import FormTable from '@/components/admin/Form/FormTable';
 import Button from '@/components/common/Button/Button';
-import InlineLabelPairRow from '@/components/admin/Form/InlineLabelPairRow';
 import { RadioGroup } from '@/components/common/Radio/RadioGroup';
 
 // 섹션 (register에서 import)
@@ -29,7 +28,6 @@ import { useCoursesHandlers } from '@/app/admin/events/register/hooks/useCourses
 import { useFormValidation } from '@/app/admin/events/register/hooks/useFormValidation';
 import { useFormSubmission } from '@/app/admin/events/register/hooks/useFormSubmission';
 import type {
-  Shuttle,
   EventCreatePayload,
 } from '@/app/admin/events/register/api/types';
 
@@ -331,17 +329,13 @@ export default function EditForm({
             fieldRefs={fieldRefs}
           />
 
-          {/* 공개여부 / 셔틀 (CreateForm과 동일) */}
-          <InlineLabelPairRow
-            leftLabel="공개여부"
-            rightLabel="셔틀 운행여부"
-            leftField={
-              <div
-                className={cn(
-                  'px-3 py-1',
-                  readOnly ? 'text-[#646464] pointer-events-none' : ''
-                )}
-              >
+          {/* 공개여부 */}
+          <div className="grid" style={{ gridTemplateColumns: `200px 1fr` }}>
+            <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
+              공개여부
+            </div>
+            <div className="bg-white flex items-center min-h-[52px] px-3">
+              <div className={cn(readOnly ? 'text-[#646464] pointer-events-none' : '')}>
                 <RadioGroup
                   name={`${f.uid}-visibility`}
                   value={f.visibility}
@@ -355,34 +349,8 @@ export default function EditForm({
                   ]}
                 />
               </div>
-            }
-            rightField={
-              <div
-                className={cn(
-                  'px-3 py-1',
-                  readOnly ? 'text-[#646464] pointer-events-none' : ''
-                )}
-              >
-                <RadioGroup
-                  name={`${f.uid}-shuttle`}
-                  value={f.shuttle}
-                  onValueChange={
-                    readOnly ? noop : v => f.setShuttle(v as Shuttle)
-                  }
-                  className="text-[13px]"
-                  gapPx={24}
-                  options={[
-                    { value: '운행', label: '운행' },
-                    { value: '비운행', label: '비운행' },
-                  ]}
-                />
-                <span className="text-[13px] text-[#646464]">
-                  (현재는 사용되지 않습니다)
-                </span>
-              </div>
-            }
-            rowHeight={52}
-          />
+            </div>
+          </div>
         </FormTable>
 
         {/* 2. 배너 */}

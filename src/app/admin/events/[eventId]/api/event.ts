@@ -37,6 +37,8 @@ export interface EventDetailApiResponse {
     bank?: string;
     /** 가상계좌/입금 계좌번호 */
     virtualAccount?: string;
+    /** 예금주명 (선택) */
+    accountHolderName?: string;
     /** 접수 시작 자동 전환 트리거 */
     autoStart?: boolean;
     /** 접수 마감 자동 전환 트리거 */

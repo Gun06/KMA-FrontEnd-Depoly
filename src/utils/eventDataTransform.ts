@@ -145,6 +145,7 @@ export function transformApiDataToEventDetail(
     paymentDeadline: eventInfo.paymentDeadline,
     bank: eventInfo.bank,
     virtualAccount: eventInfo.virtualAccount,
+    accountHolderName: eventInfo.accountHolderName,
     eventCategories: eventCategories.map(c => ({
       id: c.id,
       name: c.name,

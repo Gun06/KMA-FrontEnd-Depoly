@@ -5,7 +5,6 @@ import { cn } from '@/utils/cn';
 
 import FormTable from '@/components/admin/Form/FormTable';
 import Button from '@/components/common/Button/Button';
-import InlineLabelPairRow from '@/components/admin/Form/InlineLabelPairRow';
 import { RadioGroup } from '@/components/common/Radio/RadioGroup';
 
 // 섹션
@@ -25,7 +24,6 @@ import { FormStateStorage } from '../utils/formStateStorage';
 import { useFormValidation } from '../hooks/useFormValidation';
 import { useFormSubmission } from '../hooks/useFormSubmission';
 import type {
-  Shuttle,
   EventCreatePayload,
 } from '../api/types';
 
@@ -108,6 +106,7 @@ export default function CreateForm({
         paymentDeadlineMm: f.paymentDeadlineMm,
         bank: f.bank,
         virtualAccount: f.virtualAccount,
+        accountHolderName: f.accountHolderName,
       } as EventCreatePayload & {
         date: string;
         hh: string;
@@ -123,6 +122,7 @@ export default function CreateForm({
         paymentDeadlineMm: string;
         bank?: string;
         virtualAccount?: string;
+        accountHolderName?: string;
       };
       
       return stateToSave;
@@ -199,46 +199,26 @@ export default function CreateForm({
             fieldRefs={fieldRefs}
           />
 
-          {/* 공개여부 / 셔틀 */}
-          <InlineLabelPairRow
-            leftLabel="공개여부"
-            rightLabel="셔틀 운행여부"
-            leftField={
-              <div className="px-3 py-1">
-                <RadioGroup
-                  name={`${f.uid}-visibility`}
-                  value={f.visibility}
-                  onValueChange={f.setVisibility}
-                  className="text-[13px]"
-                  gapPx={24}
-                  options={[
-                    { value: '공개', label: '공개' },
-                    { value: '테스트', label: '테스트' },
-                    { value: '비공개', label: '비공개' },
-                  ]}
-                />
-              </div>
-            }
-            rightField={
-              <div className="px-3 py-1">
-                <RadioGroup
-                  name={`${f.uid}-shuttle`}
-                  value={f.shuttle}
-                  onValueChange={v => f.setShuttle(v as Shuttle)}
-                  className="text-[13px]"
-                  gapPx={24}
-                  options={[
-                    { value: '운행', label: '운행' },
-                    { value: '비운행', label: '비운행' },
-                  ]}
-                />
-                <span className="text-[13px] text-[#646464]">
-                  (현재는 사용되지 않습니다)
-                </span>
-              </div>
-            }
-            rowHeight={52}
-          />
+          {/* 공개여부 */}
+          <div className="grid" style={{ gridTemplateColumns: `200px 1fr` }}>
+            <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
+              공개여부
+            </div>
+            <div className="bg-white flex items-center min-h-[52px] px-3">
+              <RadioGroup
+                name={`${f.uid}-visibility`}
+                value={f.visibility}
+                onValueChange={f.setVisibility}
+                className="text-[13px]"
+                gapPx={24}
+                options={[
+                  { value: '공개', label: '공개' },
+                  { value: '테스트', label: '테스트' },
+                  { value: '비공개', label: '비공개' },
+                ]}
+              />
+            </div>
+          </div>
         </FormTable>
 
         {/* 2. 배너 */}

@@ -47,6 +47,8 @@ export type EventDetailData = {
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
   virtualAccount?: string;
+  /** 예금주명 (선택) */
+  accountHolderName?: string;
   eventCategories?: Array<{
     id: string;
     name: string;
@@ -93,6 +95,7 @@ export default function EventDetailView({
   // 결제정보(은행/계좌) - eventData에서 직접 가져오기
   const bankName = eventData.bank || '';
   const accountNumber = eventData.virtualAccount || '';
+  const accountHolderName = eventData.accountHolderName || '';
 
   const handleEdit = () => {
     if (onEdit) {
@@ -510,7 +513,7 @@ export default function EventDetailView({
           </div>
 
           {/* 7. 결제 정보 - 맨 아래 */}
-          {(bankName || accountNumber) && (
+          {(bankName || accountNumber || accountHolderName) && (
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
                 <svg
@@ -528,7 +531,7 @@ export default function EventDetailView({
                 </svg>
                 결제 정보
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {bankName && (
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
                     <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
@@ -546,6 +549,16 @@ export default function EventDetailView({
                     </span>
                     <p className="text-base font-semibold font-mono text-gray-900 font-pretendard">
                       {accountNumber}
+                    </p>
+                  </div>
+                )}
+                {accountHolderName && (
+                  <div className="bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                      예금주명
+                    </span>
+                    <p className="text-base font-semibold text-gray-900 font-pretendard">
+                      {accountHolderName}
                     </p>
                   </div>
                 )}

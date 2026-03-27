@@ -18,6 +18,7 @@ export default function GroupPaymentInfoSection({
 }: GroupPaymentInfoSectionProps) {
   const [bankName, setBankName] = React.useState<string>('');
   const [virtualAccount, setVirtualAccount] = React.useState<string>('');
+  const [accountHolderName, setAccountHolderName] = React.useState<string>('');
 
   React.useEffect(() => {
     let ignore = false;
@@ -37,6 +38,7 @@ export default function GroupPaymentInfoSection({
             if (!ignore) {
               setBankName(String(data?.bankName || ''));
               setVirtualAccount(String(data?.virtualAccount || ''));
+              setAccountHolderName(String(data?.accountHolderName || ''));
             }
             return; // 성공하면 종료
           }
@@ -54,6 +56,7 @@ export default function GroupPaymentInfoSection({
         if (!ignore && data?.eventInfo) {
           setBankName(String(data.eventInfo.bank || ''));
           setVirtualAccount(String(data.eventInfo.virtualAccount || ''));
+          setAccountHolderName(String(data.eventInfo.accountHolderName || ''));
         }
       } catch (_error) {
         // 결제 정보 로드 실패 시 무시
@@ -74,6 +77,12 @@ export default function GroupPaymentInfoSection({
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="space-y-2 text-sm text-gray-600">
             <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
+            <p>
+              예금주명 :{' '}
+              <span className="bg-yellow-300 font-bold">
+                {accountHolderName || '-'}
+              </span>
+            </p>
             <p>
               계좌번호 :{' '}
               <span className="bg-yellow-300 font-bold">

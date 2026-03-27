@@ -44,6 +44,8 @@ export type CompetitionFormHandle = {
   setBank?: (value: string) => void;
   virtualAccount?: string;
   setVirtualAccount?: (value: string) => void;
+  accountHolderName?: string;
+  setAccountHolderName?: (value: string) => void;
   eventPageUrl: string;
   setEventPageUrl: (value: string) => void;
   maxParticipants: string;
@@ -395,33 +397,47 @@ export default function BasicInfoSection({
         />
       </FormRow>
 
-  {/* 결제 정보: 은행명 / 계좌번호 */}
-  <InlineLabelPairRow
-    leftLabel="은행명"
-    rightLabel="계좌번호"
-    leftField={
-    <TextField
-      placeholder="예: 국민은행"
-      value={f.bank ?? ''}
-      onChange={e => (readOnly || !f.setBank ? noop() : f.setBank(e.currentTarget.value))}
-      className={cn(fieldCls, inputColorCls)}
-      fontSizePx={13}
-      heightPx={52}
-      readOnly={readOnly}
-    />
-    }
-    rightField={
-    <TextField
-      placeholder="예: 123456-01-123456"
-      value={f.virtualAccount ?? ''}
-      onChange={e => (readOnly || !f.setVirtualAccount ? noop() : f.setVirtualAccount(e.currentTarget.value))}
-      className={cn(fieldCls, inputColorCls)}
-      fontSizePx={13}
-      heightPx={52}
-      readOnly={readOnly}
-    />
-    }
-  />
+      {/* 결제 정보: 은행명 / 계좌번호 / 예금주명 */}
+      <FormRow label="결제 정보" contentClassName="!py-0 items-stretch">
+        <div
+          className="grid w-full items-stretch h-full"
+          style={{ gridTemplateColumns: '1fr 1fr 1fr' }}
+        >
+          <div className="border-r border-neutral-300 h-full flex items-center">
+            <TextField
+              placeholder="은행명을 입력해주세요"
+              value={f.bank ?? ''}
+              onChange={e => (readOnly || !f.setBank ? noop() : f.setBank(e.currentTarget.value))}
+              className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
+              readOnly={readOnly}
+            />
+          </div>
+          <div className="border-r border-neutral-300 h-full flex items-center">
+            <TextField
+              placeholder="계좌번호를 입력해주세요"
+              value={f.virtualAccount ?? ''}
+              onChange={e => (readOnly || !f.setVirtualAccount ? noop() : f.setVirtualAccount(e.currentTarget.value))}
+              className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
+              readOnly={readOnly}
+            />
+          </div>
+          <div className="h-full flex items-center">
+            <TextField
+              placeholder="예금주명을 입력해주세요(선택)"
+              value={f.accountHolderName ?? ''}
+              onChange={e => (readOnly || !f.setAccountHolderName ? noop() : f.setAccountHolderName(e.currentTarget.value))}
+              className={cn(fieldCls, inputColorCls)}
+              fontSizePx={13}
+              heightPx={52}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+      </FormRow>
     </>
   );
 }

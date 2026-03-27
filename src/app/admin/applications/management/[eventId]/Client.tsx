@@ -8,6 +8,7 @@ import { useEventList } from '@/hooks/useNotices';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
+import RefundUploadModal from '@/components/admin/applications/RefundUploadModal';
 import GroupUploadModal from '@/components/admin/applications/GroupUploadModal';
 import PersonalUploadModal from '@/components/admin/applications/PersonalUploadModal';
 import { downloadRegistrationList } from '@/services/registration';
@@ -221,6 +222,9 @@ export default function Client({
   
   // 입금내역 업로드 모달 상태
   const [isPaymentUploadModalOpen, setIsPaymentUploadModalOpen] = React.useState(false);
+
+  // 환불내역 업로드 모달 상태
+  const [isRefundUploadModalOpen, setIsRefundUploadModalOpen] = React.useState(false);
   
   // 단체 신청 양식 업로드 모달 상태
   const [isGroupUploadModalOpen, setIsGroupUploadModalOpen] = React.useState(false);
@@ -312,6 +316,17 @@ export default function Client({
     await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
   };
 
+  // 환불내역 업로드 처리
+  const handleUploadRefunds = () => {
+    setIsRefundUploadModalOpen(true);
+  };
+
+  // 환불내역 업로드 성공 후 처리
+  const handleRefundUploadSuccess = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
+    await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
+  };
+
   const handleCancelUploadPayments = () => {
     if (!uploadController) return;
     uploadController.abort();
@@ -371,11 +386,13 @@ export default function Client({
   };
 
   // 툴바 액션 처리
-  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm') => {
+  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'uploadRefundExcel' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm') => {
     if (action === 'downloadApplicants') {
       handleDownloadApplicants();
     } else if (action === 'uploadPayments') {
       handleUploadPayments();
+    } else if (action === 'uploadRefundExcel') {
+      handleUploadRefunds();
     } else if (action === 'downloadGroupForm') {
       handleDownloadGroupForm();
     } else if (action === 'uploadGroupForm') {
@@ -661,6 +678,14 @@ export default function Client({
         onClose={() => setIsPaymentUploadModalOpen(false)}
         eventId={eventId}
         onSuccess={handlePaymentUploadSuccess}
+      />
+
+      {/* 환불내역 업로드 모달 */}
+      <RefundUploadModal
+        isOpen={isRefundUploadModalOpen}
+        onClose={() => setIsRefundUploadModalOpen(false)}
+        eventId={eventId}
+        onSuccess={handleRefundUploadSuccess}
       />
 
       {/* 단체 신청 양식 업로드 모달 */}

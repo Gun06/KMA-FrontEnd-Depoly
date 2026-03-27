@@ -206,6 +206,7 @@ export type HydrateSnapshotInput = {
   account?: string;
   bank?: string;
   virtualAccount?: string;
+  accountHolderName?: string;
   homeUrl?: string;
   eventPageUrl?: string;
   maxParticipants?: string;
@@ -302,6 +303,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   // 은행/계좌
   const [bank, setBank] = React.useState<string>('');
   const [virtualAccount, setVirtualAccount] = React.useState<string>('');
+  const [accountHolderName, setAccountHolderName] = React.useState<string>('');
   const [homeUrl, setHomeUrl] = React.useState('');
   const [eventPageUrl, setEventPageUrl] = React.useState('');
 
@@ -425,6 +427,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setAccount(prefill.account ?? '');
     setBank((prefill as any)?.bank ?? '');
     setVirtualAccount((prefill as any)?.virtualAccount ?? '');
+    setAccountHolderName((prefill as any)?.accountHolderName ?? '');
     setHomeUrl(prefill.homeUrl ?? '');
     setEventPageUrl(prefill.eventPageUrl ?? '');
 
@@ -776,6 +779,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     account,
     bank,
     virtualAccount,
+    accountHolderName,
     homeUrl,
     eventPageUrl,
     maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
@@ -980,6 +984,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (s.account !== undefined) setAccount(s.account);
     if ((s as any).bank !== undefined) setBank((s as any).bank);
     if ((s as any).virtualAccount !== undefined) setVirtualAccount((s as any).virtualAccount);
+    if ((s as any).accountHolderName !== undefined) setAccountHolderName((s as any).accountHolderName);
     if (s.homeUrl !== undefined) setHomeUrl(s.homeUrl);
     if (s.eventPageUrl !== undefined) setEventPageUrl(s.eventPageUrl);
     if (s.maxParticipants !== undefined) setMaxParticipants(s.maxParticipants);
@@ -1114,6 +1119,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBank,
     virtualAccount,
     setVirtualAccount,
+    accountHolderName,
+    setAccountHolderName,
     homeUrl,
     setHomeUrl,
     eventPageUrl,

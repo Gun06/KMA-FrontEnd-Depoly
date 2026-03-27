@@ -353,6 +353,7 @@ export function transformApiResponseToFormPrefill(
     account: eventInfo.virtualAccount || '',
     bank: eventInfo.bank || '',
     virtualAccount: eventInfo.virtualAccount || '',
+    accountHolderName: eventInfo.accountHolderName || '',
     homeUrl: eventInfo.eventsPageUrl || '',
     eventPageUrl: eventInfo.eventsPageUrl || '',
     maxParticipants: eventInfo.registMaximum || 0,

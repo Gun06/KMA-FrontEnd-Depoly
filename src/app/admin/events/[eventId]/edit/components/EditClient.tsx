@@ -196,6 +196,7 @@ export default function EditClient({
   // 결제정보(은행/가상계좌) 별도 API 연동
   const [bankName, setBankName] = React.useState<string>('');
   const [virtualAccount, setVirtualAccount] = React.useState<string>('');
+  const [accountHolderName, setAccountHolderName] = React.useState<string>('');
   const [paymentInfoKey, setPaymentInfoKey] = React.useState(0);
   
   React.useEffect(() => {
@@ -212,6 +213,7 @@ export default function EditClient({
         if (!ignore) {
           setBankName(String(data?.bankName || ''));
           setVirtualAccount(String(data?.virtualAccount || ''));
+          setAccountHolderName(String(data?.accountHolderName || ''));
         }
       } catch {}
     };
@@ -246,6 +248,7 @@ export default function EditClient({
         ...result,
         bank: apiData.eventInfo.bank ?? bankName,
         virtualAccount: apiData.eventInfo.virtualAccount ?? virtualAccount,
+        accountHolderName: apiData.eventInfo.accountHolderName ?? accountHolderName,
         groups: groups.map(g => ({
           course: {
             name: g.course.name,
@@ -274,7 +277,7 @@ export default function EditClient({
     );
     
     return fallbackPrefill;
-  }, [apiData, forms, eventId, currentRow, prefillForm, bankName, virtualAccount, isLoading]);
+  }, [apiData, forms, eventId, currentRow, prefillForm, bankName, virtualAccount, accountHolderName, isLoading]);
 
   const goDetail = () => router.replace(`/admin/events/${eventId}`);
 
@@ -343,9 +346,10 @@ export default function EditClient({
       // 페이지 이미지 데이터도 즉시 재조회 (public API는 React Query를 사용하지 않으므로 refetch 호출)
       await refetch();
 
-      if (payload.bank || payload.virtualAccount) {
+      if (payload.bank || payload.virtualAccount || payload.accountHolderName) {
         setBankName(payload.bank || '');
         setVirtualAccount(payload.virtualAccount || '');
+        setAccountHolderName(payload.accountHolderName || '');
       }
       setPaymentInfoKey(prev => prev + 1);
 

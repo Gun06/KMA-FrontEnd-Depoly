@@ -203,6 +203,45 @@ export async function finalizePaymentUpload(
   }
 }
 
+// 환불 내역 Excel 체크 (DB 반영 전 매칭 결과 확인)
+export async function checkRefundUpload(
+  eventId: string,
+  file: File,
+  options?: { signal?: AbortSignal }
+) {
+  const formData = new FormData();
+  formData.append('excelFile', file);
+
+  const url = `/api/v1/registration/event/${eventId}/refund/excel/check`;
+
+  try {
+    const response = await request('admin', url, 'POST', formData, true, {
+      signal: options?.signal,
+    });
+    return response as import('@/components/admin/applications/api/refundUpload').RefundUploadCheckResponse;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+    throw error instanceof Error ? error : new Error('환불 내역 체크에 실패했습니다.');
+  }
+}
+
+// 환불 내역 Excel 최종 반영
+export async function finalizeRefundUpload(
+  eventId: string,
+  data: import('@/components/admin/applications/api/refundUpload').RefundUploadFinalRequest
+): Promise<string> {
+  const url = `/api/v1/registration/event/${eventId}/refund/excel/final`;
+
+  try {
+    const response = await request('admin', url, 'POST', data, true);
+    return response as string;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('환불 내역 최종 업로드에 실패했습니다.');
+  }
+}
+
 // 신청자 입금여부 및 메모 일괄 수정
 export async function updatePaymentStatus(updates: Array<{
   id: string;

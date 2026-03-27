@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import SelectMenu from "./SelectMenu";
 import SearchBox from "./SearchBox";
 import Button from "@/components/common/Button/Button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { Dropdown } from "@/components/common/Dropdown/Dropdown";
 
 type Opt = { label: string; value: string };
@@ -15,6 +15,7 @@ export type FilterButtonSpec = {
   tone?: "primary" | "dark" | "neutral";
   iconRight?: boolean;
   iconLeft?: ReactNode;
+  iconOnly?: boolean;
   onClick?: () => void;
   menu?: FilterButtonMenuItem[]; // 드롭다운 메뉴 버튼일 때만 설정
 };
@@ -26,6 +27,7 @@ export type FilterBarProps = {
   buttonTextMode?: "label" | "current";
   buttons?: FilterButtonSpec[];
   showReset?: boolean;
+  resetPosition?: "end" | "afterSearch";
   initialValues?: string[]; // 필드별 초기값
   initialSearchValue?: string; // 검색어 초기값
   onFieldChange?: (label: string, value: string) => void;
@@ -41,6 +43,7 @@ export default function FilterBar({
   buttonTextMode = "current",
   buttons = [],
   showReset = false,
+  resetPosition = "end",
   initialValues,
   initialSearchValue = "",
   onFieldChange,
@@ -87,6 +90,23 @@ export default function FilterBar({
     onReset?.();
   };
 
+  const isResetIconOnly = resetPosition === "afterSearch";
+  const resetButton = showReset ? (
+    <Button
+      type="button"
+      tone="neutral"
+      size="xs"
+      widthType={isResetIconOnly ? "default" : "compact"}
+      iconLeft={<RotateCcw className="w-[18px] h-[18px]" aria-hidden />}
+      aria-label="초기화"
+      title="초기화"
+      onClick={handleReset}
+      className={isResetIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
+    >
+      {isResetIconOnly ? "" : "초기화"}
+    </Button>
+  ) : null;
+
   return (
     <div className={`flex items-start gap-5 ${className}`}>
       {/* 필터 Selects */}
@@ -115,27 +135,32 @@ export default function FilterBar({
         const hasMenu = Array.isArray(b.menu) && b.menu.length > 0;
 
         if (!hasMenu) {
+          const isSearchIconOnly = b.iconOnly && b.label === "검색";
           return (
-            <Button
-              key={`${b.label}-${i}`}
-              type="button"
-              tone={b.tone ?? "primary"}
-              size="sm"
-              widthType="pager"
-              iconRight={b.iconRight}
-              iconLeft={b.iconLeft}
-              onClick={
-                b.onClick
-                  ? b.onClick
-                  : () => {
-                      if (b.label === "검색") onSearch?.(q);
-                      else onActionClick?.(b.label);
-                    }
-              }
-              className="shrink-0"
-            >
-              {b.label}
-            </Button>
+            <div key={`${b.label}-${i}`} className="contents">
+              <Button
+                type="button"
+                tone={b.tone ?? "primary"}
+                size="sm"
+                widthType={isSearchIconOnly ? "default" : "pager"}
+                iconRight={b.iconRight}
+                iconLeft={isSearchIconOnly ? <Search className="w-[18px] h-[18px]" aria-hidden /> : b.iconLeft}
+                aria-label={isSearchIconOnly ? "검색" : undefined}
+                title={isSearchIconOnly ? "검색" : undefined}
+                onClick={
+                  b.onClick
+                    ? b.onClick
+                    : () => {
+                        if (b.label === "검색") onSearch?.(q);
+                        else onActionClick?.(b.label);
+                      }
+                }
+                className={isSearchIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
+              >
+                {isSearchIconOnly ? "" : b.label}
+              </Button>
+              {resetPosition === "afterSearch" && b.label === "검색" && resetButton}
+            </div>
           );
         }
 
@@ -169,19 +194,7 @@ export default function FilterBar({
       })}
 
       {/* 초기화(맨 끝) */}
-      {showReset && (
-        <Button
-          type="button"
-          tone="neutral"
-          size="xs"
-          widthType="compact"
-          iconLeft={<RotateCcw className="w-4 h-4" aria-hidden />}
-          onClick={handleReset}
-          className="shrink-0"
-        >
-          초기화
-        </Button>
-      )}
+      {resetPosition === "end" && resetButton}
     </div>
   );
 }
