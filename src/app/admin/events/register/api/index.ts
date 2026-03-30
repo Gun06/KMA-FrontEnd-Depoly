@@ -25,6 +25,8 @@ export type {
   EventCategoryCombination,
   EventCategoryInfo,
   EventBannerInfo,
+  EventTermsInfoRequest,
+  EventTermsInfoResponse,
   EventCreateRequest,
   EventUpdateRequest,
   EventBannerUpdateInfo,

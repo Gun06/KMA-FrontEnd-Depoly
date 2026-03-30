@@ -6,6 +6,7 @@ import type {
   EventInfo,
   EventCategoryInfo,
   EventBannerInfo,
+  EventTermsInfoRequest,
   EventImageFiles,
 } from './types';
 import type { UploadItem } from '@/components/common/Upload/types';
@@ -26,6 +27,7 @@ export class EventDataTransformer {
 
     // 2. 주최/주관/후원 배너 정보 변환
     const eventBannerInfoList = this.createEventBannerInfo(frontendData);
+    const termsInfo = this.createTermsInfo(frontendData);
 
     // 3. 이미지 파일 정보 변환
     const imageFiles = this.createImageFiles(frontendData);
@@ -34,6 +36,7 @@ export class EventDataTransformer {
     const eventCreateRequest: EventCreateRequest = {
       eventInfo,
       eventBannerInfoList,
+      termsInfo,
     };
 
     return { eventCreateRequest, imageFiles };
@@ -161,6 +164,20 @@ export class EventDataTransformer {
     buildList('ASSIST', data.assists, data.partners?.assists);
 
     return bannerInfoList;
+  }
+
+  private static createTermsInfo(data: EventCreatePayload): EventTermsInfoRequest[] {
+    return (data.termsInfo ?? [])
+      .map((item, index) => ({
+        title: (item.title ?? '').trim(),
+        content: (item.content ?? '').trim(),
+        sortOrder:
+          typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
+            ? item.sortOrder
+            : index,
+      }))
+      .filter(item => item.title || item.content)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   /**

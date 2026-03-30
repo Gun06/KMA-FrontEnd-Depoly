@@ -5,8 +5,10 @@ import FormTable from "@/components/admin/Form/FormTable";
 import NoticeMessage from "@/components/admin/Form/NoticeMessage";
 import FileSection from "@/components/admin/Form/FileSection";
 import SortableFileSection from "@/components/admin/Form/SortableFileSection";
+import { Minus, Plus } from "lucide-react";
 import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
+import type { TermsInfoItem } from "../../hooks/useCompetitionForm";
 
 /** 업로드 필드 & 세터 타입 */
 export type CompetitionForm = {
@@ -49,6 +51,11 @@ export type CompetitionForm = {
 
   imgResult: UploadItem[] | undefined;
   setImgResult: (items: UploadItem[]) => void;
+
+  termsInfo: TermsInfoItem[] | undefined;
+  addTermsInfo: () => void;
+  removeTermsInfo: (index: number) => void;
+  updateTermsInfo: (index: number, field: "title" | "content", value: string) => void;
 };
 
 type UploadsSectionProps = {
@@ -69,6 +76,13 @@ const toRO = (arr: UploadItem[] | undefined): ReadonlyFile[] =>
 const contentPad = (count: number) => (count > 0 ? "items-start py-2" : "items-center py-0");
 
 export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
+  const termsRows = f.termsInfo ?? [];
+  const [previewIndex, setPreviewIndex] = React.useState<number | null>(null);
+  const previewTerm =
+    previewIndex !== null && termsRows[previewIndex]
+      ? termsRows[previewIndex]
+      : null;
+
   return (
     <>
       {/* 배너 등록 */}
@@ -249,6 +263,120 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           ]}
         />
       </div>
+
+      <FormTable
+        title="약관 정보"
+        labelWidth={200}
+        tightRows
+        center
+        actions={
+          !readOnly ? (
+            <button
+              type="button"
+              onClick={f.addTermsInfo}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              aria-label="약관 항목 추가"
+            >
+              <Plus size={16} strokeWidth={2.25} />
+              추가
+            </button>
+          ) : undefined
+        }
+      >
+        {termsRows.map((term, index) => (
+          <div
+            key={`${term.id ?? "new"}-${index}`}
+            className="grid border-b border-neutral-200"
+            style={{ gridTemplateColumns: "200px 1fr 56px" }}
+          >
+            <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
+              약관 {index + 1}
+            </div>
+            <div className="bg-white px-3 py-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={term.title}
+                  onChange={(e) => f.updateTermsInfo(index, "title", e.target.value)}
+                  placeholder="약관 제목을 입력하세요."
+                  className="w-full h-9 px-1 text-[13px] border-0 border-b border-neutral-300 rounded-none bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500"
+                  readOnly={readOnly}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPreviewIndex(index)}
+                  className="h-9 px-3 shrink-0 text-[12px] font-medium border border-neutral-300 rounded bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                >
+                  미리보기
+                </button>
+              </div>
+              <div className="mt-0.5 pt-0">
+              <textarea
+                value={term.content}
+                onChange={(e) => f.updateTermsInfo(index, "content", e.target.value)}
+                placeholder="약관 내용을 입력하세요."
+                rows={3}
+                className="w-full min-h-[52px] px-1 py-1.5 text-[13px] border-0 rounded-none bg-transparent resize-y focus:outline-none focus:ring-0"
+                readOnly={readOnly}
+              />
+              </div>
+            </div>
+            <div className="flex items-center justify-center bg-white border-l border-neutral-300">
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => f.removeTermsInfo(index)}
+                  aria-label={`약관 ${index + 1} 삭제`}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-neutral-200 text-neutral-600 hover:bg-red-100 hover:text-red-600 transition-colors"
+                >
+                  <Minus size={16} strokeWidth={2.25} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </FormTable>
+
+      {/* 약관 정보 안내 (인증서 배경 이미지 안내와 동일 스타일/위치) */}
+      <div className="flex mx-auto px-4 pt-2">
+        <NoticeMessage
+          items={[
+            { text: "※ 우측 하단 모서리를 드래그하면 입력창을 더 크게 볼 수 있습니다." },
+            { text: "※ 약관 정보는 필수 항목이 아닌 선택 사항입니다." },
+          ]}
+        />
+      </div>
+
+      {previewTerm && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setPreviewIndex(null)}
+          />
+          <div className="relative w-[calc(100%-2rem)] max-w-3xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+              <h3 className="text-[18px] font-bold text-gray-900">약관 미리보기</h3>
+              <button
+                type="button"
+                onClick={() => setPreviewIndex(null)}
+                className="h-8 px-3 text-[13px] rounded border border-neutral-300 hover:bg-neutral-50"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="p-5 max-h-[70vh] overflow-y-auto bg-white">
+              <div className="bg-gray-100 rounded-lg p-4">
+                <p className="font-bold text-gray-800 mb-3 text-[15px]">
+                  {previewTerm.title?.trim() || "제목 없음"}
+                </p>
+                <div className="space-y-2 text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {previewTerm.content?.trim() || "내용이 없습니다."}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

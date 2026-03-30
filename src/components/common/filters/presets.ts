@@ -84,17 +84,16 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       buttons: [
         { label: "검색", tone: "dark", iconOnly: true },
         {
-          label: "입금 Excel",
+          label: "신청자",
           tone: "primary",
-          menu: [
-            { label: "신청자 목록 다운로드", value: "downloadApplicants" },
-            { label: "입금 내역 업로드",     value: "uploadPayments" },
-          ],
+          icon: "download",
+          actionValue: "downloadApplicants",
         },
         {
-          label: "환불 Excel",
+          label: "입금/환불",
           tone: "primary",
           menu: [
+            { label: "입금 내역 업로드", value: "uploadPayments" },
             { label: "환불 내역 업로드", value: "uploadRefundExcel" },
           ],
         },

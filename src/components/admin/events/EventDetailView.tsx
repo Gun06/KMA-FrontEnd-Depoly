@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/common/Button/Button';
 import RegistrationStatusBadge, {
@@ -71,6 +77,13 @@ export type EventDetailData = {
     static: boolean;
     badge?: boolean;
   }>;
+  /** 약관 (API: termsInfo / eventTerms / eventTerm) */
+  eventTerms?: Array<{
+    id?: string;
+    title: string;
+    content: string;
+    sortOrder: number;
+  }>;
 };
 
 type Props = {
@@ -79,6 +92,64 @@ type Props = {
   onDelete?: () => void;
   onBack?: () => void;
 };
+
+/** 약관 본문: 2줄 클램프 시 실제로 잘릴 때만 더보기/접기 표시 */
+function EventTermBody({
+  content,
+  isExpanded,
+  onToggle,
+}: {
+  content: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const bodyRef = useRef<HTMLParagraphElement>(null);
+  const [clampedOverflows, setClampedOverflows] = useState(false);
+
+  const measureClampedOverflow = useCallback(() => {
+    const el = bodyRef.current;
+    if (!el || isExpanded) return;
+    // line-clamp 적용 시 숨겨진 영역이 있으면 scrollHeight > clientHeight
+    setClampedOverflows(el.scrollHeight > el.clientHeight + 1);
+  }, [isExpanded, content]);
+
+  useLayoutEffect(() => {
+    measureClampedOverflow();
+  }, [measureClampedOverflow]);
+
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => measureClampedOverflow());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measureClampedOverflow]);
+
+  const showToggle = isExpanded || clampedOverflows;
+
+  return (
+    <>
+      <p
+        ref={bodyRef}
+        className={cn(
+          'text-sm text-gray-700 font-pretendard leading-relaxed',
+          isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-2 break-words'
+        )}
+      >
+        {content}
+      </p>
+      {showToggle && (
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 font-pretendard"
+        >
+          {isExpanded ? '접기' : '더보기'}
+        </button>
+      )}
+    </>
+  );
+}
 
 export default function EventDetailView({
   eventData,
@@ -91,6 +162,10 @@ export default function EventDetailView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  /** 약관 조항별 본문 펼침 (상세 조회용) */
+  const [expandedTermKeys, setExpandedTermKeys] = useState<Set<string>>(
+    () => new Set()
+  );
   
   // 결제정보(은행/계좌) - eventData에서 직접 가져오기
   const bankName = eventData.bank || '';
@@ -513,7 +588,7 @@ export default function EventDetailView({
           </div>
 
           {/* 7. 결제 정보 - 맨 아래 */}
-          {(bankName || accountNumber || accountHolderName) && (
+          {(bankName || accountNumber || eventData.accountHolderName != null) && (
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
                 <svg
@@ -552,16 +627,14 @@ export default function EventDetailView({
                     </p>
                   </div>
                 )}
-                {accountHolderName && (
-                  <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
-                      예금주명
-                    </span>
-                    <p className="text-base font-semibold text-gray-900 font-pretendard">
-                      {accountHolderName}
-                    </p>
-                  </div>
-                )}
+                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                    예금주명
+                  </span>
+                  <p className="text-base font-semibold text-gray-900 font-pretendard">
+                    {accountHolderName || '없음'}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -627,6 +700,70 @@ export default function EventDetailView({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* 8. 약관 정보 (날짜 정보 바로 아래) */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-1 flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              약관 정보
+            </h3>
+            <p className="text-xs text-gray-500 font-pretendard mb-3">
+              참가 신청 화면에 노출되는 약관입니다.
+            </p>
+
+            {eventData.eventTerms && eventData.eventTerms.length > 0 ? (
+              <div className="space-y-3">
+                {eventData.eventTerms.map((term, idx) => {
+                  const termKey = term.id ?? `term-${idx}`;
+                  const isExpanded = expandedTermKeys.has(termKey);
+                  const content = term.content ?? '';
+
+                  const toggleTerm = () => {
+                    setExpandedTermKeys(prev => {
+                      const next = new Set(prev);
+                      if (next.has(termKey)) next.delete(termKey);
+                      else next.add(termKey);
+                      return next;
+                    });
+                  };
+
+                  return (
+                    <div
+                      key={termKey}
+                      className="bg-white rounded-lg p-3 border border-gray-200"
+                    >
+                      <p className="text-sm font-bold text-gray-900 font-pretendard mb-2">
+                        {term.title}
+                      </p>
+                      <EventTermBody
+                        content={content}
+                        isExpanded={isExpanded}
+                        onToggle={toggleTerm}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-sm text-gray-600 font-pretendard">
+                  등록된 약관이 없습니다.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

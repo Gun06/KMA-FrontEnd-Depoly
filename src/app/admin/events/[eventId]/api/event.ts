@@ -95,5 +95,26 @@ export interface EventDetailApiResponse {
     imageUrl: string;
     orderNumber: number;
   }>;
+  /** 약관 (일부 API는 termsInfo) */
+  termsInfo?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    sortOrder: number;
+  }>;
+  /** 약관 (일부 API는 eventTerm으로 응답) */
+  eventTerm?: Array<{
+    id?: string;
+    title: string;
+    content: string;
+    sortOrder?: number;
+  }>;
+  /** 약관 (일부 API는 eventTerms로 응답) */
+  eventTerms?: Array<{
+    id?: string;
+    title: string;
+    content: string;
+    sortOrder?: number;
+  }>;
 }
 

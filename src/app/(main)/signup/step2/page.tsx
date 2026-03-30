@@ -21,6 +21,15 @@ export default function SignupStep2Page() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [confirmPasswordMessage, setConfirmPasswordMessage] = useState('')
 
+  // 아이디 조건 상태 (백엔드 정규식 기준)
+  const [idConditions, setIdConditions] = useState({
+    hasLength: false, // 5~20자
+    startsWithLetter: false, // 첫 글자 영문
+    allowedChars: false, // 영문/숫자/._- 만
+    endsWithAlnum: false, // 끝 글자 영문 또는 숫자
+    noConsecutiveSeparators: true, // ._- 연속 사용 금지
+  })
+
   // 비밀번호 조건 상태
   const [passwordConditions, setPasswordConditions] = useState({
     hasLength: false,      // 10~64자
@@ -55,7 +64,7 @@ export default function SignupStep2Page() {
     if (field === 'id') {
       // ID 변경 시 중복검사 결과 초기화
       resetAccountDuplicateCheck()
-      validateIdFormat(value)
+      validateId(value)
     } else if (field === 'password') {
       validatePassword(value)
       setConfirmPasswordMessage('')
@@ -64,27 +73,31 @@ export default function SignupStep2Page() {
     }
   }
 
-  const validateIdFormat = (id: string) => {
+  const validateId = (id: string) => {
     if (!id) {
+      setIdConditions({
+        hasLength: false,
+        startsWithLetter: false,
+        allowedChars: false,
+        endsWithAlnum: false,
+        noConsecutiveSeparators: true,
+      })
       return
     }
-    
-    // 영문과 숫자가 모두 포함되어야 함
-    const hasLetter = /[a-zA-Z]/.test(id)
-    const hasNumber = /\d/.test(id)
-    const isValidLength = id.length >= 4 && id.length <= 15
-    const isValidChars = /^[a-zA-Z0-9]+$/.test(id)
-    
-    if (!isValidLength) {
-      // 길이 검증 실패 시 중복검사 버튼 비활성화
-      return
-    } else if (!isValidChars) {
-      // 문자 검증 실패 시 중복검사 버튼 비활성화
-      return
-    } else if (!hasLetter || !hasNumber) {
-      // 영문/숫자 포함 검증 실패 시 중복검사 버튼 비활성화
-      return
-    }
+
+    const hasLength = id.length >= 5 && id.length <= 20
+    const startsWithLetter = /^[a-zA-Z]/.test(id)
+    const allowedChars = /^[a-zA-Z0-9._-]+$/.test(id)
+    const endsWithAlnum = /[a-zA-Z0-9]$/.test(id)
+    const noConsecutiveSeparators = !/[._-]{2}/.test(id)
+
+    setIdConditions({
+      hasLength,
+      startsWithLetter,
+      allowedChars,
+      endsWithAlnum,
+      noConsecutiveSeparators,
+    })
   }
 
   const validatePassword = (password: string) => {
@@ -131,7 +144,7 @@ export default function SignupStep2Page() {
 
     try {
       await checkAccountDuplicate(formDataLocal.id)
-    } catch (error) {
+    } catch (_error) {
     }
   }
 
@@ -139,13 +152,10 @@ export default function SignupStep2Page() {
   const isIdFormatValid = () => {
     const id = formDataLocal.id
     if (!id) return false
-    
-    const hasLetter = /[a-zA-Z]/.test(id)
-    const hasNumber = /\d/.test(id)
-    const isValidLength = id.length >= 4 && id.length <= 15
-    const isValidChars = /^[a-zA-Z0-9]+$/.test(id)
-    
-    return isValidLength && isValidChars && hasLetter && hasNumber
+
+    // 백엔드와 동일한 정규식
+    const pattern = /^(?=.{5,20}$)(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]$/
+    return pattern.test(id)
   }
 
   // 비밀번호가 모든 조건을 만족하는지 확인
@@ -187,7 +197,7 @@ export default function SignupStep2Page() {
               type="text"
               value={formDataLocal.id}
               onChange={(e) => handleInputChange('id', e.target.value)}
-              placeholder="영문/숫자 조합으로 4자~15자 이내"
+              placeholder="영문으로 시작, 5~20자 (영문/숫자/._-)"
               autoComplete="off"
               className="flex-1 px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
@@ -214,14 +224,68 @@ export default function SignupStep2Page() {
             </button>
           </div>
                     
-          {/* 중복검사 결과 메시지 */}
-          {accountDuplicateCheck.message && (
-            <p className={`text-sm ${
-              accountDuplicateCheck.isDuplicate ? 'text-red-600' : 'text-green-600'
-            }`}>
-              {accountDuplicateCheck.message}
+          {/* 중복검사 결과 (텍스트 라인) */}
+          {accountDuplicateCheck.message ? (
+            <p
+              className={`flex items-center gap-1.5 text-sm font-semibold ${
+                accountDuplicateCheck.isDuplicate ? 'text-red-600' : 'text-blue-600'
+              }`}
+            >
+              {accountDuplicateCheck.isDuplicate ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
+              <span className="break-words">{accountDuplicateCheck.message}</span>
             </p>
-          )}
+          ) : null}
+
+          {/* 아이디 조건 표시 (비밀번호처럼) */}
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <div className={`flex items-center space-x-2 text-sm ${
+                idConditions.hasLength ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {idConditions.hasLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>5~20자</span>
+              </div>
+              <div className={`flex items-center space-x-2 text-sm ${
+                idConditions.startsWithLetter ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {idConditions.startsWithLetter ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>영문으로 시작</span>
+              </div>
+              <div className={`flex items-center space-x-2 text-sm ${
+                idConditions.allowedChars ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {idConditions.allowedChars ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>영문/숫자/._- 사용</span>
+              </div>
+              <div className={`flex items-center space-x-2 text-sm ${
+                idConditions.endsWithAlnum ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {idConditions.endsWithAlnum ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>끝은 영문 또는 숫자</span>
+              </div>
+              <div className={`flex items-center space-x-2 text-sm ${
+                idConditions.noConsecutiveSeparators ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {idConditions.noConsecutiveSeparators ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>._- 연속 사용 불가</span>
+              </div>
+            </div>
+
+            {formDataLocal.id && (
+              <p className={`text-sm font-medium ${
+                isIdFormatValid() ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {isIdFormatValid()
+                  ? '✓ 모든 조건을 만족한 형식의 아이디입니다.'
+                  : '✗ 위의 조건을 모두 만족해야 합니다.'
+                }
+              </p>
+            )}
+          </div>
         </div>
 
         {/* 비밀번호 입력 */}

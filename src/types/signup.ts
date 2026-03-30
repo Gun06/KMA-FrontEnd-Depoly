@@ -168,8 +168,9 @@ export const SIGNUP_ERROR_MESSAGES = {
   
   // Step 2
   ACCOUNT_REQUIRED: '아이디를 입력해주세요.',
-  ACCOUNT_LENGTH: '아이디는 4~20자로 입력해주세요.',
-  ACCOUNT_FORMAT: '아이디는 영문, 숫자만 사용 가능합니다.',
+  ACCOUNT_LENGTH: '아이디는 5~20자로 입력해주세요.',
+  ACCOUNT_FORMAT:
+    '아이디는 영문으로 시작하며, 영문/숫자와 . _ - 만 사용할 수 있어요. (. _ - 연속/끝 사용 불가)',
   ACCOUNT_DUPLICATE: '이미 사용 중인 아이디입니다.',
   PASSWORD_REQUIRED: '비밀번호를 입력해주세요.',
   PASSWORD_LENGTH: '비밀번호는 8~20자로 입력해주세요.',
@@ -194,9 +195,11 @@ export const SIGNUP_ERROR_MESSAGES = {
 // 유효성 검사 규칙
 export const VALIDATION_RULES = {
   ACCOUNT: {
-    MIN_LENGTH: 4,
+    MIN_LENGTH: 5,
     MAX_LENGTH: 20,
-    PATTERN: /^[a-zA-Z0-9]+$/,
+    // 백엔드 패턴과 일치
+    // ^(?=.{5,20}$)(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]$
+    PATTERN: /^(?=.{5,20}$)(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]$/,
   },
   PASSWORD: {
     MIN_LENGTH: 8,

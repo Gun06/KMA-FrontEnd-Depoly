@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import SelectMenu from "./SelectMenu";
 import SearchBox from "./SearchBox";
 import Button from "@/components/common/Button/Button";
-import { RotateCcw, Search } from "lucide-react";
+import { Download, RotateCcw, Search } from "lucide-react";
 import { Dropdown } from "@/components/common/Dropdown/Dropdown";
 
 type Opt = { label: string; value: string };
@@ -16,6 +16,10 @@ export type FilterButtonSpec = {
   iconRight?: boolean;
   iconLeft?: ReactNode;
   iconOnly?: boolean;
+  /** 아이콘 전용 버튼용 (프리셋에서 JSX 없이 지정) */
+  icon?: "download";
+  /** onActionClick으로 전달할 값 (label과 분리) */
+  actionValue?: string;
   onClick?: () => void;
   menu?: FilterButtonMenuItem[]; // 드롭다운 메뉴 버튼일 때만 설정
 };
@@ -136,28 +140,38 @@ export default function FilterBar({
 
         if (!hasMenu) {
           const isSearchIconOnly = b.iconOnly && b.label === "검색";
+          const isIconOnly = Boolean(b.iconOnly);
+          const resolvedIconLeft =
+            isSearchIconOnly
+              ? <Search className="w-[18px] h-[18px]" aria-hidden />
+              : b.iconLeft ?? undefined;
+          const resolvedIconRight =
+            b.iconRight ??
+            (b.icon === "download"
+              ? <Download className="w-[18px] h-[18px]" aria-hidden />
+              : undefined);
           return (
             <div key={`${b.label}-${i}`} className="contents">
               <Button
                 type="button"
                 tone={b.tone ?? "primary"}
                 size="sm"
-                widthType={isSearchIconOnly ? "default" : "pager"}
-                iconRight={b.iconRight}
-                iconLeft={isSearchIconOnly ? <Search className="w-[18px] h-[18px]" aria-hidden /> : b.iconLeft}
-                aria-label={isSearchIconOnly ? "검색" : undefined}
-                title={isSearchIconOnly ? "검색" : undefined}
+                widthType={isIconOnly ? "default" : "pager"}
+                iconRight={resolvedIconRight}
+                iconLeft={resolvedIconLeft}
+                aria-label={isIconOnly ? b.label : undefined}
+                title={isIconOnly ? b.label : undefined}
                 onClick={
                   b.onClick
                     ? b.onClick
                     : () => {
                         if (b.label === "검색") onSearch?.(q);
-                        else onActionClick?.(b.label);
+                        else onActionClick?.(b.actionValue ?? b.label);
                       }
                 }
-                className={isSearchIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
+                className={isIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
               >
-                {isSearchIconOnly ? "" : b.label}
+                {isIconOnly ? "" : b.label}
               </Button>
               {resetPosition === "afterSearch" && b.label === "검색" && resetButton}
             </div>

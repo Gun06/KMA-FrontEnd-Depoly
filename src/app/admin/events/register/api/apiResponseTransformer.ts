@@ -343,6 +343,24 @@ export function transformApiResponseToFormPrefill(
     imgCourse: sortImagesByOrder(apiData.coursePageImages), // 코스
   };
 
+  const termsFromApi =
+    [apiData.termsInfo, apiData.eventTerms, apiData.eventTerm].find(
+      (a): a is NonNullable<typeof a> =>
+        Array.isArray(a) && a.length > 0
+    ) ?? [];
+
+  const termsInfo = termsFromApi
+    .map((item, index) => ({
+      id: 'id' in item && typeof item.id === 'string' ? item.id : undefined,
+      title: item.title ?? '',
+      content: item.content ?? '',
+      sortOrder:
+        typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
+          ? item.sortOrder
+          : index,
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
   return {
     titleKo: eventInfo.nameKr || '',
     titleEn: eventInfo.nameEng || '',
@@ -383,6 +401,7 @@ export function transformApiResponseToFormPrefill(
     partners,
     // 업로드 정보 (이미지 미리보기용)
     uploads,
+    termsInfo,
     // groups는 별도로 변환하여 사용 (기념품/종목 섹션에서)
   } as UseCompetitionPrefill;
 }

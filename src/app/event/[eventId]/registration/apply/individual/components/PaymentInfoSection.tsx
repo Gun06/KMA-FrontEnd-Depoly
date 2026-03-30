@@ -44,7 +44,7 @@ export default function PaymentInfoSection({
               return;
             }
           }
-        } catch (e) {
+        } catch (_e) {
           // 메인 API 실패 시 전용 API 시도
         }
         
@@ -63,10 +63,10 @@ export default function PaymentInfoSection({
           setAccountHolderName(String(data?.accountHolderName || ''));
         }
           }
-        } catch (e) {
+        } catch (_e) {
           // 결제 정보 API도 실패하면 빈 값 유지
         }
-      } catch (error) {
+      } catch (_error) {
         // 결제 정보 로드 실패 시 무시
       }
     };
@@ -85,12 +85,14 @@ export default function PaymentInfoSection({
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="space-y-2 text-sm text-gray-600">
             <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
-            <p>
-              예금주명 :{' '}
-              <span className="bg-yellow-300 font-bold">
-                {accountHolderName || '-'}
-              </span>
-            </p>
+            {accountHolderName ? (
+              <p>
+                예금주명 :{' '}
+                <span className="bg-yellow-300 font-bold">
+                  {accountHolderName}
+                </span>
+              </p>
+            ) : null}
             <p>
               계좌번호 :{' '}
               <span className="bg-yellow-300 font-bold">

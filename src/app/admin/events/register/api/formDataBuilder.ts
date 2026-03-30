@@ -228,6 +228,7 @@ export class FormDataBuilder {
     // EventDataTransformer를 사용하여 eventInfo 생성
     const { eventCreateRequest } = EventDataTransformer.transformToServerFormat(payload);
     const eventInfo = eventCreateRequest.eventInfo;
+    const termsInfo = eventCreateRequest.termsInfo;
 
     // eventBannerUpdateInfo 생성 (새로운 API 스펙: imageUrl 포함)
     const eventBannerUpdateInfo: EventBannerUpdateInfo[] = validBannerInfoList.map(banner => ({
@@ -243,6 +244,7 @@ export class FormDataBuilder {
     const eventUpdateRequest: EventUpdateRequest = {
       eventInfo,
       eventBannerUpdateInfo,
+      termsInfo,
     };
 
     formData.append('eventCreateRequest', JSON.stringify(eventUpdateRequest));

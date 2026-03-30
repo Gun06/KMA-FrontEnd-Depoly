@@ -10,6 +10,7 @@ import type {
   EventTheme,
   EventFormState,
   EventCreatePayload,
+  EventTermsInfoRequest,
 } from '../api/types';
 import type { UploadItem } from '@/components/common/Upload/types';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
@@ -25,6 +26,10 @@ export type PartyItem = {
   file: UploadItem[]; // 단일(0~1개)라도 배열로 유지
   enabled?: boolean; // 기본 true
   badge?: boolean; // 배지 표시 여부, 기본 true
+};
+
+export type TermsInfoItem = EventTermsInfoRequest & {
+  id?: string;
 };
 
 /** ===== 유틸 ===== */
@@ -182,6 +187,7 @@ export type UseCompetitionPrefill = Partial<
     paymentDeadlineDate?: string;
     paymentDeadlineHh?: string;
     paymentDeadlineMm?: string;
+    termsInfo?: TermsInfoItem[];
   }
 > &
   LegacyPrefillData;
@@ -243,6 +249,7 @@ export type HydrateSnapshotInput = {
   paymentDeadlineDate?: string;
   paymentDeadlineHh?: string;
   paymentDeadlineMm?: string;
+  termsInfo?: TermsInfoItem[];
   autoStart?: boolean;
   autoDeadline?: boolean;
   autoMaxRegist?: boolean;
@@ -371,6 +378,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [imgGift, setImgGift] = React.useState<UploadItem[]>([]);
   const [imgConfirm, setImgConfirm] = React.useState<UploadItem[]>([]);
   const [imgResult, setImgResult] = React.useState<UploadItem[]>([]);
+  const [termsInfo, setTermsInfo] = React.useState<TermsInfoItem[]>([
+    { title: '', content: '', sortOrder: 0 },
+  ]);
 
   // 테마
   const [themeStyle, setThemeStyle] = React.useState<'base' | 'grad'>('base');
@@ -405,6 +415,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       deadlineDate: prefill.deadlineDate,
       paymentDeadlineDate: prefill.paymentDeadlineDate,
       visibility: prefill.visibility, // visibility 변경도 감지하도록 추가
+      // 약관은 API 키(termsInfo vs eventTerm) 차이로 나중에 채워질 수 있어 시그니처 포함
+      termsSig: (prefill.termsInfo ?? [])
+        .map((t, i) => `${i}:${t.title ?? ''}`)
+        .join('|'),
     });
     
     // 동일한 prefill이면 스킵 (중복 적용 방지)
@@ -683,6 +697,25 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setImgConfirm(convertToUploadItems(prefill.uploads.imgConfirm));
       setImgResult(convertToUploadItems(prefill.uploads.imgResult));
     }
+
+    if (prefill.termsInfo && prefill.termsInfo.length > 0) {
+      setTermsInfo(
+        prefill.termsInfo
+          .map((item, index) => ({
+            id:
+              'id' in item && typeof item.id === 'string'
+                ? item.id
+                : undefined,
+            title: item.title ?? '',
+            content: item.content ?? '',
+            sortOrder:
+              typeof item.sortOrder === 'number' ? item.sortOrder : index,
+          }))
+          .sort((a, b) => a.sortOrder - b.sortOrder)
+      );
+    } else {
+      setTermsInfo([{ title: '', content: '', sortOrder: 0 }]);
+    }
   }, [prefill]);
 
   /** ===== 그룹 핸들러 ===== */
@@ -792,6 +825,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     visibility,
     shuttle,
     eventTheme: finalEventTheme,
+    termsInfo: termsInfo.map((item, index) => ({
+      title: item.title,
+      content: item.content,
+      sortOrder: index,
+    })),
   });
 
   const toStartAt = () => toStartAtISO(date, hh, mm);
@@ -871,6 +909,38 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (!hasAssistImage) errors.push('협력 ASSIST 이미지 (협력 ASSIST 항목에 이미지 필요)');
 
     return { ok: errors.length === 0, errors };
+  };
+
+  const addTermsInfo = () => {
+    setTermsInfo(prev => [
+      ...prev,
+      { title: '', content: '', sortOrder: prev.length },
+    ]);
+  };
+
+  const removeTermsInfo = (index: number) => {
+    setTermsInfo(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      return next.map((item, i) => ({ ...item, sortOrder: i }));
+    });
+  };
+
+  const updateTermsInfo = (
+    index: number,
+    field: 'title' | 'content',
+    value: string
+  ) => {
+    setTermsInfo(prev =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: value,
+              sortOrder: index,
+            }
+          : item
+      )
+    );
   };
 
   const buildApiBody = (): EventCreatePayload => {
@@ -958,6 +1028,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       autoStart,
       autoDeadline,
       autoMaxRegist,
+      termsInfo: termsInfo.map((item, index) => ({
+        title: item.title.trim(),
+        content: item.content.trim(),
+        sortOrder: index,
+      })),
     } as unknown as EventCreatePayload;
 
     return payload;
@@ -1047,6 +1122,17 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setImgResult(s.imgResult ?? []);
 
     if (s.applyStatus) setApplyStatus(s.applyStatus);
+    if (s.termsInfo !== undefined) {
+      setTermsInfo(
+        s.termsInfo.map((item, index) => ({
+          id: item.id,
+          title: item.title ?? '',
+          content: item.content ?? '',
+          sortOrder:
+            typeof item.sortOrder === 'number' ? item.sortOrder : index,
+        }))
+      );
+    }
   };
 
   return {
@@ -1190,6 +1276,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setImgConfirm,
     imgResult,
     setImgResult,
+    termsInfo,
+    setTermsInfo,
+    addTermsInfo,
+    removeTermsInfo,
+    updateTermsInfo,
 
     // theme
     themeStyle,

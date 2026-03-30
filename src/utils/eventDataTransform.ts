@@ -113,6 +113,24 @@ export function transformApiDataToEventDetail(
     return status;
   };
 
+  const termsFromApi =
+    [apiData.termsInfo, apiData.eventTerms, apiData.eventTerm].find(
+      (a): a is NonNullable<typeof a> =>
+        Array.isArray(a) && a.length > 0
+    ) ?? [];
+
+  const eventTerms = termsFromApi
+    .map((item, index) => ({
+      id: 'id' in item && typeof item.id === 'string' ? item.id : undefined,
+      title: item.title ?? '',
+      content: item.content ?? '',
+      sortOrder:
+        typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
+          ? item.sortOrder
+          : index,
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
   return {
     id: eventInfo.id,
     nameKr: eventInfo.nameKr,
@@ -168,5 +186,6 @@ export function transformApiDataToEventDetail(
       static: b.static,
       badge: b.badge, // badge 필드 포함
     })),
+    ...(eventTerms.length > 0 ? { eventTerms } : {}),
   };
 }

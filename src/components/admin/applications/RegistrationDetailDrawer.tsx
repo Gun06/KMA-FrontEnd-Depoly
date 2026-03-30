@@ -1058,6 +1058,44 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
                 <input className="w-full rounded border px-2 py-1" value={form.addressDetail} onChange={e => setForm(v => ({ ...v, addressDetail: e.target.value }))} />
               ))}
+
+              {/* 관리자 메모 (상세주소 바로 아래) */}
+              <div className="mt-4">
+                <div className="text-sm text-gray-700 mb-1">키워드 (관리자 기재)</div>
+                <textarea
+                  className={clsx(
+                    'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
+                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
+                  )}
+                  value={memo}
+                  readOnly={!canEditMemo}
+                  disabled={!canEditMemo}
+                  onChange={e => setMemo(e.target.value)}
+                  placeholder="메모를 입력하세요"
+                />
+                {!canEditMemo && (
+                  <p className="mt-1 text-xs text-gray-400">메모는 상단의 &apos;수정하기&apos; 버튼을 눌러야 입력할 수 있습니다.</p>
+                )}
+              </div>
+
+              {/* 상세 메모 (상세주소 바로 아래) */}
+              <div className="mt-4">
+                <div className="text-sm text-gray-700 mb-1">상세메모 (관리자 기재)</div>
+                <textarea
+                  className={clsx(
+                    'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
+                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
+                  )}
+                  value={detailMemo}
+                  readOnly={!canEditMemo}
+                  disabled={!canEditMemo}
+                  onChange={e => setDetailMemo(e.target.value)}
+                  placeholder="상세메모를 입력하세요"
+                />
+                {!canEditMemo && (
+                  <p className="mt-1 text-xs text-gray-400">상세메모도 &apos;수정하기&apos; 버튼을 눌러야 입력 가능합니다.</p>
+                )}
+              </div>
               {(item.paymenterBank || item.accountNumber || item.accountHolderName || item.refundRequestedAt || item.refundDate) && (
                 <div className="mt-4 mb-2 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-3">
@@ -1099,44 +1137,6 @@ export default function RegistrationDetailDrawer({
                 <div className="rounded border bg-gray-50 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap min-h-[64px]">
                   {item.note ? item.note : ''}
                 </div>
-              </div>
-
-              {/* 관리자 메모 */}
-              <div className="mt-4">
-                <div className="text-sm text-gray-700 mb-1">키워드 (관리자 기재)</div>
-                <textarea
-                  className={clsx(
-                    'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
-                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
-                  )}
-                  value={memo}
-                  readOnly={!canEditMemo}
-                  disabled={!canEditMemo}
-                  onChange={e => setMemo(e.target.value)}
-                  placeholder="메모를 입력하세요"
-                />
-                {!canEditMemo && (
-                  <p className="mt-1 text-xs text-gray-400">메모는 상단의 &apos;수정하기&apos; 버튼을 눌러야 입력할 수 있습니다.</p>
-                )}
-              </div>
-
-              {/* 상세 메모 */}
-              <div className="mt-4">
-                <div className="text-sm text-gray-700 mb-1">상세메모 (관리자 기재)</div>
-                <textarea
-                  className={clsx(
-                    'w-full rounded border px-3 py-2 text-sm min-h-[64px] focus:outline-none focus:ring-2',
-                    canEditMemo ? 'focus:ring-blue-500 bg-white text-gray-900' : 'bg-gray-100 text-gray-600 cursor-not-allowed focus:ring-gray-200'
-                  )}
-                  value={detailMemo}
-                  readOnly={!canEditMemo}
-                  disabled={!canEditMemo}
-                  onChange={e => setDetailMemo(e.target.value)}
-                  placeholder="상세메모를 입력하세요"
-                />
-                {!canEditMemo && (
-                  <p className="mt-1 text-xs text-gray-400">상세메모도 &apos;수정하기&apos; 버튼을 눌러야 입력 가능합니다.</p>
-                )}
               </div>
 
               {/* 매칭 로그 */}

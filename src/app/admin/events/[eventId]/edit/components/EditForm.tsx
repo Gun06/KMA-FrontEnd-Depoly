@@ -197,6 +197,7 @@ export default function EditForm({
             size: gift.size,
           })),
         })) ?? [],
+      termsInfo: s.termsInfo ?? [],
       applyStatus: s.applyStatus,
     };
 

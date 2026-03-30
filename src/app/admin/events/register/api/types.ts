@@ -66,10 +66,21 @@ export interface EventBannerInfo {
   badge?: boolean; // 배지 표시 여부
 }
 
+export interface EventTermsInfoRequest {
+  title: string;
+  content: string;
+  sortOrder: number;
+}
+
+export interface EventTermsInfoResponse extends EventTermsInfoRequest {
+  id: string;
+}
+
 // 서버로 전송할 대회 생성 요청 데이터 (기념품/종목 제외)
 export interface EventCreateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
   eventBannerInfoList: EventBannerInfo[]; // 주최/주관/후원/협력 배너 정보
+  termsInfo?: EventTermsInfoRequest[];
 }
 
 // 대회 수정용 배너 업데이트 정보
@@ -86,6 +97,7 @@ export interface EventBannerUpdateInfo {
 export interface EventUpdateRequest {
   eventInfo: EventInfo; // 대회 기본 정보
   eventBannerUpdateInfo: EventBannerUpdateInfo[]; // 주최/주관/후원/협력 배너 정보 (수정용)
+  termsInfo?: EventTermsInfoRequest[];
 }
 
 // API 요청 시 전송할 이미지 파일들
@@ -172,6 +184,7 @@ export type EventFormState = {
   shuttle: Shuttle;
 
   eventTheme: EventTheme;
+  termsInfo?: EventTermsInfoRequest[];
 };
 
 /** 서버로 보낼 API 페이로드(ISO로 합친 startAt) */
