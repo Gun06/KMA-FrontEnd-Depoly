@@ -94,7 +94,14 @@ export const transformFormDataToApi = (
             formData.phone3
           ),
           email: formatEmail(formData.email1, formData.emailDomain),
-          gender: formData.gender === 'male' ? 'M' : 'F'
+          gender: formData.gender === 'male' ? 'M' : 'F',
+          guardianPhNum:
+            formData.guardianPhone2?.trim() && formData.guardianPhone3?.trim()
+              ? formatPhoneNumber(formData.guardianPhone1, formData.guardianPhone2, formData.guardianPhone3)
+              : null,
+          // 표기 혼용 방어: 둘 다 보내되 값은 동일하게
+          guardianRelationship: formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null,
+          guardianRelationShip: formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null,
         },
         registrationInfo
       },
@@ -199,7 +206,13 @@ export const transformFormDataToUpdateApi = (
             formData.emailDomain,
             formData.email2
           ),
-          gender: formData.gender === 'male' ? 'M' : 'F'
+          gender: formData.gender === 'male' ? 'M' : 'F',
+          guardianPhNum:
+            formData.guardianPhone2?.trim() && formData.guardianPhone3?.trim()
+              ? formatPhoneNumber(formData.guardianPhone1, formData.guardianPhone2, formData.guardianPhone3)
+              : null,
+          guardianRelationship: formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null,
+          guardianRelationShip: formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null,
         },
         registrationInfo
       },

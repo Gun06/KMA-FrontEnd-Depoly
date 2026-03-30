@@ -50,6 +50,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
   const [isOtpReissuing, setIsOtpReissuing] = useState(false);
   const [otpPhoneNumber, setOtpPhoneNumber] = useState<string | null>(null);
   const [addressIsBasedOnOrganization, setAddressIsBasedOnOrganization] = useState(false);
+  const [guardianIsBasedOnOrgLeader, setGuardianIsBasedOnOrgLeader] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   // 원래 주소 정보 저장 (체크박스 해제 시 복원용)
@@ -133,6 +134,9 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
         const distance = categoryParts[0] || '';
         const categoryName = categoryParts.length > 1 ? categoryParts.slice(1).join(' | ') : categoryParts[0];
 
+        const isGuardianDelegated = ownedData.checkGuardianBasedOnOrgLeader === true;
+        const guardianPhoneParts = String(isGuardianDelegated ? '' : (ownedData.guardianPhNum || '')).split('-');
+
         setFormData((prev) => ({
           ...prev,
           name: ownedData.name,
@@ -143,6 +147,10 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
           phone1: phoneParts[0] || '010',
           phone2: phoneParts[1] || '',
           phone3: phoneParts[2] || '',
+          guardianPhone1: guardianPhoneParts[0] || '010',
+          guardianPhone2: guardianPhoneParts[1] || '',
+          guardianPhone3: guardianPhoneParts[2] || '',
+          guardianRelationship: isGuardianDelegated ? '' : String(ownedData.guardianRelationship || ownedData.guardianRelationShip || ''),
           email1: emailParts[0] || '',
           emailDomain: emailParts[1] || 'naver.com',
           jeonmahyupId: ownedData.personalAccount || '',
@@ -159,6 +167,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
 
         // addressIsBasedOnOrganization 설정
         setAddressIsBasedOnOrganization(ownedData.checkAddressBasedOnOrganization || false);
+        setGuardianIsBasedOnOrgLeader(isGuardianDelegated);
 
         // 원래 주소 정보 저장 (체크박스 해제 시 복원용)
         if (ownedData.address) {
@@ -258,7 +267,15 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
               name: formData.name,
               phNum: `${formData.phone1}-${formData.phone2}-${formData.phone3}`,
               email: formatEmail(formData.email1, formData.emailDomain),
-              gender: formData.gender === 'male' ? 'M' : 'F'
+              gender: formData.gender === 'male' ? 'M' : 'F',
+              guardianPhNum:
+                guardianIsBasedOnOrgLeader
+                  ? null
+                  : formData.guardianPhone2?.trim() && formData.guardianPhone3?.trim()
+                    ? `${formData.guardianPhone1}-${formData.guardianPhone2}-${formData.guardianPhone3}`
+                    : null,
+              guardianRelationship: guardianIsBasedOnOrgLeader ? null : (formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null),
+              guardianRelationShip: guardianIsBasedOnOrgLeader ? null : (formData.guardianRelationship?.trim() ? formData.guardianRelationship.trim() : null),
             },
             registrationInfo: {
               eventCategoryId: selectedCategory.categoryId,
@@ -267,6 +284,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
             }
           },
           checkAddressIsBasedOnOrganization: addressIsBasedOnOrganization,
+          checkGuardianIsBasedOnOrganization: guardianIsBasedOnOrgLeader,
           address: addressIsBasedOnOrganization
             ? null
             : {
@@ -461,12 +479,33 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
                 </div>
               </div>
 
-              {/* 연락처 정보 섹션 */}
+              {/* 연락처 정보 섹션 (항상 수정 가능) */}
               <ContactInfoSection
                 formData={formData}
                 openDropdown={openDropdown}
                 onInputChange={handlers.handleInputChange}
                 onDropdownToggle={setOpenDropdown}
+                showGuardianSection={true}
+                guardianDisabled={guardianIsBasedOnOrgLeader}
+                hideGuardianFields={guardianIsBasedOnOrgLeader}
+                guardianHelpTextOn="단체장 정보로 위임 중입니다. 직접 입력하려면 위임 체크를 해제해 주세요."
+                guardianHeaderRight={
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={guardianIsBasedOnOrgLeader}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setGuardianIsBasedOnOrgLeader(checked);
+                        if (checked) {
+                          setFormData((prev) => ({ ...prev, guardianPhone2: '', guardianPhone3: '', guardianRelationship: '' }));
+                        }
+                      }}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    단체장 위임
+                  </label>
+                }
                 refs={refs}
               />
 

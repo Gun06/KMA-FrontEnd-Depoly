@@ -35,6 +35,10 @@ export interface ApiSubmitData {
         phNum: string;
         email: string;
         gender: string;
+        guardianPhNum?: string | null;
+        // 백엔드 표기 혼용 방어용 (RelationShip / Relationship)
+        guardianRelationship?: string | null;
+        guardianRelationShip?: string | null;
       };
                   registrationInfo: {
                     eventCategoryId: string;
@@ -73,6 +77,9 @@ export interface IndividualRegistrationResponse {
   birth: string;
   phNum: string;
   email: string;
+  guardianPhNum?: string | null;
+  guardianRelationship?: string | null;
+  guardianRelationShip?: string | null;
   address: string;
   zipCode: string;
   addressDetail: string;

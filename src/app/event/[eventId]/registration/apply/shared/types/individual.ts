@@ -15,6 +15,10 @@ export interface IndividualFormData {
   phone1: string;
   phone2: string;
   phone3: string;
+  guardianPhone1: string;
+  guardianPhone2: string;
+  guardianPhone3: string;
+  guardianRelationship: string;
   email1: string;
   email2: string;
   emailDomain: string;
@@ -34,4 +38,13 @@ export interface IndividualFormData {
 export type IdCheckResult = 'none' | 'exists' | 'not_exists';
 
 // 드롭다운 열림 상태 타입
-export type OpenDropdown = 'year' | 'month' | 'day' | 'phone1' | 'emailDomain' | 'category' | 'paymentMethod' | null;
+export type OpenDropdown =
+  | 'year'
+  | 'month'
+  | 'day'
+  | 'phone1'
+  | 'guardianPhone1'
+  | 'emailDomain'
+  | 'category'
+  | 'paymentMethod'
+  | null;

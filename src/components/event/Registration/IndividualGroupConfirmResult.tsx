@@ -55,6 +55,15 @@ export default function IndividualGroupConfirmResult({ data }: IndividualGroupCo
         })
       : ["기념품 없음"];
 
+  const guardianRelationship = data.guardianRelationship || data.guardianRelationShip || "";
+  const guardianPhNum = data.filteredGuardianPhNum || "";
+  const hasGuardianValue = data.filteredGuardianPhNum != null || (data.guardianRelationship ?? data.guardianRelationShip) != null;
+  const isGuardianDelegated = data.checkGuardianBasedOnOrgLeader === true;
+  // 노출 규칙:
+  // 1) checkGuardianBasedOnOrgLeader=true면 표시(값이 null이어도 표시)
+  // 2) checkGuardianBasedOnOrgLeader=false면 guardian 값이 하나라도 있을 때만 표시
+  const shouldShowGuardian = isGuardianDelegated || hasGuardianValue;
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="bg-white rounded-xl overflow-hidden">
@@ -148,6 +157,27 @@ export default function IndividualGroupConfirmResult({ data }: IndividualGroupCo
               </div>
             </div>
           </section>
+
+          {/* 보호자 정보: 소유신청은 값 없으면 미표시 */}
+          {shouldShowGuardian && (
+            <section>
+              <h4 className="text-base font-semibold text-gray-900 mb-3">보호자 정보</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-500">보호자 연락처</span>
+                  <span className="font-semibold text-gray-900">
+                    {isGuardianDelegated ? '단체장으로 위임' : guardianPhNum || '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-500">본인과의 관계</span>
+                  <span className="font-semibold text-gray-900">
+                    {isGuardianDelegated ? '단체장으로 위임' : guardianRelationship || '-'}
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
 
           <section>
             <h4 className="text-base font-semibold text-gray-900 mb-3">참가 항목</h4>

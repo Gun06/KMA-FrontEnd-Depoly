@@ -29,6 +29,64 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   const [requestReason, setRequestReason] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
 
+  const getGuardianFields = (data: unknown): { phNum?: string; relationship?: string } => {
+    const asRecord = (v: unknown): Record<string, unknown> | null =>
+      v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+
+    const pickStringByKeyRegex = (obj: Record<string, unknown>, regex: RegExp): string | undefined => {
+      for (const [k, v] of Object.entries(obj)) {
+        if (!regex.test(k)) continue;
+        if (typeof v === 'string' && v.trim() !== '') return v;
+      }
+      return undefined;
+    };
+
+    const root = asRecord(data);
+    if (!root) return {};
+
+    // 케이스: guardianInfo 객체로 내려오는 경우
+    const gi = asRecord(root.guardianInfo);
+    if (gi) {
+      const giPhNum =
+        (typeof gi.guardianPhNum === 'string' ? (gi.guardianPhNum as string) : undefined) ??
+        pickStringByKeyRegex(gi, /^guardian.*ph.*num$/i);
+      const giRel =
+        (typeof (gi as any).guardianRelationship === 'string' ? ((gi as any).guardianRelationship as string) : undefined) ??
+        (typeof (gi as any).guardianRelationShip === 'string' ? ((gi as any).guardianRelationShip as string) : undefined) ??
+        pickStringByKeyRegex(gi, /^guardian.*relation/i);
+      if (giPhNum || giRel) return { phNum: giPhNum, relationship: giRel };
+    }
+
+    // 최우선: 루트에서 다양한 필드명 케이스를 방어적으로 탐색
+    const rootPhNum =
+      (typeof root.guardianPhNum === 'string' ? root.guardianPhNum : undefined) ??
+      pickStringByKeyRegex(root, /^guardian.*ph.*num$/i);
+    const rootRel =
+      (typeof (root as any).guardianRelationship === 'string' ? ((root as any).guardianRelationship as string) : undefined) ??
+      (typeof (root as any).guardianRelationShip === 'string' ? ((root as any).guardianRelationShip as string) : undefined) ??
+      pickStringByKeyRegex(root, /^guardian.*relation/i);
+
+    if (rootPhNum || rootRel) return { phNum: rootPhNum, relationship: rootRel };
+
+    // 일부 응답은 personalInfo 내부로 내려갈 수 있어 방어적으로 탐색
+    const rpi = asRecord(root.registrationPersonalInfo);
+    const rmi = asRecord(rpi?.registerMustInfo);
+    const pi = asRecord(rmi?.personalInfo);
+
+    const nestedPhNum =
+      (typeof pi?.guardianPhNum === 'string' ? (pi.guardianPhNum as string) : undefined) ??
+      (pi ? pickStringByKeyRegex(pi, /^guardian.*ph.*num$/i) : undefined);
+    const nestedRel =
+      (typeof (pi as any)?.guardianRelationship === 'string' ? ((pi as any).guardianRelationship as string) : undefined) ??
+      (typeof (pi as any)?.guardianRelationShip === 'string' ? ((pi as any).guardianRelationShip as string) : undefined) ??
+      (pi ? pickStringByKeyRegex(pi, /^guardian.*relation/i) : undefined);
+
+    return {
+      phNum: nestedPhNum,
+      relationship: nestedRel,
+    };
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -278,9 +336,19 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     if (!registrationData) return; // null 체크
 
     // 주소에서 우편번호 제거하여 전달
+    // 보호자 필드는 조회 응답에 포함되지만, 저장/복원 과정에서 누락되지 않도록 명시적으로 포함
     const editData = {
       ...registrationData,
       address: cleanAddress(registrationData.address || '', registrationData.zipCode),
+      guardianPhNum: registrationData.guardianPhNum ?? null,
+      guardianRelationship:
+        registrationData.guardianRelationship ??
+        registrationData.guardianRelationShip ??
+        null,
+      guardianRelationShip:
+        registrationData.guardianRelationShip ??
+        registrationData.guardianRelationship ??
+        null,
     };
 
     // sessionStorage에 editData 저장
@@ -616,6 +684,31 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* 보호자 정보 섹션 (개인신청: 항상 표시) */}
+            <div className="px-6 sm:px-8 pb-9">
+              <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">GUARDIAN</p>
+              <h3 className="text-base font-semibold text-gray-900 mb-4">보호자 정보</h3>
+              {(() => {
+                const guardian = getGuardianFields(registrationData);
+                const guardianPhNum = guardian.phNum || '-';
+                const guardianRelationship = guardian.relationship || '-';
+                return (
+              <div className="space-y-5 text-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">보호자 연락처</label>
+                  <span className="font-medium text-gray-800">{guardianPhNum}</span>
+                </div>
+                <div className="flex items-center justify-between pb-4">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">본인과의 관계</label>
+                  <span className="font-medium text-gray-800">
+                    {guardianRelationship}
+                  </span>
+                </div>
+              </div>
+                );
+              })()}
             </div>
 
             {/* 신청 정보 섹션 */}

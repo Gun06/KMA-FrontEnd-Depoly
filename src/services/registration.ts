@@ -310,6 +310,8 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
     birth: data.birth,
     gender: data.gender,
     phNum: data.phNum,
+    guardianPhNum: data.guardianPhNum ?? null,
+    guardianRelationship: data.guardianRelationship ?? data.guardianRelationShip ?? null,
     registrationDate: data.registrationDate,
     amount: data.amount,
     paymentStatus: data.paymentStatus,
@@ -353,6 +355,8 @@ export type RegistrationUpdatePayload = {
   birth?: string;
   gender?: 'M' | 'F';
   phNum?: string;
+  guardianPhNum?: string | null;
+  guardianRelationship?: string | null;
   paymentStatus?: 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   address?: string;
   addressDetail?: string; // 상세주소 추가
@@ -382,6 +386,10 @@ export async function updateRegistrationDetail(
       ...(payload.birth && { birth: normalizeBirthDate(payload.birth) }),
       ...(payload.gender && { gender: payload.gender }),
       ...(payload.phNum && { phNum: normalizePhoneNumber(payload.phNum) }),
+      ...(payload.guardianPhNum !== undefined && {
+        guardianPhNum: payload.guardianPhNum ? normalizePhoneNumber(payload.guardianPhNum) : null,
+      }),
+      ...(payload.guardianRelationship !== undefined && { guardianRelationship: payload.guardianRelationship }),
       ...(payload.paymentStatus && { paymentStatus: payload.paymentStatus }),
       ...(payload.address && { address: payload.address }),
       ...(payload.addressDetail !== undefined && { addressDetail: payload.addressDetail }),

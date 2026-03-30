@@ -25,6 +25,8 @@ export interface RegistrationItem {
   paymentStatus: 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   address?: string;
   addressDetail?: string;
+  guardianPhNum?: string | null;
+  guardianRelationship?: string | null;
   // 목록 API용
   souvenirList?: Array<{ souvenirId: string; selectedSize: string }>;
   // 상세 API용

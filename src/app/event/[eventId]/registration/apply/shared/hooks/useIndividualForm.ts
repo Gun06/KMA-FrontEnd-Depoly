@@ -36,6 +36,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
   const monthRef = useRef<HTMLDivElement>(null);
   const dayRef = useRef<HTMLDivElement>(null);
   const phone1Ref = useRef<HTMLDivElement>(null);
+  const guardianPhone1Ref = useRef<HTMLDivElement>(null);
   const emailDomainRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
   // const souvenirRef = useRef<HTMLDivElement>(null); // 기념품 선택 모달로 변경
@@ -161,6 +162,21 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             }
           }
           
+          const guardianPhNumFromEditData =
+            editData.guardianPhNum ||
+            editData.guardianInfo?.guardianPhNum ||
+            editData.guardianInfo?.guardian_ph_num ||
+            '';
+          const guardianRelationshipFromEditData =
+            editData.guardianRelationship ||
+            editData.guardianRelationShip ||
+            editData.guardianInfo?.guardianRelationship ||
+            editData.guardianInfo?.guardianRelationShip ||
+            editData.guardianInfo?.guardian_relationship ||
+            '';
+
+          const guardianPhoneParts = String(guardianPhNumFromEditData || '').split('-');
+
           setFormData(prev => ({
             ...prev,
             name: editData.name || '',
@@ -176,6 +192,10 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             phone1: phoneParts[0] || '010',
             phone2: phoneParts[1] || '',
             phone3: phoneParts[2] || '',
+            guardianPhone1: guardianPhoneParts[0] || '010',
+            guardianPhone2: guardianPhoneParts[1] || '',
+            guardianPhone3: guardianPhoneParts[2] || '',
+            guardianRelationship: String(guardianRelationshipFromEditData || ''),
             email1: emailParts[0] || '',
             emailDomain: emailParts[1] || '',
             selectedDistance: selectedDistance,
@@ -293,6 +313,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
         monthRef.current && !monthRef.current.contains(event.target as Node) &&
         dayRef.current && !dayRef.current.contains(event.target as Node) &&
         phone1Ref.current && !phone1Ref.current.contains(event.target as Node) &&
+        guardianPhone1Ref.current && !guardianPhone1Ref.current.contains(event.target as Node) &&
         emailDomainRef.current && !emailDomainRef.current.contains(event.target as Node) &&
         categoryRef.current && !categoryRef.current.contains(event.target as Node) &&
         // souvenirRef.current && !souvenirRef.current.contains(event.target as Node) && // 기념품 선택 모달로 변경
@@ -667,6 +688,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       monthRef,
       dayRef,
       phone1Ref,
+      guardianPhone1Ref,
       emailDomainRef,
       categoryRef,
       // souvenirRef, // 기념품 선택 모달로 변경

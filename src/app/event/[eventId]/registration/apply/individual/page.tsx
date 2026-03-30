@@ -32,9 +32,12 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
     error
   } = useIndividualForm(params.eventId, eventInfo);
 
-  // 편집 모드 확인
-  const isEditMode = typeof window !== 'undefined' && 
-    new URLSearchParams(window.location.search).get('mode') === 'edit';
+  // 편집 모드 확인 (SSR/CSR 하이드레이션 불일치 방지: 마운트 후 계산)
+  const [isEditMode, setIsEditMode] = useState(false);
+  useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get('mode');
+    setIsEditMode(mode === 'edit');
+  }, []);
   
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   

@@ -30,12 +30,16 @@ export interface IndividualGroupRegistrationData {
     zipCode: string;
     addressDetail: string;
   };
+  filteredGuardianPhNum?: string | null;
+  guardianRelationship?: string | null;
+  guardianRelationShip?: string | null;
   paymentType: "CARD" | "ACCOUNT_TRANSFER";
   paymenterName: string;
   paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
   note?: string;
   checkOwned?: boolean; // 소유 신청 여부
   checkAddressBasedOnOrganization?: boolean; // 단체 주소 위탁 여부
+  checkGuardianBasedOnOrgLeader?: boolean; // 보호자 정보 단체장 위임 여부
 }
 
 // 소유 신청 인증 요청 타입
@@ -65,11 +69,15 @@ export interface OwnedRegistrationViewData {
   amount: number;
   checkAddressBasedOnOrganization: boolean; // 단체 주소 위탁 여부
   checkOwned: boolean; // 소유 신청 여부
+  checkGuardianBasedOnOrgLeader?: boolean; // 보호자 정보 단체장 위임 여부
   address: {
     address: string;
     zipCode: string;
     addressDetail: string;
   } | null; // checkAddressBasedOnOrganization이 true일 경우 null일 수 있음
+  guardianPhNum?: string | null;
+  guardianRelationship?: string | null;
+  guardianRelationShip?: string | null;
 }
 
 

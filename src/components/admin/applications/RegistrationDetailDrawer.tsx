@@ -189,6 +189,8 @@ export default function RegistrationDetailDrawer({
     birth: '',
     gender: '' as 'M' | 'F' | '',
     phNum: '',
+    guardianPhNum: '',
+    guardianRelationship: '',
     address: '',
     addressDetail: '',
     zipCode: '',
@@ -410,6 +412,8 @@ export default function RegistrationDetailDrawer({
       birth: normalizeBirthDate(item.birth) || '',
       gender: toGenderEnum(item.gender),
       phNum: normalizePhoneNumber(item.phNum) || '',
+      guardianPhNum: normalizePhoneNumber(item.guardianPhNum ?? undefined) || String(item.guardianPhNum || ''),
+      guardianRelationship: String(item.guardianRelationship || ''),
       address: extractedCleanAddress || String(item.address || ''),
       addressDetail: String(item.addressDetail || ''),
       zipCode: extractedZipCode,
@@ -622,13 +626,13 @@ export default function RegistrationDetailDrawer({
                       className="px-4 py-1.5 rounded border border-blue-600 bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={async () => {
                         if (!item) {
-                          alert('신청 정보를 찾을 수 없습니다.');
+                          toast.error('신청 정보를 찾을 수 없습니다.');
                           return;
                         }
                         
                         const registrationId = item.id;
                         if (!registrationId || registrationId.trim() === '') {
-                          alert('신청 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+                          toast.error('신청 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
                           return;
                         }
                         
@@ -645,6 +649,8 @@ export default function RegistrationDetailDrawer({
                             birth: form.birth.trim() || undefined,
                             gender: form.gender || undefined,
                             phNum: form.phNum.trim() || undefined,
+                            guardianPhNum: form.guardianPhNum.trim() || null,
+                            guardianRelationship: form.guardianRelationship.trim() || null,
                             address: combinedAddress || undefined,
                             addressDetail: form.addressDetail.trim() || undefined,
                             paymentStatus: form.paymentStatus || item.paymentStatus,
@@ -664,7 +670,7 @@ export default function RegistrationDetailDrawer({
                             await onSave();
                           }
                         } catch (_error) {
-                          alert('수정에 실패했습니다. 다시 시도해주세요.');
+                          toast.error('수정에 실패했습니다. 다시 시도해주세요.');
                         } finally {
                           setSaving(false);
                         }
@@ -700,6 +706,8 @@ export default function RegistrationDetailDrawer({
                           birth: String(item.birth || ''),
                           gender: (String(item.gender || '').toUpperCase().startsWith('M') ? 'M' : String(item.gender || '').toUpperCase().startsWith('F') ? 'F' : '') as 'M' | 'F' | '',
                           phNum: String(item.phNum || ''),
+                          guardianPhNum: String(item.guardianPhNum || ''),
+                          guardianRelationship: String(item.guardianRelationship || ''),
                           address: cancelCleanAddress || String(item.address || ''),
                           addressDetail: String(item.addressDetail || ''),
                           zipCode: cancelZipCode,
@@ -736,7 +744,7 @@ export default function RegistrationDetailDrawer({
                     className="w-full rounded border px-2 py-1 text-left bg-white hover:bg-gray-50 relative"
                     onClick={() => {
                       if (!effectiveEventId) {
-                        alert('대회 정보가 없어 단체 목록을 불러올 수 없습니다.');
+                        toast.error('대회 정보가 없어 단체 목록을 불러올 수 없습니다.');
                         return;
                       }
                       const willOpen = !isOrganizationDropdownOpen;
@@ -1009,6 +1017,12 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('연락처', (String(item.phNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3'))) : editLine('연락처', (
                 <input className="w-full rounded border px-2 py-1" value={form.phNum} onChange={e => setForm(v => ({ ...v, phNum: formatPhoneInput(e.target.value) }))} />
+              ))}
+              {!canEditFields ? line('보호자 연락처', (String(item.guardianPhNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3')) || '-') : editLine('보호자 연락처', (
+                <input className="w-full rounded border px-2 py-1" value={form.guardianPhNum} onChange={e => setForm(v => ({ ...v, guardianPhNum: formatPhoneInput(e.target.value) }))} />
+              ))}
+              {!canEditFields ? line('보호자 관계', String(item.guardianRelationship || '-') ) : editLine('보호자 관계', (
+                <input className="w-full rounded border px-2 py-1" value={form.guardianRelationship} onChange={e => setForm(v => ({ ...v, guardianRelationship: e.target.value }))} placeholder="가족, 친구, 지인, 기타" />
               ))}
               {line('신청일시', formatDateTime(item.registrationDate))}
               {line('금액', formatAmount(item.amount))}

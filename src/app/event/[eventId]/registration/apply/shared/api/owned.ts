@@ -12,6 +12,9 @@ export interface OwnedRegistrationUpdatePayload {
         phNum: string;
         email: string;
         gender: 'M' | 'F';
+        guardianPhNum?: string | null;
+        guardianRelationship?: string | null;
+        guardianRelationShip?: string | null;
       };
       registrationInfo: {
         eventCategoryId: string;
@@ -23,6 +26,7 @@ export interface OwnedRegistrationUpdatePayload {
       };
     };
     checkAddressIsBasedOnOrganization: boolean;
+    checkGuardianIsBasedOnOrganization?: boolean;
     address: {
       address: string;
       zipCode: string;
@@ -57,10 +61,24 @@ export const updateOwnedRegistration = async (
     const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/${registrationId}/owned`;
     
     // checkAddressIsBasedOnOrganization이 true일 경우 address를 null로 설정
+    // checkGuardianIsBasedOnOrganization이 true일 경우 guardian 필드를 null로 설정
     const requestBody = {
       ...data,
       registrationPersonalInfo: {
         ...data.registrationPersonalInfo,
+        registerMustInfo: {
+          ...data.registrationPersonalInfo.registerMustInfo,
+          personalInfo: {
+            ...data.registrationPersonalInfo.registerMustInfo.personalInfo,
+            ...(data.registrationPersonalInfo.checkGuardianIsBasedOnOrganization
+              ? {
+                  guardianPhNum: null,
+                  guardianRelationship: null,
+                  guardianRelationShip: null,
+                }
+              : {}),
+          },
+        },
         address: data.registrationPersonalInfo.checkAddressIsBasedOnOrganization
           ? null
           : data.registrationPersonalInfo.address,
