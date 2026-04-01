@@ -326,32 +326,15 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           const requestData = transformGroupFormDataToApi(formData, eventInfo);
           response = await submitGroupRegistration(eventId, requestData);
         }
-        // [ncloud 복구 시 복원] 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
-        // if (response && response.stagedToken) {
-        //   setStagedToken(response.stagedToken as string);
-        //   const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
-        //   setOtpPhoneNumber(phoneNumber);
-        //   setIsOtpModalOpen(true);
-        //   setSubmitError('');
-        // } else {
-        //   throw new Error('스테이징 토큰을 받지 못했습니다.');
-        // }
-
-        // ncloud 임시 대응: stagedToken 없으면 백엔드가 직접 완료 처리 → 성공 페이지로 이동
-        if (response?.stagedToken) {
+        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
+        if (response && response.stagedToken) {
           setStagedToken(response.stagedToken as string);
           const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
           setOtpPhoneNumber(phoneNumber);
           setIsOtpModalOpen(true);
           setSubmitError('');
         } else {
-          const modeParam = isEdit ? '&mode=edit' : '';
-          const successUrl = `/event/${eventId}/registration/apply/group/success?name=${encodeURIComponent(
-            formData.groupName
-          )}&groupName=${encodeURIComponent(
-            formData.groupName
-          )}&participantCount=${formData.participants.length}${modeParam}`;
-          router.push(successUrl);
+          throw new Error('스테이징 토큰을 받지 못했습니다.');
         }
       } catch (error) {
         const errorMessage = formatError(error);

@@ -9,6 +9,8 @@ import {
 import { clearTokens, clearAdminTokens } from '@/utils/jwt';
 import { tokenService } from '@/utils/tokenService';
 import { logError, getUserFriendlyMessage } from '@/utils/errorHandler';
+import { useAuthStore } from '@/stores/authStore';
+import { useAdminAuthStore } from '@/stores/adminAuthStore';
 
 /** ====== 설정 ====== */
 const API_BASE_URL_ADMIN = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN ?? '';
@@ -201,11 +203,13 @@ const handleErrorResponse = async (
       // 관리자: 자동 리프레시 시도하지 않음 → 즉시 토큰 정리
       clearAdminTokens();
       tokenService.setAdminAccessToken(null);
+      useAdminAuthStore.getState().logout();
     } else {
       const refreshed = await tokenService.refreshAccessToken();
       if (!refreshed) {
         clearTokens();
         tokenService.setAccessToken(null);
+        useAuthStore.getState().logout();
       }
     }
   }

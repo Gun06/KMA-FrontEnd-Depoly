@@ -3,10 +3,11 @@ import { GroupApiRequestData } from '../types/group';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
-// 단체신청 제출
+// 단체신청 제출 — 2step(OTP) 스테이징: …/organization/stage
+// 추후 관리 설정(GET)에 따라 1step(무 /stage) 분기 예정
 export const submitGroupRegistration = async (eventId: string, data: GroupApiRequestData) => {
   try {
-    const url = `${API_BASE_URL}/api/v0/public/event/${eventId}/registration/organization`;
+    const url = `${API_BASE_URL}/api/v0/public/event/${eventId}/registration/organization/stage`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {

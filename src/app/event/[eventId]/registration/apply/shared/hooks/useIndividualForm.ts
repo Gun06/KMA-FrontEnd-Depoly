@@ -411,31 +411,17 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           // 신규 신청 모드: POST API 호출
           _result = await submitIndividualRegistration(eventId, apiData);
         }
-        // [ncloud 복구 시 복원] 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
-        // if (_result && _result.stagedToken) {
-        //   setStagedToken(_result.stagedToken as string);
-        //   const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
-        //   setOtpPhoneNumber(phoneNumber);
-        //   setIsOtpModalOpen(true);
-        //   setSubmitError('');
-        // } else {
-        //   throw new Error('스테이징 토큰을 받지 못했습니다.');
-        // }
-
-        // ncloud 임시 대응: stagedToken 없으면 백엔드가 직접 완료 처리 → 성공 페이지로 이동
-        if (_result?.stagedToken) {
+        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
+        if (_result && _result.stagedToken) {
           setStagedToken(_result.stagedToken as string);
+          // 현재 폼의 전화번호를 그대로 사용 (010-1234-5678 형태)
           const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
           setOtpPhoneNumber(phoneNumber);
           setIsOtpModalOpen(true);
+          // 이전 에러 메시지 초기화
           setSubmitError('');
         } else {
-          const modeParam = isEditMode ? '&mode=edit' : '';
-          router.push(
-            `/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(
-              formData.name
-            )}${modeParam}`
-          );
+          throw new Error('스테이징 토큰을 받지 못했습니다.');
         }
       } catch (error) {
         // 수정 모드인지 다시 확인 (catch 블록에서 사용)
