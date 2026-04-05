@@ -1,3 +1,5 @@
+import { genderToApiEnum } from '@/utils/formatRegistration';
+
 // 신청자 관리 관련 타입 정의
 export interface RegistrationItem {
   registrationId: string;        // 서버에서 내려주는 registrationId
@@ -172,14 +174,9 @@ function formatDateTimeDisplay(raw?: string): string {
   return raw.replace('T', ' ').split('.')[0] || raw;
 }
 export function convertRegistrationToManageRow(item: RegistrationItem, index?: number): ApplicantManageRow {
-  const normalizeGender = (g?: string): '남' | '여' => {
-    const s = String(g || '').trim();
-    const u = s.toUpperCase();
-    if (u === 'M' || s.includes('남')) return '남';
-    if (u === 'F' || s.includes('여')) return '여';
-    // 알 수 없는 값인 경우 백엔드 기본 규칙에 맞춰 '여'로 표시
-    return '여';
-  };
+  const genderEnum = genderToApiEnum(item.gender);
+  const genderDisplay: '남' | '여' =
+    genderEnum === 'M' ? '남' : genderEnum === 'F' ? '여' : '여';
   return {
     id: item.registrationId || item.id, // 서버에서 내려주는 registrationId 우선 사용
     no: item.no ?? (index !== undefined ? index + 1 : 0), // 서버에서 내려주는 no 우선 사용
@@ -187,7 +184,7 @@ export function convertRegistrationToManageRow(item: RegistrationItem, index?: n
     name: item.name || item.userName || '', // 서버에서 내려주는 name 우선 사용
     org: item.organizationName || '개인', // 서버에서 내려주는 organizationName
     course: item.eventCategoryName || item.categoryName || item.eventCategory || '', // 서버에서 내려주는 eventCategoryName 우선 사용
-    gender: normalizeGender(item.gender),
+    gender: genderDisplay,
     birth: formatBirthDisplay(item.birth),
     phone: formatPhoneDisplay(item.phNum), // 서버에서 내려주는 phNum
     eventName: item.eventName, // 대회명

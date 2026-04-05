@@ -214,8 +214,11 @@ const handleErrorResponse = async (
     }
   }
 
-  // 백엔드의 message를 항상 우선 사용. 폴백은 일반 상태 문자열만 사용
-  const fallback = getUserFriendlyMessage({ status: res.status });
+  // 백엔드의 message를 항상 우선 사용. 폴백은 HTTP 상태별 안내
+  const fallback =
+    res.status === 413
+      ? '전송 용량이 허용 한도를 초과했습니다. 홍보 배너 이미지를 더 작게 줄이거나 압축한 뒤 다시 시도해 주세요.'
+      : getUserFriendlyMessage({ status: res.status });
 
   const { message, code, serverHttpStatus, meta } = parseErrorFields(
     data,
@@ -294,7 +297,10 @@ export const request = async <T>(
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw error;
     }
-    throw new HttpError('네트워크 오류가 발생했습니다.', 0);
+    throw new HttpError(
+      '요청을 완료하지 못했습니다. 연결 상태를 확인하거나, 업로드 파일이 너무 크면 용량을 줄인 뒤 다시 시도해 주세요.',
+      0
+    );
   }
 
   if (!res.ok) {
@@ -339,7 +345,10 @@ export const request = async <T>(
             signal: init?.signal,
           });
         } catch {
-          throw new HttpError('네트워크 오류가 발생했습니다.', 0);
+          throw new HttpError(
+            '요청을 완료하지 못했습니다. 연결 상태를 확인하거나, 업로드 파일이 너무 크면 용량을 줄인 뒤 다시 시도해 주세요.',
+            0
+          );
         }
 
         if (!retryRes.ok) await handleErrorResponse(server, retryRes);

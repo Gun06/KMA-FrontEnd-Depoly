@@ -8,6 +8,7 @@ import EditForm from './components/EditForm';
 import { LocalEventUpdateTransformer } from './api/localEventUpdateTransformer';
 import { FormDataBuilder } from './api/formDataBuilder';
 import type { LocalEventUpdatePayload } from './api/types';
+import type { LocalEventStatus } from '../../register/api/types';
 import { useUpdateLocalEvent } from './api';
 import { useLocalEventDetail } from '../api';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
@@ -62,8 +63,8 @@ export default function Client({ eventId }: { eventId: string }) {
     const registStartTime = extractTime(apiData.registStartDate);
     const registDeadlineTime = extractTime(apiData.registDeadline);
 
-    // FINAL_CLOSED는 폼에서 지원하지 않으므로 CLOSED로 변환
-    const normalizedEventStatus: 'PENDING' | 'OPEN' | 'CLOSED' = 
+    // FINAL_CLOSED는 폼에서 지원하지 않으므로 CLOSED로 변환 (UPLOAD_APPLYING은 그대로)
+    const normalizedEventStatus: LocalEventStatus =
       apiData.eventStatus === 'FINAL_CLOSED' ? 'CLOSED' : apiData.eventStatus;
 
     return {

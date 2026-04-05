@@ -54,6 +54,7 @@ const subMenus: Record<string, SubMenu> = {
     items: [
       { label: '대회리스트', href: '/schedule' },
       { label: '대회갤러리', href: '/schedule/gallery' },
+      { label: '지역대회', href: '/schedule/local' },
     ],
   },
   접수안내: {

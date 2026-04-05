@@ -16,6 +16,8 @@ export function mapLocalEventStatusToRegStatus(eventStatus: string): RegStatus {
       return '접수마감';
     case 'PENDING':
       return '비접수';
+    case 'UPLOAD_APPLYING':
+      return '업로드신청';
     default:
       return '비접수';
   }
@@ -31,7 +33,11 @@ export function transformLocalEventToRow(
     title: apiEvent.eventName,
     eventUrl: apiEvent.eventUrl,
     applyStatus: mapLocalEventStatusToRegStatus(apiEvent.eventStatus),
+    eventStatusRaw: apiEvent.eventStatus,
     isPublic: apiEvent.visibleStatus,
+    applicantName: apiEvent.applicantName,
+    applicantPhNum: apiEvent.applicantPhNum,
+    applicantCompany: apiEvent.applicantCompany,
   };
 }
 

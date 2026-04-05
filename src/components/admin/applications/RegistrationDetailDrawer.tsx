@@ -5,7 +5,7 @@ import React from 'react';
 import clsx from 'clsx';
 import type { RegistrationItem } from '@/types/registration';
 import { updateRegistrationDetail, resetRegistrationPassword, resetOrganizationPassword, deleteRegistration } from '@/services/registration';
-import { formatBirthInput, formatPhoneInput, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
+import { formatBirthInput, formatPhoneInput, genderToApiEnum, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import { toast } from 'react-toastify';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
@@ -208,7 +208,12 @@ export default function RegistrationDetailDrawer({
   const [isOrganizationSearching, setIsOrganizationSearching] = React.useState(false);
   const organizationSearchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const organizationDropdownRef = React.useRef<HTMLDivElement>(null);
+  /** 폼 동기화 effect가 같은 신청 건에 대해 편집 모드를 끄지 않도록 id 기준 추적 */
+  const lastFormSyncedRegistrationIdRef = React.useRef<string | null>(null);
 
+  React.useEffect(() => {
+    if (!open) lastFormSyncedRegistrationIdRef.current = null;
+  }, [open]);
 
   // item.id를 추적하여 다른 항목을 선택했을 때만 메모 초기화
   const prevItemIdRef = React.useRef<string | null>(null);
@@ -365,17 +370,11 @@ export default function RegistrationDetailDrawer({
     return directName || '-';
   }, [selectedCategory?.name, item?.eventCategory, item?.categoryName]);
 
-  // 폼 데이터 초기화 (item이 변경될 때마다)
+  // 폼 데이터 초기화 (item·코스 드롭다운 등 변경 시). 편집 모드 해제는 신청 id가 바뀔 때만 수행
   React.useEffect(() => {
     if (!item) return;
-    // 성별을 API enum으로 안정적으로 변환 (M/F 또는 남/여 모두 지원)
-    const toGenderEnum = (g?: string): 'M' | 'F' | '' => {
-      const s = String(g || '').trim();
-      const u = s.toUpperCase();
-      if (u === 'M' || s.includes('남')) return 'M';
-      if (u === 'F' || s.includes('여')) return 'F';
-      return '';
-    };
+    const idChanged = lastFormSyncedRegistrationIdRef.current !== item.id;
+    lastFormSyncedRegistrationIdRef.current = item.id;
 
     // eventCategoryId 추출: souvenirListDetail에서 첫 번째 항목의 eventCategoryId 사용
     let currentEventCategoryId = item.souvenirListDetail?.[0]?.eventCategoryId || '';
@@ -410,7 +409,7 @@ export default function RegistrationDetailDrawer({
       name: String(item.name || item.userName || ''),
       paymenterName: String(item.paymenterName || ''),
       birth: normalizeBirthDate(item.birth) || '',
-      gender: toGenderEnum(item.gender),
+      gender: genderToApiEnum(item.gender),
       phNum: normalizePhoneNumber(item.phNum) || '',
       guardianPhNum: normalizePhoneNumber(item.guardianPhNum ?? undefined) || String(item.guardianPhNum || ''),
       guardianRelationship: String(item.guardianRelationship || ''),
@@ -423,8 +422,7 @@ export default function RegistrationDetailDrawer({
       organizationId: item.organizationId || null,
       organizationName: item.organizationName && item.organizationName !== '개인' ? item.organizationName : '',
     });
-    // 편집 모드가 열릴 때 편집 상태 리셋
-    if (open) {
+    if (open && idChanged) {
       setIsEditing(false);
     }
   }, [item, open, dropdownCategories]);
@@ -494,10 +492,10 @@ export default function RegistrationDetailDrawer({
   const canEditMemo = isEditing; // 메모와 상세메모는 항상 수정 가능
 
   const genderLabel = (() => {
-    const g = String(item.gender || '').toUpperCase();
-    if (g === 'M' || g.includes('남')) return '남';
-    if (g === 'F' || g.includes('여')) return '여';
-    return item.gender || '';
+    const e = genderToApiEnum(item.gender);
+    if (e === 'M') return '남';
+    if (e === 'F') return '여';
+    return item.gender?.trim() || '';
   })();
 
   const paymentStatusLabel = (() => {
@@ -704,7 +702,7 @@ export default function RegistrationDetailDrawer({
                           name: String(item.name || item.userName || ''),
                           paymenterName: String(item.paymenterName || ''),
                           birth: String(item.birth || ''),
-                          gender: (String(item.gender || '').toUpperCase().startsWith('M') ? 'M' : String(item.gender || '').toUpperCase().startsWith('F') ? 'F' : '') as 'M' | 'F' | '',
+                          gender: genderToApiEnum(item.gender),
                           phNum: String(item.phNum || ''),
                           guardianPhNum: String(item.guardianPhNum || ''),
                           guardianRelationship: String(item.guardianRelationship || ''),

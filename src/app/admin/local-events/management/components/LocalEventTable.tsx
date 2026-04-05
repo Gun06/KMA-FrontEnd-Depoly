@@ -4,9 +4,7 @@
 import React from 'react';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import type { Column } from '@/components/common/Table/BaseTable';
-import RegistrationStatusBadge, {
-  type RegStatus,
-} from '@/components/common/Badge/RegistrationStatusBadge';
+import RegistrationStatusBadge from '@/components/common/Badge/RegistrationStatusBadge';
 
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
@@ -14,15 +12,21 @@ import type { LocalEventRow } from '../api/types';
 
 type PublicFilter = '' | '공개' | '테스트' | '비공개';
 
-// 프리셋 값 → 도메인 값 매핑
-const mapStatus = (v: string): RegStatus | '' =>
+// 프리셋 값 → API eventStatus 매핑
+const mapStatus = (
+  v: string
+): '' | 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | 'UPLOAD_APPLYING' =>
   v === 'ing'
-    ? '접수중'
+    ? 'OPEN'
     : v === 'done'
-      ? '접수마감'
-      : v === 'none'
-        ? '비접수'
-        : '';
+      ? 'CLOSED'
+      : v === 'final_closed'
+        ? 'FINAL_CLOSED'
+        : v === 'none'
+          ? 'PENDING'
+          : v === 'upload_applying'
+            ? 'UPLOAD_APPLYING'
+            : '';
 
 const mapPublic = (v: string): PublicFilter =>
   v === 'open' ? '공개' : v === 'test' ? '테스트' : v === 'closed' ? '비공개' : '';
@@ -36,7 +40,9 @@ type Props = {
 
   onSearch?: (q: string) => void;
   onYearChange?: (year: string) => void;
-  onFilterStatusChange?: (status: RegStatus | '') => void;
+  onFilterStatusChange?: (
+    status: '' | 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | 'UPLOAD_APPLYING'
+  ) => void;
   onFilterPublicChange?: (v: PublicFilter) => void;
 
   onClickRegister?: () => void;
@@ -98,6 +104,21 @@ export default function LocalEventTable({
           {r.title}
         </span>
       ),
+    },
+    {
+      key: 'applicantCompany',
+      header: '신청회사',
+      width: 160,
+      align: 'left',
+      className: 'text-left text-[#374151]',
+      render: r => {
+        const v = r.applicantCompany?.trim();
+        return (
+          <span className="block max-w-[220px] truncate" title={v || undefined}>
+            {v ? v : '—'}
+          </span>
+        );
+      },
     },
     {
       key: 'applyStatus',
@@ -250,7 +271,7 @@ export default function LocalEventTable({
           onChange: onPageChange,
           align: 'center',
         }}
-        minWidth={1100}
+        minWidth={1240}
       />
     </div>
   );

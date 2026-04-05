@@ -18,6 +18,7 @@ const menuColumns = [
     items: [
       { name: '대회리스트', href: '/schedule' },
       { name: '대회갤러리', href: '/schedule/gallery' },
+      { name: '지역대회', href: '/schedule/local' },
     ],
   },
   {

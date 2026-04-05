@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import LocalEventTable from './components/LocalEventTable';
 import type { LocalEventRow } from './api/types';
-import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import type { LocalEventListResponse } from './api/types';
 import {
   useLocalEventList,
@@ -30,25 +29,30 @@ export default function LocalEventsClient({
   // URL 파라미터에서 필터 값 추출
   const urlYear = search.get('year');
   const urlVisibleStatus = search.get('visibleStatus') as 'OPEN' | 'TEST' | 'CLOSE' | null;
-  const urlEventStatus = search.get('eventStatus') as 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | null;
+  const urlEventStatus = search.get('eventStatus') as
+    | 'PENDING'
+    | 'OPEN'
+    | 'CLOSED'
+    | 'FINAL_CLOSED'
+    | 'UPLOAD_APPLYING'
+    | null;
   const urlKeyword = search.get('keyword') || '';
 
-  // URL status 파라미터를 RegStatus로 변환
-  const urlStatusToRegStatus = (urlStatus: string | null): RegStatus | '' => {
+  type EventStatusFilter = '' | 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | 'UPLOAD_APPLYING';
+
+  const normalizeUrlEventStatus = (urlStatus: string | null): EventStatusFilter => {
     if (!urlStatus) return '';
-    const normalized = urlStatus.toLowerCase();
-    if (['ing', 'open', 'opening'].includes(normalized)) return '접수중';
-    if (['done', 'closed', 'final_closed'].includes(normalized)) return '접수마감';
-    if (['none', 'pending'].includes(normalized)) return '비접수';
+    const v = String(urlStatus).toUpperCase();
+    if (v === 'PENDING' || v === 'OPEN' || v === 'CLOSED' || v === 'FINAL_CLOSED' || v === 'UPLOAD_APPLYING') {
+      return v;
+    }
     return '';
   };
 
   // ---------- 초기 상태 (URL → 상태) ----------
   const [q, setQ] = React.useState(urlKeyword);
   const [year, setYear] = React.useState(urlYear || '');
-  const [status, setStatus] = React.useState<RegStatus | ''>(
-    urlStatusToRegStatus(urlEventStatus)
-  );
+  const [status, setStatus] = React.useState<EventStatusFilter>(normalizeUrlEventStatus(urlEventStatus));
   const [pub, setPub] = React.useState<'' | '공개' | '테스트' | '비공개'>(
     urlVisibleStatus === 'OPEN'
       ? '공개'
@@ -67,7 +71,7 @@ export default function LocalEventsClient({
   React.useEffect(() => {
     const newYear = search.get('year') || '';
     const newVisibleStatus = search.get('visibleStatus') as 'OPEN' | 'TEST' | 'CLOSE' | null;
-    const newEventStatus = search.get('eventStatus') as 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | null;
+    const newEventStatus = search.get('eventStatus') as EventStatusFilter | null;
     const newKeyword = search.get('keyword') || '';
     const newPage = Number(search.get('page') ?? initialPage) || initialPage;
 
@@ -76,7 +80,7 @@ export default function LocalEventsClient({
     if (newKeyword !== q) setQ(newKeyword);
     if (newPage !== page) setPage(newPage);
     
-    const newStatus = urlStatusToRegStatus(newEventStatus);
+    const newStatus = normalizeUrlEventStatus(newEventStatus);
     if (newStatus !== status) setStatus(newStatus);
     
     const newPub = newVisibleStatus === 'OPEN' ? '공개' : newVisibleStatus === 'TEST' ? '테스트' : newVisibleStatus === 'CLOSE' ? '비공개' : '';
@@ -105,7 +109,12 @@ export default function LocalEventsClient({
       size: number;
       year?: number;
       visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
-      eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
+      eventStatus?:
+        | 'PENDING'
+        | 'OPEN'
+        | 'CLOSED'
+        | 'FINAL_CLOSED'
+        | 'UPLOAD_APPLYING';
       keyword?: string;
     } = {
       page,
@@ -116,9 +125,7 @@ export default function LocalEventsClient({
     if (pub === '공개') params.visibleStatus = 'OPEN';
     if (pub === '테스트') params.visibleStatus = 'TEST';
     if (pub === '비공개') params.visibleStatus = 'CLOSE';
-    if (status === '접수중') params.eventStatus = 'OPEN';
-    if (status === '접수마감') params.eventStatus = 'CLOSED';
-    if (status === '비접수') params.eventStatus = 'PENDING';
+    if (status) params.eventStatus = status;
     if (q.trim()) params.keyword = q.trim();
 
     return params;
@@ -224,7 +231,18 @@ export default function LocalEventsClient({
   const filterInitialValuesRef = React.useRef<string[]>(['', '', '']);
   const filterInitialValues = React.useMemo(() => {
     // 년도, 신청여부, 공개여부 순서
-    const statusValue = status === '접수중' ? 'ing' : status === '접수마감' ? 'done' : status === '비접수' ? 'none' : '';
+    const statusValue =
+      status === 'OPEN'
+        ? 'ing'
+        : status === 'CLOSED'
+          ? 'done'
+          : status === 'FINAL_CLOSED'
+            ? 'final_closed'
+            : status === 'PENDING'
+              ? 'none'
+              : status === 'UPLOAD_APPLYING'
+                ? 'upload_applying'
+                : '';
     const publicValue = pub === '공개' ? 'open' : pub === '테스트' ? 'test' : pub === '비공개' ? 'closed' : '';
     const newValues = [year || '', statusValue, publicValue];
     
@@ -278,16 +296,13 @@ export default function LocalEventsClient({
     }, 0);
   };
 
-  const onFilterStatusChange = (s: RegStatus | '') => {
-    // 상태를 먼저 즉시 업데이트 (깜빡임 방지)
+  const onFilterStatusChange = (s: EventStatusFilter) => {
     setStatus(s);
     setPage(1);
-    const eventStatus = s === '접수중' ? 'OPEN' : s === '접수마감' ? 'CLOSED' : s === '비접수' ? 'PENDING' : '';
-    // URL 업데이트는 다음 틱에서 실행
     setTimeout(() => {
       replaceQuery({
         page: '1',
-        eventStatus: eventStatus || undefined,
+        eventStatus: s || undefined,
       });
     }, 0);
   };

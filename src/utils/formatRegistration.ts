@@ -77,3 +77,19 @@ export function formatPhoneInput(value: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
 }
 
+/**
+ * 성별을 관리자 수정 폼·API용 M / F 로 정규화
+ * 백엔드: 남성·여성, 남·여·남자·여자, M·F·MALE·FEMALE 등
+ */
+export function genderToApiEnum(g?: string | null): 'M' | 'F' | '' {
+  const s = String(g ?? '').trim();
+  if (!s) return '';
+  const u = s.toUpperCase();
+  if (u === 'M' || u.startsWith('MALE')) return 'M';
+  if (u === 'F' || u.startsWith('FEMALE')) return 'F';
+  // 한글은 접두로 통일 (남성/남자/남, 여성/여자/여)
+  if (s.startsWith('남')) return 'M';
+  if (s.startsWith('여')) return 'F';
+  return '';
+}
+

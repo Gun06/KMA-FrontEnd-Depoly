@@ -3,8 +3,12 @@
  * 지역대회 등록 관련 타입 정의
  */
 
-// 지역대회 상태
-export type LocalEventStatus = 'PENDING' | 'OPEN' | 'CLOSED';
+// 지역대회 상태 (등록 폼은 대기/진행/종료만 선택, 수정 폼에서만 업로드신청 추가)
+export type LocalEventStatus =
+  | 'PENDING'
+  | 'OPEN'
+  | 'CLOSED'
+  | 'UPLOAD_APPLYING';
 
 // 지역대회 공개 상태
 export type LocalEventVisibleStatus = 'OPEN' | 'TEST' | 'CLOSE';

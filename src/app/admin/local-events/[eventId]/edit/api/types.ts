@@ -3,8 +3,12 @@
  * 지역대회 수정 관련 타입 정의
  */
 
-// 지역대회 상태
-export type LocalEventStatus = 'PENDING' | 'OPEN' | 'CLOSED';
+// 지역대회 상태 (수정 API — 업로드신청 포함)
+export type LocalEventStatus =
+  | 'PENDING'
+  | 'OPEN'
+  | 'CLOSED'
+  | 'UPLOAD_APPLYING';
 
 // 지역대회 공개 상태
 export type LocalEventVisibleStatus = 'OPEN' | 'TEST' | 'CLOSE';

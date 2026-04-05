@@ -168,11 +168,20 @@ export default function LocalEventForm({
                   onValueChange={f.setEventStatus}
                   className="text-[13px]"
                   gapPx={24}
-                  options={[
-                    { value: 'PENDING', label: '대기' },
-                    { value: 'OPEN', label: '진행중' },
-                    { value: 'CLOSED', label: '종료' },
-                  ]}
+                  options={
+                    mode === 'edit'
+                      ? [
+                          { value: 'PENDING', label: '대기' },
+                          { value: 'OPEN', label: '진행중' },
+                          { value: 'CLOSED', label: '종료' },
+                          { value: 'UPLOAD_APPLYING', label: '업로드신청' },
+                        ]
+                      : [
+                          { value: 'PENDING', label: '대기' },
+                          { value: 'OPEN', label: '진행중' },
+                          { value: 'CLOSED', label: '종료' },
+                        ]
+                  }
                 />
               </div>
             }

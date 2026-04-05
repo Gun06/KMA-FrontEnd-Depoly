@@ -15,6 +15,10 @@ type Props = {
   menuMaxHeight?: number;        // 최대 높이(넘치면 내부 스크롤)
   safeTop?: number;              // 고정 헤더 높이 등(기본 64)
   autoCloseOnScrollOut?: boolean;// 트리거가 화면 밖이면 닫기
+  /** 그리드 셀 등에서 트리거가 가로 100% */
+  fullWidth?: boolean;
+  /** 좁은 화면: 조금 더 작은 타이포·패딩 (여전히 터치하기 쉬운 높이) */
+  compact?: boolean;
 };
 
 export default function SelectMenu({
@@ -27,6 +31,8 @@ export default function SelectMenu({
   menuMaxHeight = 260,
   safeTop = 64,
   autoCloseOnScrollOut = true,
+  fullWidth = false,
+  compact = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number; width: number; maxH: number }>({
@@ -109,22 +115,41 @@ export default function SelectMenu({
     : (value === "" && currentLabel === "전체" ? label : (currentLabel || label));
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative", fullWidth && "w-full min-w-0", className)}>
       <button
         type="button"
         ref={btnRef}
         onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
         className={cn(
-          "h-10 min-w-[120px] rounded-[5px] border px-3 bg-white",
-          open ? "border-[#256EF4]" : "border-[#58616A]",
-          "inline-flex items-center justify-between gap-2"
+          "rounded-[5px] border bg-white inline-flex items-center justify-between gap-2",
+          "outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 [-webkit-tap-highlight-color:transparent]",
+          compact ? "min-h-[44px] h-11 px-2.5 w-full" : "h-10 min-w-[120px] px-3",
+          fullWidth && "w-full min-w-0",
+          compact
+            ? "border-[#CDD1D5]"
+            : open
+              ? "border-[#256EF4]"
+              : "border-[#58616A]"
         )}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
       >
-        <span className="text-[15px] leading-[26px] text-[#1E2124] whitespace-nowrap">{buttonText}</span>
-        <ChevronDown className={cn("w-5 h-5 text-[#33363D] transition-transform shrink-0", open && "rotate-180")} />
+        <span
+          className={cn(
+            "text-[#1E2124] truncate text-left min-w-0 flex-1",
+            compact ? "text-[13px] leading-tight font-medium" : "text-[15px] leading-[26px] whitespace-nowrap"
+          )}
+        >
+          {buttonText}
+        </span>
+        <ChevronDown
+          className={cn(
+            compact ? "w-4 h-4 shrink-0" : "w-5 h-5 shrink-0",
+            "text-[#33363D] transition-transform",
+            open && "rotate-180"
+          )}
+        />
       </button>
 
       {open && (
@@ -154,7 +179,10 @@ export default function SelectMenu({
                   onMouseDown={(e) => e.stopPropagation()} // 클릭버블 방지
                   onClick={() => { onChange(opt.value); setOpen(false); }}
                   className={cn(
-                    "w-full rounded-md px-2 py-2 text-left text-[15px] leading-[26px] text-[#1E2124]",
+                    "w-full rounded-md px-2 text-left text-[#1E2124]",
+                    compact
+                      ? "py-2.5 text-[13px] leading-snug min-h-[44px]"
+                      : "py-2 text-[15px] leading-[26px]",
                     active ? "bg-[#EEF2F7]" : "hover:bg-gray-50"
                   )}
                 >

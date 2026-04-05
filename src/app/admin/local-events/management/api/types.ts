@@ -10,13 +10,19 @@ export interface LocalEventItem {
   id: string;
   eventName: string;
   eventUrl: string;
-  eventStatus: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
+  eventStatus: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | 'UPLOAD_APPLYING';
   eventStartDate: string; // ISO 8601
   registStartDate: string; // ISO 8601
   registDeadline: string; // ISO 8601
   visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   /** 예: "5km | 10km" */
   eventCategoryCsv?: string;
+  /** 신청자명 */
+  applicantName?: string;
+  /** 신청자 번호 */
+  applicantPhNum?: string;
+  /** 신청자 회사 이름 */
+  applicantCompany?: string;
   promotionBannerUrl?: string;
 }
 
@@ -33,7 +39,7 @@ export interface LocalEventListParams {
   size?: number;
   year?: number;
   visibleStatus?: 'OPEN' | 'TEST' | 'CLOSE';
-  eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED';
+  eventStatus?: 'PENDING' | 'OPEN' | 'CLOSED' | 'FINAL_CLOSED' | 'UPLOAD_APPLYING';
   keyword?: string;
 }
 
@@ -45,6 +51,10 @@ export type LocalEventRow = {
   title: string;
   eventUrl: string;
   applyStatus: RegStatus;
+  eventStatusRaw?: LocalEventItem['eventStatus'];
   isPublic: 'OPEN' | 'TEST' | 'CLOSE';
+  applicantName?: string;
+  applicantPhNum?: string;
+  applicantCompany?: string;
 };
 

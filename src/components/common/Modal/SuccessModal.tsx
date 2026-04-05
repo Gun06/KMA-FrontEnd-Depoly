@@ -7,13 +7,16 @@ interface SuccessModalProps {
   onClose: () => void;
   title?: string;
   message?: string;
+  /** false면 배경·X로 닫지 않고 확인 버튼만 허용 */
+  allowDismissal?: boolean;
 }
 
 export default function SuccessModal({ 
   isOpen, 
   onClose, 
   title = "등록되었습니다!",
-  message = "문의사항이 성공적으로 등록되었습니다."
+  message = "문의사항이 성공적으로 등록되었습니다.",
+  allowDismissal = true,
 }: SuccessModalProps) {
   if (!isOpen) return null;
 
@@ -22,18 +25,24 @@ export default function SuccessModal({
       {/* 배경 오버레이 */}
       <div 
         className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
+        onClick={allowDismissal ? onClose : undefined}
+        aria-hidden
       />
       
       {/* 모달 */}
-      <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+      <div
+        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        onClick={e => e.stopPropagation()}
+      >
+        {allowDismissal && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
         
         {/* 모달 내용 */}
         <div className="p-8 text-center">
@@ -54,6 +63,7 @@ export default function SuccessModal({
           
           {/* 확인 버튼 */}
           <button
+            type="button"
             onClick={onClose}
             className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors"
           >

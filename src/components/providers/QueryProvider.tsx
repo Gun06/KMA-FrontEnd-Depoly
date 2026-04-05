@@ -34,17 +34,23 @@ export default function QueryProvider({ children }: QueryProviderProps) {
             })();
             
             // 삭제된 이벤트 관련 에러는 무시 (404 또는 "이미 삭제되었거나 존재하지 않는" 메시지)
-            const isDeletedEventError = 
-              (error instanceof HttpError && error.status === 404) ||
+            const isDeletedEventError =
+              (error instanceof HttpError &&
+                (error.status === 404 ||
+                  error.code === 'NOT_FOUND_EVENT' ||
+                  error.serverHttpStatus === 'NOT_FOUND')) ||
               message.includes('이미 삭제되었거나 존재하지 않는') ||
-              message.includes('존재하지 않는 대회');
-            
-            // 지역대회 상세 조회 에러는 무시 (삭제 후 발생할 수 있음)
-            const isLocalEventDetailError = 
+              message.includes('존재하지 않는 대회') ||
+              message.includes('대회를 찾을 수 없습니다');
+
+            // 지역대회 상세 조회 에러는 무시 (삭제 후 재조회·확인 클릭 직전 404 등, 화면에서 처리)
+            const isLocalEventDetailError =
               Array.isArray(query?.queryKey) &&
-              query.queryKey[0] === 'admin' &&
-              query.queryKey[1] === 'local-events' &&
-              query.queryKey[2] === 'detail';
+              ((query.queryKey[0] === 'admin' &&
+                query.queryKey[1] === 'local-events' &&
+                query.queryKey[2] === 'detail') ||
+                (query.queryKey[0] === 'local-event' &&
+                  query.queryKey[1] === 'detail'));
             
             // 비공개 대회 스폰서 배너 조회 실패 에러는 무시 (404는 정상적인 응답)
             const isEventSponsorBannerError = 
@@ -59,19 +65,24 @@ export default function QueryProvider({ children }: QueryProviderProps) {
           },
         }),
         mutationCache: new MutationCache({
-          onError: (error: unknown) => {
+          onError: (error: unknown, _vars, _ctx, mutation) => {
+            const meta = mutation?.options?.meta as
+              | { suppressGlobalMutationErrorToast?: boolean }
+              | undefined;
+            if (meta?.suppressGlobalMutationErrorToast) return;
+
             const message = (() => {
               if (error instanceof HttpError) return error.message;
               if (error instanceof Error) return error.message;
               return '요청 중 오류가 발생했습니다.';
             })();
-            
+
             // 삭제된 이벤트 관련 에러는 무시
-            const isDeletedEventError = 
+            const isDeletedEventError =
               (error instanceof HttpError && error.status === 404) ||
               message.includes('이미 삭제되었거나 존재하지 않는') ||
               message.includes('존재하지 않는 대회');
-            
+
             if (!isDeletedEventError) {
               toast.error(message);
             }
