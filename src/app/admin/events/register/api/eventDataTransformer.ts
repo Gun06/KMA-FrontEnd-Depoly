@@ -78,6 +78,7 @@ export class EventDataTransformer {
       autoStart: data.autoStart ?? false,
       autoDeadline: data.autoDeadline ?? false,
       autoMaxRegist: data.autoMaxRegist ?? false,
+      agreeAllLabel: data.agreeAllLabel?.trim() || undefined,
     };
   }
 
@@ -169,14 +170,15 @@ export class EventDataTransformer {
   private static createTermsInfo(data: EventCreatePayload): EventTermsInfoRequest[] {
     return (data.termsInfo ?? [])
       .map((item, index) => ({
-        title: (item.title ?? '').trim(),
         content: (item.content ?? '').trim(),
+        required: item.required === true,
+        termsLabel: (item.termsLabel ?? '').trim(),
         sortOrder:
           typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
             ? item.sortOrder
             : index,
       }))
-      .filter(item => item.title || item.content)
+      .filter(item => item.content || item.termsLabel)
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }
 

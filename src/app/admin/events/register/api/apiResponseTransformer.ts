@@ -352,8 +352,9 @@ export function transformApiResponseToFormPrefill(
   const termsInfo = termsFromApi
     .map((item, index) => ({
       id: 'id' in item && typeof item.id === 'string' ? item.id : undefined,
-      title: item.title ?? '',
       content: item.content ?? '',
+      required: item.required === true,
+      termsLabel: item.termsLabel ?? '',
       sortOrder:
         typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
           ? item.sortOrder
@@ -394,6 +395,7 @@ export function transformApiResponseToFormPrefill(
     paymentDeadlineDate: paymentDeadline,
     paymentDeadlineHh: paymentDeadlineHh,
     paymentDeadlineMm: paymentDeadlineMm,
+    agreeAllLabel: eventInfo.agreeAllLabel || '',
     autoStart: eventInfo.autoStart ?? false,
     autoDeadline: eventInfo.autoDeadline ?? false,
     autoMaxRegist: eventInfo.autoMaxRegist ?? false,

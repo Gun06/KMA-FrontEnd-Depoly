@@ -11,6 +11,9 @@ import { requestIndividualRefund } from "@/app/event/[eventId]/registration/appl
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { fetchIndividualRegistrationConfirm } from "./api";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
+import CashReceiptModal from "@/app/event/[eventId]/registration/confirm/shared/components/CashReceiptModal";
+import { fetchCashReceipt } from "@/app/event/[eventId]/registration/confirm/shared/api/cashReceipt";
+import { CASH_RECEIPT_STATUS_LABEL, CASH_RECEIPT_STATUS_COLOR, CashReceiptStatus } from "@/app/event/[eventId]/registration/confirm/shared/types/cashReceipt";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -28,6 +31,9 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   const [possibleToRequest, setPossibleToRequest] = useState<boolean | null>(null);
   const [requestReason, setRequestReason] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
+  const [isCashReceiptModalOpen, setIsCashReceiptModalOpen] = useState(false);
+  const [cashReceiptModalMode, setCashReceiptModalMode] = useState<'request' | 'view'>('request');
+  const [cashReceiptStatus, setCashReceiptStatus] = useState<{ exists: boolean; latestStatus?: CashReceiptStatus } | null>(null);
 
   const getGuardianFields = (data: unknown): { phNum?: string; relationship?: string } => {
     const asRecord = (v: unknown): Record<string, unknown> | null =>
@@ -248,6 +254,25 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
     loadEventStatus();
   }, [params.eventId]);
+
+  // 현금영수증 상태 조회
+  useEffect(() => {
+    if (!registrationData?.registrationId) return;
+    const loadCashReceiptStatus = async () => {
+      try {
+        const data = await fetchCashReceipt(params.eventId, registrationData.registrationId, 'registration');
+        if (data.isCashReceiptExist && data.cashReceiptInfo?.length > 0) {
+          const latest = data.cashReceiptInfo[data.cashReceiptInfo.length - 1];
+          setCashReceiptStatus({ exists: true, latestStatus: latest.status as CashReceiptStatus });
+        } else {
+          setCashReceiptStatus({ exists: false });
+        }
+      } catch {
+        setCashReceiptStatus({ exists: false });
+      }
+    };
+    loadCashReceiptStatus();
+  }, [registrationData?.registrationId, params.eventId]);
 
   // 결제 계좌 정보 로드 (신청하기와 동일한 방식)
   useEffect(() => {
@@ -803,6 +828,38 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   </span>
                 </div>
 
+                <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">현금영수증</label>
+                  {cashReceiptStatus?.exists ? (
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold ${CASH_RECEIPT_STATUS_COLOR[cashReceiptStatus.latestStatus!]}`}>
+                        {CASH_RECEIPT_STATUS_LABEL[cashReceiptStatus.latestStatus!]}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setCashReceiptModalMode('view');
+                          setIsCashReceiptModalOpen(true);
+                        }}
+                        className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors"
+                      >
+                        상세보기
+                      </button>
+                    </div>
+                  ) : registrationData.paymentStatus === 'COMPLETED' ? (
+                    <button
+                      onClick={() => {
+                        setCashReceiptModalMode('request');
+                        setIsCashReceiptModalOpen(true);
+                      }}
+                      className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
+                    >
+                      신청하기
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-400">결제 완료 후 신청 가능</span>
+                  )}
+                </div>
+
                 {(registrationData.paymenterBank || registrationData.accountNumber) && (
                   <>
                     <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -992,6 +1049,31 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         message="현재 대회 신청 및 수정 일정이 마감되어 수정 및 환불할 수 없습니다."
         confirmText="확인"
       />
+
+      {registrationData?.registrationId && (
+        <CashReceiptModal
+          isOpen={isCashReceiptModalOpen}
+          onClose={() => {
+            setIsCashReceiptModalOpen(false);
+            if (registrationData?.registrationId) {
+              fetchCashReceipt(params.eventId, registrationData.registrationId, 'registration')
+                .then((data) => {
+                  if (data.isCashReceiptExist && data.cashReceiptInfo?.length > 0) {
+                    const latest = data.cashReceiptInfo[data.cashReceiptInfo.length - 1];
+                    setCashReceiptStatus({ exists: true, latestStatus: latest.status as CashReceiptStatus });
+                  } else {
+                    setCashReceiptStatus({ exists: false });
+                  }
+                })
+                .catch(() => {});
+            }
+          }}
+          eventId={params.eventId}
+          targetId={registrationData.registrationId}
+          targetType="registration"
+          initialMode={cashReceiptModalMode}
+        />
+      )}
     </SubmenuLayout>
   );
 }

@@ -45,6 +45,8 @@ export interface EventDetailApiResponse {
     autoDeadline?: boolean;
     /** 최대 정원 마감 자동 전환 트리거 */
     autoMaxRegist?: boolean;
+    /** 신청 페이지 전체 동의 체크박스 문구 */
+    agreeAllLabel?: string;
   };
   eventCategories: Array<{
     id: string;
@@ -98,23 +100,26 @@ export interface EventDetailApiResponse {
   /** 약관 (일부 API는 termsInfo) */
   termsInfo?: Array<{
     id: string;
-    title: string;
     content: string;
     sortOrder: number;
+    required?: boolean;
+    termsLabel?: string;
   }>;
   /** 약관 (일부 API는 eventTerm으로 응답) */
   eventTerm?: Array<{
     id?: string;
-    title: string;
     content: string;
     sortOrder?: number;
+    required?: boolean;
+    termsLabel?: string;
   }>;
   /** 약관 (일부 API는 eventTerms로 응답) */
   eventTerms?: Array<{
     id?: string;
-    title: string;
     content: string;
     sortOrder?: number;
+    required?: boolean;
+    termsLabel?: string;
   }>;
 }
 

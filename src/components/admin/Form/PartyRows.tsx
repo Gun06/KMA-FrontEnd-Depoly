@@ -9,8 +9,9 @@ import EventUploader from "@/components/common/Upload/EventUploader";
 import type { UploadItem } from "@/components/common/Upload/types";
 
 /** 🔘 미니 세그먼트 토글 (ON/OFF) — 기본정보 등에서 재사용 */
-export function MiniToggle({ value, onChange, disabled, className }: {
+export function MiniToggle({ value, onChange, disabled, className, onLabel = 'ON', offLabel = 'OFF' }: {
   value: boolean; onChange?: (v: boolean) => void; disabled?: boolean; className?: string;
+  onLabel?: string; offLabel?: string;
 }) {
   return (
     <div
@@ -32,7 +33,7 @@ export function MiniToggle({ value, onChange, disabled, className }: {
           value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
         )}
       >
-        ON
+        {onLabel}
       </button>
       <button
         type="button"
@@ -43,7 +44,7 @@ export function MiniToggle({ value, onChange, disabled, className }: {
           !value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
         )}
       >
-        OFF
+        {offLabel}
       </button>
     </div>
   );

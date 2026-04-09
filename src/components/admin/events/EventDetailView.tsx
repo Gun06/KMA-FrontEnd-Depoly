@@ -49,6 +49,8 @@ export type EventDetailData = {
   visibleStatus: 'OPEN' | 'TEST' | 'CLOSE';
   registDeadline?: string;
   paymentDeadline?: string;
+  /** 전체 동의 체크박스 라벨 */
+  agreeAllLabel?: string;
   /** 은행명 (예: 국민은행) */
   bank?: string;
   /** 가상계좌/입금 계좌번호 */
@@ -80,8 +82,9 @@ export type EventDetailData = {
   /** 약관 (API: termsInfo / eventTerms / eventTerm) */
   eventTerms?: Array<{
     id?: string;
-    title: string;
     content: string;
+    termsLabel?: string;
+    required?: boolean;
     sortOrder: number;
   }>;
 };
@@ -745,9 +748,19 @@ export default function EventDetailView({
                       key={termKey}
                       className="bg-white rounded-lg p-3 border border-gray-200"
                     >
-                      <p className="text-sm font-bold text-gray-900 font-pretendard mb-2">
-                        {term.title}
-                      </p>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={cn(
+                            "text-[11px] px-2 py-0.5 rounded-full font-semibold",
+                            term.required ? "bg-red-100 text-red-600" : "bg-gray-200 text-gray-600"
+                          )}
+                        >
+                          {term.required ? "필수" : "선택"}
+                        </span>
+                        <p className="text-sm font-bold text-gray-900 font-pretendard">
+                          {term.termsLabel?.trim() || `약관 ${idx + 1}`}
+                        </p>
+                      </div>
                       <EventTermBody
                         content={content}
                         isExpanded={isExpanded}

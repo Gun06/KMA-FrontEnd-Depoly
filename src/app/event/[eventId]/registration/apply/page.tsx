@@ -8,11 +8,13 @@ import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { checkStatusToRequest } from "./shared/api/event";
 import { fetchPublicEventTerms, type PublicEventTerm } from "./shared/api/terms";
 import MarathonApplyStaticTerms from "./shared/components/MarathonApplyStaticTerms";
+import EventTermsConsentModal from "./shared/components/EventTermsConsentModal";
 
 export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
   const agreementData = getAgreementData(params.eventId);
-  const [isAgreed, setIsAgreed] = useState(false);
+  const [isEventTermsAgreed, setIsEventTermsAgreed] = useState(false);
+  const [isFinalAgreed, setIsFinalAgreed] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [possibleToRequest, setPossibleToRequest] = useState<boolean | null>(null);
   const [requestReason, setRequestReason] = useState<string | null>(null);
@@ -21,7 +23,28 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const [alertMessage, setAlertMessage] = useState("");
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [apiTerms, setApiTerms] = useState<PublicEventTerm[]>([]);
-  const [termsLoading, setTermsLoading] = useState(true);
+  const [allAgreeLabel, setAllAgreeLabel] = useState("");
+  const [termsConsentModalOpen, setTermsConsentModalOpen] = useState(false);
+  const [pendingApplyKind, setPendingApplyKind] = useState<"individual" | "group" | null>(null);
+  const [_checkedTermIds, setCheckedTermIds] = useState<Record<string, boolean>>({});
+  const [modalCheckedTermIds, setModalCheckedTermIds] = useState<Record<string, boolean>>({});
+  const [_termsLoading, setTermsLoading] = useState(true);
+
+  const getTermKey = (term: PublicEventTerm, idx: number) =>
+    term.id ?? `idx-${idx}`;
+
+  const setAllChecks = (checked: boolean, useModalState = false) => {
+    const next: Record<string, boolean> = {};
+    apiTerms.forEach((term, idx) => {
+      next[getTermKey(term, idx)] = checked;
+    });
+    if (useModalState) {
+      setModalCheckedTermIds(next);
+    } else {
+      setCheckedTermIds(next);
+      setIsEventTermsAgreed(checked);
+    }
+  };
 
   useEffect(() => {
     // 페이지 로딩 완료 시 로딩 상태 해제
@@ -49,6 +72,30 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
 
     fetchStatus();
   }, [params.eventId]);
+
+  useEffect(() => {
+    if (apiTerms.length === 0) {
+      setCheckedTermIds({});
+      setModalCheckedTermIds({});
+      return;
+    }
+    setCheckedTermIds((prev) => {
+      const next: Record<string, boolean> = {};
+      apiTerms.forEach((term, idx) => {
+        const key = term.id ?? `idx-${idx}`;
+        next[key] = prev[key] ?? false;
+      });
+      return next;
+    });
+    setModalCheckedTermIds((prev) => {
+      const next: Record<string, boolean> = {};
+      apiTerms.forEach((term, idx) => {
+        const key = term.id ?? `idx-${idx}`;
+        next[key] = prev[key] ?? false;
+      });
+      return next;
+    });
+  }, [apiTerms]);
 
   // 이벤트 상태 명시적으로 로드 (접수마감/내부마감 구분용)
   useEffect(() => {
@@ -82,10 +129,16 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     const loadTerms = async () => {
       setTermsLoading(true);
       try {
-        const list = await fetchPublicEventTerms(params.eventId);
-        if (!cancelled) setApiTerms(list);
+        const result = await fetchPublicEventTerms(params.eventId);
+        if (!cancelled) {
+          setApiTerms(result.eventTerms);
+          setAllAgreeLabel(result.allAgreeLabel);
+        }
       } catch {
-        if (!cancelled) setApiTerms([]);
+        if (!cancelled) {
+          setApiTerms([]);
+          setAllAgreeLabel("");
+        }
       } finally {
         if (!cancelled) setTermsLoading(false);
       }
@@ -101,8 +154,19 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     setAlertOpen(true);
   };
 
+  const hasRequiredTerms = apiTerms.some((term) => term.required);
+  const isRequiredTermsCheckedInModal = apiTerms.every((term, idx) =>
+    term.required ? modalCheckedTermIds[getTermKey(term, idx)] === true : true
+  );
+
+  const proceedApply = (kind: "individual" | "group") => {
+    router.push(
+      `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
+    );
+  };
+
   const handleApplyClick = (kind: "individual" | "group") => {
-    if (!isAgreed) {
+    if (!isFinalAgreed) {
       showAlert("약관에 동의하셔야 신청이 가능합니다.");
       return;
     }
@@ -128,16 +192,52 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
 
     // 상태를 아직 못 불러온 경우에는 기본적으로 진행 허용
     if (possibleToRequest === null && isStatusLoading) {
-      router.push(
-        `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
-      );
+      if (!isEventTermsAgreed && apiTerms.length > 0) {
+        setPendingApplyKind(kind);
+        setTermsConsentModalOpen(true);
+        return;
+      }
+      proceedApply(kind);
+      return;
+    }
+
+    if (!isEventTermsAgreed && apiTerms.length > 0) {
+      setPendingApplyKind(kind);
+      setTermsConsentModalOpen(true);
       return;
     }
 
     // 신청 가능한 경우 신청 페이지로 이동
-    router.push(
-      `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
-    );
+    proceedApply(kind);
+  };
+
+  const handleConfirmTermsConsent = () => {
+    if (hasRequiredTerms && !isRequiredTermsCheckedInModal) return;
+    setCheckedTermIds(modalCheckedTermIds);
+    setIsEventTermsAgreed(true);
+    setTermsConsentModalOpen(false);
+    if (pendingApplyKind) {
+      const nextKind = pendingApplyKind;
+      setPendingApplyKind(null);
+      proceedApply(nextKind);
+    }
+  };
+
+  const handleSkipTermsConsent = () => {
+    if (hasRequiredTerms) return;
+    setCheckedTermIds(modalCheckedTermIds);
+    setIsEventTermsAgreed(true);
+    setTermsConsentModalOpen(false);
+    if (pendingApplyKind) {
+      const nextKind = pendingApplyKind;
+      setPendingApplyKind(null);
+      proceedApply(nextKind);
+    }
+  };
+
+  const handleCloseTermsConsentModal = () => {
+    setTermsConsentModalOpen(false);
+    setPendingApplyKind(null);
   };
 
   // 로딩 중일 때 로딩 스피너 표시
@@ -179,6 +279,25 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
         title="신청이 불가능합니다"
         message={alertMessage}
         confirmText="확인"
+      />
+      <EventTermsConsentModal
+        isOpen={termsConsentModalOpen}
+        onClose={handleCloseTermsConsentModal}
+        terms={apiTerms}
+        allAgreeLabel={allAgreeLabel}
+        checkedTermIds={modalCheckedTermIds}
+        getTermKey={getTermKey}
+        onToggleAll={(checked) => setAllChecks(checked, true)}
+        onToggleTerm={(term, idx, checked) =>
+          setModalCheckedTermIds((prev) => ({
+            ...prev,
+            [getTermKey(term, idx)]: checked,
+          }))
+        }
+        hasRequiredTerms={hasRequiredTerms}
+        isRequiredTermsChecked={isRequiredTermsCheckedInModal}
+        onConfirm={handleConfirmTermsConsent}
+        onSkip={handleSkipTermsConsent}
       />
 
       <div className="container mx-auto px-4 py-4 sm:py-8">
@@ -268,29 +387,11 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <p className="text-xs text-gray-500 mb-2 font-pretendard">
               참가 신청 약관 안내
             </p>
-            <div className="bg-gray-100 rounded-lg p-4 max-h-[300px] overflow-y-auto">
+            <div className="bg-gray-100 rounded-lg p-4 max-h-[600px] overflow-y-auto">
               <MarathonApplyStaticTerms />
             </div>
 
-            {!termsLoading && apiTerms.length > 0 ? (
-              <>
-                <p className="text-xs text-gray-500 mb-2 font-pretendard mt-4">
-                  대회 약관
-                </p>
-                <div className="bg-gray-100 rounded-lg p-4 max-h-[300px] overflow-y-auto">
-                  <div className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">
-                    {apiTerms.map((term, idx) => (
-                      <div key={term.id ?? `api-term-${idx}`}>
-                        {term.title ? (
-                          <p className="font-bold text-gray-800 mb-2">{term.title}</p>
-                        ) : null}
-                        <p className="whitespace-pre-wrap">{term.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : null}
+            {/* 대회 약관 동의 UI는 신청 버튼 클릭 시 모달에서 처리 */}
           </div>
 
           {/* 동의 및 신청 섹션 */}
@@ -301,8 +402,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                 <input
                   type="checkbox"
                   id="agreement-checkbox"
-                  checked={isAgreed}
-                  onChange={(e) => setIsAgreed(e.target.checked)}
+                  checked={isFinalAgreed}
+                  onChange={(e) => setIsFinalAgreed(e.target.checked)}
                   className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
                 <label htmlFor="agreement-checkbox" className="text-sm sm:text-base text-gray-700">
@@ -315,7 +416,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <div className="flex flex-row gap-3 justify-center">
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed &&
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isFinalAgreed &&
                     possibleToRequest !== false &&
                     eventStatus !== 'CLOSED' &&
                     eventStatus !== 'FINAL_CLOSED'
@@ -328,7 +429,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               </button>
               <button
                 type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${isAgreed &&
+                className={`px-8 py-3 rounded font-semibold transition-colors ${isFinalAgreed &&
                     possibleToRequest !== false &&
                     eventStatus !== 'CLOSED' &&
                     eventStatus !== 'FINAL_CLOSED'

@@ -118,6 +118,35 @@ export const PRESETS: Record<string, FilterBarPreset> = {
       resetPosition: "afterSearch",
     },
   },
+  "참가신청 / 현금영수증관리": {
+    props: {
+      buttonTextMode: "current",
+      fields: [
+        {
+          label: "대회",
+          options: [
+            { label: "대회전체", value: "ALL" },
+          ],
+          fieldClassName: "w-[450px] [&>button]:w-full",
+        },
+        {
+          label: "상태",
+          options: [
+            { label: "전체", value: "" },
+            { label: "처리 대기", value: "REQUESTED" },
+            { label: "발급 완료", value: "COMPLETED" },
+            { label: "발급 취소", value: "CANCELED" },
+          ],
+        },
+      ],
+      searchPlaceholder: "검색어를 입력한 후 Enter를 누르세요.",
+      buttons: [
+        { label: "검색", tone: "dark", iconOnly: true },
+      ],
+      showReset: true,
+      resetPosition: "afterSearch",
+    },
+  },
 
   /* ===================== 관리자 ===================== */
 

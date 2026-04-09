@@ -185,6 +185,7 @@ export default function EditForm({
       account: s.account,
       homeUrl: s.homeUrl,
       eventPageUrl: s.eventPageUrl,
+      agreeAllLabel: s.agreeAllLabel,
       maxParticipants: s.maxParticipants?.toString(),
       groups:
         s.groups?.map(group => ({

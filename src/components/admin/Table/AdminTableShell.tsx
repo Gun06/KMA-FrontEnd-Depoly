@@ -27,6 +27,7 @@ type Props<T> = {
   contentMinHeight?: number | string | null;
   allowTextSelection?: boolean;
   loadingMessage?: string;
+  emptyMessage?: string;
 };
 
 export default function AdminTableShell<T>({
@@ -46,6 +47,7 @@ export default function AdminTableShell<T>({
   contentMinHeight = '100vh',
   allowTextSelection = false,
   loadingMessage,
+  emptyMessage,
 }: Props<T>) {
   const minH = contentMinHeight 
     ? (typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight)
@@ -100,6 +102,11 @@ export default function AdminTableShell<T>({
         {loadingMessage && rows.length === 0 && (
           <div className="flex items-center justify-center pt-20 pb-32">
             <div className="text-gray-500 text-base">{loadingMessage}</div>
+          </div>
+        )}
+        {!loadingMessage && emptyMessage && rows.length === 0 && (
+          <div className="flex items-center justify-center pt-20 pb-32">
+            <div className="text-gray-500 text-base text-center whitespace-pre-line">{emptyMessage}</div>
           </div>
         )}
       </div>

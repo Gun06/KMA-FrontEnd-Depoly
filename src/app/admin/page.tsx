@@ -2,9 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Users, FileText, Plus, ArrowRight, Clock, Image, Bell, BarChart } from 'lucide-react';
+import { Calendar, Users, Plus, ArrowRight, Clock, Image, Bell, BarChart } from 'lucide-react';
 import { useAdminEventList, transformAdminEventToEventRow } from '@/services/admin';
 import { useAllInquiries } from '@/hooks/useInquiries';
+import { useCashReceiptStatistics } from '@/app/admin/api/cashReceipt';
 import type { AdminEventItem } from '@/types/Admin';
 import RegistrationStatusBadge from '@/components/common/Badge/RegistrationStatusBadge';
 import type { EventRow } from '@/components/admin/events/EventTable';
@@ -15,6 +16,7 @@ export default function AdminHomePage() {
   
   // 문의사항 목록 조회 (통계용 - 전체 데이터를 가져오기 위해 size를 크게 설정)
   const { data: inquiryData, isLoading: inquiriesLoading } = useAllInquiries({ page: 1, size: 10000 });
+  const { data: cashReceiptStatistics, isLoading: cashReceiptLoading } = useCashReceiptStatistics();
 
   // 통계 계산
   const totalEvents = (eventData as any)?.totalElements || 0;
@@ -166,6 +168,11 @@ export default function AdminHomePage() {
             <HeaderPill label="문의 응답률" value={inquiriesLoading ? '...' : `${responseRate.toFixed(1)}%`} tone="blue" />
             <HeaderPill label="미답변 문의" value={inquiriesLoading ? '...' : unansweredInquiries.toLocaleString()} tone="red" />
             <HeaderPill label="접수중 대회" value={eventsLoading ? '...' : openEvents.toLocaleString()} tone="green" />
+            <HeaderPill
+              label="현금영수증 대기"
+              value={cashReceiptLoading ? '...' : (cashReceiptStatistics?.requestedCount ?? 0).toLocaleString()}
+              tone="yellow"
+            />
           </div>
         </div>
       </header>
@@ -253,6 +260,46 @@ export default function AdminHomePage() {
                   <span className="text-sm font-bold text-slate-900">{item.count}</span>
                 </Link>
               ))}
+            </div>
+          </SectionPanel>
+
+          <SectionPanel
+            title="현금영수증 현황"
+            description="현금영수증 처리 현황과 최근 요청입니다."
+            href="/admin/applications/cash-receipt"
+            hideHeader
+          >
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="grid grid-cols-3 gap-2">
+                <Link
+                  href="/admin/applications/cash-receipt"
+                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
+                >
+                  <p className="text-[11px] text-slate-500">전체 건수</p>
+                  <p className="mt-1 text-base font-bold text-slate-900">
+                    {cashReceiptLoading ? '...' : (cashReceiptStatistics?.totalCount ?? 0).toLocaleString()}
+                  </p>
+                </Link>
+                <Link
+                  href="/admin/applications/cash-receipt?status=REQUESTED"
+                  className="rounded-lg border border-amber-100/70 bg-amber-50/60 px-3 py-2 text-center hover:bg-amber-50 transition-colors"
+                >
+                  <p className="text-[11px] text-amber-600">처리 대기</p>
+                  <p className="mt-1 text-base font-bold text-amber-700">
+                    {cashReceiptLoading ? '...' : (cashReceiptStatistics?.requestedCount ?? 0).toLocaleString()}
+                  </p>
+                </Link>
+                <Link
+                  href="/admin/applications/cash-receipt"
+                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
+                >
+                  <p className="text-[11px] text-slate-500">처리율</p>
+                  <p className="mt-1 text-base font-bold text-slate-900">
+                    {cashReceiptLoading ? '...' : `${(cashReceiptStatistics?.processedPercent ?? 0).toFixed(1)}%`}
+                  </p>
+                </Link>
+              </div>
+
             </div>
           </SectionPanel>
 
@@ -346,12 +393,13 @@ function HeaderPill({
 }: {
   label: string;
   value: string;
-  tone: 'blue' | 'red' | 'green';
+  tone: 'blue' | 'red' | 'green' | 'yellow';
 }) {
   const toneClasses = {
     blue: 'border-blue-300/20 bg-blue-500/15 text-blue-200',
     red: 'border-rose-300/20 bg-rose-500/15 text-rose-200',
     green: 'border-emerald-300/20 bg-emerald-500/15 text-emerald-200',
+    yellow: 'border-amber-200/20 bg-amber-300/10 text-amber-200',
   };
 
   return (

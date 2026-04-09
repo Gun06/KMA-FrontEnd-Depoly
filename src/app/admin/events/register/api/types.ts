@@ -37,6 +37,8 @@ export interface EventInfo {
   autoDeadline?: boolean;
   /** 최대 정원 마감 자동 전환 트리거 */
   autoMaxRegist?: boolean;
+  /** 신청 페이지 전체 동의 체크박스 문구 */
+  agreeAllLabel?: string;
 }
 
 // 기념품 정보
@@ -67,9 +69,10 @@ export interface EventBannerInfo {
 }
 
 export interface EventTermsInfoRequest {
-  title: string;
   content: string;
   sortOrder: number;
+  required: boolean;
+  termsLabel: string;
 }
 
 export interface EventTermsInfoResponse extends EventTermsInfoRequest {
@@ -184,6 +187,7 @@ export type EventFormState = {
   shuttle: Shuttle;
 
   eventTheme: EventTheme;
+  agreeAllLabel?: string;
   termsInfo?: EventTermsInfoRequest[];
 };
 

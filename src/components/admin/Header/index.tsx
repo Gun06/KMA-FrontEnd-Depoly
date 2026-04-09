@@ -36,6 +36,7 @@ const subMenus: Record<string, SubMenu> = {
   참가신청: {
     items: [
       { label: '신청자 관리', href: '/admin/applications/management' },
+      { label: '현금영수증 관리', href: '/admin/applications/cash-receipt' },
       { label: '기록관리', href: '/admin/applications/records' },
     ],
   },

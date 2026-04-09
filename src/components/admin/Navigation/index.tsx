@@ -35,6 +35,7 @@ type Item = { name: string; base: string; icon: LucideIcon; children: Child[] };
 const NAV_ITEMS: Item[] = [
   { name: '참가신청', base: '/admin/applications', icon: Users, children: [
     { name: '신청자 관리', href: '/admin/applications/management' },
+    { name: '현금영수증 관리', href: '/admin/applications/cash-receipt' },
     { name: '기록관리', href: '/admin/applications/records' },
   ]},
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [

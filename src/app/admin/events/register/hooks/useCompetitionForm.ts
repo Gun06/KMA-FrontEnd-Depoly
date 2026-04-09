@@ -187,6 +187,7 @@ export type UseCompetitionPrefill = Partial<
     paymentDeadlineDate?: string;
     paymentDeadlineHh?: string;
     paymentDeadlineMm?: string;
+    agreeAllLabel?: string;
     termsInfo?: TermsInfoItem[];
   }
 > &
@@ -249,6 +250,7 @@ export type HydrateSnapshotInput = {
   paymentDeadlineDate?: string;
   paymentDeadlineHh?: string;
   paymentDeadlineMm?: string;
+  agreeAllLabel?: string;
   termsInfo?: TermsInfoItem[];
   autoStart?: boolean;
   autoDeadline?: boolean;
@@ -378,8 +380,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [imgGift, setImgGift] = React.useState<UploadItem[]>([]);
   const [imgConfirm, setImgConfirm] = React.useState<UploadItem[]>([]);
   const [imgResult, setImgResult] = React.useState<UploadItem[]>([]);
+  const [agreeAllLabel, setAgreeAllLabel] = React.useState('');
   const [termsInfo, setTermsInfo] = React.useState<TermsInfoItem[]>([
-    { title: '', content: '', sortOrder: 0 },
+    { content: '', sortOrder: 0, required: false, termsLabel: '' },
   ]);
 
   // 테마
@@ -417,7 +420,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       visibility: prefill.visibility, // visibility 변경도 감지하도록 추가
       // 약관은 API 키(termsInfo vs eventTerm) 차이로 나중에 채워질 수 있어 시그니처 포함
       termsSig: (prefill.termsInfo ?? [])
-        .map((t, i) => `${i}:${t.title ?? ''}`)
+        .map((t, i) => `${i}:${t.termsLabel ?? ''}`)
         .join('|'),
     });
     
@@ -444,6 +447,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setAccountHolderName((prefill as any)?.accountHolderName ?? '');
     setHomeUrl(prefill.homeUrl ?? '');
     setEventPageUrl(prefill.eventPageUrl ?? '');
+    setAgreeAllLabel((prefill as any)?.agreeAllLabel ?? '');
 
     // 접수 인원수 프리필
     if (prefill.maxParticipants)
@@ -706,15 +710,18 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
               'id' in item && typeof item.id === 'string'
                 ? item.id
                 : undefined,
-            title: item.title ?? '',
             content: item.content ?? '',
+            required: item.required === true,
+            termsLabel: item.termsLabel ?? '',
             sortOrder:
               typeof item.sortOrder === 'number' ? item.sortOrder : index,
           }))
           .sort((a, b) => a.sortOrder - b.sortOrder)
       );
     } else {
-      setTermsInfo([{ title: '', content: '', sortOrder: 0 }]);
+      setTermsInfo([
+        { content: '', sortOrder: 0, required: false, termsLabel: '' },
+      ]);
     }
   }, [prefill]);
 
@@ -825,9 +832,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     visibility,
     shuttle,
     eventTheme: finalEventTheme,
+    agreeAllLabel: agreeAllLabel.trim(),
     termsInfo: termsInfo.map((item, index) => ({
-      title: item.title,
       content: item.content,
+      required: item.required === true,
+      termsLabel: item.termsLabel ?? '',
       sortOrder: index,
     })),
   });
@@ -914,7 +923,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const addTermsInfo = () => {
     setTermsInfo(prev => [
       ...prev,
-      { title: '', content: '', sortOrder: prev.length },
+      {
+        content: '',
+        sortOrder: prev.length,
+        required: false,
+        termsLabel: '',
+      },
     ]);
   };
 
@@ -927,8 +941,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
 
   const updateTermsInfo = (
     index: number,
-    field: 'title' | 'content',
-    value: string
+    field: 'content' | 'termsLabel' | 'required',
+    value: string | boolean
   ) => {
     setTermsInfo(prev =>
       prev.map((item, i) =>
@@ -1029,10 +1043,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       autoDeadline,
       autoMaxRegist,
       termsInfo: termsInfo.map((item, index) => ({
-        title: item.title.trim(),
         content: item.content.trim(),
+        required: item.required === true,
+        termsLabel: (item.termsLabel ?? '').trim(),
         sortOrder: index,
       })),
+      agreeAllLabel: agreeAllLabel.trim(),
     } as unknown as EventCreatePayload;
 
     return payload;
@@ -1063,6 +1079,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (s.homeUrl !== undefined) setHomeUrl(s.homeUrl);
     if (s.eventPageUrl !== undefined) setEventPageUrl(s.eventPageUrl);
     if (s.maxParticipants !== undefined) setMaxParticipants(s.maxParticipants);
+    if (s.agreeAllLabel !== undefined) setAgreeAllLabel(s.agreeAllLabel);
     setGroups(s.groups ?? []);
     setHostItems(s.hostItems ?? []);
     setOrganizerItems(s.organizerItems ?? []);
@@ -1126,8 +1143,9 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setTermsInfo(
         s.termsInfo.map((item, index) => ({
           id: item.id,
-          title: item.title ?? '',
           content: item.content ?? '',
+          required: item.required === true,
+          termsLabel: item.termsLabel ?? '',
           sortOrder:
             typeof item.sortOrder === 'number' ? item.sortOrder : index,
         }))
@@ -1276,6 +1294,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setImgConfirm,
     imgResult,
     setImgResult,
+    agreeAllLabel,
+    setAgreeAllLabel,
     termsInfo,
     setTermsInfo,
     addTermsInfo,

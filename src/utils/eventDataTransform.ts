@@ -122,8 +122,9 @@ export function transformApiDataToEventDetail(
   const eventTerms = termsFromApi
     .map((item, index) => ({
       id: 'id' in item && typeof item.id === 'string' ? item.id : undefined,
-      title: item.title ?? '',
       content: item.content ?? '',
+      required: item.required === true,
+      termsLabel: item.termsLabel ?? '',
       sortOrder:
         typeof item.sortOrder === 'number' && Number.isFinite(item.sortOrder)
           ? item.sortOrder
@@ -161,6 +162,7 @@ export function transformApiDataToEventDetail(
     visibleStatus: normalizeVisibleStatus(eventInfo.visibleStatus),
     registDeadline: eventInfo.registDeadline,
     paymentDeadline: eventInfo.paymentDeadline,
+    agreeAllLabel: eventInfo.agreeAllLabel,
     bank: eventInfo.bank,
     virtualAccount: eventInfo.virtualAccount,
     accountHolderName: eventInfo.accountHolderName,

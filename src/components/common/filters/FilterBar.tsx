@@ -12,7 +12,8 @@ export type FilterButtonMenuItem = { label: string; value: string };
 
 export type FilterButtonSpec = {
   label: string;
-  tone?: "primary" | "dark" | "neutral";
+  tone?: "primary" | "dark" | "neutral" | "outlineDark" | "outlineLight" | "white";
+  variant?: "solid" | "outline";
   iconRight?: boolean;
   iconLeft?: ReactNode;
   iconOnly?: boolean;
@@ -25,7 +26,13 @@ export type FilterButtonSpec = {
 };
 
 export type FilterBarProps = {
-  fields?: { label: string; options: Opt[]; menuMaxHeight?: number }[];
+  fields?: {
+    label: string;
+    options: Opt[];
+    menuMaxHeight?: number;
+    fullWidth?: boolean;
+    fieldClassName?: string;
+  }[];
   searchPlaceholder?: string;
   className?: string;
   buttonTextMode?: "label" | "current";
@@ -38,6 +45,7 @@ export type FilterBarProps = {
   onSearch?: (q: string) => void;
   onActionClick?: (labelOrValue: string) => void; // 메뉴 value도 전달
   onReset?: () => void;
+  renderAfterReset?: ReactNode; // 초기화 버튼 뒤에 렌더할 컴포넌트
 };
 
 export default function FilterBar({
@@ -54,6 +62,7 @@ export default function FilterBar({
   onSearch,
   onActionClick,
   onReset,
+  renderAfterReset,
 }: FilterBarProps) {
   const [values, setValues] = useState<string[]>(
     initialValues && initialValues.length === fields.length
@@ -123,6 +132,8 @@ export default function FilterBar({
           options={f.options}
           buttonTextMode={buttonTextMode}
           menuMaxHeight={f.menuMaxHeight}
+          fullWidth={!!f.fullWidth}
+          className={f.fieldClassName}
         />
       ))}
 
@@ -155,6 +166,7 @@ export default function FilterBar({
               <Button
                 type="button"
                 tone={b.tone ?? "primary"}
+                variant={b.variant ?? "solid"}
                 size="sm"
                 widthType={isIconOnly ? "default" : "pager"}
                 iconRight={resolvedIconRight}
@@ -187,6 +199,7 @@ export default function FilterBar({
               <Button
                 type="button"
                 tone={b.tone ?? "primary"}
+                variant={b.variant ?? "solid"}
                 size="sm"
                 widthType="pager"
                 iconRight     // “Excel >” 유지
@@ -209,6 +222,9 @@ export default function FilterBar({
 
       {/* 초기화(맨 끝) */}
       {resetPosition === "end" && resetButton}
+      
+      {/* 초기화 버튼 뒤 추가 컴포넌트 */}
+      {renderAfterReset}
     </div>
   );
 }

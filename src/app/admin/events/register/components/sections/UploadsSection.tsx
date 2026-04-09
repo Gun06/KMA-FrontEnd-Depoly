@@ -9,6 +9,7 @@ import { Minus, Plus } from "lucide-react";
 import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
 import type { TermsInfoItem } from "../../hooks/useCompetitionForm";
+import { MiniToggle } from "@/components/admin/Form/PartyRows";
 
 /** 업로드 필드 & 세터 타입 */
 export type CompetitionForm = {
@@ -52,10 +53,16 @@ export type CompetitionForm = {
   imgResult: UploadItem[] | undefined;
   setImgResult: (items: UploadItem[]) => void;
 
+  agreeAllLabel: string;
+  setAgreeAllLabel: (value: string) => void;
   termsInfo: TermsInfoItem[] | undefined;
   addTermsInfo: () => void;
   removeTermsInfo: (index: number) => void;
-  updateTermsInfo: (index: number, field: "title" | "content", value: string) => void;
+  updateTermsInfo: (
+    index: number,
+    field: "content" | "termsLabel" | "required",
+    value: string | boolean
+  ) => void;
 };
 
 type UploadsSectionProps = {
@@ -283,53 +290,85 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           ) : undefined
         }
       >
+        <div
+          className="grid border-b border-neutral-200"
+          style={{ gridTemplateColumns: "200px 1fr" }}
+        >
+          <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
+            전체 동의 문구
+          </div>
+          <div className="bg-white px-3 py-2">
+            <input
+              type="text"
+              value={f.agreeAllLabel ?? ""}
+              onChange={(e) => f.setAgreeAllLabel(e.target.value)}
+              placeholder="예: [전체동의] 위 약관에 모두 동의합니다."
+              className="w-full h-9 px-1 text-[13px] border-0 border-b border-neutral-300 rounded-none bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500"
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
         {termsRows.map((term, index) => (
           <div
             key={`${term.id ?? "new"}-${index}`}
             className="grid border-b border-neutral-200"
             style={{ gridTemplateColumns: "200px 1fr 56px" }}
           >
-            <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
-              약관 {index + 1}
+            {/* 라벨 */}
+            <div className="bg-[#4D4D4D] text-white flex flex-col items-center justify-center gap-2 text-[13px] border-r border-neutral-300 min-h-[52px] py-3">
+              <span>약관 {index + 1}</span>
+              {/* 필수/선택 토글 */}
+              <MiniToggle
+                value={term.required === true}
+                onChange={(v) => f.updateTermsInfo(index, "required", v)}
+                disabled={readOnly}
+                onLabel="필수"
+                offLabel="선택"
+              />
             </div>
-            <div className="bg-white px-3 py-2">
+
+            {/* 내용 영역 */}
+            <div className="bg-white px-3 py-2.5 space-y-2">
+              {/* 체크 문구 + 미리보기 */}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  value={term.title}
-                  onChange={(e) => f.updateTermsInfo(index, "title", e.target.value)}
-                  placeholder="약관 제목을 입력하세요."
-                  className="w-full h-9 px-1 text-[13px] border-0 border-b border-neutral-300 rounded-none bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500"
+                  value={term.termsLabel ?? ""}
+                  onChange={(e) => f.updateTermsInfo(index, "termsLabel", e.target.value)}
+                  placeholder="제목 겸 체크 문구를 입력하세요. (예: 개인정보 수집·이용 동의 (필수))"
+                  className="flex-1 h-8 px-1 text-[13px] font-medium border-0 border-b border-neutral-300 rounded-none bg-transparent focus:outline-none focus:ring-0 focus:border-blue-500"
                   readOnly={readOnly}
                 />
                 <button
                   type="button"
                   onClick={() => setPreviewIndex(index)}
-                  className="h-9 px-3 shrink-0 text-[12px] font-medium border border-neutral-300 rounded bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                  className="h-7 px-2.5 shrink-0 text-[11px] font-medium border border-neutral-300 rounded bg-neutral-50 text-neutral-600 hover:bg-neutral-100 transition-colors"
                 >
                   미리보기
                 </button>
               </div>
-              <div className="mt-0.5 pt-0">
+
+              {/* 약관 내용 */}
               <textarea
                 value={term.content}
                 onChange={(e) => f.updateTermsInfo(index, "content", e.target.value)}
                 placeholder="약관 내용을 입력하세요."
                 rows={3}
-                className="w-full min-h-[52px] px-1 py-1.5 text-[13px] border-0 rounded-none bg-transparent resize-y focus:outline-none focus:ring-0"
+                className="w-full min-h-[64px] px-1 py-1 text-[13px] text-gray-700 border-0 border-t border-neutral-100 rounded-none bg-transparent resize-y focus:outline-none focus:ring-0 placeholder:text-neutral-400"
                 readOnly={readOnly}
               />
-              </div>
             </div>
-            <div className="flex items-center justify-center bg-white border-l border-neutral-300">
+
+            {/* 삭제 버튼 */}
+            <div className="flex items-start justify-center pt-3 bg-white border-l border-neutral-300">
               {!readOnly && (
                 <button
                   type="button"
                   onClick={() => f.removeTermsInfo(index)}
                   aria-label={`약관 ${index + 1} 삭제`}
-                  className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-neutral-200 text-neutral-600 hover:bg-red-100 hover:text-red-600 transition-colors"
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-full bg-neutral-100 text-neutral-400 hover:bg-red-100 hover:text-red-500 transition-colors"
                 >
-                  <Minus size={16} strokeWidth={2.25} />
+                  <Minus size={14} strokeWidth={2.25} />
                 </button>
               )}
             </div>
@@ -367,7 +406,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
             <div className="p-5 max-h-[70vh] overflow-y-auto bg-white">
               <div className="bg-gray-100 rounded-lg p-4">
                 <p className="font-bold text-gray-800 mb-3 text-[15px]">
-                  {previewTerm.title?.trim() || "제목 없음"}
+                  {previewTerm.termsLabel?.trim() || "체크 문구 없음"}
                 </p>
                 <div className="space-y-2 text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {previewTerm.content?.trim() || "내용이 없습니다."}
