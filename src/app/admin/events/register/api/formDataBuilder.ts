@@ -119,6 +119,11 @@ export class FormDataBuilder {
       { key: 'resultImage', file: imageFiles.resultImage },
       // 선택: 사이드메뉴 배너(herosection 이미지)
       { key: 'sideMenuBannerImage', file: imageFiles.sideMenuBannerImage },
+      // 선택: 사이드 광고 배너 (API 필드명 eventAdvertiseBanner)
+      {
+        key: 'eventAdvertiseBanner',
+        file: imageFiles.eventAdvertiseBannerImage,
+      },
     ];
 
     for (const { key, file } of otherImages) {
@@ -536,6 +541,13 @@ export class FormDataBuilder {
       const file = uploads.bannerSideMenu![0].file;
       if (file) {
         formData.append('sideMenuBannerImage', file);
+      }
+    }
+
+    if (hasImage(uploads.bannerAdvertise || [])) {
+      const file = uploads.bannerAdvertise![0].file;
+      if (file) {
+        formData.append('eventAdvertiseBanner', file);
       }
     }
 

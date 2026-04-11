@@ -102,7 +102,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9FA] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
       {/* 메인 컨테이너 */}
       <div className="w-full max-w-lg">
         {/* 콘텐츠 영역 */}

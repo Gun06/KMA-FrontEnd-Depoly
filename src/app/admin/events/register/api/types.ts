@@ -123,6 +123,8 @@ export interface EventImageFiles {
   courseImage: File; // 코스 페이지 이미지 (필수)
   // 사이드메뉴 배너(herosection 이미지) - 선택
   sideMenuBannerImage?: File;
+  /** 사이드 광고 배너 — FormData 키: eventAdvertiseBanner */
+  eventAdvertiseBannerImage?: File;
   // 주최/주관/후원/협력 배너 이미지 배열 (eventBannerInfoList와 순서 일치)
   eventBannerImages?: File[];
 }
@@ -208,6 +210,8 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     bannerInstagram?: UploadItem[];
     // 사이드메뉴배너(herosection 이미지)
     bannerSideMenu?: UploadItem[];
+    /** 사이드 광고 배너 */
+    bannerAdvertise?: UploadItem[];
     // 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
     bannerGuideDesktop?: UploadItem[];
     bannerGuideMobile?: UploadItem[];

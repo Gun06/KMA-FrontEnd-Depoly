@@ -5,7 +5,12 @@ import EventCard from './EventCard';
 import { BlockEventItem } from '@/types/event';
 import Link from 'next/link';
 
-export default function EventSection() {
+interface EventSectionProps {
+  /** 메인 2열 레이아웃: 좌측 컬럼에 맞게 패딩·그리드 적용 */
+  variant?: 'default' | 'embedded';
+}
+
+export default function EventSection({ variant = 'default' }: EventSectionProps) {
   const [eventData, setEventData] = useState<BlockEventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +72,7 @@ export default function EventSection() {
             const dateB = new Date(b.eventDate).getTime();
             return dateA - dateB;
           });
-          setEventData(sorted.slice(0, 10));
+          setEventData(sorted.slice(0, 9));
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -81,25 +86,37 @@ export default function EventSection() {
     fetchEventData();
   }, []);
 
+  const isEmbedded = variant === 'embedded';
+
   return (
-    <section className="bg-white pt-8 pb-8">
-      {/* 타이틀 위치: 공지사항과 동일 (32/36/40px) */}
-      <div className="max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10">
+    <section className={`bg-white ${isEmbedded ? 'pt-0 pb-0' : 'pt-8 pb-8'}`}>
+      <div
+        className={
+          isEmbedded
+            ? 'w-full'
+            : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10'
+        }
+      >
         <div className="flex items-end justify-between">
           <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
             주요대회일정
           </h2>
-        <Link
-          href="/schedule"
-          className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          더보기 &gt;
-        </Link>
+          <Link
+            href="/schedule"
+            className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            더보기 &gt;
+          </Link>
+        </div>
       </div>
-       </div>
 
-      <div className="mt-4">
-        {/* 가로 스크롤 리스트 (이미지 영역 드래그로 스크롤) */}
+      <div
+        className={
+          isEmbedded
+            ? 'mt-4 -mx-4 md:-mx-6 lg:-mx-[6vw]'
+            : 'mt-4'
+        }
+      >
         <div
           ref={scrollRef}
           role="region"
@@ -114,11 +131,17 @@ export default function EventSection() {
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
         >
-          <ul className="flex gap-3 px-0 pb-2 w-max min-w-full list-none pl-[18px] md:pl-[82px]">
+          <ul
+            className={`flex w-max min-w-full list-none gap-3 pb-2 ${
+              isEmbedded
+                ? 'px-4 md:px-6 lg:px-[6vw]'
+                : 'pl-[18px] md:pl-[82px]'
+            }`}
+          >
             {isLoading || error ? (
-              Array.from({ length: 4 }).map((_, i) => (
+              Array.from({ length: 9 }).map((_, i) => (
                 <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
-                  <div className="w-full aspect-[16/10] rounded-xl bg-gray-200 animate-pulse" />
+                  <div className="aspect-[16/10] w-full rounded-xl bg-gray-200 animate-pulse" />
                   <div className="mt-2.5 space-y-1.5">
                     <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
                     <div className="h-3.5 w-20 rounded bg-gray-200 animate-pulse" />
@@ -149,13 +172,13 @@ export default function EventSection() {
                 />
               ))
             ) : (
-              <li className="flex items-center justify-center w-full py-8 text-gray-400 text-sm">
+              <li className="flex w-full items-center justify-center py-8 text-sm text-gray-400">
                 등록된 대회 일정이 없습니다.
               </li>
             )}
-            </ul>
-          </div>
+          </ul>
         </div>
+      </div>
     </section>
   );
 }

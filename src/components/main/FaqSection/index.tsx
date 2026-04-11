@@ -138,8 +138,8 @@ export default function FaqSection({
       </SectionPanel>
       
       {/* FAQ 내용을 SectionPanel 아래에 별도 배치 */}
-      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6">
-        <div className="px-8 md:px-9 lg:px-10">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw]">
+        <div className="px-8 md:px-9 lg:px-0">
           {isLoading ? (
             // 스켈레톤 UI
             <div className="divide-y divide-gray-200 bg-white rounded-md">

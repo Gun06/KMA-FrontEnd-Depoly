@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import AppInstallBanner from '@/components/main/AppInstallBanner';
 import logoImage from '@/assets/images/main/logo.jpg';
 import searchIcon from '@/assets/icons/main/search.svg';
@@ -58,7 +63,7 @@ const subMenus: Record<string, SubMenu> = {
     ],
   },
   접수안내: {
-    items: [{ label: '참가신청 가이드', href: '/registration/guide' }],
+    items: [{ label: '신청 가이드', href: '/registration/guide' }],
   },
   게시판: {
     items: [
@@ -88,10 +93,25 @@ const navItems = [
   { label: '마이페이지', href: '/mypage', key: '마이페이지' },
 ];
 
+const navItemsLeft = navItems.slice(0, 5);
+const navItemMypage = navItems[5];
+
 const dropdownVariants = {
   hidden: { opacity: 0, y: -10 },
   visible: { opacity: 1, y: 0 },
 };
+
+/** 메가 패널: transform 레이어가 부모 backdrop 합성을 깨지 않도록 opacity만 */
+/** 세 pill 공통 — 밝은/어두운 배경 모두에서 잘 보이는 다크 프로스트 글라스 */
+const GLASS_PILL_STYLE: React.CSSProperties = {
+  backgroundColor: 'rgba(15,15,15,0.68)',
+  backdropFilter: 'blur(16px)',
+  WebkitBackdropFilter: 'blur(16px)',
+};
+
+
+
+
 
 
 export default function Header() {
@@ -99,6 +119,8 @@ export default function Header() {
   const { isCustom } = useBreakpoints();
   const { isLoggedIn, user, accessToken } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
+  const isHome = pathname === '/' || pathname === '';
   const [isBannerVisible, setIsBannerVisible] = useState(false);
 
   // Hydration mismatch 방지: 클라이언트 마운트 후에만 토큰/스토어 기반 판별
@@ -221,8 +243,11 @@ export default function Header() {
 
     const updateMainOffset = () => {
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      const offset = isBannerVisible ? (isDesktop ? '128px' : '120px') : '64px';
+      const offset = isBannerVisible ? (isDesktop ? '144px' : '136px') : '80px';
       document.documentElement.style.setProperty('--kma-main-header-offset', offset);
+      /* 배너만의 높이 — 사이드바 top 오프셋 계산용 */
+      const bannerH = isBannerVisible ? (isDesktop ? '64px' : '56px') : '0px';
+      document.documentElement.style.setProperty('--kma-banner-height', bannerH);
     };
 
     updateMainOffset();
@@ -239,153 +264,37 @@ export default function Header() {
   }, [isBannerVisible]);
 
   const hasTopBanner = isBannerVisible;
-  const panelTopClass = hasTopBanner ? 'top-[120px] md:top-32' : 'top-16';
+  const panelTopClass = hasTopBanner ? 'top-[136px] md:top-[144px]' : 'top-20';
   const mobileToggleTopClass = hasTopBanner ? 'top-[4.25rem] md:top-[4.75rem]' : 'top-3';
 
 
   return (
-    <header className="bg-white fixed top-0 left-0 w-full z-[150] shadow-sm">
+    <header className="fixed top-0 left-0 z-[150] w-full overflow-visible">
       <AppInstallBanner onVisibilityChange={setIsBannerVisible} />
-      <div className="w-full max-w-[1920px] mx-auto px-4">
-        <div
-          className="grid items-center h-16"
-          style={{
-            gridTemplateColumns: 'minmax(300px, 1fr) auto minmax(300px, 1fr)',
-          }}
+
+      {/* 모바일 상단 바 */}
+      <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-4 custom:hidden">
+        <Link
+          href="/"
+          className="flex min-w-0 items-center gap-2 hover:opacity-90"
         >
-          {/* 로고 */}
-          <div className="flex items-center justify-start custom:justify-center">
-            <Link
-              href="/"
-              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-8 h-8 relative">
-                <Image
-                  src={logoImage}
-                  alt="전국마라톤협회 로고"
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              </div>
-              <span className="font-giants text-lg text-gray-900 whitespace-nowrap break-keep truncate">
-                전국마라톤협회
-              </span>
-            </Link>
+          <div className="relative h-9 w-9 shrink-0">
+            <Image
+              src={logoImage}
+              alt="전국마라톤협회 로고"
+              width={36}
+              height={36}
+              className="rounded-full ring-[3px] ring-green-700"
+            />
           </div>
-
-          {/* 데스크탑 네비게이션 */}
-          <nav
-            className="hidden custom:grid items-center relative z-[110]"
-            style={{ gridTemplateColumns: 'repeat(6, minmax(120px, 1fr))' }}
-            role="navigation"
-            aria-label="메인 네비게이션"
-          >
-            {navItems.map(({ label, key }) => (
-              <div
-                key={label}
-                className="flex items-center justify-center h-16"
-              >
-                <button
-                  className={`w-full h-full flex items-center justify-center text-center font-pretendard transition-colors whitespace-nowrap break-keep truncate relative ${
-                    state.subMenuOpen === key
-                      ? 'text-blue-600'
-                      : 'text-gray-900 hover:text-blue-600'
-                  }`}
-                  onClick={() => {
-                    if (key) {
-                      toggleSubMenu(key);
-                    }
-                  }}
-                  aria-haspopup="true"
-                  aria-expanded={state.subMenuOpen === key}
-                >
-                  {label}
-                  {state.subMenuOpen === key && (
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-blue-600"></div>
-                  )}
-                </button>
-              </div>
-            ))}
-          </nav>
-
-          {/* 우측 아이콘 */}
-          <div className="hidden custom:flex items-center justify-center space-x-6 relative z-[110]">
-            <a
-              href="http://www.run1080.com/new/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                (구)전마협
-              </span>
-              <span aria-hidden className="text-lg">
-                ↗
-              </span>
-            </a>
-            {actualIsLoggedIn ? (
-              <div className="flex items-center space-x-3">
-                <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                  {user?.account || '회원'} 님
-                </span>
-
-                {/* 알림 드롭다운 */}
-                <NotificationDropdown 
-                  isLoggedIn={actualIsLoggedIn} 
-                  userAccount={user?.account}
-                />
-
-                <button
-                  onClick={async () => {
-                    const canNavigate = navigationGuard.startNavigation();
-                    if (!canNavigate) return;
-
-                    try {
-                      await authService.logout();
-                      tokenService.broadcastLogout();
-                      await navigationGuard.safeNavigate(() => {
-                        router.push('/');
-                      }, 100);
-                    } catch {
-                      navigationGuard.endNavigation();
-                    }
-                  }}
-                  className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 transition-colors"
-                >
-                  로그아웃
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-                onClick={(e) => {
-                  // 클라이언트에서만 returnUrl 설정
-                  const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
-                  router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-                  e.preventDefault();
-                }}
-              >
-                <Image
-                  src={userIcon}
-                  alt="사용자"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-                <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
-                  로그인
-                </span>
-              </Link>
-            )}
-          </div>
-
-          {/* 모바일 햄버거/닫기 버튼 */}
-          <div className={`custom:hidden fixed right-4 flex items-center space-x-2 z-[160] ${mobileToggleTopClass}`}>
+          <span className="font-giants truncate text-base break-keep whitespace-nowrap text-white drop-shadow-sm">
+            전국마라톤협회
+          </span>
+        </Link>
+        <div className={`fixed right-4 z-[160] flex items-center space-x-2 ${mobileToggleTopClass}`}>
             {/* 햄버거/닫기 버튼 */}
             <button
-              className="p-2 hover:bg-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+              className="rounded bg-white/15 p-2 shadow-none hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={toggleMobileMenu}
               aria-label={state.mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
               aria-expanded={state.mobileOpen}
@@ -406,7 +315,7 @@ export default function Header() {
                         alt="닫기"
                         width={24}
                         height={24}
-                        className="w-6 h-6"
+                        className="w-6 h-6 brightness-0 invert"
                       />
                     </motion.div>
                   ) : (
@@ -423,89 +332,178 @@ export default function Header() {
                         alt="메뉴"
                         width={24}
                         height={24}
-                        className="w-6 h-6"
+                        className="w-6 h-6 brightness-0 invert"
                       />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </button>
-          </div>
         </div>
       </div>
 
-      {/* 데스크탑용 메가 드롭다운 */}
-      <AnimatePresence>
-        {state.subMenuOpen && (
-          <div className="fixed inset-0 z-[90]">
-            {/* 블러 배경 - 헤더 아래쪽에만 적용 */}
-            <div
-              className={`absolute left-0 right-0 bottom-0 bg-white bg-opacity-20 ${panelTopClass}`}
-              style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
-              onClick={() => updateState({ subMenuOpen: null })}
-            />
+      {/* 데스크탑: 로고(좌) — 필 네비(중앙) — 액션(우) */}
+      <div className="relative mx-auto hidden max-w-[1920px] overflow-visible px-[6vw] custom:block">
+        <div className="relative z-[110] flex h-20 items-center gap-6">
 
-            <motion.div
-              className={`absolute left-0 w-full bg-white z-[95] shadow-lg ${panelTopClass}`}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={dropdownVariants}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+          {/* 좌: 로고 + 브랜드명 — 글라스 필 */}
+          <Link
+            href="/"
+            className="flex shrink-0 items-center gap-3 rounded-full px-6 py-2.5 ring-1 ring-white/15 transition-all hover:brightness-125"
+            style={GLASS_PILL_STYLE}
+          >
+            <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-green-600">
+              <Image
+                src={logoImage}
+                alt="전국마라톤협회 로고"
+                fill
+                sizes="32px"
+                className="object-cover"
+              />
+            </div>
+            <span className="font-giants whitespace-nowrap text-base font-bold tracking-tight text-white">
+              전국마라톤협회
+            </span>
+          </Link>
+
+          {/* 중앙: 필 스타일 네비게이션 — 글라스 */}
+          <div className="flex flex-1 justify-center">
+            <nav
+              className="flex items-center gap-2 rounded-full px-3 py-2.5 ring-1 ring-white/15"
+              style={GLASS_PILL_STYLE}
+              role="navigation"
+              aria-label="메인 메뉴"
             >
-              <div className="w-full max-w-[1920px] mx-auto px-4">
+              {navItemsLeft.map(({ label, key }) => (
                 <div
-                  className="grid items-center py-6"
-                  style={{
-                    gridTemplateColumns:
-                      'minmax(300px, 1fr) auto minmax(300px, 1fr)',
-                  }}
+                  key={key}
+                  className="relative"
+                  onMouseEnter={() => key && updateState({ subMenuOpen: key })}
+                  onMouseLeave={() => updateState({ subMenuOpen: null })}
                 >
-                  {/* 왼쪽 빈 영역 */}
-                  <div></div>
-
-                  {/* 중앙 서브메뉴 영역 */}
-                  <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: 'repeat(6, minmax(120px, 1fr))',
-                    }}
+                  <button
+                    type="button"
+                    className={`rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-200 ${
+                      state.subMenuOpen === key
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-white/90 hover:bg-white/15 hover:text-white'
+                    }`}
+                    aria-haspopup="true"
+                    aria-expanded={state.subMenuOpen === key}
                   >
-                    {Object.entries(subMenus).map(([key, menu]) => (
-                      <div
-                        key={key}
-                        className="flex flex-col items-center overflow-hidden"
-                      >
-                        <ul className="space-y-2 py-2 w-full">
-                          {menu.items.map(item => (
-                            <li key={item.href}>
-                              <Link
-                                href={item.href}
-                                className="text-sm font-pretendard text-gray-600 hover:text-blue-600 transition-colors block py-1 text-center whitespace-nowrap break-keep truncate max-w-full"
-                                onClick={() =>
-                                  updateState({ subMenuOpen: null })
-                                }
-                              >
-                                {item.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
-                  </div>
+                    {label}
+                  </button>
 
-                  {/* 오른쪽 빈 영역 */}
-                  <div></div>
+                  {/* 드롭다운 — 세부메뉴 각각 독립 카드 */}
+                  {state.subMenuOpen === key && subMenus[key] && (
+                    <div className="absolute left-0 top-full z-[75] w-full pt-[18px]">
+                      <ul className="flex w-full flex-col gap-1.5">
+                        {subMenus[key].items.map(item => (
+                          <li key={item.href} className="w-full">
+                            <Link
+                              href={item.href}
+                              onClick={() => updateState({ subMenuOpen: null })}
+                              className={`flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
+                                pathname === item.href
+                                  ? 'bg-white text-gray-900 shadow-md ring-white/30'
+                                  : 'ring-white/15 text-white/90 hover:brightness-125'
+                              }`}
+                              style={pathname === item.href ? undefined : GLASS_PILL_STYLE}
+                            >
+                              {item.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </motion.div>
+              ))}
+            </nav>
           </div>
-        )}
-      </AnimatePresence>
+
+          {/* 우: 액션 — 글라스 필 */}
+          <div
+            className="flex shrink-0 items-center gap-1 rounded-full px-2 py-2 ring-1 ring-white/15"
+            style={GLASS_PILL_STYLE}
+          >
+            {navItemMypage && (
+              <Link
+                href={navItemMypage.href}
+                className={`rounded-full px-5 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
+                  pathname.startsWith('/mypage')
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-white/90 hover:bg-white/15 hover:text-white'
+                }`}
+              >
+                {navItemMypage.label}
+              </Link>
+            )}
+            <a
+              href="http://www.run1080.com/new/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+            >
+              (구)전마협
+              <svg className="h-3 w-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+            {actualIsLoggedIn ? (
+              <div className="flex items-center gap-1">
+                <span className="hidden max-w-[90px] truncate px-2 text-sm font-medium text-white/90 lg:inline">
+                  {user?.account || '회원'}
+                </span>
+                <NotificationDropdown
+                  isLoggedIn={actualIsLoggedIn}
+                  userAccount={user?.account}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const canNavigate = navigationGuard.startNavigation();
+                    if (!canNavigate) return;
+                    try {
+                      await authService.logout();
+                      tokenService.broadcastLogout();
+                      await navigationGuard.safeNavigate(() => {
+                        router.push('/');
+                      }, 100);
+                    } catch {
+                      navigationGuard.endNavigation();
+                    }
+                  }}
+                  className="rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+                >
+                  로그아웃
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+                onClick={e => {
+                  const returnUrl =
+                    typeof window !== 'undefined' ? window.location.pathname : '/';
+                  router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                  e.preventDefault();
+                }}
+              >
+                <Image
+                  src={userIcon}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 brightness-0 invert"
+                />
+                로그인
+              </Link>
+            )}
+          </div>
+        </div>
+
+      </div>
 
       {/* 검색 모달 */}
       <AnimatePresence>

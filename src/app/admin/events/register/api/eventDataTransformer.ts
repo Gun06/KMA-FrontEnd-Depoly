@@ -221,6 +221,9 @@ export class EventDataTransformer {
       sideMenuBannerImage: this.getFileFromUpload(
         uploads.bannerSideMenu?.[0]
       ),
+      eventAdvertiseBannerImage: this.getFileFromUpload(
+        uploads.bannerAdvertise?.[0]
+      ),
     };
 
     // 주최/주관/후원/협력 배너 이미지들 (순서 중요!)

@@ -45,19 +45,19 @@ export default function AssociationBanner({ total, currentIndex }: AssociationBa
             <h1 className="hero-anim hero-title font-giants text-lg sm:text-2xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 md:mb-6 leading-tight text-center hero-text-shadow">
               <div className="whitespace-nowrap inline-block">
                 <span>회원 수 </span>
-                <span className="gradient-text">3만명</span>
+                <span className="text-white">3만명</span>
                 <span>, 누적 완주 거리 </span>
-                <span className="gradient-text">120만 Km</span>
+                <span className="text-white">120만 Km</span>
                 <span> 달성!</span>
               </div>
             </h1>
-            <p className="hero-anim hero-date font-giants text-sm sm:text-base md:text-lg lg:text-xl text-white/95 leading-relaxed mb-1 sm:mb-2 md:mb-2 lg:mb-2 text-center hero-text-shadow">
+            <p className="hero-anim hero-date font-giants mb-1 text-center text-sm leading-relaxed text-white sm:mb-2 sm:text-base md:mb-2 md:text-lg lg:mb-2 lg:text-xl hero-text-shadow">
               누적된 발걸음이 하나의 큰 꿈이 되었습니다.
             </p>
-            <p className="hero-anim hero-date font-giants text-sm sm:text-base md:text-lg lg:text-xl text-white/95 leading-relaxed mb-3 sm:mb-4 md:mb-5 lg:mb-6 text-center hero-text-shadow">
+            <p className="hero-anim hero-date font-giants mb-3 text-center text-sm leading-relaxed text-white sm:mb-4 sm:text-base md:mb-5 md:text-lg lg:mb-6 lg:text-xl hero-text-shadow">
               그 길 위에서, 우리는 함께 꿈을 완주합니다.
             </p>
-            <p className="hero-anim hero-date font-giants text-[10px] sm:text-xs md:text-sm lg:text-base text-white/90 text-center hero-text-shadow">
+            <p className="hero-anim hero-date font-giants text-center text-[10px] text-white sm:text-xs md:text-sm lg:text-base hero-text-shadow">
               전국마라톤협회
             </p>
           </div>

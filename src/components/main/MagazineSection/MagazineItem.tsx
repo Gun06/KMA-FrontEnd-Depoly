@@ -19,18 +19,25 @@ export default function InquiryItem({ item, onClick }: InquiryItemProps) {
       className="block cursor-pointer" 
       onClick={handleClick}
     >
-      <div className="py-3 hover:bg-gray-50 transition-colors duration-200" style={{ borderBottom: '1px solid #E5E7EB' }}>
+      <div
+        className="py-3 transition-colors duration-200 hover:bg-gray-50"
+        style={{ borderBottom: '1px solid #E5E7EB' }}
+      >
         <div className="flex items-start gap-3">
-          {/* 날짜 */}
-          <div className="text-sm text-gray-500 whitespace-nowrap min-w-[80px]">
+          <div className="min-w-[80px] shrink-0 whitespace-nowrap text-sm text-gray-500">
             {item.date}
           </div>
-          
-          {/* 제목만 표시 */}
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm text-gray-900 leading-relaxed truncate min-w-0">
-              {item.title}
-            </h4>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-nowrap items-center gap-2">
+              <h4 className="min-w-0 flex-1 truncate text-sm leading-relaxed text-gray-900">
+                {item.title}
+              </h4>
+              {/* 공지 태그 칸과 동일 레이아웃, 투명(비표시) */}
+              <div
+                className="pointer-events-none flex h-5 w-16 shrink-0 items-center justify-end opacity-0"
+                aria-hidden
+              />
+            </div>
           </div>
         </div>
       </div>

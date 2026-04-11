@@ -331,6 +331,9 @@ export function transformApiResponseToFormPrefill(
     bannerSideMenu: eventInfo.sideMenuBannerImageUrl
       ? [{ url: eventInfo.sideMenuBannerImageUrl }]
       : [],
+    bannerAdvertise: eventInfo.eventAdvertiseBannerUrl
+      ? [{ url: eventInfo.eventAdvertiseBannerUrl }]
+      : [],
     imgResult: eventInfo.resultImageUrl
       ? [{ url: eventInfo.resultImageUrl }]
       : [],

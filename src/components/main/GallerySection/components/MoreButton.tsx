@@ -3,13 +3,19 @@
 import Link from 'next/link';
 import React from 'react';
 
-export default function MoreButton() {
+interface MoreButtonProps {
+  /** 메인 2열 갤러리 스트립 높이에 맞춤 */
+  embedded?: boolean;
+}
+
+export default function MoreButton({ embedded = false }: MoreButtonProps) {
+  const lineH = embedded ? 'h-32 md:h-[320px]' : 'h-32 md:h-[300px]';
   return (
-    <div className="flex items-center justify-center ml-6 md:ml-12">
+    <div className={`flex shrink-0 items-center justify-center ${embedded ? 'ml-4 md:ml-8' : 'ml-6 md:ml-12'}`}>
       <Link href="/schedule/gallery">
         <div className="relative">
           {/* 세로선 */}
-          <div className="w-0.5 h-32 md:h-[300px] bg-gray-200"></div>
+          <div className={`w-0.5 bg-gray-200 ${lineH}`} />
           
           {/* 원형 버튼 - 세로선 중앙에 위치 */}
           <button

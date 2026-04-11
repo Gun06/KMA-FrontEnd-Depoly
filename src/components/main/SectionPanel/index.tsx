@@ -27,10 +27,10 @@ export default function SectionPanel({
   return (
     <div className={`relative overflow-hidden h-16 md:h-20 ${fullBleed ? 'rounded-none' : 'rounded-md'} ${containerClassName}`}>
       {backgroundLayer}
-      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 h-full">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw] h-full">
         {/* Title */}
         <div
-          className={`h-full flex items-center pl-4 md:pl-3 lg:pl-4 relative z-10 ${titleClassName}`}
+          className={`h-full flex items-center pl-4 md:pl-3 lg:pl-0 relative z-10 ${titleClassName}`}
           style={titleStart ? { paddingLeft: titleStart } : undefined}
         >
           <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900 flex items-center">

@@ -157,6 +157,9 @@ export function transformApiToFormPrefill(
     bannerSideMenu: eventInfo.sideMenuBannerImageUrl
       ? [{ url: eventInfo.sideMenuBannerImageUrl }]
       : [],
+    bannerAdvertise: eventInfo.eventAdvertiseBannerUrl
+      ? [{ url: eventInfo.eventAdvertiseBannerUrl }]
+      : [],
     imgNotice: eventInfo.noticePageImageUrl
       ? [{ url: eventInfo.noticePageImageUrl }]
       : [],

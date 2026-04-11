@@ -8,15 +8,12 @@ import type { GalleryItem } from '@/app/(main)/schedule/gallery/types';
 interface GalleryListProps {
   items: GalleryItem[];
   onItemClick?: (item: GalleryItem) => void;
+  variant?: 'default' | 'embedded';
 }
 
-export default function GalleryList({ items, onItemClick }: GalleryListProps) {
+export default function GalleryList({ items, onItemClick, variant = 'default' }: GalleryListProps) {
   if (items.length === 0) {
-    return (
-      <li className="shrink-0 text-gray-500 text-center">
-        갤러리 데이터가 없습니다.
-      </li>
-    );
+    return null;
   }
 
   return (
@@ -33,6 +30,7 @@ export default function GalleryList({ items, onItemClick }: GalleryListProps) {
             title={item.eventName}
             date={formatDate(item.eventStartDate)}
             disableAnimation={false}
+            variant={variant}
             onClick={() => onItemClick?.(item)}
           />
         </li>

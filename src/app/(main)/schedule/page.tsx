@@ -237,11 +237,11 @@ export default function SchedulePage() {
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
-        <div ref={bannerRef} className="relative w-full">
-          <div className="sm:hidden" style={{ paddingBottom: '20%' }}></div>
-          <div className="hidden sm:block md:hidden" style={{ height: '150px' }}></div>
-          <div className="hidden md:block lg:hidden" style={{ height: '150px' }}></div>
-          <div className="hidden lg:block" style={{ height: '150px' }}></div>
+        <div ref={bannerRef} className="relative w-full" style={{ marginTop: 'calc(-1 * var(--kma-main-header-offset, 80px))' }}>
+          <div className="sm:hidden" style={{ paddingBottom: '28%' }}></div>
+          <div className="hidden sm:block md:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          <div className="hidden md:block lg:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          <div className="hidden lg:block" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
           <Image
             src={menubanner}
             alt="메뉴 배너"
@@ -251,7 +251,7 @@ export default function SchedulePage() {
           />
           
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center px-6 sm:px-8 md:px-16 lg:px-32 xl:px-48">
+          <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
             {/* 페이지 제목 */}
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
               대회일정
@@ -289,6 +289,15 @@ export default function SchedulePage() {
           </div>
         </div>
         
+        {/* sticky 고정 시 헤더 영역 흰색 배경 레이어 */}
+        {isStickyFixed && (
+          <div
+            className="fixed left-0 right-0 top-0 bg-white z-[149]"
+            style={{ height: 'var(--kma-main-header-offset, 80px)' }}
+            aria-hidden
+          />
+        )}
+
         {/* 탭 버튼 + 날짜 선택 컨트롤 - 모바일 전용, 하나로 묶어서 상단 고정 */}
         {/* 배너가 스크롤되면 헤더 바로 아래에 고정되도록 스크롤 이벤트로 fixed 전환 */}
         <div 
@@ -296,7 +305,7 @@ export default function SchedulePage() {
             "sm:hidden z-[100] bg-white shadow-sm",
             isStickyFixed ? "fixed left-0 right-0" : "relative"
           )}
-          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 64px)' } : undefined}
+          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 80px)' } : undefined}
         >
           {/* 탭 버튼들 */}
           <div className="px-2 pt-2 pb-2">
@@ -377,7 +386,7 @@ export default function SchedulePage() {
           className="w-full py-2 sm:py-4 lg:py-6" 
           style={{ 
             paddingTop: isStickyFixed 
-              ? 'calc(1rem + var(--kma-main-header-offset, 64px))' 
+              ? 'calc(1rem + var(--kma-main-header-offset, 80px))' 
               : undefined 
           }}
         >
@@ -391,7 +400,7 @@ export default function SchedulePage() {
             "hidden sm:block mb-6 py-2 px-4 sm:px-12 min-[1299px]:px-20 border-t border-b border-l-0 border-r-0 border-[0.5px] border-gray-800 bg-white z-20",
             isStickyFixed ? "fixed left-0 right-0" : "relative"
           )}
-          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 64px)' } : undefined}
+          style={isStickyFixed ? { top: 'var(--kma-main-header-offset, 80px)' } : undefined}
         >
           <div className="flex flex-row gap-4 items-center justify-between">
           {/* 연도 선택 */}

@@ -148,6 +148,7 @@ export function transformApiDataToEventDetail(
     mainBannerPcImageUrl: eventInfo.mainBannerPcImageUrl,
     mainBannerMobileImageUrl: eventInfo.mainBannerMobileImageUrl,
     sideMenuBannerImageUrl: eventInfo.sideMenuBannerImageUrl,
+    eventAdvertiseBannerUrl: eventInfo.eventAdvertiseBannerUrl ?? null,
     mainOutlinePcImageUrl: eventInfo.mainOutlinePcImageUrl,
     mainOutlineMobileImageUrl: eventInfo.mainOutlineMobileImageUrl,
     eventOutlinePageImageUrl: eventInfo.eventOutlinePageImageUrl,

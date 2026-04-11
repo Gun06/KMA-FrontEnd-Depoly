@@ -132,9 +132,9 @@ export default function InquirySection() {
   }, [inquiryData]);
 
   return (
-    <div className="bg-white rounded-lg shadow-none border border-white pt-4 pr-4 pb-4 pl-4 md:pt-5 md:pr-5 md:pb-5 md:pl-6">
-      {/* 헤더 - 타이틀 위치: 대회사진 갤러리와 동일 (pl-4 md:pl-6) */}
-      <div className="flex items-center justify-between mb-6 -mx-4 md:-mx-6 px-4 md:px-6">
+    <div className="bg-white rounded-lg shadow-none border border-white pt-4 pb-4 md:pt-5 md:pb-5">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between mb-6">
         <h3 className="font-giants text-[22px] md:text-[28px] text-gray-900">
           문의사항
         </h3>
@@ -153,13 +153,17 @@ export default function InquirySection() {
           Array.from({ length: 5 }).map((_, idx) => (
             <div key={`skeleton-${idx}`} className="py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
               <div className="flex items-start gap-3">
-                {/* 날짜 스켈레톤 */}
-                <div className="text-sm whitespace-nowrap min-w-[80px]">
-                  <div className="h-[14px] w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="min-w-[80px] shrink-0 whitespace-nowrap text-sm">
+                  <div className="h-[14px] w-16 animate-pulse rounded bg-gray-200" />
                 </div>
-                {/* 제목 스켈레톤 */}
-                <div className="flex-1 min-w-0">
-                  <div className="h-[14px] flex-1 bg-gray-200 rounded animate-pulse" style={{ lineHeight: '1.625' }} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-nowrap items-center gap-2">
+                    <div
+                      className="h-[14px] min-w-0 flex-1 animate-pulse rounded bg-gray-200"
+                      style={{ lineHeight: '1.625' }}
+                    />
+                    <div className="h-5 w-16 shrink-0 animate-pulse rounded bg-gray-200" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,36 +184,15 @@ export default function InquirySection() {
             />
           ))
         ) : (
-          // 데이터가 없을 때 스켈레톤 UI처럼 영역 유지하고 블러 처리
-          <div className="relative">
-            {/* 스켈레톤 배경 */}
-            {Array.from({ length: 5 }).map((_, idx) => (
-              <div 
-                key={`skeleton-${idx}`}
-                className="py-3" 
-                style={{ borderBottom: '1px solid #E5E7EB' }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-sm whitespace-nowrap min-w-[80px]">
-                    <div className="h-[14px] w-16 bg-gray-200 rounded opacity-60" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="h-[14px] bg-gray-200 rounded opacity-60" style={{ lineHeight: '1.625' }} />
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {/* 블러 처리된 오버레이와 메시지 */}
-            <div className="absolute inset-0 backdrop-blur-[2px] bg-white/40 flex flex-col items-center justify-center">
-              <p className="text-gray-500 text-sm mb-4">아직 글이 없습니다</p>
-              <button
-                onClick={() => router.push('/notice/inquiry')}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
-              >
-                문의사항 작성하기
-              </button>
-            </div>
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <p className="text-sm text-gray-500">아직 글이 없습니다</p>
+            <button
+              type="button"
+              onClick={() => router.push('/notice/inquiry')}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              문의사항 작성하기
+            </button>
           </div>
         )}
       </div>

@@ -1,335 +1,377 @@
-"use client"
-import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
-import { SponsorBanner } from '@/types/event'
+"use client";
 
-export default function SponsorSection() {
-  
-  // API 데이터 상태
-  const [sponsorData, setSponsorData] = useState<SponsorBanner[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [_error, setError] = useState<string | null>(null)
-  const marqueeRef = useRef<HTMLDivElement | null>(null)
-  const listRef = useRef<HTMLUListElement | null>(null)
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import Image from "next/image";
+import { SponsorBanner } from "@/types/event";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
-  // API에서 스폰서 배너 데이터 가져오기
+export default function SponsorSection({ hideHeader = false }: { hideHeader?: boolean }) {
+  const [sponsorData, setSponsorData] = useState<SponsorBanner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const isLgUp = useMediaQuery("(min-width: 1024px)");
+
+  const marqueeRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
+
+  const deskMarqueeRef = useRef<HTMLDivElement | null>(null);
+  const deskListRef = useRef<HTMLUListElement | null>(null);
+
   useEffect(() => {
     const fetchSponsorData = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-        
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER
-        
+        setIsLoading(true);
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
         if (!API_BASE_URL) {
-          throw new Error('API 기본 URL이 설정되지 않았습니다. 환경 변수를 확인해주세요.')
+          setSponsorData([]);
+          return;
         }
-        
-        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/main-page/main-sponsor`
-        
-        const response = await fetch(API_ENDPOINT, {
-          method: 'GET',
+        const response = await fetch(`${API_BASE_URL}/api/v1/public/main-page/main-sponsor`, {
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-        })
-        
+        });
         if (response.ok) {
-          const data: SponsorBanner[] = await response.json()
-          
-          // visible이 true인 배너만 필터링하고 orderNo 순으로 정렬
+          const data: SponsorBanner[] = await response.json();
           const visibleBanners = data
-            .filter(banner => banner.visible)
-            .sort((a, b) => a.orderNo - b.orderNo)
-          
-          setSponsorData(visibleBanners)
+            .filter((banner) => banner.visible)
+            .sort((a, b) => a.orderNo - b.orderNo);
+          setSponsorData(visibleBanners);
         } else {
-          const errorText = await response.text()
-          throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+          setSponsorData([]);
         }
-      } catch (_error) {
-        // 서버 에러 시 기본 데이터 사용
-        setSponsorData([])
-        setError(null) // 에러 상태를 null로 설정하여 기본 데이터 표시
+      } catch {
+        setSponsorData([]);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
+    fetchSponsorData();
+  }, []);
 
-    fetchSponsorData()
-  }, [])
+  const unique = sponsorData.filter(
+    (b, i, arr) => arr.findIndex((o) => o.imageUrl === b.imageUrl) === i
+  );
 
-  // 표시할 배너 결정 (API 데이터만 사용, 더미 데이터 제거)
-  const baseBanners = sponsorData.length > 0 
-    ? sponsorData.map(banner => ({ src: banner.imageUrl, alt: banner.url, url: banner.url }))
-    : []
-  
-  // 중복 제거 (URL 기준) - 관리자 미리보기와 동일한 로직
-  const uniqueBanners = baseBanners.filter((banner, index, arr) => 
-    arr.findIndex(other => other.src === banner.src) === index
-  )
-  
-  // 최소 12개가 되도록 반복 (관리자 미리보기와 동일한 로직)
-  const banners = uniqueBanners.length > 0
-    ? Array.from({ length: Math.max(12, uniqueBanners.length * 3) }, (_, i) => uniqueBanners[i % uniqueBanners.length])
-    : []
+  /** 모바일·태블릿 가로 마퀴 */
+  const marqueeLoop = useMemo(() => {
+    if (unique.length === 0) return [];
+    return Array.from({ length: Math.max(12, unique.length * 3) }, (_, i) => unique[i % unique.length]);
+  }, [unique]);
 
-  // 로딩 중이거나 데이터가 없을 때도 스켈레톤 표시 (기본값: true)
-  const showSkeleton = isLoading || banners.length === 0;
+  /** PC 세로 마퀴(끊김 없는 루프) */
+  const deskVerticalLoop = useMemo(() => {
+    if (unique.length === 0) return [];
+    return Array.from({ length: Math.max(8, unique.length * 3) }, (_, i) => unique[i % unique.length]);
+  }, [unique]);
 
   useEffect(() => {
-    if (!marqueeRef.current || !listRef.current || banners.length === 0) return
+    if (isLgUp || !marqueeRef.current || !listRef.current || marqueeLoop.length === 0) return;
 
-    let animationFrameId: number
-    let offset = 0
-    let listWidth = listRef.current.scrollWidth
-    // 메인 사이트 스폰서 섹션 스크롤 속도 (값이 작을수록 느림)
-    const speed = 0.7
+    let animationFrameId: number;
+    let offset = 0;
+    let listWidth = listRef.current.scrollWidth;
+    const speed = 0.85;
 
-    const RESIZE_THROTTLE_MS = 120
-    let lastResizeAt = 0
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null
     const updateWidth = () => {
-      if (!listRef.current) return
-      listWidth = listRef.current.scrollWidth
-    }
-    const throttledUpdateWidth = () => {
-      const now = Date.now()
-      if (now - lastResizeAt < RESIZE_THROTTLE_MS) {
-        if (resizeTimer == null) {
-          resizeTimer = setTimeout(() => {
-            updateWidth()
-            lastResizeAt = Date.now()
-            resizeTimer = null
-          }, RESIZE_THROTTLE_MS)
-        }
-        return
-      }
-      lastResizeAt = now
-      updateWidth()
-    }
+      if (!listRef.current) return;
+      listWidth = listRef.current.scrollWidth;
+    };
 
-    const resizeObserver = new ResizeObserver(throttledUpdateWidth)
-    resizeObserver.observe(listRef.current)
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(listRef.current);
 
     const animate = () => {
       if (!marqueeRef.current || listWidth === 0) {
-        animationFrameId = requestAnimationFrame(animate)
-        return
+        animationFrameId = requestAnimationFrame(animate);
+        return;
       }
 
-      offset -= speed
+      offset -= speed;
       if (Math.abs(offset) >= listWidth) {
-        offset += listWidth
+        offset += listWidth;
       }
 
-      marqueeRef.current.style.transform = `translate3d(${offset}px, 0, 0)`
-      animationFrameId = requestAnimationFrame(animate)
-    }
+      marqueeRef.current.style.transform = `translate3d(${offset}px, 0, 0)`;
+      animationFrameId = requestAnimationFrame(animate);
+    };
 
-    animationFrameId = requestAnimationFrame(animate)
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
-      cancelAnimationFrame(animationFrameId)
-      if (resizeTimer != null) clearTimeout(resizeTimer)
-      resizeObserver.disconnect()
-    }
-  }, [banners.length])
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+    };
+  }, [isLgUp, marqueeLoop.length]);
+
+  /** PC: 세로 순환 */
+  useEffect(() => {
+    if (!isLgUp || !deskMarqueeRef.current || !deskListRef.current || deskVerticalLoop.length === 0)
+      return;
+
+    let animationFrameId: number;
+    let offset = 0;
+    let listHeight = deskListRef.current.scrollHeight;
+    const speed = 0.45;
+
+    const updateHeight = () => {
+      if (!deskListRef.current) return;
+      listHeight = deskListRef.current.scrollHeight;
+    };
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(deskListRef.current);
+
+    const animate = () => {
+      if (!deskMarqueeRef.current || listHeight === 0) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
+      offset -= speed;
+      if (Math.abs(offset) >= listHeight) {
+        offset += listHeight;
+      }
+
+      deskMarqueeRef.current.style.transform = `translate3d(0, ${offset}px, 0)`;
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animationFrameId = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver.disconnect();
+    };
+  }, [isLgUp, deskVerticalLoop.length]);
+
+  const renderMarqueeImages = (keyPrefix: string) =>
+    marqueeLoop.map((banner, idx) => (
+      <li
+        key={`${keyPrefix}-${banner.orderNo}-${idx}`}
+        className="flex h-full shrink-0 items-stretch"
+      >
+        <a
+          href={banner.url || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-full max-h-full items-center"
+        >
+          <Image
+            src={banner.imageUrl}
+            alt={banner.url || "스폰서 배너"}
+            width={320}
+            height={120}
+            sizes="(max-width: 1023px) 30vw, 200px"
+            className="h-full max-h-full w-auto max-w-none object-contain object-center select-none"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+          />
+        </a>
+      </li>
+    ));
+
+  const renderDeskVerticalItems = (keyPrefix: string) =>
+    deskVerticalLoop.map((banner, idx) => (
+      <li
+        key={`${keyPrefix}-${banner.orderNo}-${idx}`}
+        className="flex w-full shrink-0 items-center justify-center"
+      >
+        <a
+          href={banner.url || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full"
+        >
+          <Image
+            src={banner.imageUrl}
+            alt={banner.url || "스폰서 배너"}
+            width={640}
+            height={360}
+            sizes="(max-width: 1280px) 280px, 300px"
+            className="h-auto w-full max-w-full object-contain select-none"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+          />
+        </a>
+      </li>
+    ));
 
   return (
-    <section 
-      className="relative bg-white sponsor-section" 
-      style={{ 
-        height: 'var(--sectionH, 140px)',
-        minHeight: 'var(--sectionH, 140px)' // 최소 높이 보장 + fallback
-      }}
+    <section
+      className="flex w-full min-h-0 flex-col lg:h-full lg:min-h-0"
+      aria-labelledby="main-sponsors-heading"
     >
-      {/* 이미지 트랙 (12개 반복, 중앙 정렬, 무한 이동) */}
+      {/* 주황 헤더 — hideHeader=true 이면 숨김 (page.tsx 에서 직접 렌더링) */}
+      {!hideHeader && (
+        <div
+          className="mb-3 shrink-0 px-2 py-1.5"
+          style={{ backgroundColor: '#F97316', borderRadius: '6px' }}
+        >
+          <h2
+            id="main-sponsors-heading"
+            className="font-giants text-[14px] font-bold tracking-wide text-white"
+          >
+            SPONSOR
+          </h2>
+        </div>
+      )}
+      {hideHeader && <h2 id="main-sponsors-heading" className="sr-only">스폰서</h2>}
+
+      {/* 모바일 · 태블릿: 가로 무한 순환(마퀴) */}
       <div
-        className="absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden z-10"
-        style={{ 
-          height: 'var(--imgH, 80px)',
-          minHeight: 'var(--imgH, 80px)' // 최소 높이 보장 + fallback
-        }}
-      >
-        {/* 로딩 스켈레톤 - 항상 먼저 렌더링하여 레이아웃 유지 (기본값: 보임) */}
-        <div 
-          className="absolute top-0 right-0 bottom-0 flex items-center gap-4 md:gap-6 lg:gap-8 px-0 h-full overflow-hidden transition-opacity duration-300"
-          style={{ 
-            height: '100%',
-            minHeight: 'var(--imgH, 80px)',
-            // 초기 렌더링 시 항상 보이도록 강제 (showSkeleton이 false가 될 때까지)
-            opacity: showSkeleton ? 1 : 0,
-            zIndex: showSkeleton ? 20 : 0,
-            pointerEvents: showSkeleton ? 'auto' : 'none',
-            background: 'transparent'
-          }}
-        >
-          {Array.from({ length: 8 }).map((_, idx) => (
-            <div
-              key={`skeleton-${idx}`}
-              className="shrink-0 w-32 md:w-40 lg:w-48 h-full rounded-lg"
-              style={{ 
-                height: 'var(--imgH, 80px)',
-                minWidth: '128px',
-                background: 'linear-gradient(90deg, #e5e7eb 0%, #d1d5db 50%, #e5e7eb 100%)',
-                backgroundSize: '200% 100%',
-                animation: 'shimmer 2s infinite linear'
-              }}
-            />
-          ))}
-        </div>
-
-        {/* 실제 콘텐츠 - 항상 렌더링하되 조건부로 표시 */}
-        <div 
-          className={`relative w-full h-full transition-opacity duration-300 ${
-            showSkeleton ? 'opacity-0' : 'opacity-100'
-          }`}
-          style={{ 
-            height: '100%', 
-            minHeight: 'var(--imgH, 80px)' // fallback 추가
-          }}
-        >
-          <div ref={marqueeRef} className="marquee-track flex w-max items-center h-full leading-[0]">
-            <ul ref={listRef} className="flex items-center gap-0 h-full px-0">
-              {banners.map((banner, idx) => (
-              <li key={`s-${idx}`} className="shrink-0 flex items-center justify-center h-full">
-                <a 
-                  href={banner.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Image 
-                    src={banner.src} 
-                    alt={banner.alt} 
-                    height={100} 
-                    width={200}
-                    style={{ height: 'var(--imgH, 80px)' }} 
-                    className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-          {/* 두 번째 트랙을 이어붙여 끊김 없는 루프 */}
-          <ul className="flex items-center gap-0 h-full px-0">
-            {banners.map((banner, idx) => (
-              <li key={`s2-${idx}`} className="shrink-0 flex items-center justify-center h-full">
-                <a 
-                  href={banner.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Image 
-                    src={banner.src} 
-                    alt={banner.alt} 
-                    height={100} 
-                    width={200}
-                    style={{ height: 'var(--imgH, 80px)' }} 
-                    className="w-auto object-contain hover:opacity-80 transition-opacity select-none" 
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                  />
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        </div>
-      </div>
-
-      {/* 양쪽 파란 테두리 + 흰색 배경 영역 */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20" style={{ width: 'var(--leftW)' }}>
-        <div
-          className="h-full w-full"
-          style={{
-            background: 'linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 40%, rgba(255,255,255,1) 70%, rgba(255,255,255,0) 100%)'
-          }}
-        />
-      </div>
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20" style={{ width: 'var(--rightW)' }}>
-        <div
-          className="h-full w-full"
-          style={{
-            background: 'linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 40%, rgba(255,255,255,1) 70%, rgba(255,255,255,0) 100%)'
-          }}
-        />
-      </div>
-
-      {/* 아래 구분선(회색 계열) */}
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gray-200 z-[60]" />
-
-      <style jsx>{`
-        .marquee-track { will-change: transform; }
-        
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+        className="sponsor-marquee-area relative mt-3 overflow-hidden lg:hidden"
+        style={
+          {
+            ["--marquee-h"]: "88px",
+            ["--marquee-inner-h"]: "calc(var(--marquee-h) - 16px)",
+            ["--fade-w"]: "clamp(12px, 4vw, 48px)",
+          } as React.CSSProperties
         }
-        
-        /* 이미지 드래그 방지 */
-        .marquee img {
+      >
+        <div
+          className="relative z-10 overflow-hidden"
+          style={{ height: "var(--marquee-h)", minHeight: "var(--marquee-h)" }}
+        >
+          {isLoading && (
+            <div
+              className="absolute inset-0 z-20 flex items-center gap-2 overflow-hidden px-1.5 py-2 md:gap-2.5"
+              aria-hidden
+            >
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div
+                  key={`sk-${idx}`}
+                  className="h-[var(--marquee-inner-h)] min-h-[52px] w-24 shrink-0 rounded-lg bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 animate-pulse sm:w-28 md:w-32"
+                />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && marqueeLoop.length > 0 && (
+            <div
+              className="absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 overflow-hidden"
+              style={{ height: "var(--marquee-inner-h)" }}
+            >
+              <div
+                ref={marqueeRef}
+                className="marquee-track flex h-full w-max items-center leading-[0] will-change-transform"
+              >
+                <ul ref={listRef} className="flex h-full items-center gap-0 px-0">
+                  {renderMarqueeImages("a")}
+                </ul>
+                <ul className="flex h-full items-center gap-0 px-0" aria-hidden>
+                  {renderMarqueeImages("b")}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && unique.length === 0 && (
+            <div className="flex min-h-[var(--marquee-h)] items-center justify-center px-4 py-6 text-center text-sm text-zinc-400">
+              등록된 스폰서 배너가 없습니다.
+            </div>
+          )}
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-20"
+          style={{
+            width: "var(--fade-w)",
+            background:
+              "linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, transparent 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-20"
+          style={{
+            width: "var(--fade-w)",
+            background:
+              "linear-gradient(to left, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, transparent 100%)",
+          }}
+        />
+      </div>
+
+      {/* 데스크톱: 주요대회일정+갤러리 열 높이까지 채우는 세로 순환 */}
+      <div
+        className="sponsor-desk-marquee-area relative mt-3 hidden min-h-0 flex-1 flex-col overflow-hidden lg:flex"
+        style={
+          {
+            ["--desk-fade-h"]: "28px",
+          } as React.CSSProperties
+        }
+      >
+        <div className="relative z-10 h-full min-h-0 flex-1 overflow-hidden">
+          {isLoading && (
+            <div className="flex flex-col gap-1.5 p-2" aria-hidden>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={`sk-desk-${i}`}
+                  className="aspect-[16/9] w-full animate-pulse rounded-lg bg-zinc-200"
+                />
+              ))}
+            </div>
+          )}
+
+          {!isLoading && deskVerticalLoop.length > 0 && (
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                ref={deskMarqueeRef}
+                className="desk-marquee-track flex w-full flex-col will-change-transform"
+              >
+                <ul ref={deskListRef} className="flex w-full flex-col gap-0">
+                  {renderDeskVerticalItems("va")}
+                </ul>
+                <ul className="flex w-full flex-col gap-0" aria-hidden>
+                  {renderDeskVerticalItems("vb")}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && unique.length === 0 && (
+            <div className="flex min-h-[160px] items-center justify-center px-4 py-10 text-center text-sm text-zinc-400">
+              등록된 스폰서 배너가 없습니다.
+            </div>
+          )}
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-20"
+          style={{
+            height: "var(--desk-fade-h)",
+            background:
+              "linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 60%, transparent 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20"
+          style={{
+            height: "var(--desk-fade-h)",
+            background:
+              "linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 60%, transparent 100%)",
+          }}
+        />
+      </div>
+
+      <style jsx global>{`
+        .sponsor-marquee-area .marquee-track img {
           -webkit-user-drag: none;
-          -khtml-user-drag: none;
-          -moz-user-drag: none;
-          -o-user-drag: none;
-          user-drag: none;
+          user-select: none;
           pointer-events: none;
         }
-        
-        .marquee a {
+        .sponsor-marquee-area .marquee-track a {
           pointer-events: auto;
         }
-        /* Desktop default (>=1280px) */
-        .sponsor-section {
-          --sectionH: clamp(140px, 9vw, 160px); /* 자연스럽게 증가 */
-          --imgH: clamp(80px, 5.4vw, 96px);
-          --imgW: clamp(200px, 17vw, 300px);
-          --leftW: clamp(96px, 6.5vw, 120px);
-          --rightW: clamp(96px, 6.5vw, 120px);
+        .sponsor-desk-marquee-area .desk-marquee-track img {
+          -webkit-user-drag: none;
+          user-select: none;
+          pointer-events: none;
         }
-        /* 1024–1279px */
-        @media (max-width: 1279px) and (min-width: 1024px) {
-          .sponsor-section {
-            --sectionH: 120px;
-            --imgH: 70px;
-            --leftW: 96px;    /* 주요대회일정 시작선과 맞춤 */
-            --rightW: 96px;   /* 오른쪽도 동일하게 맞춤 */
-          }
-        }
-        /* 768–1023px (Tablet) */
-        @media (max-width: 1023px) and (min-width: 768px) {
-          .sponsor-section {
-            --sectionH: 100px;
-            --imgH: 60px;
-            --leftW: 32px;    /* 주요대회일정 시작선과 맞춤 */
-            --rightW: 32px;   /* 오른쪽도 동일하게 맞춤 */
-          }
-        }
-        /* 480–767px (Phones) */
-        @media (max-width: 767px) and (min-width: 480px) {
-          .sponsor-section {
-            --sectionH: 80px;
-            --imgH: 50px;
-            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
-            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
-          }
-        }
-        /* <=479px (Small phones) */
-        @media (max-width: 479px) {
-          .sponsor-section {
-            --sectionH: 70px;
-            --imgH: 44px;
-            --leftW: 12px;    /* 주요대회일정 시작선과 맞춤 */
-            --rightW: 12px;   /* 오른쪽도 동일하게 맞춤 */
-          }
+        .sponsor-desk-marquee-area .desk-marquee-track a {
+          pointer-events: auto;
         }
       `}</style>
     </section>
-  )
+  );
 }

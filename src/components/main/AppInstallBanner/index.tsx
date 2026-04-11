@@ -39,7 +39,7 @@ export default function AppInstallBanner({ onVisibilityChange }: AppInstallBanne
 
   return (
     <div className="w-full bg-black text-white">
-      <div className="mx-auto flex h-14 w-full max-w-[1920px] items-center gap-3 px-3 md:h-16 md:px-4">
+        <div className="mx-auto flex h-14 w-full max-w-[1920px] items-center gap-3 px-3 md:h-16 md:px-4">
         <button
           type="button"
           onClick={handleClose}

@@ -34,6 +34,10 @@ export type CompetitionForm = {
   bannerSideMenu: UploadItem[] | undefined;
   setBannerSideMenu: (items: UploadItem[]) => void;
 
+  // 사이드 광고 배너
+  bannerAdvertise: UploadItem[] | undefined;
+  setBannerAdvertise: (items: UploadItem[]) => void;
+
   // 페이지별 이미지
   imgNotice: UploadItem[] | undefined;
   setImgNotice: (items: UploadItem[]) => void;
@@ -164,6 +168,21 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           onChangeEditable={f.setBannerSideMenu}
           valueReadonly={toRO(f.bannerSideMenu)}
           contentClassName={cn("px-4", contentPad((f.bannerSideMenu ?? []).length))}
+          single={true}
+        />
+        <FileSection
+          label="사이드 광고 배너"
+          editable={!readOnly}
+          accept="image/*"
+          maxSizeMB={30}
+          helper={"선택된 파일 없음 / 30MB 이내"}
+          valueEditable={f.bannerAdvertise}
+          onChangeEditable={f.setBannerAdvertise}
+          valueReadonly={toRO(f.bannerAdvertise)}
+          contentClassName={cn(
+            "px-4",
+            contentPad((f.bannerAdvertise ?? []).length)
+          )}
           single={true}
         />
       </FormTable>

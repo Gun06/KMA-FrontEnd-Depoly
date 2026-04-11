@@ -69,7 +69,7 @@ export default function FeaturesSection() {
 
   return (
     <section className="py-12 bg-white">
-      <div className="container mx-auto px-4">
+      <div className="max-w-[1920px] mx-auto px-4 lg:px-[6vw]">
         {/* 메인 타이틀 */}
         <div className="text-center mb-12">
           <h2 className="font-giants text-2xl md:text-3xl lg:text-4xl text-gray-900 mb-4">

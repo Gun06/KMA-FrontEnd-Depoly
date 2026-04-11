@@ -31,6 +31,28 @@ function parseDate(s: string): Date | null {
   return null;
 }
 
+/** D-Day 뱃지가 비어도 대회일이 보이도록 YYYY.MM.DD (파싱 실패 시 원문) */
+function formatBannerDisplayDate(value: string): string {
+  const t = value.trim();
+  if (!t) return '';
+  const parsed = parseDate(t);
+  if (!parsed) return t;
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const d = String(parsed.getDate()).padStart(2, '0');
+  return `${y}.${m}.${d}`;
+}
+
+function toDateOnlyIso(parsed: Date): string {
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const d = String(parsed.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+const HERO_TEXT_SHADOW =
+  '[text-shadow:0_2px_24px_rgba(0,0,0,0.55),0_1px_2px_rgba(0,0,0,0.75)]';
+
 interface ApiBannerSlideProps {
   id: number;
   imageUrl: string;
@@ -52,13 +74,17 @@ export default function ApiBannerSlide({
   currentIndex,
 }: ApiBannerSlideProps) {
   const hasEventId = eventId && eventId.trim() !== '';
+  const overviewHref = hasEventId ? `/event/${eventId.trim()}/guide/overview` : '';
   const SlideWrapper = hasEventId ? 'a' : 'div';
-  const wrapperProps = hasEventId
-    ? { href: `/event/${eventId}/guide/overview` }
-    : {};
+  const wrapperProps = hasEventId ? { href: overviewHref } : {};
 
-  const dateLabel = date?.trim() ? toDFormat(date) : '';
-  const hasAnyText = dateLabel || (title?.trim()) || (subtitle?.trim());
+  const trimmedDate = date?.trim() ?? '';
+  const parsedBannerDate = trimmedDate ? parseDate(trimmedDate) : null;
+  const dDayLabel = trimmedDate ? toDFormat(trimmedDate) : '';
+  const displayDate = trimmedDate ? formatBannerDisplayDate(trimmedDate) : '';
+  const hasDateRow = Boolean(dDayLabel || displayDate);
+  const hasAnyText = hasDateRow || Boolean(title?.trim()) || Boolean(subtitle?.trim());
+  const showOverlay = hasAnyText || hasEventId;
 
   const safeIndex =
     typeof currentIndex === 'number' && Number.isFinite(currentIndex) && currentIndex >= 0 && currentIndex < total
@@ -81,35 +107,57 @@ export default function ApiBannerSlide({
         className="object-cover object-center"
       />
 
-      {/* KMA-Mobile 스타일: 하단 그라데이션 오버레이 (transparent → 0 → 0.6 black) */}
+      {/* 전면 검정 반투명 (카드 오버레이와 톤 통일) */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.6) 100%)',
-        }}
+        className="pointer-events-none absolute inset-0 bg-black/45"
+        aria-hidden
       />
 
-      {/* 텍스트 오버레이 - KMA-Mobile처럼 왼쪽 하단 고정 */}
-      {hasAnyText && (
-        <div className="absolute left-4 sm:left-6 md:left-8 bottom-8 sm:bottom-10 md:bottom-12 right-4 sm:right-6 md:right-8 z-10 flex flex-col items-start text-left">
-          {dateLabel && (
-            <span
-              className="hero-anim hero-badge inline-block px-2 py-1 rounded text-[11px] font-bold text-white mb-3"
-              style={{ backgroundColor: '#FF4081' }}
-            >
-              {dateLabel}
-            </span>
+      {/* 텍스트 오버레이 — 모바일·태블릿: 좌측 하단 / 데스크톱: 투르 드 프랑스형 좌상단(≈left 10%, 세로는 히어로 비율+헤더 안전) */}
+      {showOverlay && (
+        <div
+          className="absolute left-3 right-4 top-20 z-10 flex max-w-[min(100%,42rem)] flex-col items-start text-left sm:top-auto sm:bottom-32 sm:left-4 sm:right-6 md:bottom-36 md:left-5 md:right-8 lg:bottom-auto lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(40rem,45%)] lg:px-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
+        >
+          {hasDateRow && (
+            <div className="hero-anim hero-badge mb-3 flex flex-col items-start gap-2 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              {dDayLabel ? (
+                <span
+                  className="inline-flex shrink-0 rounded-md px-3 py-1.5 text-xs font-bold leading-none text-white sm:px-3.5 sm:py-2 sm:text-sm md:text-base font-pretendard-bold"
+                  style={{ backgroundColor: '#FF4081' }}
+                >
+                  {dDayLabel}
+                </span>
+              ) : null}
+              {displayDate ? (
+                <time
+                  dateTime={parsedBannerDate ? toDateOnlyIso(parsedBannerDate) : undefined}
+                  className={`font-pretendard text-[15px] font-semibold tracking-wide text-white sm:text-base lg:text-lg xl:text-xl ${HERO_TEXT_SHADOW}`}
+                >
+                  {displayDate}
+                </time>
+              ) : null}
+            </div>
           )}
           {title?.trim() && (
-            <h1 className="hero-anim hero-title text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight" style={{ letterSpacing: '-0.5px' }}>
+            <h1
+              className={`hero-anim hero-title font-giants text-[1.625rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-3xl sm:leading-tight sm:tracking-[-0.025em] md:text-4xl md:leading-[1.1] lg:text-5xl lg:leading-[1.06] xl:text-[3.125rem] 2xl:text-[3.375rem] ${HERO_TEXT_SHADOW}`}
+            >
               {title.trim()}
             </h1>
           )}
           {subtitle?.trim() && (
-            <p className="hero-anim hero-date text-white/90 text-sm sm:text-base mt-2 leading-snug">
+            <p
+              className={`hero-anim hero-date font-pretendard mt-2 max-w-prose text-base font-medium leading-relaxed text-white sm:mt-3 sm:text-lg md:text-xl lg:mt-4 lg:text-xl xl:text-2xl ${HERO_TEXT_SHADOW}`}
+            >
               {subtitle.trim()}
             </p>
           )}
+
+          {hasEventId ? (
+            <span className="hero-anim hero-readmore pointer-events-none mt-4 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-5 py-2.5 font-pretendard-bold text-sm font-bold uppercase tracking-[0.14em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base">
+              READ MORE
+            </span>
+          ) : null}
 
           {/* Action buttons: 태블릿 이상에서만 노출 (KMA-Mobile에는 없음, 웹만 유지) */}
           {hasEventId && (

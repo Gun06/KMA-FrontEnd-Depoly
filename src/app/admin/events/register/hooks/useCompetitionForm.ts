@@ -93,6 +93,9 @@ type PrefillUploads = {
   // 🔹 사이드메뉴배너(herosection 이미지)
   bannerSideMenu?: UploadItem[] | Array<{ url: string }>;
 
+  // 🔹 사이드 광고 배너
+  bannerAdvertise?: UploadItem[] | Array<{ url: string }>;
+
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일) 새로 추가
   bannerGuideDesktop?: UploadItem[] | Array<{ url: string }>;
   bannerGuideMobile?: UploadItem[] | Array<{ url: string }>;
@@ -231,6 +234,7 @@ export type HydrateSnapshotInput = {
   bannerSponsor?: UploadItem[];
   bannerInstagram?: UploadItem[];
   bannerSideMenu?: UploadItem[];
+  bannerAdvertise?: UploadItem[];
   bannerGuideDesktop?: UploadItem[];
   bannerGuideMobile?: UploadItem[];
   bannerMainDesktop?: UploadItem[];
@@ -356,6 +360,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
 
   // 🔹 사이드메뉴배너(herosection 이미지)
   const [bannerSideMenu, setBannerSideMenu] = React.useState<UploadItem[]>([]);
+
+  // 🔹 사이드 광고 배너
+  const [bannerAdvertise, setBannerAdvertise] = React.useState<UploadItem[]>(
+    []
+  );
 
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
   const [bannerGuideDesktop, setBannerGuideDesktop] = React.useState<
@@ -678,6 +687,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
 
       // 사이드메뉴배너
       setBannerSideMenu(convertToUploadItems(prefill.uploads.bannerSideMenu));
+
+      setBannerAdvertise(
+        convertToUploadItems(prefill.uploads.bannerAdvertise)
+      );
 
       // 페이지 상단 배너 (요강/메인 D/M)
       setBannerGuideDesktop(
@@ -1022,6 +1035,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         bannerAssist: assistImages, // 🔧 assistItems에서 변환된 이미지들
         bannerInstagram,
         bannerSideMenu, // 사이드메뉴배너(herosection 이미지)
+        bannerAdvertise,
 
         // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
         bannerGuideDesktop,
@@ -1125,6 +1139,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBannerSponsor(s.bannerSponsor ?? []);
     setBannerInstagram(s.bannerInstagram ?? []);
     setBannerSideMenu(s.bannerSideMenu ?? []);
+    setBannerAdvertise(s.bannerAdvertise ?? []);
 
     setBannerGuideDesktop(s.bannerGuideDesktop ?? []);
     setBannerGuideMobile(s.bannerGuideMobile ?? []);
@@ -1270,6 +1285,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBannerInstagram,
     bannerSideMenu,
     setBannerSideMenu,
+    bannerAdvertise,
+    setBannerAdvertise,
 
     // uploads — 페이지 상단 배너 (요강/메인 - D/M)
     bannerGuideDesktop,

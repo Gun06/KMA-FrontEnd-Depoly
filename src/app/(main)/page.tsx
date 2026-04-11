@@ -1,47 +1,42 @@
 import FaqSection from '@/components/main/FaqSection'
 import ContactSection from '@/components/main/ContactSection'
-import MarathonHeroCarousel from '@/components/main/HeroCarousel/HeroCarousel'
 import CtaCards from '@/components/main/CtaCardSection'
-import SponsorSection from '@/components/main/SponsorSection'
 import GallerySection from '@/components/main/GallerySection'
 import EventSection from '@/components/main/EventSection'
 import NoticeMagazineSection from '@/layouts/main/NoticeMagazineSection'
 import FeaturesSection from '@/components/main/FeaturesSection'
+import MainHomeHero from '@/components/main/MainHomeHero'
 
 export default function AssociationPage() {
   return (
     <>
-      <MarathonHeroCarousel />
-      {/* SPONSOR 섹션 */}
-      <SponsorSection />
+      <div>
+        <MainHomeHero />
 
-      {/* 주요대회일정 섹션*/}
-      <div className="mt-[20px]" />
-      <EventSection />
+        <div className="border-t border-zinc-100 bg-white">
+          <div className="mx-auto max-w-[1920px] px-4 pt-10 pb-0 md:px-6 lg:px-[6vw]">
+            <div className="flex flex-col gap-10">
+              <EventSection variant="embedded" />
+              <GallerySection variant="embedded" />
+            </div>
+          </div>
+        </div>
 
-      {/* 갤러리 섹션 */}
-       <GallerySection />
+        <NoticeMagazineSection />
 
-      {/* 공지사항 및 매거진 섹션 */}
-      <NoticeMagazineSection />
+        <div className="bg-white">
+          <CtaCards presets={['ios', 'android']} />
+        </div>
 
-      {/* 단체 활용 문의 / 결제 관련 문의 카드 (공지·문의 아래) */}
-      <div className="py-6 md:py-8 bg-white">
-        <CtaCards presets={['ios', 'android']} />
-      </div>
+        <FeaturesSection />
 
-      {/* 기능 소개 섹션 */}
-      <div className="h-[30px] md:h-[60px]" />
-      <FeaturesSection />
+        <div className="mt-[10px]">
+          <FaqSection allowMultipleOpen />
+        </div>
 
-      {/* FAQ 섹션 */}
-      <div className="mt-[10px]">
-        <FaqSection allowMultipleOpen />
-      </div>
-
-      {/* Contact Us 섹션 */}
-      <div className="mt-[10px]">
-        <ContactSection />
+        <div className="mt-[10px]">
+          <ContactSection />
+        </div>
       </div>
     </>
   )

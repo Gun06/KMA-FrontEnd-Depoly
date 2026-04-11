@@ -10,6 +10,8 @@ interface GalleryCardProps {
   title: string;
   date: string;
   disableAnimation?: boolean;
+  /** 메인 2열(가로 스크롤): 뷰포트 IO에 안 잡혀 카드가 숨는 문제 방지 + 스트립 높이에 맞춤 */
+  variant?: 'default' | 'embedded';
   onClick?: () => void;
 }
 
@@ -20,13 +22,16 @@ export default function GalleryCard({
   title,
   date,
   disableAnimation = false,
+  variant = 'default',
   onClick,
 }: GalleryCardProps) {
-  const [isVisible, setIsVisible] = useState(disableAnimation);
+  const embedded = variant === 'embedded';
+  const revealImmediately = disableAnimation || embedded;
+  const [isVisible, setIsVisible] = useState(revealImmediately);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (disableAnimation) {
+    if (revealImmediately) {
       setIsVisible(true);
       return;
     }
@@ -48,12 +53,14 @@ export default function GalleryCard({
     }
 
     return () => observer.disconnect();
-  }, [disableAnimation]);
+  }, [revealImmediately]);
 
   return (
     <div
       ref={cardRef}
-      className={`w-[235px] md:w-[300px] h-[300px] md:h-[380px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 transition-opacity duration-500 ${
+      className={`w-[235px] md:w-[300px] ${
+        embedded ? 'h-[300px] md:h-[360px]' : 'h-[300px] md:h-[380px]'
+      } bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 transition-opacity duration-500 ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >

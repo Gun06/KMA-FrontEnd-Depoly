@@ -85,7 +85,7 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
         </SectionPanel>
         
         {/* Contact 내용을 SectionPanel 아래에 별도 배치 */}
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 relative">
+        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw] relative">
           {/* slate 배경을 Contact 내용에도 적용 - 높이 확장 */}
           <div
             aria-hidden
@@ -93,7 +93,7 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
             style={{ clipPath: `inset(30% 0 0 0)` }}
           />
           
-          <div className="px-8 md:px-9 lg:px-10 py-8 md:py-12 relative z-10">
+          <div className="px-8 md:px-9 lg:px-0 py-8 md:py-12 relative z-10">
             {/* 컨텐츠 */}
             <div className="relative">
               <div className="grid grid-cols-2 gap-y-12 md:gap-y-16 gap-x-1 md:grid-cols-3 md:gap-x-2 lg:grid-cols-5 lg:gap-x-3 items-start relative z-10">

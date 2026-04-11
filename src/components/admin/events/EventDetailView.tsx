@@ -34,6 +34,8 @@ export type EventDetailData = {
   mainBannerPcImageUrl?: string;
   mainBannerMobileImageUrl?: string;
   sideMenuBannerImageUrl?: string; // 사이드메뉴배너(herosection 이미지)
+  /** 사이드 광고 배너 */
+  eventAdvertiseBannerUrl?: string | null;
   mainOutlinePcImageUrl?: string;
   mainOutlineMobileImageUrl?: string;
   eventOutlinePageImageUrl?: string;
@@ -1131,6 +1133,29 @@ export default function EventDetailView({
                   className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() =>
                     handleImageClick(eventData.sideMenuBannerImageUrl)
+                  }
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 사이드 광고 배너 */}
+            {eventData.eventAdvertiseBannerUrl && (
+              <div className="space-y-2">
+                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                  사이드 광고 배너
+                </h3>
+                <img
+                  src={eventData.eventAdvertiseBannerUrl}
+                  alt="사이드 광고 배너"
+                  className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() =>
+                    handleImageClick(
+                      eventData.eventAdvertiseBannerUrl ?? undefined
+                    )
                   }
                   onError={e => {
                     const target = e.target as HTMLImageElement;

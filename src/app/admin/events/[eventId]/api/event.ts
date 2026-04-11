@@ -18,6 +18,8 @@ export interface EventDetailApiResponse {
     mainBannerPcImageUrl: string;
     mainBannerMobileImageUrl: string;
     sideMenuBannerImageUrl?: string; // 사이드메뉴배너(herosection 이미지)
+    /** 사이드 광고 배너 (multipart: eventAdvertiseBanner) */
+    eventAdvertiseBannerUrl?: string | null;
     mainOutlinePcImageUrl: string;
     mainOutlineMobileImageUrl: string;
     eventOutlinePageImageUrl: string;

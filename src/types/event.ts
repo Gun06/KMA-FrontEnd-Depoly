@@ -192,6 +192,21 @@ export interface BlockEventResponse {
   [key: string]: BlockEventItem[];
 }
 
+/** GET /api/v1/public/main-page/advertise — 시작일순 광고 배너(최대 9) */
+export interface MainPageAdvertiseItem {
+  eventId: string;
+  /** 배너 이미지 URL */
+  url: string;
+  deadline: string;
+  startTime: string;
+  eventName: string;
+  /** GET .../approach 인기대회 응답에만 올 수 있음 */
+  registrationCount?: number;
+}
+
+/** GET /api/v1/public/main-page/advertise/approach — 인기(마감임박) 대회 배너(단건·복수 동일 필드) */
+export type MainPagePopularAdvertiseItem = MainPageAdvertiseItem;
+
 // 스폰서 배너 API 응답 타입
 export interface SponsorBanner {
   url: string;
