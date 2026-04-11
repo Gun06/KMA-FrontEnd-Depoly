@@ -381,7 +381,7 @@ export default function FloatingPanels() {
   return (
     <div
       ref={panelRef}
-      className="pointer-events-none fixed right-[6vw] z-[50] hidden lg:flex lg:flex-col lg:gap-4 lg:pb-4"
+      className="pointer-events-none fixed right-3 z-[145] hidden md:flex md:flex-col md:gap-3 md:pb-4 lg:right-[6vw] lg:gap-4"
       style={{ top: 'calc(var(--kma-main-header-offset, 80px) + 0.35rem)', width: PANEL_W }}
     >
       {adPopInfo && (
