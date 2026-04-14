@@ -112,7 +112,7 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
         <Bell className="h-5 w-5 text-white" />
         {/* 미읽음 알림 개수 표시 */}
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-[#256EF4]" />
+          <span className="absolute top-0.5 right-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
         )}
       </button>
 

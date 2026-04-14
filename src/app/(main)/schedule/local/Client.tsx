@@ -18,18 +18,32 @@ export default function Client() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<LocalEventTabKey>('register');
+  const [hydrationFallbackReady, setHydrationFallbackReady] = useState(false);
   const { isLoggedIn, accessToken, hasHydrated, user } = useAuthStore();
   const { data: profile, isLoading: isProfileLoading } = useMyProfile();
   const unreadCount = useUnreadCount();
   const isAuthenticated = isLoggedIn && Boolean(accessToken);
-  const showAuthPending = !hasHydrated;
-  const showAccessGate = hasHydrated && !isAuthenticated;
+  const hydrationSettled = hasHydrated || hydrationFallbackReady;
+  const showAuthPending = !hydrationSettled;
+  const showAccessGate = hydrationSettled && !isAuthenticated;
 
   useEffect(() => {
     const t = searchParams.get('tab');
     if (t === 'mine') setTab('mine');
     if (t === 'register') setTab('register');
   }, [searchParams]);
+
+  // 드물게 persist hydration 신호가 늦거나 누락될 때 무한 스켈레톤 방지
+  useEffect(() => {
+    if (hasHydrated) {
+      setHydrationFallbackReady(true);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setHydrationFallbackReady(true);
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [hasHydrated]);
 
   return (
     <div className="min-h-[50vh] sm:min-h-screen flex flex-col">
