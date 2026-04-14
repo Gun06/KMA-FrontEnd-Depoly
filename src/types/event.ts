@@ -174,17 +174,34 @@ export interface NoticeSectionInfo {
   empty: boolean;
 }
 
+/** GET /api/v1/public/main-page/block-list 의 filter 쿼리 */
+export type MainPageBlockListFilter =
+  | 'ALL'
+  | 'NOT_REGISTRATION_END'
+  | 'NOT_EVENT_END';
+
 // 블록 형식 대회 일정 API 응답 타입
 export interface BlockEventItem {
   eventId: string;
+  /** 메인 블록용 광고 배너 이미지(있으면 카드 썸네일 우선) */
+  eventAdvertiseImgSrc?: string | null;
   eventImgSrc: string;
   eventNameKr: string;
   eventNameEn: string;
   eventDate: string; // ISO 8601 형식
-  status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  status:
+    | 'PENDING'
+    | 'OPEN'
+    | 'ONGOING'
+    | 'COMPLETED'
+    | 'CANCELLED'
+    | 'FINAL_CLOSED'
+    | 'CLOSED';
   eventDeadLine: string; // ISO 8601 형식
+  /** 접수 마감(ISO). 있으면 D-day 등에 우선 사용 */
+  registDeadline?: string | null;
   categoryNames: string;
-  eventType: string; // "ALL" 등
+  eventType: string; // "ALL" | "KMA" | "LOCAL" 등
   eventUrl?: string; // 로컬대회의 경우 외부 URL (선택사항)
 }
 
@@ -307,13 +324,22 @@ export interface PersonalRecordRequest {
 // 대회일정 API 응답 타입
 export interface ScheduleEvent {
   eventId: string;
+  eventAdvertiseImgSrc?: string | null;
   eventImgSrc: string;
   eventNameKr: string;
   eventNameEn: string;
   eventDate: string;
   eventType: "KMA" | "LOCAL" | "ALL";
-  status: "PENDING" | "ONGOING" | "COMPLETED" | "CANCELLED";
+  status:
+    | "PENDING"
+    | "OPEN"
+    | "ONGOING"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "FINAL_CLOSED"
+    | "CLOSED";
   eventDeadLine: string;
+  registDeadline?: string | null;
   categoryNames?: string;
   eventUrl?: string | null; // 로컬대회의 경우 외부 URL (선택사항)
 }

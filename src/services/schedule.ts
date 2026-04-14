@@ -1,17 +1,33 @@
-import { ScheduleApiResponse, CalendarApiResponse } from '@/types/event';
+import {
+  ScheduleApiResponse,
+  CalendarApiResponse,
+  type MainPageBlockListFilter,
+} from '@/types/event';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
+/** 블록 일정 카드 썸네일: 광고 배너 URL이 있으면 우선 */
+export function blockListDisplayImageSrc(item: {
+  eventAdvertiseImgSrc?: string | null | undefined;
+  eventImgSrc?: string | null | undefined;
+}): string {
+  const ad = item.eventAdvertiseImgSrc?.trim();
+  if (ad) return ad;
+  return item.eventImgSrc?.trim() ?? '';
+}
+
 export const fetchScheduleEvents = async (
-  year: number, 
-  month: number, 
-  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL'
+  year: number,
+  month: number,
+  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL',
+  filter: MainPageBlockListFilter = 'ALL'
 ): Promise<ScheduleApiResponse> => {
   try {
     const queryParams = new URLSearchParams({
       year: String(year),
       month: String(month),
       type: type,
+      filter,
     });
     
     const response = await fetch(`${API_BASE_URL}/api/v1/public/main-page/block-list?${queryParams.toString()}`, {

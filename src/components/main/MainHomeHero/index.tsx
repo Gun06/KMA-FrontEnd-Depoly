@@ -21,6 +21,7 @@ import type {
   SponsorBanner,
 } from '@/types/event';
 import MarathonHeroCarousel from '@/components/main/HeroCarousel/HeroCarousel';
+import { blockListDisplayImageSrc } from '@/services/schedule';
 
 const ADV_PAGE_SIZE = 3;
 const ADV_ROTATE_MS = 4500;
@@ -246,14 +247,19 @@ function PopularDeadlineBanner({
 }: {
   item: MainPagePopularAdvertiseItem | null;
   loading: boolean;
-  variant?: 'default' | 'mobile';
+  variant?: 'default' | 'mobile' | 'mobileCompact' | 'mobileDesktopLike';
 }) {
-  const isMobile = variant === 'mobile';
+  const isMobile =
+    variant === 'mobile' ||
+    variant === 'mobileCompact' ||
+    variant === 'mobileDesktopLike';
+  const isCompactMobile = variant === 'mobileCompact';
+  const isDesktopLikeMobile = variant === 'mobileDesktopLike';
   const cd = useDeadlineCountdown(item?.deadline);
 
   if (loading) {
     /* 데스크톱: 실제 카드와 동일 — 이미지 열 + 겹친 D-day 패널 */
-    if (!isMobile) {
+    if (!isMobile || isDesktopLikeMobile) {
       return (
         <motion.div
           className="w-full"
@@ -262,7 +268,12 @@ function PopularDeadlineBanner({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
-            className="flex w-full origin-center rotate-[-4.5deg] items-stretch"
+            className={cn(
+              'flex w-full items-stretch',
+              isDesktopLikeMobile
+                ? 'max-w-[min(88vw,17rem)] origin-top-left'
+                : 'origin-center rotate-[-4.5deg]'
+            )}
             aria-busy="true"
             aria-label="마감임박 대회 로딩"
           >
@@ -273,25 +284,30 @@ function PopularDeadlineBanner({
               />
             </div>
             <div
-              className="relative z-10 -ml-32 flex w-80 shrink-0 flex-col items-center justify-center rounded-2xl pr-8 pl-20 shadow-xl ring-1 ring-white/10"
+              className={cn(
+                'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
+                isDesktopLikeMobile
+                  ? '-ml-14 w-36 pr-2.5 pl-8'
+                  : '-ml-32 w-80 pr-8 pl-20'
+              )}
               style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
             >
-              <div className="flex translate-x-7 flex-col items-center gap-[2.125rem]">
-                <div className="h-9 w-[4.25rem] animate-pulse rounded-xl bg-[#FFDC12]/45" />
+              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-3 gap-3' : 'translate-x-10 gap-[2.125rem]')}>
+                <div className={cn('animate-pulse rounded-xl bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-6 w-12' : 'h-9 w-[4.25rem]')} />
                 <div className="flex items-end justify-center gap-1 tabular-nums">
                   <div className="flex flex-col items-center gap-0.5">
-                    <div className="h-5 w-7 animate-pulse rounded bg-white/30" />
-                    <div className="h-2 w-7 animate-pulse rounded bg-white/15" />
+                    <div className={cn('animate-pulse rounded bg-white/30', isDesktopLikeMobile ? 'h-3.5 w-5' : 'h-5 w-7')} />
+                    <div className={cn('animate-pulse rounded bg-white/15', isDesktopLikeMobile ? 'h-1.5 w-5' : 'h-2 w-7')} />
                   </div>
                   <div className="mb-3 h-4 w-1 animate-pulse rounded-sm bg-white/25" />
                   <div className="flex flex-col items-center gap-0.5">
-                    <div className="h-5 w-7 animate-pulse rounded bg-white/30" />
-                    <div className="h-2 w-8 animate-pulse rounded bg-white/15" />
+                    <div className={cn('animate-pulse rounded bg-white/30', isDesktopLikeMobile ? 'h-3.5 w-5' : 'h-5 w-7')} />
+                    <div className={cn('animate-pulse rounded bg-white/15', isDesktopLikeMobile ? 'h-1.5 w-5' : 'h-2 w-8')} />
                   </div>
                   <div className="mb-3 h-4 w-1 animate-pulse rounded-sm bg-white/25" />
                   <div className="flex flex-col items-center gap-0.5">
-                    <div className="h-5 w-7 animate-pulse rounded bg-white/30" />
-                    <div className="h-2 w-8 animate-pulse rounded bg-white/15" />
+                    <div className={cn('animate-pulse rounded bg-white/30', isDesktopLikeMobile ? 'h-3.5 w-5' : 'h-5 w-7')} />
+                    <div className={cn('animate-pulse rounded bg-white/15', isDesktopLikeMobile ? 'h-1.5 w-5' : 'h-2 w-8')} />
                   </div>
                 </div>
               </div>
@@ -312,17 +328,22 @@ function PopularDeadlineBanner({
         <div
           className={cn(
             'relative w-full overflow-hidden rounded-2xl bg-zinc-200 ring-1 ring-black/10',
-            SIDEBAR_AD_ASPECT_CLASS
+            isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS
           )}
           aria-busy="true"
           aria-label="마감임박 대회 로딩"
         >
           <div className="absolute inset-0 animate-pulse bg-zinc-300/90" />
           <div
-            className="absolute bottom-3 right-3 z-[2] w-[min(calc(100%-1.5rem),20rem)] overflow-hidden rounded-lg shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30"
+            className={cn(
+              'absolute z-[2] overflow-hidden rounded-lg shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30',
+              isCompactMobile
+                ? 'bottom-2 right-2 w-[calc(100%-1rem)]'
+                : 'bottom-3 right-3 w-[min(calc(100%-1.5rem),20rem)]'
+            )}
           >
-            <div className="h-9 animate-pulse bg-[#FFFF00]/55 sm:h-10" />
-            <div className="h-7 animate-pulse bg-zinc-900/90 sm:h-8" />
+            <div className={cn('animate-pulse bg-[#FFFF00]/55', isCompactMobile ? 'h-7' : 'h-9 sm:h-10')} />
+            <div className={cn('animate-pulse bg-zinc-900/90', isCompactMobile ? 'h-5' : 'h-7 sm:h-8')} />
           </div>
         </div>
       </motion.div>
@@ -334,7 +355,7 @@ function PopularDeadlineBanner({
       <p
         className={cn(
           'flex items-center justify-center px-3 text-center text-[11px] leading-relaxed md:text-xs',
-          SIDEBAR_AD_ASPECT_CLASS,
+          isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS,
           isMobile
             ? 'rounded-2xl bg-zinc-100 py-8 text-zinc-500'
             : 'rounded-lg bg-black/30 text-white/55 ring-1 ring-white/10'
@@ -349,55 +370,107 @@ function PopularDeadlineBanner({
   const daysLabel = cd.expired ? 0 : cd.days;
 
   /* ── default 변형: 두 개의 겹친 pill 카드 ── */
-  if (!isMobile) {
+  if (!isMobile || isDesktopLikeMobile) {
+    const isDesktopLike = isDesktopLikeMobile;
     /* 좌측 이미지 카드 (파란 테두리) + 우측 카운트다운 카드 (빨간 테두리) 겹침 */
     const card = (
-      <div className="flex w-full origin-center rotate-[-4.5deg] items-stretch">
+      <div
+        className={cn(
+          'flex w-full items-stretch',
+          isDesktopLike
+            ? 'max-w-[min(88vw,17rem)] origin-top-left'
+            : 'max-w-[92%] origin-center rotate-[-4.5deg]'
+        )}
+      >
 
         {/* 좌측 — 이미지 카드 (자연 비율) */}
-        <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl">
-          <Image
-            src={item.url.trim()}
-            alt={item.eventName?.trim() || '마감임박 대회'}
-            width={332}
-            height={166}
-            style={{ width: '100%', height: 'auto', display: 'block' }}
-            className={cn(cd.expired && 'grayscale opacity-70')}
-            sizes="(max-width:1024px) 60vw, 320px"
-          />
+        <div
+          className={cn(
+            'relative min-w-0 overflow-hidden rounded-2xl',
+            isDesktopLike ? 'basis-[72%] max-w-[72%] aspect-[332/166]' : 'flex-1'
+          )}
+        >
+          {isDesktopLike ? (
+            <Image
+              src={item.url.trim()}
+              alt={item.eventName?.trim() || '마감임박 대회'}
+              fill
+              className={cn('object-cover object-center', cd.expired && 'grayscale opacity-70')}
+              sizes="(max-width: 768px) 46vw, 220px"
+            />
+          ) : (
+            <Image
+              src={item.url.trim()}
+              alt={item.eventName?.trim() || '마감임박 대회'}
+              width={332}
+              height={166}
+              style={{ width: '100%', height: 'auto', display: 'block' }}
+              className={cn(cd.expired && 'grayscale opacity-70')}
+              sizes="(max-width:1024px) 60vw, 320px"
+            />
+          )}
         </div>
 
         {/* 우측 — D-day 카드 (이미지 위로 살짝 겹침) */}
         <div
-          className="relative z-10 -ml-32 flex w-80 shrink-0 flex-col items-center justify-center rounded-2xl pr-8 pl-20 shadow-xl"
+          className={cn(
+            'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl',
+            isDesktopLike
+              ? '-ml-14 w-36 pr-2.5 pl-8'
+              : '-ml-28 w-72 pr-6 pl-16'
+          )}
           style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
           role="timer"
           aria-live="off"
           aria-label={`접수 마감까지 남은 시간: ${daysLabel}일 ${pad2(cd.hrs)}시간 ${pad2(cd.mins)}분 ${pad2(cd.secs)}초`}
         >
           {/* 가운데 정렬 유지 + 블록만 오른쪽으로 이동 */}
-          <div className="flex translate-x-7 flex-col items-center gap-[2.125rem] text-center">
+          <div
+            className={cn(
+              'flex flex-col items-center text-center',
+              isDesktopLike
+                ? 'translate-x-3 gap-3'
+                : 'translate-x-10 gap-[2.125rem]'
+            )}
+          >
             {/* D-N 뱃지 */}
-            <div className="rounded-xl bg-[#FFDC12] px-4 py-1.5 shadow-lg">
-              <span className="font-giants text-[clamp(16px,2.6vw,26px)] font-black leading-none tracking-tight text-black">
+            <div
+              className={cn(
+                'rounded-xl bg-[#FFDC12] shadow-lg',
+                isDesktopLike ? 'px-2 py-1' : 'px-3 py-1.5'
+              )}
+            >
+              <span
+                className={cn(
+                  'font-giants font-black leading-none tracking-tight text-black',
+                  isDesktopLike
+                    ? 'text-[clamp(10px,2.6vw,13px)]'
+                    : 'text-[clamp(16px,2.6vw,26px)]'
+                )}
+              >
                 D-{daysLabel}
               </span>
             </div>
             {/* HH : MM : SS + 라벨 */}
-            <div className="flex items-end justify-center gap-1 tabular-nums">
+            <div
+              className={cn(
+                'flex items-end justify-center tabular-nums',
+                isDesktopLike ? 'ml-4 gap-0.5' : 'gap-1'
+              )}
+            >
               <div className="flex flex-col items-center gap-0">
-                <span className="font-giants text-[clamp(13px,2vw,20px)] font-bold leading-none text-white">{pad2(cd.hrs)}</span>
-                <span className="text-[9px] font-medium tracking-widest text-white/50 uppercase">hrs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.hrs)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>hrs</span>
               </div>
-              <span className="font-giants text-[clamp(13px,2vw,20px)] font-bold leading-none text-white/30 mb-3">:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-2 text-[clamp(10px,2.4vw,12px)]' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className="font-giants text-[clamp(13px,2vw,20px)] font-bold leading-none text-white">{pad2(cd.mins)}</span>
-                <span className="text-[9px] font-medium tracking-widest text-white/50 uppercase">mins</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.mins)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>mins</span>
               </div>
-              <span className="font-giants text-[clamp(13px,2vw,20px)] font-bold leading-none text-white/30 mb-3">:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-2 text-[clamp(10px,2.4vw,12px)]' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className="font-giants text-[clamp(13px,2vw,20px)] font-bold leading-none text-white">{pad2(cd.secs)}</span>
-                <span className="text-[9px] font-medium tracking-widest text-white/50 uppercase">secs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.secs)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>secs</span>
               </div>
             </div>
             {cd.expired && (
@@ -427,7 +500,9 @@ function PopularDeadlineBanner({
       className={cn(
         'absolute z-[2] overflow-hidden rounded-lg',
         isMobile
-          ? 'bottom-3 right-3 w-[min(calc(100%-1.5rem),20rem)] shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30'
+          ? isCompactMobile
+            ? 'bottom-2 right-2 w-[calc(100%-1rem)] shadow-[0_7px_20px_rgba(0,0,0,0.5)] ring-1 ring-black/25'
+            : 'bottom-3 right-3 w-[min(calc(100%-1.5rem),20rem)] shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30'
           : 'bottom-2 right-2 w-[min(94%,13rem)] shadow-[0_4px_18px_rgba(0,0,0,0.4)] ring-1 ring-black/15',
         cd.expired && 'opacity-95'
       )}
@@ -435,7 +510,7 @@ function PopularDeadlineBanner({
       <div
         className={cn(
           'flex items-center justify-center gap-x-2.5 bg-[#FFFF00] px-2 py-1 font-black tabular-nums leading-none text-black sm:gap-x-3 sm:px-2.5 sm:py-1.5',
-          isMobile && 'gap-x-3 px-3 py-1.5 sm:py-2'
+          isMobile && (isCompactMobile ? 'gap-x-2 px-2 py-1' : 'gap-x-3 px-3 py-1.5 sm:py-2')
         )}
         role="timer"
         aria-live="off"
@@ -445,7 +520,9 @@ function PopularDeadlineBanner({
           className={cn(
             'min-w-[2.85rem] shrink-0 text-center sm:min-w-[3.1rem]',
             isMobile
-              ? 'text-sm sm:text-base md:text-lg'
+              ? isCompactMobile
+                ? 'text-xs sm:text-sm'
+                : 'text-sm sm:text-base md:text-lg'
               : '[font-size:clamp(11px,3.4vw,16px)]'
           )}
         >
@@ -455,7 +532,9 @@ function PopularDeadlineBanner({
           className={cn(
             'flex items-center justify-center gap-x-0.5 sm:gap-x-1',
             isMobile
-              ? 'text-sm sm:text-base md:text-lg'
+              ? isCompactMobile
+                ? 'text-xs sm:text-sm'
+                : 'text-sm sm:text-base md:text-lg'
               : '[font-size:clamp(11px,3.4vw,16px)]'
           )}
         >
@@ -473,14 +552,18 @@ function PopularDeadlineBanner({
       <div
         className={cn(
           'flex items-start justify-center gap-x-2.5 bg-black px-2 py-1 font-medium leading-none tracking-wide text-white sm:gap-x-3 sm:px-2.5 sm:py-1',
-          isMobile && 'px-3 py-1.5 sm:py-2',
+          isMobile && (isCompactMobile ? 'px-2 py-1' : 'px-3 py-1.5 sm:py-2'),
           !isMobile && 'lowercase'
         )}
       >
         <span
           className={cn(
             'min-w-[2.85rem] shrink-0 text-center sm:min-w-[3.1rem]',
-            isMobile ? 'text-xs font-semibold sm:text-sm' : 'lowercase [font-size:clamp(6.5px,2vw,9px)]'
+            isMobile
+              ? isCompactMobile
+                ? 'text-[10px] font-semibold'
+                : 'text-xs font-semibold sm:text-sm'
+              : 'lowercase [font-size:clamp(6.5px,2vw,9px)]'
           )}
         >
           {isMobile ? '일' : 'days'}
@@ -488,7 +571,11 @@ function PopularDeadlineBanner({
         <div
           className={cn(
             'flex items-start justify-center gap-x-0.5 sm:gap-x-1',
-            isMobile ? 'text-xs font-semibold sm:text-sm' : '[font-size:clamp(6.5px,2vw,9px)]'
+            isMobile
+              ? isCompactMobile
+                ? 'text-[10px] font-semibold'
+                : 'text-xs font-semibold sm:text-sm'
+              : '[font-size:clamp(6.5px,2vw,9px)]'
           )}
         >
           <span className="inline-block min-w-[2.35ch] text-center">
@@ -508,7 +595,11 @@ function PopularDeadlineBanner({
         <div
           className={cn(
             'bg-[#FFFF00]/95 py-1 text-center font-semibold leading-none text-neutral-900',
-            isMobile ? 'text-xs sm:text-sm' : 'py-0.5 text-[8px] sm:text-[9px]'
+            isMobile
+              ? isCompactMobile
+                ? 'text-[10px]'
+                : 'text-xs sm:text-sm'
+              : 'py-0.5 text-[8px] sm:text-[9px]'
           )}
         >
           접수 마감
@@ -521,7 +612,7 @@ function PopularDeadlineBanner({
     <div
       className={cn(
         'relative w-full overflow-hidden bg-gray-100 transition',
-        SIDEBAR_AD_ASPECT_CLASS,
+        isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS,
         isMobile
           ? 'rounded-2xl'
           : 'rounded-lg bg-black ring-1 ring-white/15 backdrop-blur-sm',
@@ -533,7 +624,7 @@ function PopularDeadlineBanner({
         alt={item.eventName?.trim() ? `${item.eventName} 접수 마감 카운트다운` : ''}
         fill
         className={cn('object-cover object-center', cd.expired && 'opacity-60')}
-        sizes="(max-width: 1024px) 100vw, 300px"
+        sizes={isCompactMobile ? '(max-width: 768px) 170px, 180px' : '(max-width: 1024px) 100vw, 300px'}
       />
       <span className="sr-only">
         {item.eventName?.trim() || '마감임박 대회'}
@@ -823,115 +914,31 @@ function HeroOliveCarousel({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * 모바일·태블릿: 메인 배너 안 하단 — PC 오버레이와 같은 인기 카드(이미지+제목)를 가로 스크롤로 표시
- */
-function HeroMobilePopularInBanner({
+/** 모바일·태블릿: 히어로 하단 오버레이에 마감임박 배너 1건 고정 노출 */
+function HeroMobileDeadlineInBanner({
   popularItems,
   popularLoading,
 }: {
   popularItems: MainPagePopularAdvertiseItem[];
   popularLoading: boolean;
 }) {
-  const popularThree = Array.from({ length: 3 }, (_, i) => popularItems[i]);
-  const usePopularRow =
-    popularLoading || popularItems.some((p) => p?.url?.trim());
-  if (!usePopularRow) return null;
-
-  const cardClass =
-    'group relative block h-[96px] w-[136px] shrink-0 overflow-hidden rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.35)] ring-1 ring-white/25 sm:h-[108px] sm:w-[154px] md:h-[118px] md:w-[168px]';
-
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-20 lg:hidden"
-      aria-label="금주 인기 대회"
+      className="pointer-events-none absolute inset-0 z-20 lg:hidden"
+      aria-label="마감임박 대회"
       aria-busy={popularLoading}
     >
-      <div className="pointer-events-auto bg-gradient-to-t from-black/80 via-black/50 to-transparent px-4 pb-3 pt-12 md:px-6 md:pb-4 md:pt-14">
-        <div className="flex items-end justify-between gap-2 pb-2">
-          <h2 className="w-fit max-w-[min(100%,14rem)] truncate rounded-md bg-[#FFDC12] px-3 py-1.5 font-giants text-base font-bold tracking-tight text-black shadow-sm sm:max-w-[16rem] sm:text-lg md:px-3.5 md:py-2 md:text-xl">
-            금주 인기 대회
-          </h2>
-          <Link
-            href="/schedule"
-            className="shrink-0 text-xs font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-colors hover:text-white"
-          >
-            더보기 &gt;
-          </Link>
-        </div>
-        <div
-          className="-mx-1 flex gap-2 overflow-x-auto overflow-y-hidden pb-1 pt-0.5 scrollbar-hide"
-          style={{
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {popularLoading
-            ? [0, 1, 2].map((i) => (
-                <div
-                  key={`hero-pop-sk-${i}`}
-                  className={cn(cardClass, 'animate-pulse bg-white/20')}
-                  aria-hidden
-                />
-              ))
-            : popularThree.map((item, i) => {
-                if (!item?.url?.trim()) {
-                  return (
-                    <div
-                      key={`hero-pop-empty-${i}`}
-                      className={cn(
-                        cardClass,
-                        'border border-dashed border-white/35 bg-white/10'
-                      )}
-                      aria-hidden
-                    />
-                  );
-                }
-                const href = advertiseHref(item);
-                const inner = (
-                  <>
-                    <div className="absolute inset-0">
-                      <Image
-                        src={item.url.trim()}
-                        alt={item.eventName?.trim() ? `${item.eventName} 썸네일` : ''}
-                        fill
-                        className="object-cover object-center"
-                        sizes="(max-width:768px) 170px, 180px"
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-black/45" aria-hidden />
-                    <div className="relative flex h-full flex-col justify-end gap-0.5 p-2 md:p-2.5">
-                      <p className="text-[10px] font-medium leading-none text-white md:text-xs">
-                        {formatEventDate(item.startTime)}
-                      </p>
-                      <p className="line-clamp-2 font-giants text-[11px] font-bold leading-snug text-white md:text-xs">
-                        {item.eventName?.trim() || '인기 대회'}
-                      </p>
-                      {item.registrationCount != null ? (
-                        <p className="text-[9px] text-white/88 md:text-[10px]">
-                          신청 {item.registrationCount}명
-                        </p>
-                      ) : null}
-                    </div>
-                  </>
-                );
-                if (href) {
-                  return (
-                    <Link
-                      key={item.eventId || `hp-${i}`}
-                      href={href}
-                      className={cardClass}
-                    >
-                      {inner}
-                    </Link>
-                  );
-                }
-                return (
-                  <div key={item.eventId || `hp-${i}`} className={cardClass}>
-                    {inner}
-                  </div>
-                );
-              })}
+      <div className="pointer-events-auto bg-gradient-to-b from-black/70 via-black/35 to-transparent px-4 pb-10 pt-[calc(var(--kma-main-header-offset,64px)+0.8rem)] md:px-6 md:pb-12 md:pt-[calc(var(--kma-main-header-offset,64px)+1rem)]">
+        <div className="flex items-end justify-end gap-2" />
+      </div>
+
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-4 pb-6 pt-12 md:px-6 md:pb-7 md:pt-14">
+        <div className="w-[min(88vw,17rem)]">
+          <PopularDeadlineBanner
+            variant="mobileDesktopLike"
+            item={popularItems[0] ?? null}
+            loading={popularLoading}
+          />
         </div>
       </div>
     </div>
@@ -955,17 +962,11 @@ function oliveCardSkeletonLi(key: string) {
 function HeroMobileBelowHero({
   events,
   isLoading,
-  popularItems,
-  popularLoading,
 }: {
   events: BlockEventItem[];
   isLoading: boolean;
-  popularItems: MainPagePopularAdvertiseItem[];
-  popularLoading: boolean;
 }) {
   const mainThree = Array.from({ length: 3 }, (_, i) => events[i]);
-  const usePopularRow =
-    popularLoading || popularItems.some((p) => p?.url?.trim());
 
   const cardHover =
     'transition-transform duration-300 ease-out hover:scale-[1.02] motion-reduce:transition-none motion-reduce:hover:scale-100';
@@ -973,74 +974,64 @@ function HeroMobileBelowHero({
   return (
     <section
       className="relative z-[11] border-t border-gray-200/80 bg-white lg:hidden"
-      aria-label={
-        usePopularRow ? '마감임박' : '주요대회일정, 마감임박'
-      }
+      aria-label="주요대회일정"
     >
       <div className="mx-auto max-w-[1920px] space-y-8 px-4 py-8 md:space-y-10 md:px-6 md:py-10">
-        {!usePopularRow ? (
-          <div>
-            <MobileScheduleSectionHeader
-              title={
-                <h2 className="font-giants text-[22px] text-gray-900 md:text-[28px]">
-                  주요대회일정
-                </h2>
-              }
-            />
-            <HeroOliveCarousel>
-              {isLoading
-                ? [0, 1, 2].map((i) => oliveCardSkeletonLi(`m-bl-sk-${i}`))
-                : mainThree.map((ev, i) => {
-                    if (!ev) {
-                      return (
-                        <li
-                          key={`m-bl-empty-${i}`}
-                          className="w-[240px] shrink-0 list-none md:w-[267px]"
-                          aria-hidden
-                        >
-                          <div className="aspect-[16/10] w-full rounded-xl border border-dashed border-gray-200 bg-gray-50" />
-                          <div className="mt-2.5 h-10 rounded bg-gray-50" />
-                        </li>
-                      );
-                    }
-                    const ymd = toYmd(ev.eventDate) || '2099-12-31';
+        <div>
+          <MobileScheduleSectionHeader
+            title={
+              <h2 className="font-giants text-[22px] text-gray-900 md:text-[28px]">
+                주요대회일정
+              </h2>
+            }
+          />
+          <HeroOliveCarousel>
+            {isLoading
+              ? [0, 1, 2].map((i) => oliveCardSkeletonLi(`m-bl-sk-${i}`))
+              : mainThree.map((ev, i) => {
+                  if (!ev) {
                     return (
-                      <EventCard
-                        key={ev.eventId || `bl-${i}`}
-                        imageSrc={ev.eventImgSrc}
-                        imageAlt={ev.eventNameKr}
-                        title={ev.eventNameKr}
-                        subtitle={ev.eventNameEn}
-                        date={new Date(ymd).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                        categoryNames={ev.categoryNames}
-                        status={ev.status}
-                        eventDate={ymd}
-                        eventDeadLine={
-                          ev.eventDeadLine
+                      <li
+                        key={`m-bl-empty-${i}`}
+                        className="w-[240px] shrink-0 list-none md:w-[267px]"
+                        aria-hidden
+                      >
+                        <div className="aspect-[16/10] w-full rounded-xl border border-dashed border-gray-200 bg-gray-50" />
+                        <div className="mt-2.5 h-10 rounded bg-gray-50" />
+                      </li>
+                    );
+                  }
+                  const ymd = toYmd(ev.eventDate) || '2099-12-31';
+                  return (
+                    <EventCard
+                      key={ev.eventId || `bl-${i}`}
+                      imageSrc={blockListDisplayImageSrc(ev)}
+                      imageAlt={ev.eventNameKr}
+                      title={ev.eventNameKr}
+                      subtitle={ev.eventNameEn}
+                      date={new Date(ymd).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                      categoryNames={ev.categoryNames}
+                      status={ev.status}
+                      eventDate={ymd}
+                      eventDeadLine={
+                        ev.registDeadline
+                          ? toYmd(ev.registDeadline)
+                          : ev.eventDeadLine
                             ? toYmd(ev.eventDeadLine)
                             : undefined
-                        }
-                        eventId={ev.eventId}
-                        eventUrl={ev.eventUrl}
-                        size="olive"
-                        className={cardHover}
-                      />
-                    );
-                  })}
-            </HeroOliveCarousel>
-          </div>
-        ) : null}
-
-        <div>
-          <PopularDeadlineBanner
-            variant="mobile"
-            item={popularItems[0] ?? null}
-            loading={popularLoading}
-          />
+                      }
+                      eventId={ev.eventId}
+                      eventUrl={ev.eventUrl}
+                      size="olive"
+                      className={cardHover}
+                    />
+                  );
+                })}
+          </HeroOliveCarousel>
         </div>
       </div>
     </section>
@@ -1564,8 +1555,14 @@ export default function MainHomeHero() {
     const fetchBlockList = async () => {
       try {
         setEventsLoading(true);
+        const qs = new URLSearchParams({
+          year: '0',
+          month: '0',
+          type: 'ALL',
+          filter: 'ALL',
+        });
         const response = await fetch(
-          `${API_BASE_URL}/api/v1/public/main-page/block-list?year=0&month=0`,
+          `${API_BASE_URL}/api/v1/public/main-page/block-list?${qs.toString()}`,
           {
             method: 'GET',
             headers: {
@@ -1632,7 +1629,7 @@ export default function MainHomeHero() {
       {/* 히어로 높이만 포함: absolute(bottom) 칩·PC 오버레이 기준이 하단 섹션과 섞이지 않도록 */}
       <div className="relative w-full">
         <MarathonHeroCarousel />
-        <HeroMobilePopularInBanner
+        <HeroMobileDeadlineInBanner
           popularItems={popularItems}
           popularLoading={popularLoading}
         />
@@ -1645,12 +1642,6 @@ export default function MainHomeHero() {
           popularLoading={popularLoading}
         />
       </div>
-      <HeroMobileBelowHero
-        events={events}
-        isLoading={eventsLoading}
-        popularItems={popularItems}
-        popularLoading={popularLoading}
-      />
     </section>
   );
 }

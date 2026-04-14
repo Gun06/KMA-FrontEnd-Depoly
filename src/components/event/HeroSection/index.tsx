@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import defaultSubmenuBanner from '@/assets/images/event/submenu_banner.png';
 
 interface HeroSectionProps {
   eventId: string;
@@ -222,16 +221,8 @@ export default function HeroSection({
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
       <div className="relative w-full">
-        <div className="sm:hidden" style={{ paddingBottom: '20%' }}></div>
-        <div
-          className="hidden sm:block md:hidden"
-          style={{ height: '150px' }}
-        ></div>
-        <div
-          className="hidden md:block lg:hidden"
-          style={{ height: '150px' }}
-        ></div>
-        <div className="hidden lg:block" style={{ height: '200px' }}></div>
+        {/* 세로 픽셀 고정 없이 가로(뷰포트 너비)에 맞춰 높이 결정 */}
+        <div className="aspect-[5/1] w-full sm:aspect-[21/5] lg:aspect-[21/4]" />
         {/* 배너 이미지 */}
         {sideBannerImageUrl && (
           <Image

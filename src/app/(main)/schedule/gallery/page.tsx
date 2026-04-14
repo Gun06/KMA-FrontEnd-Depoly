@@ -15,7 +15,7 @@ export default function GalleryPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pageSize = 12; // 한 페이지에 12개씩 표시 (3x4 또는 4x3 그리드)
-  
+
   // URL 쿼리 파라미터에서 페이지 번호 읽기
   const initialPage = parseInt(searchParams.get('page') || '1', 10);
   const [currentPage, setCurrentPage] = useState(initialPage > 0 ? initialPage : 1);
@@ -35,7 +35,7 @@ export default function GalleryPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    
+
     // URL 쿼리 파라미터 업데이트
     const params = new URLSearchParams(searchParams.toString());
     if (page === 1) {
@@ -43,10 +43,10 @@ export default function GalleryPage() {
     } else {
       params.set('page', String(page));
     }
-    
+
     const newUrl = params.toString() ? `?${params.toString()}` : '';
     router.push(`/schedule/gallery${newUrl}`, { scroll: false });
-    
+
     // 페이지 변경 시 스크롤을 상단으로 이동
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -77,14 +77,14 @@ export default function GalleryPage() {
             className="object-cover object-right"
             priority
           />
-          
+
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 */}
           <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
             {/* 페이지 제목 */}
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
               대회갤러리
             </h1>
-            
+
             {/* 브레드크럼 */}
             <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
               <Link href="/" className="flex items-center hover:text-blue-600 transition-colors">

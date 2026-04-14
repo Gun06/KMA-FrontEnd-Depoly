@@ -26,26 +26,31 @@ export default function SubmenuLayout({
           className="relative w-full"
           style={{ marginTop: 'calc(-1 * var(--kma-main-header-offset, 80px))' }}
         >
-          {/* 배너 전체 높이 = 헤더 높이 + 콘텐츠 영역 높이 */}
-          <div className="sm:hidden" style={{ paddingBottom: '28%' }}></div>
-          <div className="hidden sm:block md:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden md:block lg:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden lg:block" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          {/* 높이: 헤더 뒤 영역(오프셋) + 가로 너비 비율로 결정 (세로 픽셀 고정 없음) */}
+          <div className="flex w-full flex-col">
+            <div
+              aria-hidden
+              className="w-full shrink-0"
+              style={{ height: 'var(--kma-main-header-offset, 80px)' }}
+            />
+            <div className="aspect-[6/1] w-full shrink-0 sm:aspect-[7/1] lg:aspect-[12/1]" />
+          </div>
           <Image
             src={menubanner}
             alt="메뉴 배너"
             fill
-            className="object-cover object-right"
+            sizes="100vw"
+            className="object-cover object-center"
             priority
           />
           
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 — 헤더 아래 영역에 표시 */}
           <div
-            className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]"
+            className="absolute inset-0 flex flex-col items-start justify-center px-4 py-1 sm:px-6 sm:py-1.5 lg:px-[6vw]"
             style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}
           >
             {/* 페이지 제목 */}
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
+            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
               {breadcrumb?.subMenu || "인사말"}
             </h1>
             
@@ -102,24 +107,29 @@ export function SubmenuLayoutThemed({
           className="relative w-full"
           style={{ marginTop: 'calc(-1 * var(--kma-main-header-offset, 80px))' }}
         >
-          <div className="sm:hidden" style={{ paddingBottom: '28%' }}></div>
-          <div className="hidden sm:block md:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden md:block lg:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden lg:block" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          <div className="flex w-full flex-col">
+            <div
+              aria-hidden
+              className="w-full shrink-0"
+              style={{ height: 'var(--kma-main-header-offset, 80px)' }}
+            />
+            <div className="aspect-[6/1] w-full shrink-0 sm:aspect-[7/1] lg:aspect-[12/1]" />
+          </div>
           <Image
             src={menubanner}
             alt="메뉴 배너"
             fill
-            className="object-cover object-right"
+            sizes="100vw"
+            className="object-cover object-center"
             priority
           />
           
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 — 헤더 아래 영역에 표시 */}
           <div
-            className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]"
+            className="absolute inset-0 flex flex-col items-start justify-center px-4 py-1 sm:px-6 sm:py-1.5 lg:px-[6vw]"
             style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}
           >
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
+            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
               {breadcrumb?.subMenu || "인사말"}
             </h1>
             <nav className="text-xs sm:text-sm md:text-sm text-black">

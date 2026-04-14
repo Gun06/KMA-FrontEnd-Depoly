@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchScheduleEvents, fetchCalendarEvents } from '@/services/schedule';
-import { ScheduleEvent, CalendarEvent } from '@/types/event';
+import { ScheduleEvent, CalendarEvent, type MainPageBlockListFilter } from '@/types/event';
 
 export const useSchedule = (
-  year: number, 
-  month: number, 
-  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL'
+  year: number,
+  month: number,
+  type: 'ALL' | 'KMA' | 'LOCAL' = 'ALL',
+  filter: MainPageBlockListFilter = 'ALL'
 ) => {
   return useQuery({
-    queryKey: ['schedule', year, month, type],
-    queryFn: () => fetchScheduleEvents(year, month, type),
+    queryKey: ['schedule', year, month, type, filter],
+    queryFn: () => fetchScheduleEvents(year, month, type, filter),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
     enabled: !!year && !!month,

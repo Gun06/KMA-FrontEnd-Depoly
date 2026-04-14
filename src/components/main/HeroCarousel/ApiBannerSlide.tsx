@@ -116,7 +116,7 @@ export default function ApiBannerSlide({
       {/* 텍스트 오버레이 — 모바일·태블릿: 좌측 하단 / 데스크톱: 투르 드 프랑스형 좌상단(≈left 10%, 세로는 히어로 비율+헤더 안전) */}
       {showOverlay && (
         <div
-          className="absolute left-3 right-4 top-20 z-10 flex max-w-[min(100%,42rem)] flex-col items-start text-left sm:top-auto sm:bottom-32 sm:left-4 sm:right-6 md:bottom-36 md:left-5 md:right-8 lg:bottom-auto lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(40rem,45%)] lg:px-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
+          className="absolute left-3 right-4 top-[calc(var(--kma-main-header-offset,64px)+1.2rem)] z-10 flex max-w-[min(100%,1000px)] flex-col items-start text-left sm:left-4 sm:right-6 sm:top-[calc(var(--kma-main-header-offset,64px)+0.9rem)] md:left-5 md:right-8 md:top-[calc(var(--kma-main-header-offset,64px)+1.05rem)] lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(1000px,64vw)] lg:px-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
         >
           {hasDateRow && (
             <div className="hero-anim hero-badge mb-3 flex flex-col items-start gap-2 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
@@ -140,7 +140,7 @@ export default function ApiBannerSlide({
           )}
           {title?.trim() && (
             <h1
-              className={`hero-anim hero-title font-giants text-[1.625rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-3xl sm:leading-tight sm:tracking-[-0.025em] md:text-4xl md:leading-[1.1] lg:text-5xl lg:leading-[1.06] xl:text-[3.125rem] 2xl:text-[3.375rem] ${HERO_TEXT_SHADOW}`}
+              className={`hero-anim hero-title font-giants text-[1.625rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-3xl sm:leading-tight sm:tracking-[-0.025em] md:text-4xl md:leading-[1.1] lg:text-5xl lg:leading-[1.06] xl:text-[3.125rem] 2xl:text-[3.375rem] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${HERO_TEXT_SHADOW}`}
             >
               {title.trim()}
             </h1>

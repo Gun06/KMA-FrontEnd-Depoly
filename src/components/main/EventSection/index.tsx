@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import EventCard from './EventCard';
 import { BlockEventItem } from '@/types/event';
+import { blockListDisplayImageSrc } from '@/services/schedule';
 import Link from 'next/link';
 
 interface EventSectionProps {
@@ -53,8 +54,14 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
         if (!API_BASE_URL) {
           throw new Error('API 기본 URL이 설정되지 않았습니다.');
         }
+        const qs = new URLSearchParams({
+          year: '0',
+          month: '0',
+          type: 'ALL',
+          filter: 'ALL',
+        });
         const response = await fetch(
-          `${API_BASE_URL}/api/v1/public/main-page/block-list?year=0&month=0`,
+          `${API_BASE_URL}/api/v1/public/main-page/block-list?${qs.toString()}`,
           {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -121,7 +128,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
           ref={scrollRef}
           role="region"
           aria-label="주요대회일정 카드 목록"
-          className={`h-[250px] md:h-[280px] overflow-x-auto overflow-y-hidden scrollbar-hide ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+          className={`h-[215px] md:h-[245px] overflow-x-auto overflow-y-hidden scrollbar-hide ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
           style={{ touchAction: 'none' }}
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}
@@ -141,7 +148,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
             {isLoading || error ? (
               Array.from({ length: 9 }).map((_, i) => (
                 <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
-                  <div className="aspect-[16/10] w-full rounded-xl bg-gray-200 animate-pulse" />
+                  <div className="aspect-[332/166] w-full rounded-xl bg-gray-200 animate-pulse" />
                   <div className="mt-2.5 space-y-1.5">
                     <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
                     <div className="h-3.5 w-20 rounded bg-gray-200 animate-pulse" />
@@ -153,7 +160,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
               eventData.map((event) => (
                 <EventCard
                   key={event.eventId}
-                  imageSrc={event.eventImgSrc}
+                  imageSrc={blockListDisplayImageSrc(event)}
                   imageAlt={event.eventNameKr}
                   title={event.eventNameKr}
                   subtitle={event.eventNameEn}
@@ -165,7 +172,11 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
                   categoryNames={event.categoryNames}
                   status={event.status}
                   eventDate={event.eventDate.split('T')[0]}
-                  eventDeadLine={event.eventDeadLine ? event.eventDeadLine.split('T')[0] : undefined}
+                  eventDeadLine={
+                    (event.registDeadline || event.eventDeadLine)
+                      ? (event.registDeadline || event.eventDeadLine)!.split('T')[0]
+                      : undefined
+                  }
                   eventId={event.eventId}
                   eventUrl={event.eventUrl}
                   size="olive"

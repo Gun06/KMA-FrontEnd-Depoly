@@ -243,10 +243,14 @@ export default function Header() {
 
     const updateMainOffset = () => {
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      const offset = isBannerVisible ? (isDesktop ? '144px' : '136px') : '80px';
+      /* 앱 배너(h-11·md:h-12) + 모바일 헤더줄(pt-1·py-2·콘텐츠) / 데스크톱은 h-20 */
+      const offset = isBannerVisible
+        ? isDesktop
+          ? '128px'
+          : '112px'
+        : '80px';
       document.documentElement.style.setProperty('--kma-main-header-offset', offset);
-      /* 배너만의 높이 — 사이드바 top 오프셋 계산용 */
-      const bannerH = isBannerVisible ? (isDesktop ? '64px' : '56px') : '0px';
+      const bannerH = isBannerVisible ? (isDesktop ? '48px' : '52px') : '0px';
       document.documentElement.style.setProperty('--kma-banner-height', bannerH);
     };
 
@@ -264,81 +268,82 @@ export default function Header() {
   }, [isBannerVisible]);
 
   const hasTopBanner = isBannerVisible;
-  const panelTopClass = hasTopBanner ? 'top-[136px] md:top-[144px]' : 'top-20';
-  const mobileToggleTopClass = hasTopBanner ? 'top-[4.25rem] md:top-[4.75rem]' : 'top-3';
-
+  const panelTopClass = hasTopBanner ? 'top-[112px] md:top-[128px]' : 'top-20';
 
   return (
     <header className="fixed top-0 left-0 z-[150] w-full overflow-visible">
       <AppInstallBanner onVisibilityChange={setIsBannerVisible} />
 
-      {/* 모바일 상단 바 */}
-      <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-4 custom:hidden">
-        <Link
-          href="/"
-          className="flex min-w-0 items-center gap-2 hover:opacity-90"
+      {/* 모바일·태블릿: 한 줄 풀폭 바 — 메뉴 열릴 때 풀스크린 블러보다 위(z-120) */}
+      <div className="custom:hidden relative z-[120] w-full px-0 pt-0.5 pb-0 sm:pt-0.5">
+        <div
+          className="relative z-[125] mx-auto flex w-full max-w-[1920px] items-center justify-between gap-2 border-b border-white/10 px-3 py-1 sm:gap-2.5 sm:px-3.5 sm:py-1.5"
+          style={GLASS_PILL_STYLE}
         >
-          <div className="relative h-9 w-9 shrink-0">
-            <Image
-              src={logoImage}
-              alt="전국마라톤협회 로고"
-              width={36}
-              height={36}
-              className="rounded-full ring-[3px] ring-green-700"
-            />
-          </div>
-          <span className="font-giants truncate text-base break-keep whitespace-nowrap text-white drop-shadow-sm">
-            전국마라톤협회
-          </span>
-        </Link>
-        <div className={`fixed right-4 z-[160] flex items-center space-x-2 ${mobileToggleTopClass}`}>
-            {/* 햄버거/닫기 버튼 */}
-            <button
-              className="rounded bg-white/15 p-2 shadow-none hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={toggleMobileMenu}
-              aria-label={state.mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
-              aria-expanded={state.mobileOpen}
-            >
-              <div className="relative w-6 h-6">
-                <AnimatePresence mode="wait">
-                  {state.mobileOpen ? (
-                    <motion.div
-                      key="close"
-                      initial={{ opacity: 0, scale: 0.8, rotate: -90 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, rotate: 90 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="absolute inset-0"
-                    >
-                      <Image
-                        src={xIcon}
-                        alt="닫기"
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 brightness-0 invert"
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="menu"
-                      initial={{ opacity: 0, scale: 0.8, rotate: 90 }}
-                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, rotate: -90 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="absolute inset-0"
-                    >
-                      <Image
-                        src={menuIcon}
-                        alt="메뉴"
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 brightness-0 invert"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </button>
+          <Link
+            href="/"
+            className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden transition-all hover:brightness-125 sm:gap-2.5"
+          >
+            <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full ring-2 ring-green-600 sm:h-8 sm:w-8">
+              <Image
+                src={logoImage}
+                alt="전국마라톤협회 로고"
+                fill
+                sizes="(max-width: 639px) 28px, 32px"
+                className="object-cover"
+              />
+            </div>
+            <span className="font-giants min-w-0 max-w-full shrink truncate text-sm font-bold tracking-tight text-white sm:text-base">
+              전국마라톤협회
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="flex size-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-none hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:bg-white/15 sm:size-11"
+            onClick={toggleMobileMenu}
+            aria-label={state.mobileOpen ? '메뉴 닫기' : '메뉴 열기'}
+            aria-expanded={state.mobileOpen}
+          >
+            <div className="relative h-6 w-6">
+              <AnimatePresence mode="wait">
+                {state.mobileOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ opacity: 0, scale: 0.8, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, rotate: 90 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={xIcon}
+                      alt="닫기"
+                      width={24}
+                      height={24}
+                      className="h-6 w-6 brightness-0 invert"
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ opacity: 0, scale: 0.8, rotate: 90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, rotate: -90 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={menuIcon}
+                      alt="메뉴"
+                      width={24}
+                      height={24}
+                      className="h-6 w-6 brightness-0 invert"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -582,21 +587,20 @@ export default function Header() {
       <AnimatePresence>
         {state.mobileOpen && (
           <>
-            {/* 블러 배경 - 헤더 아래쪽에만 적용 */}
-            <div className="custom:hidden fixed inset-0 z-[110]">
-              {/* 헤더 아래쪽만 블러 처리 */}
-              <div
-                className={`absolute left-0 right-0 bottom-0 bg-white bg-opacity-20 ${panelTopClass}`}
-                style={{
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                }}
-                onClick={() => updateState({ mobileOpen: false })}
-              />
-            </div>
+            {/* 뷰포트 전체 블러·딤 (헤더/앱배너는 z-120으로 그 위에서 클릭 가능) */}
+            <div
+              role="presentation"
+              className="custom:hidden fixed inset-0 z-[105] bg-black/35"
+              style={{
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+              onClick={() => updateState({ mobileOpen: false })}
+            />
 
             <motion.nav
-              className="custom:hidden bg-white shadow-md relative z-[115] overflow-hidden"
+              className="custom:hidden relative z-[115] overflow-hidden border-b border-white/10 shadow-lg shadow-black/20"
+              style={GLASS_PILL_STYLE}
               initial={{ height: 0, opacity: 0, y: -20 }}
               animate={{ height: 'auto', opacity: 1, y: 0 }}
               exit={{ height: 0, opacity: 0, y: -20 }}
@@ -608,19 +612,20 @@ export default function Header() {
               role="navigation"
               aria-label="모바일 메뉴"
             >
-              <ul className="flex flex-col divide-y divide-gray-200">
+              <ul className="flex flex-col divide-y divide-white/10">
                 {navItems.map(({ label, href, key }) => (
                   <li key={label}>
                     {key && subMenus[key] ? (
                       <>
                         <button
-                          className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-50 focus:outline-none focus:bg-gray-50 font-pretendard"
+                          type="button"
+                          className="flex w-full items-center justify-between px-4 py-3 text-left font-pretendard text-white/95 hover:bg-white/10 focus:bg-white/10 focus:outline-none"
                           onClick={() => toggleMobileSubMenu(key)}
                           aria-expanded={state.expandedMobileMenu === key}
                         >
                           <span>{label}</span>
                           <svg
-                            className={`w-4 h-4 transition-transform ${
+                            className={`h-4 w-4 shrink-0 text-white/80 transition-transform ${
                               state.expandedMobileMenu === key
                                 ? 'rotate-90'
                                 : ''
@@ -644,13 +649,13 @@ export default function Header() {
                               animate={{ height: 'auto', opacity: 1, y: 0 }}
                               exit={{ height: 0, opacity: 0, y: -5 }}
                               transition={{ duration: 0.25, ease: 'easeOut' }}
-                              className="bg-gray-50"
+                              className="border-t border-white/5 bg-black/25"
                             >
                               {subMenus[key].items.map(item => (
                                 <li key={item.href}>
                                   <Link
                                     href={item.href}
-                                    className="block px-8 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors font-pretendard"
+                                    className="block px-8 py-2.5 text-sm font-pretendard text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                                     onClick={() =>
                                       updateState({ mobileOpen: false })
                                     }
@@ -666,21 +671,22 @@ export default function Header() {
                     ) : (
                       <Link
                         href={href}
-                        className="block px-4 py-3 hover:bg-gray-50 transition-colors font-pretendard"
+                        className="block px-4 py-3 font-pretendard text-white/95 transition-colors hover:bg-white/10"
                       >
                         {label}
                       </Link>
                     )}
                   </li>
                 ))}
-                <li className="px-4 py-3 flex justify-end items-center gap-3 border-t border-gray-200">
+                <li className="flex items-center justify-end gap-3 border-t border-white/10 px-4 py-3">
                   {actualIsLoggedIn ? (
                     <>
-                      <span className="text-sm text-gray-800 whitespace-nowrap">
+                      <span className="whitespace-nowrap text-sm text-white/90">
                         {user?.account || '회원'} 님
                       </span>
                       <button
-                        className="px-3 py-1 text-xs rounded bg-gray-100 hover:bg-gray-200 transition-colors"
+                        type="button"
+                        className="rounded px-3 py-1 text-xs text-white transition-colors hover:bg-white/20 bg-white/15"
                         onClick={async () => {
                           await authService.logout();
                           tokenService.broadcastLogout();
@@ -693,7 +699,7 @@ export default function Header() {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center space-x-1 p-2 rounded-full transition-colors focus:outline-none hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+                      className="flex items-center space-x-1 rounded-full p-2 text-white/90 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                       onClick={(e) => {
                         const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
                         router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
@@ -706,9 +712,9 @@ export default function Header() {
                         alt="사용자"
                         width={20}
                         height={20}
-                        className="w-5 h-5"
+                        className="h-5 w-5 brightness-0 invert"
                       />
-                      <span className="font-pretendard text-sm whitespace-nowrap break-keep truncate">
+                      <span className="truncate whitespace-nowrap break-keep font-pretendard text-sm text-white/95">
                         로그인
                       </span>
                     </Link>

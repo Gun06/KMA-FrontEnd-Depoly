@@ -213,7 +213,7 @@ export default function EventCard({
     const oliveCard = (
       <div className={clsx(isGridCell ? 'w-full' : 'w-[240px] md:w-[267px]', 'flex flex-col select-none')}>
         <div
-          className="relative w-full aspect-[16/10] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden"
+          className="relative w-full aspect-[332/166] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden"
           onDragStart={(e) => e.preventDefault()}
           draggable={false}
         >
