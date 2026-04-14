@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import menubanner from '@/assets/images/main/menubanner.png';
 import homeIcon from '@/assets/icons/main/home.svg';
 import { GalleryGrid } from './components';
@@ -66,43 +67,50 @@ export default function GalleryPage() {
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
         <div className="relative w-full" style={{ marginTop: 'calc(-1 * var(--kma-main-header-offset, 80px))' }}>
-          <div className="sm:hidden" style={{ paddingBottom: '28%' }}></div>
-          <div className="hidden sm:block md:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden md:block lg:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden lg:block" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          <div className="flex w-full flex-col">
+            <div
+              aria-hidden
+              className="w-full shrink-0"
+              style={{ height: 'var(--kma-main-header-offset, 80px)' }}
+            />
+            <div className="aspect-[6/1] w-full shrink-0 sm:aspect-[7/1] lg:aspect-[12/1]" />
+          </div>
           <Image
             src={menubanner}
             alt="메뉴 배너"
             fill
-            className="object-cover object-right"
+            sizes="100vw"
+            className="object-cover object-center"
             priority
           />
 
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
+          <div className="absolute inset-0 flex flex-col items-start justify-center px-4 py-1 sm:px-6 sm:py-1.5 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
             {/* 페이지 제목 */}
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
+            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
               대회갤러리
             </h1>
 
-            {/* 브레드크럼 */}
-            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-600">
-              <Link href="/" className="flex items-center hover:text-blue-600 transition-colors">
-                <Image
-                  src={homeIcon}
-                  alt="홈"
-                  width={14}
-                  height={14}
-                  className="w-3 h-3 sm:w-4 sm:h-4"
-                />
-              </Link>
-              <span className="text-gray-400">/</span>
-              <Link href="/schedule" className="hover:text-blue-600 transition-colors">
-                대회일정
-              </Link>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">대회갤러리</span>
-            </div>
+            {/* 브레드크럼 네비게이션 */}
+            <nav className="text-xs sm:text-sm md:text-sm text-black">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <Link
+                  href="/"
+                  className="hover:text-gray-700 transition-colors duration-200 flex items-center gap-1 px-1 sm:px-0 text-black font-normal underline"
+                >
+                  <Image src={homeIcon} alt="홈" className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">홈</span>
+                </Link>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mx-1 sm:mx-2 text-black" />
+                <span className="text-black font-normal whitespace-nowrap underline">
+                  대회일정
+                </span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mx-1 sm:mx-2 text-black" />
+                <span className="text-black font-bold whitespace-nowrap underline">
+                  대회갤러리
+                </span>
+              </div>
+            </nav>
           </div>
         </div>
 

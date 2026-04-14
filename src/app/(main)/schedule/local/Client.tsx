@@ -1,22 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import clsx from 'clsx';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/stores';
+import ProfileInfoPanel from '@/components/main/mypage/ProfileInfoPanel';
+import { useMyProfile, useUnreadCount } from '@/app/(main)/mypage/profile/shared';
 import {
   LocalEventBanner,
   LocalEventTabBar,
   type LocalEventTabKey,
-  LocalEventLoginNotice,
   LocalEventRegisterPanel,
   LocalEventMineList,
 } from './components';
 
 export default function Client() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<LocalEventTabKey>('register');
-  const { isLoggedIn } = useAuthStore();
+  const { isLoggedIn, accessToken, hasHydrated, user } = useAuthStore();
+  const { data: profile, isLoading: isProfileLoading } = useMyProfile();
+  const unreadCount = useUnreadCount();
+  const isAuthenticated = isLoggedIn && Boolean(accessToken);
+  const showAuthPending = !hasHydrated;
+  const showAccessGate = hasHydrated && !isAuthenticated;
 
   useEffect(() => {
     const t = searchParams.get('tab');
@@ -30,32 +37,86 @@ export default function Client() {
         <LocalEventBanner />
 
         <div className="w-full bg-white py-8 sm:py-10 md:py-14">
-          <div
-            className={clsx(
-              'mx-auto px-4 sm:px-6 lg:px-8',
-              tab === 'mine' ? 'max-w-[1300px]' : 'max-w-3xl'
-            )}
-          >
-            <p className="text-sm sm:text-base text-gray-600 text-center mb-8">
-              지역에서 진행하는 대회를 등록하고, 내가 등록한 지역대회를 확인할 수 있습니다.
-              <span className="block mt-1 text-gray-500 text-xs sm:text-sm">
-                로그인 후 &quot;내 지역대회&quot; 목록 조회가 가능합니다.
-              </span>
-            </p>
+          <div className="mx-auto max-w-[1300px] px-4 sm:px-6 lg:px-8">
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+              <ProfileInfoPanel
+                name={profile?.name || user?.account}
+                account={profile?.account || user?.account}
+                birth={profile?.birth}
+                gender={profile?.gender}
+                role={user?.role}
+                isLoading={showAuthPending || (isAuthenticated && isProfileLoading)}
+                statusText="활성"
+                unreadCountText={`${unreadCount}건`}
+                onEditClick={() => router.push('/mypage/profile')}
+              />
 
-            <LocalEventTabBar tab={tab} onTabChange={setTab} />
+              <div className="order-2 min-w-0">
+                <LocalEventTabBar tab={tab} onTabChange={setTab} />
+                <div className="relative mt-4">
+                  {tab === 'register' && isAuthenticated && <LocalEventRegisterPanel />}
 
-            {!isLoggedIn && <LocalEventLoginNotice />}
+                  {tab === 'mine' && isAuthenticated && <LocalEventMineList />}
 
-            {tab === 'register' && <LocalEventRegisterPanel />}
+                  {showAuthPending && (
+                    <>
+                      {tab === 'register' ? (
+                        <div className="rounded-2xl border border-gray-200 bg-white px-4 py-8 text-center shadow-[0_4px_24px_rgba(15,23,42,0.08)] sm:px-10 sm:py-10">
+                          <div className="mx-auto mb-6 h-12 w-12 animate-pulse rounded-2xl bg-gray-100" />
+                          <div className="mx-auto h-4 w-5/6 animate-pulse rounded bg-gray-100" />
+                          <div className="mx-auto mt-3 h-4 w-2/3 animate-pulse rounded bg-gray-100" />
+                          <div className="mx-auto mt-8 h-10 w-48 animate-pulse rounded-xl bg-gray-100" />
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                          <div className="h-12 animate-pulse rounded-lg bg-gray-100" />
+                          <div className="mt-4 h-40 animate-pulse rounded-lg bg-gray-50" />
+                        </div>
+                      )}
+                    </>
+                  )}
 
-            {tab === 'mine' && isLoggedIn && <LocalEventMineList />}
+                  {showAccessGate && (
+                    <>
+                      {tab === 'register' ? (
+                        <div className="rounded-2xl border border-gray-200 bg-white px-4 py-8 text-center shadow-[0_4px_24px_rgba(15,23,42,0.08)] sm:px-10 sm:py-10">
+                          <div className="mx-auto mb-6 h-12 w-12 rounded-2xl bg-[#E8F0FF]" />
+                          <div className="mx-auto h-4 w-5/6 rounded bg-gray-100" />
+                          <div className="mx-auto mt-3 h-4 w-2/3 rounded bg-gray-100" />
+                          <div className="mx-auto mt-8 h-10 w-48 rounded-xl bg-gray-100" />
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                          <div className="h-12 rounded-lg bg-gray-100" />
+                          <div className="mt-4 h-40 rounded-lg bg-gray-50" />
+                        </div>
+                      )}
 
-            {tab === 'mine' && !isLoggedIn && (
-              <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 px-6 py-12 text-center text-sm text-gray-500">
-                로그인 후 내가 등록한 지역대회를 확인할 수 있습니다.
+                      {/* 마이페이지와 동일한 블러 강도: 탭 콘텐츠 영역에만 오버레이 */}
+                      <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/55 p-4 backdrop-blur-sm">
+                        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white/95 p-8 text-center shadow-sm">
+                          <p className="text-lg font-semibold text-gray-900">
+                            로그인 후 이용할 수 있습니다.
+                          </p>
+                          <p className="mt-2 text-sm text-gray-600">
+                            {tab === 'register'
+                              ? '지역대회 등록은 로그인 후 가능합니다.'
+                              : '내 지역대회 조회는 로그인 후 가능합니다.'}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => router.push('/login')}
+                            className="mt-5 h-11 rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white hover:bg-blue-700"
+                          >
+                            로그인하러 가기
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </main>

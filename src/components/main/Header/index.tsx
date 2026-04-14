@@ -3,6 +3,7 @@
 import React, {
   useState,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useRef,
 } from 'react';
@@ -108,6 +109,7 @@ const GLASS_PILL_STYLE: React.CSSProperties = {
   backdropFilter: 'blur(16px)',
   WebkitBackdropFilter: 'blur(16px)',
 };
+const APP_INSTALL_BANNER_STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 
 
 
@@ -237,6 +239,18 @@ export default function Header() {
       });
     }
   }, [isCustom, updateState]);
+
+  // 첫 페인트 전에 앱 배너 표시 여부를 반영해 메뉴 배너 높이 점프를 최소화
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const isHidden =
+        window.sessionStorage.getItem(APP_INSTALL_BANNER_STORAGE_KEY) === 'true';
+      setIsBannerVisible(!isHidden);
+    } catch {
+      setIsBannerVisible(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -388,11 +402,10 @@ export default function Header() {
                 >
                   <button
                     type="button"
-                    className={`rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-200 ${
-                      state.subMenuOpen === key
+                    className={`rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-200 ${state.subMenuOpen === key
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-white/90 hover:bg-white/15 hover:text-white'
-                    }`}
+                      }`}
                     aria-haspopup="true"
                     aria-expanded={state.subMenuOpen === key}
                   >
@@ -408,11 +421,10 @@ export default function Header() {
                             <Link
                               href={item.href}
                               onClick={() => updateState({ subMenuOpen: null })}
-                              className={`flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
-                                pathname === item.href
+                              className={`flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${pathname === item.href
                                   ? 'bg-white text-gray-900 shadow-md ring-white/30'
                                   : 'ring-white/15 text-white/90 hover:brightness-125'
-                              }`}
+                                }`}
                               style={pathname === item.href ? undefined : GLASS_PILL_STYLE}
                             >
                               {item.label}
@@ -435,11 +447,10 @@ export default function Header() {
             {navItemMypage && (
               <Link
                 href={navItemMypage.href}
-                className={`rounded-full px-5 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
-                  pathname.startsWith('/mypage')
+                className={`rounded-full px-5 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${pathname.startsWith('/mypage')
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-white/90 hover:bg-white/15 hover:text-white'
-                }`}
+                  }`}
               >
                 {navItemMypage.label}
               </Link>
@@ -625,11 +636,10 @@ export default function Header() {
                         >
                           <span>{label}</span>
                           <svg
-                            className={`h-4 w-4 shrink-0 text-white/80 transition-transform ${
-                              state.expandedMobileMenu === key
+                            className={`h-4 w-4 shrink-0 text-white/80 transition-transform ${state.expandedMobileMenu === key
                                 ? 'rotate-90'
                                 : ''
-                            }`}
+                              }`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"

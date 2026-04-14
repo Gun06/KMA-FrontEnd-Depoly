@@ -11,11 +11,34 @@ import { useMyLocalEvents } from '../hooks/useLocalEvents';
 import LocalEventMineSearchControls from './LocalEventMineSearchControls';
 import type {
   LocalEventMypageEventStatus,
+  LocalEventMypageItem,
   LocalEventMypageSearchParams,
   LocalEventVisibleStatus,
 } from '../types/localEvent';
 
 const PAGE_SIZE = 20;
+
+/** 목록이 비었을 때만 노출 — 등록 직후 화면 확인용 더미 (상세/수정 API 호출 없음) */
+const DEMO_LOCAL_EVENT_ID = '__local_event_demo__';
+
+const DEMO_LOCAL_EVENT_ROW: LocalEventMypageItem = {
+  no: 1,
+  id: DEMO_LOCAL_EVENT_ID,
+  eventName: '[예시] 지역대회등록 예시',
+  eventUrl: 'https://example.com',
+  eventStartDate: '2026-06-15T00:00:00',
+  registStartDate: '2026-05-01T00:00:00',
+  registDeadline: '2026-06-01T00:00:00',
+  visibleStatus: 'OPEN',
+  eventStatus: 'OPEN',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  applicantCompany: '전국마라톤협회',
+};
+
+function isDemoLocalEventRow(row: { id: string }) {
+  return row.id === DEMO_LOCAL_EVENT_ID;
+}
 
 function toApiEventStatus(v: string): LocalEventMypageEventStatus | undefined {
   if (!v) return undefined;
@@ -141,6 +164,18 @@ export default function LocalEventMineList() {
   const total = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 0;
 
+  const hasActiveFilters =
+    Boolean(yearStr) || Boolean(regFilter) || Boolean(pubFilter) || Boolean(keyword.trim());
+
+  const displayItems =
+    items.length > 0
+      ? items
+      : !isLoading && !isError && !hasActiveFilters
+        ? [DEMO_LOCAL_EVENT_ROW]
+        : [];
+
+  const showDemoRibbon = items.length === 0 && displayItems.length > 0;
+
   // 실제 등록된 대회가 있는 년도만 추출
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -224,13 +259,19 @@ export default function LocalEventMineList() {
         <p className="text-xs text-gray-400 text-right">갱신 중...</p>
       ) : null}
 
-      {items.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg border border-gray-200">
+      {displayItems.length === 0 && !isLoading ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white py-16">
           <p className="text-gray-600">조건에 맞는 지역대회가 없습니다.</p>
-          <p className="text-sm text-gray-400 mt-1">필터를 바꾸거나 등록 탭에서 새로 등록해 보세요.</p>
+          <p className="mt-1 text-sm text-gray-400">필터를 바꾸거나 등록 탭에서 새로 등록해 보세요.</p>
         </div>
       ) : (
         <>
+          {showDemoRibbon ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-2.5 text-center text-xs text-amber-950 sm:text-sm">
+              아래 한 건은 <strong>등록 후 목록 예시</strong>입니다. 실제 등록하면 같은 형태로 표시됩니다.
+            </div>
+          ) : null}
+
           {/* ── 데스크탑 테이블 (md 이상) ── */}
           <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table className="min-w-[800px] w-full text-sm">
@@ -238,41 +279,50 @@ export default function LocalEventMineList() {
                 <tr className="bg-gray-50 border-b border-gray-200 text-gray-600">
                   <th className="px-3 py-3 w-14 text-center font-medium whitespace-nowrap">번호</th>
                   <th className="px-3 py-3 w-[108px] text-center font-medium whitespace-nowrap">개최일</th>
-                  <th className="px-3 py-3 text-left font-medium min-w-[200px]">대회명</th>
-                  <th className="px-3 py-3 text-left font-medium min-w-[120px]">소속</th>
+                  <th className="px-3 py-3 text-center font-medium min-w-[200px]">대회명</th>
+                  <th className="px-3 py-3 text-center font-medium min-w-[120px]">소속</th>
                   <th className="px-3 py-3 w-[100px] text-center font-medium">신청상태</th>
                   <th className="px-3 py-3 w-[80px] text-center font-medium">공개여부</th>
                   <th className="px-3 py-3 w-[64px] text-center font-medium">관리</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((row) => (
+                {displayItems.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-gray-100 hover:bg-gray-50/80 transition-colors"
+                    className={`border-b border-gray-100 transition-colors hover:bg-gray-50/80 ${isDemoLocalEventRow(row) ? 'bg-amber-50/40' : ''
+                      }`}
                   >
-                    <td className="px-3 py-3 text-center text-gray-500 tabular-nums text-xs">{row.no}</td>
-                    <td className="px-3 py-3 text-center text-[#6B7280] whitespace-nowrap text-xs">
+                    <td className="px-3 py-3 text-center text-xs tabular-nums text-gray-500">{row.no}</td>
+                    <td className="px-3 py-3 text-center text-xs whitespace-nowrap text-[#6B7280]">
                       {formatDateOnly(row.eventStartDate)}
                     </td>
                     <td className="px-3 py-3">
-                      <Link
-                        href={`/schedule/local/${row.id}`}
-                        className="font-medium text-gray-900 hover:text-blue-600 hover:underline line-clamp-2 text-sm"
-                      >
-                        {row.eventName}
-                      </Link>
+                      {isDemoLocalEventRow(row) ? (
+                        <span className="line-clamp-2 text-sm font-medium text-gray-800">{row.eventName}</span>
+                      ) : (
+                        <Link
+                          href={`/schedule/local/${row.id}`}
+                          className="line-clamp-2 text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                        >
+                          {row.eventName}
+                        </Link>
+                      )}
                     </td>
-                    <td className="px-3 py-3 text-gray-600 text-xs">{row.applicantCompany || '—'}</td>
+                    <td className="px-3 py-3 text-center text-xs text-gray-600">{row.applicantCompany || '—'}</td>
                     <td className="px-3 py-3 text-center">{renderEventStatusBadge(row.eventStatus)}</td>
                     <td className="px-3 py-3 text-center">{renderVisibleLabel(row.visibleStatus)}</td>
                     <td className="px-3 py-3 text-center">
-                      <Link
-                        href={`/schedule/local/${row.id}/edit`}
-                        className="text-xs font-medium text-blue-600 hover:underline"
-                      >
-                        수정
-                      </Link>
+                      {isDemoLocalEventRow(row) ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : (
+                        <Link
+                          href={`/schedule/local/${row.id}/edit`}
+                          className="text-xs font-medium text-blue-600 hover:underline"
+                        >
+                          수정
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -282,24 +332,31 @@ export default function LocalEventMineList() {
 
           {/* ── 모바일 카드 (md 미만) ── */}
           <div className="md:hidden space-y-2">
-            {items.map((row) => (
+            {displayItems.map((row) => (
               <div
                 key={row.id}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className={`rounded-xl border border-gray-200 bg-white p-4 shadow-sm ${isDemoLocalEventRow(row) ? 'border-amber-200 bg-amber-50/50' : ''
+                  }`}
               >
-                <div className="flex items-start gap-2 mb-2 min-w-0">
-                  <Link
-                    href={`/schedule/local/${row.id}`}
-                    className="font-semibold text-gray-900 hover:text-blue-600 hover:underline text-sm leading-snug line-clamp-2 flex-1 min-w-0"
-                  >
-                    {row.eventName}
-                  </Link>
+                <div className="mb-2 flex min-w-0 items-start gap-2">
+                  {isDemoLocalEventRow(row) ? (
+                    <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-gray-800 line-clamp-2">
+                      {row.eventName}
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/schedule/local/${row.id}`}
+                      className="min-w-0 flex-1 text-sm font-semibold leading-snug text-gray-900 line-clamp-2 hover:text-blue-600 hover:underline"
+                    >
+                      {row.eventName}
+                    </Link>
+                  )}
                   <div className="shrink-0">{renderVisibilityOutline(row.visibleStatus)}</div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                   <span>{formatDateOnly(row.eventStartDate)}</span>
-                  {row.applicantCompany ? <span className="truncate max-w-[10rem]">{row.applicantCompany}</span> : null}
+                  {row.applicantCompany ? <span className="max-w-[10rem] truncate">{row.applicantCompany}</span> : null}
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -312,7 +369,7 @@ export default function LocalEventMineList() {
             ))}
           </div>
 
-          {total > 0 ? (
+          {total > 0 && !showDemoRibbon ? (
             <>
               <PaginationBar
                 page={page}

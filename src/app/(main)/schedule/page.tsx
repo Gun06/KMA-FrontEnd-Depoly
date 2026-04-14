@@ -15,12 +15,6 @@ import { flattenScheduleEvents, flattenCalendarEvents, filterScheduleEventsByTyp
 import { fetchScheduleEvents, fetchCalendarEvents, blockListDisplayImageSrc } from '@/services/schedule';
 import { ScheduleEvent, CalendarEvent, type MainPageBlockListFilter } from '@/types/event';
 
-const BLOCK_FILTER_OPTIONS: { value: MainPageBlockListFilter; label: string }[] = [
-  { value: 'ALL', label: '전체' },
-  { value: 'NOT_REGISTRATION_END', label: '접수 마감 전' },
-  { value: 'NOT_EVENT_END', label: '대회 종료 전' },
-];
-
 export default function SchedulePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'all' | 'marathon' | 'national'>('marathon');
@@ -31,8 +25,9 @@ export default function SchedulePage() {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [isStickyFixed, setIsStickyFixed] = useState(false);
   const bannerRef = useRef<HTMLDivElement | null>(null);
-  const [scheduleBlockFilter, setScheduleBlockFilter] =
-    useState<MainPageBlockListFilter>('ALL');
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
+  const hasInitialMonthAligned = useRef(false);
+  const [scheduleBlockFilter] = useState<MainPageBlockListFilter>('ALL');
 
   // 각 월별로 API 호출하여 전체 연도 데이터 수집
   const year = currentDate.getFullYear();
@@ -165,16 +160,27 @@ export default function SchedulePage() {
   const eventsByMonth = getEventsByMonth();
 
   // 월 버튼 클릭 시 해당 월 섹션으로 스크롤
-  const scrollToMonth = (monthIndex: number) => {
+  const scrollToMonth = (monthIndex: number, behavior: ScrollBehavior = 'smooth') => {
     const element = monthRefs.current[monthIndex];
     if (element) {
+      // 데스크톱 리스트 모드: 콘텐츠 전용 스크롤 영역만 이동
+      if (listScrollRef.current) {
+        const targetTop = Math.max(0, element.offsetTop - 8);
+        listScrollRef.current.scrollTo({
+          top: targetTop,
+          behavior,
+        });
+        return;
+      }
+
+      // 모바일/기타 모드: 페이지 스크롤 이동
       const headerOffset = 200; // 헤더 높이 고려
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior
       });
     }
   };
@@ -240,28 +246,53 @@ export default function SchedulePage() {
     };
   }, []);
 
+  // 첫 진입 시 현재 달 섹션으로 맞춰서 표시 (데스크탑 리스트 모드 포함)
+  useEffect(() => {
+    if (hasInitialMonthAligned.current) return;
+    if (isLoading || viewMode === 'calendar') return;
+
+    const monthIndex = currentDate.getMonth();
+    if (!monthRefs.current[monthIndex]) return;
+
+    // 초기 레이아웃/이미지 로딩으로 위치가 바뀌는 경우를 대비해 2회 정렬
+    const rafId = window.requestAnimationFrame(() => {
+      scrollToMonth(monthIndex, 'auto');
+      window.setTimeout(() => {
+        scrollToMonth(monthIndex, 'auto');
+        hasInitialMonthAligned.current = true;
+      }, 220);
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isLoading, viewMode, currentDate, year]);
+
   return (
     <div className="min-h-[50vh] sm:min-h-screen">
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
         <div ref={bannerRef} className="relative w-full" style={{ marginTop: 'calc(-1 * var(--kma-main-header-offset, 80px))' }}>
-          <div className="sm:hidden" style={{ paddingBottom: '28%' }}></div>
-          <div className="hidden sm:block md:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden md:block lg:hidden" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
-          <div className="hidden lg:block" style={{ height: 'calc(120px + var(--kma-main-header-offset, 80px))' }}></div>
+          <div className="flex w-full flex-col">
+            <div
+              aria-hidden
+              className="w-full shrink-0"
+              style={{ height: 'var(--kma-main-header-offset, 80px)' }}
+            />
+            <div className="aspect-[6/1] w-full shrink-0 sm:aspect-[7/1] lg:aspect-[12/1]" />
+          </div>
           <Image
             src={menubanner}
             alt="메뉴 배너"
             fill
-            className="object-cover object-right"
+            sizes="100vw"
+            className="object-cover object-center"
             priority
           />
 
           {/* 배너 위에 페이지 제목과 브레드크럼 오버레이 */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center px-4 sm:px-6 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
+          <div className="absolute inset-0 flex flex-col items-start justify-center px-4 py-1 sm:px-6 sm:py-1.5 lg:px-[6vw]" style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}>
             {/* 페이지 제목 */}
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl text-black mb-1 sm:mb-2 font-giants-bold">
+            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
               대회일정
             </h1>
 
@@ -317,11 +348,12 @@ export default function SchedulePage() {
         >
           {/* 탭 버튼들 */}
           <div className="px-2 pt-2 pb-2">
-            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+            <div className="overflow-x-auto no-scrollbar">
+              <div className="flex min-w-max gap-1 rounded-lg bg-gray-100 p-1">
               <button
                 onClick={() => handleViewModeChange('marathon')}
                 className={clsx(
-                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  'min-w-[84px] py-2 px-2 text-xs font-medium rounded-md transition-colors',
                   viewMode === 'marathon'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -332,7 +364,7 @@ export default function SchedulePage() {
               <button
                 onClick={() => handleViewModeChange('national')}
                 className={clsx(
-                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  'min-w-[84px] py-2 px-2 text-xs font-medium rounded-md transition-colors',
                   viewMode === 'national'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -343,7 +375,7 @@ export default function SchedulePage() {
               <button
                 onClick={() => handleViewModeChange('all')}
                 className={clsx(
-                  'flex-1 py-2 px-2 text-xs font-medium rounded-md transition-colors',
+                  'min-w-[84px] py-2 px-2 text-xs font-medium rounded-md transition-colors',
                   viewMode === 'all'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -352,25 +384,6 @@ export default function SchedulePage() {
                 전체일정
               </button>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 px-0.5">
-              <span className="text-[11px] font-medium text-gray-500">일정 조건</span>
-              <div className="flex flex-wrap gap-1">
-                {BLOCK_FILTER_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setScheduleBlockFilter(opt.value)}
-                    className={clsx(
-                      'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
-                      scheduleBlockFilter === opt.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200/80 text-gray-700 hover:bg-gray-200'
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -543,26 +556,6 @@ export default function SchedulePage() {
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 px-4 py-2 sm:px-12 min-[1299px]:px-20">
-                <span className="text-xs font-medium text-gray-500 shrink-0">일정 조건</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {BLOCK_FILTER_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setScheduleBlockFilter(opt.value)}
-                      className={clsx(
-                        'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                        scheduleBlockFilter === opt.value
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      )}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* 전체일정 / 전마협 / 전국일정 탭 - 월별로 그룹화된 이벤트 표시 */}
@@ -581,7 +574,10 @@ export default function SchedulePage() {
                     <p className="text-gray-500">잠시 후 다시 시도해주세요</p>
                   </div>
                 ) : (
-                  <div className="space-y-12">
+                  <div
+                    ref={listScrollRef}
+                    className="space-y-12 sm:max-h-[calc(100vh-var(--kma-main-header-offset,80px)-18rem)] sm:overflow-y-auto sm:pr-2"
+                  >
                     {(() => {
                       // 전체 빈 상태 확인 (현재 년도만 확인)
                       const currentYear = currentDate.getFullYear();
@@ -642,7 +638,7 @@ export default function SchedulePage() {
                             className="scroll-mt-32"
                           >
                             {/* 월 헤더 */}
-                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 sticky top-32 bg-white py-2 z-[5]">
+                            <h2 className="sticky top-0 z-[5] mb-4 bg-white py-2 text-lg font-bold text-gray-900 sm:mb-6 sm:text-xl md:text-2xl">
                               {monthName}
                             </h2>
 

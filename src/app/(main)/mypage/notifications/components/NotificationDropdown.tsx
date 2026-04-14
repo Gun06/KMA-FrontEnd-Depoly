@@ -52,10 +52,10 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
   // 알림 관련 훅
   const { data: globalData, isLoading: globalLoading } = useGlobalNotifications(1, 20);
   const { data: eventData, isLoading: eventLoading } = useEventNotifications(1, 20);
-  
+
   const notificationsData = notificationType === 'GLOBAL' ? globalData : eventData;
   const notificationsLoading = notificationType === 'GLOBAL' ? globalLoading : eventLoading;
-  
+
   const markAllAsRead = useMarkAllNotificationsAsRead();
   const markAsRead = useMarkNotificationAsRead();
 
@@ -77,7 +77,7 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
         const target = event.target as HTMLElement;
         const notificationDropdown = target.closest('[data-notification-dropdown]');
         const notificationButton = target.closest('[data-notification-button]');
-        
+
         if (!notificationDropdown && !notificationButton) {
           setNotificationOpen(false);
         }
@@ -103,14 +103,16 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
         type="button"
         onClick={() => setNotificationOpen(!notificationOpen)}
         data-notification-button
-        className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+        className={`relative rounded-full p-2 transition-colors ${
+          notificationOpen ? 'bg-white/15' : 'hover:bg-white/15'
+        }`}
         aria-label="알림"
         aria-expanded={notificationOpen}
       >
-        <Bell className="w-5 h-5 text-gray-700" />
+        <Bell className="h-5 w-5 text-white" />
         {/* 미읽음 알림 개수 표시 */}
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-[#256EF4] ring-2 ring-white" />
+          <span className="absolute top-0.5 right-0.5 inline-flex h-2.5 w-2.5 rounded-full bg-[#256EF4]" />
         )}
       </button>
 
@@ -124,160 +126,156 @@ export function NotificationDropdown({ isLoggedIn, userAccount: _userAccount }: 
           <div className="absolute -top-1.5 right-5 w-3 h-3 rotate-45 bg-white border-l border-t border-gray-200" />
 
           <div className="bg-white rounded-2xl shadow-[0_14px_40px_rgba(15,23,42,0.14)] border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900">
-              읽지 않은 알림{' '}
-              <span className="text-blue-600">({unreadCount})</span>
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <div className="text-sm font-semibold text-gray-900">
+                읽지 않은 알림{' '}
+                <span className="text-blue-600">({unreadCount})</span>
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (markAllAsRead.isPending) return;
+                    try {
+                      await markAllAsRead.mutateAsync();
+                    } catch (error) {
+                      const errorMessage =
+                        error && typeof error === 'object' && 'message' in error
+                          ? String(error.message)
+                          : '알림 읽음 처리에 실패했습니다.';
+                      alert(errorMessage);
+                    }
+                  }}
+                  disabled={markAllAsRead.isPending}
+                  className="text-xs text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {markAllAsRead.isPending ? '처리 중...' : '모두 읽음'}
+                </button>
+              )}
             </div>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  if (markAllAsRead.isPending) return;
-                  try {
-                    await markAllAsRead.mutateAsync();
-                  } catch (error) {
-                    const errorMessage =
-                      error && typeof error === 'object' && 'message' in error
-                        ? String(error.message)
-                        : '알림 읽음 처리에 실패했습니다.';
-                    alert(errorMessage);
-                  }
-                }}
-                disabled={markAllAsRead.isPending}
-                className="text-xs text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {markAllAsRead.isPending ? '처리 중...' : '모두 읽음'}
-              </button>
-            )}
-          </div>
-          
-          {/* 알림 타입 탭 */}
-          <div className="px-4 py-2 border-b border-gray-100">
-            <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNotificationType('GLOBAL');
-                }}
-                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  notificationType === 'GLOBAL'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                전체알림 {globalUnreadCount > 0 && `(${globalUnreadCount})`}
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setNotificationType('EVENT');
-                }}
-                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                  notificationType === 'EVENT'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                대회알림 {eventUnreadCount > 0 && `(${eventUnreadCount})`}
-              </button>
-            </div>
-          </div>
 
-          <ul className="max-h-80 overflow-y-auto">
-            {notificationsLoading ? (
-              <li className="px-4 py-4">
-                <div className="animate-pulse space-y-3">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={`dropdown-skeleton-${index}`} className="py-2">
-                      <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
-                      <div className="h-4 w-44 rounded bg-gray-200 mb-2" />
-                      <div className="h-3 w-56 rounded bg-gray-200" />
-                    </div>
-                  ))}
-                </div>
-              </li>
-            ) : notificationsData?.content && notificationsData.content.length > 0 ? (
-              (() => {
-                // 최근 알림 10개 표시 (미읽음 여부와 관계없이)
-                const displayNotifications = notificationsData.content.slice(0, 10);
-                
-                return displayNotifications.map((notification: NotificationItem, index: number, array: NotificationItem[]) => {
-                  const isUnread = isUnreadNotification(notification)
-                  const prevNotification = index > 0 ? array[index - 1] : null
-                  const prevIsUnread = prevNotification ? isUnreadNotification(prevNotification) : false
-                  const showDivider = index > 0
-                  const isUnreadToUnread = isUnread && prevIsUnread
-                  const isReadToRead = !isUnread && !prevIsUnread
-                  
-                  return (
-                    <li
-                      key={notification.id}
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        // 미읽음 알림만 읽음 처리
-                        if (isUnreadNotification(notification)) {
-                          try {
-                            await markAsRead.mutateAsync({
-                              notificationId: notification.id,
-                              type: notification.type || (notificationType === 'EVENT' ? 'PERSONAL' : 'GLOBAL'),
-                            });
-                          } catch {
-                            // 에러는 무시 (이미 읽은 알림일 수 있음)
+            {/* 알림 타입 탭 */}
+            <div className="px-4 py-2 border-b border-gray-100">
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotificationType('GLOBAL');
+                  }}
+                  className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${notificationType === 'GLOBAL'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  전체알림 {globalUnreadCount > 0 && `(${globalUnreadCount})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotificationType('EVENT');
+                  }}
+                  className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${notificationType === 'EVENT'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  대회알림 {eventUnreadCount > 0 && `(${eventUnreadCount})`}
+                </button>
+              </div>
+            </div>
+
+            <ul className="max-h-80 overflow-y-auto">
+              {notificationsLoading ? (
+                <li className="px-4 py-4">
+                  <div className="animate-pulse space-y-3">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div key={`dropdown-skeleton-${index}`} className="py-2">
+                        <div className="h-3 w-16 rounded bg-gray-200 mb-2" />
+                        <div className="h-4 w-44 rounded bg-gray-200 mb-2" />
+                        <div className="h-3 w-56 rounded bg-gray-200" />
+                      </div>
+                    ))}
+                  </div>
+                </li>
+              ) : notificationsData?.content && notificationsData.content.length > 0 ? (
+                (() => {
+                  // 최근 알림 10개 표시 (미읽음 여부와 관계없이)
+                  const displayNotifications = notificationsData.content.slice(0, 10);
+
+                  return displayNotifications.map((notification: NotificationItem, index: number, array: NotificationItem[]) => {
+                    const isUnread = isUnreadNotification(notification)
+                    const prevNotification = index > 0 ? array[index - 1] : null
+                    const prevIsUnread = prevNotification ? isUnreadNotification(prevNotification) : false
+                    const showDivider = index > 0
+                    const isUnreadToUnread = isUnread && prevIsUnread
+                    const isReadToRead = !isUnread && !prevIsUnread
+
+                    return (
+                      <li
+                        key={notification.id}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          // 미읽음 알림만 읽음 처리
+                          if (isUnreadNotification(notification)) {
+                            try {
+                              await markAsRead.mutateAsync({
+                                notificationId: notification.id,
+                                type: notification.type || (notificationType === 'EVENT' ? 'PERSONAL' : 'GLOBAL'),
+                              });
+                            } catch {
+                              // 에러는 무시 (이미 읽은 알림일 수 있음)
+                            }
                           }
-                        }
-                      }}
-                      className={`px-4 py-3 cursor-pointer relative ${
-                        isUnreadNotification(notification)
-                          ? 'bg-blue-50 hover:bg-blue-100/70'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      {showDivider && (
-                        <div
-                          className={`absolute top-0 left-4 right-4 h-px ${
-                            isUnreadToUnread
-                              ? 'bg-gray-200' // 미읽음-미읽음: 얇은 회색 줄
-                              : isReadToRead
-                              ? 'bg-gray-200' // 읽음-읽음: 얇은 회색 줄
-                              : 'bg-gray-100' // 읽음-미읽음 또는 미읽음-읽음: 더 연한 회색
+                        }}
+                        className={`px-4 py-3 cursor-pointer relative ${isUnreadNotification(notification)
+                            ? 'bg-blue-50 hover:bg-blue-100/70'
+                            : 'hover:bg-gray-50'
                           }`}
-                        />
-                      )}
-                      <p className="text-xs text-gray-400 mb-1">
-                        {formatNotificationDate(notification.sentAt || notification.createdAt)}
-                      </p>
-                      <p className={`text-sm font-semibold tracking-[-0.01em] truncate ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
-                        {notification.title}
-                      </p>
-                      {notification.body && (
-                        <div className="mt-1 flex items-center gap-1.5 min-w-0">
-                          <span className="text-gray-300 text-[11px] leading-none flex-shrink-0" aria-hidden="true">|</span>
-                          <p className="text-[11px] text-gray-500 leading-[1.45] line-clamp-1">
-                            {notification.body}
-                          </p>
-                        </div>
-                      )}
-                    </li>
-                  );
-                });
-              })()
-            ) : (
-              <li className="px-4 py-8 text-center text-sm text-gray-500">
-                알림이 없습니다.
-              </li>
-            )}
-          </ul>
-          <Link
-            href="/mypage/notifications"
-            onClick={() => setNotificationOpen(false)}
-            className="block w-full px-4 py-2.5 text-xs text-center text-gray-500 hover:bg-gray-50"
-          >
-            알림 전체 보기
-          </Link>
+                      >
+                        {showDivider && (
+                          <div
+                            className={`absolute top-0 left-4 right-4 h-px ${isUnreadToUnread
+                                ? 'bg-gray-200' // 미읽음-미읽음: 얇은 회색 줄
+                                : isReadToRead
+                                  ? 'bg-gray-200' // 읽음-읽음: 얇은 회색 줄
+                                  : 'bg-gray-100' // 읽음-미읽음 또는 미읽음-읽음: 더 연한 회색
+                              }`}
+                          />
+                        )}
+                        <p className="text-xs text-gray-400 mb-1">
+                          {formatNotificationDate(notification.sentAt || notification.createdAt)}
+                        </p>
+                        <p className={`text-sm font-semibold tracking-[-0.01em] truncate ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
+                          {notification.title}
+                        </p>
+                        {notification.body && (
+                          <div className="mt-1 flex items-center gap-1.5 min-w-0">
+                            <span className="text-gray-300 text-[11px] leading-none flex-shrink-0" aria-hidden="true">|</span>
+                            <p className="text-[11px] text-gray-500 leading-[1.45] line-clamp-1">
+                              {notification.body}
+                            </p>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  });
+                })()
+              ) : (
+                <li className="px-4 py-8 text-center text-sm text-gray-500">
+                  알림이 없습니다.
+                </li>
+              )}
+            </ul>
+            <Link
+              href="/mypage/notifications"
+              onClick={() => setNotificationOpen(false)}
+              className="block w-full px-4 py-2.5 text-xs text-center text-gray-500 hover:bg-gray-50"
+            >
+              알림 전체 보기
+            </Link>
           </div>
         </div>
       )}
