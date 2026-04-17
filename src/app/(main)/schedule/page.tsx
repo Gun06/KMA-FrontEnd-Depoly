@@ -165,7 +165,10 @@ export default function SchedulePage() {
     if (element) {
       // 데스크톱 리스트 모드: 콘텐츠 전용 스크롤 영역만 이동
       if (listScrollRef.current) {
-        const targetTop = Math.max(0, element.offsetTop - 8);
+        const containerRect = listScrollRef.current.getBoundingClientRect();
+        const elementRect = element.getBoundingClientRect();
+        const relativeTop = elementRect.top - containerRect.top;
+        const targetTop = Math.max(0, listScrollRef.current.scrollTop + relativeTop - 8);
         listScrollRef.current.scrollTo({
           top: targetTop,
           behavior,
