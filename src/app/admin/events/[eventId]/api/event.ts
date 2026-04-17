@@ -49,6 +49,12 @@ export interface EventDetailApiResponse {
     autoMaxRegist?: boolean;
     /** 신청 페이지 전체 동의 체크박스 문구 */
     agreeAllLabel?: string;
+    /** 이벤트 페이지 이미지 URL */
+    specialEventImageUrl?: string;
+    /** 시상안내 페이지 이미지 URL */
+    awardInfoImageUrl?: string;
+    /** 메인 첫 화면 유튜브 임베딩 링크 */
+    youtubeUrl?: string;
   };
   eventCategories: Array<{
     id: string;

@@ -79,6 +79,7 @@ export class EventDataTransformer {
       autoDeadline: data.autoDeadline ?? false,
       autoMaxRegist: data.autoMaxRegist ?? false,
       agreeAllLabel: data.agreeAllLabel?.trim() || undefined,
+      youtubeUrl: data.youtubeUrl?.trim() || undefined,
     };
   }
 
@@ -224,6 +225,12 @@ export class EventDataTransformer {
       eventAdvertiseBannerImage: this.getFileFromUpload(
         uploads.bannerAdvertise?.[0]
       ),
+      specialEventImage: uploads.specialEventImage?.[0]
+        ? this.getFileFromUpload(uploads.specialEventImage[0])
+        : undefined,
+      awardInfoImage: uploads.awardInfoImage?.[0]
+        ? this.getFileFromUpload(uploads.awardInfoImage[0])
+        : undefined,
     };
 
     // 주최/주관/후원/협력 배너 이미지들 (순서 중요!)

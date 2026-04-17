@@ -23,6 +23,7 @@ function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): E
   const mainBannerMobileImageUrl = get('mainBannerMobileImageUrl', 'main_banner_mobile_image_url');
   const mainOutlinePcImageUrl = get('mainOutlinePcImageUrl', 'main_outline_pc_image_url');
   const mainOutlineMobileImageUrl = get('mainOutlineMobileImageUrl', 'main_outline_mobile_image_url');
+  const youtubeUrl = get('youtubeUrl', 'youtube_url');
   const resolvedId = typeof id === 'string' && id ? id : String(raw?.id ?? '');
   return {
     id: resolvedId,
@@ -33,9 +34,46 @@ function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): E
     mainBannerColor,
     mainBannerPcImageUrl,
     mainBannerMobileImageUrl,
+    youtubeUrl,
     mainOutlinePcImageUrl,
     mainOutlineMobileImageUrl,
   };
+}
+
+function normalizeYoutubeEmbedUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url.trim());
+    const host = parsed.hostname.replace(/^www\./, '');
+
+    let videoId = "";
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      if (parsed.pathname === "/watch") {
+        videoId = parsed.searchParams.get("v") ?? "";
+      } else if (parsed.pathname.startsWith("/embed/")) {
+        videoId = parsed.pathname.split("/embed/")[1] ?? "";
+      } else if (parsed.pathname.startsWith("/shorts/")) {
+        videoId = parsed.pathname.split("/shorts/")[1] ?? "";
+      }
+    } else if (host === "youtu.be") {
+      videoId = parsed.pathname.replace("/", "");
+    }
+
+    if (!videoId) return null;
+
+    const embedUrl = new URL(`https://www.youtube.com/embed/${videoId}`);
+    embedUrl.searchParams.set("autoplay", "1");
+    embedUrl.searchParams.set("mute", "1");
+    embedUrl.searchParams.set("playsinline", "1");
+    embedUrl.searchParams.set("rel", "0");
+    embedUrl.searchParams.set("controls", "0");
+    embedUrl.searchParams.set("modestbranding", "1");
+    embedUrl.searchParams.set("iv_load_policy", "3");
+    embedUrl.searchParams.set("disablekb", "1");
+    return embedUrl.toString();
+  } catch {
+    return null;
+  }
 }
 
 function hasBannerImages(info: EventTopSectionInfo | null): boolean {
@@ -167,6 +205,10 @@ export default function TopSection({
     null;
 
   const hasImages = Boolean(desktopImage || mobileImage);
+  const youtubeEmbedUrl = normalizeYoutubeEmbedUrl(
+    isMounted ? resolvedInfo?.youtubeUrl : propEventInfo?.youtubeUrl
+  );
+  const hasMedia = hasImages || Boolean(youtubeEmbedUrl);
 
   // 제목/부제목은 API 데이터만 사용 (더미 config 제거)
   const title = resolvedInfo
@@ -179,7 +221,7 @@ export default function TopSection({
   if (!eventId) return null;
 
   // 이미지가 없으면 스켈레톤만 표시 (더미 그라데이션/텍스트 제거)
-  const showSkeleton = !hasImages || ((isLoading || !isMounted) && !eventInfo && !propEventInfo);
+  const showSkeleton = !hasMedia || ((isLoading || !isMounted) && !eventInfo && !propEventInfo);
 
   if (error && !eventInfo) {
     return (
@@ -232,8 +274,24 @@ export default function TopSection({
           </div>
         </div>
 
-      {/* 데스크톱 배경 이미지 - 스켈레톤이 아닐 때만 표시 */}
-      {!showSkeleton && desktopImage && (
+      {/* 유튜브 URL이 있으면 메인 첫 화면에 영상 우선 노출 */}
+      {!showSkeleton && youtubeEmbedUrl && (
+        <div className="relative w-full bg-black">
+          {/* 모바일/데스크탑 모두 16:9 비율 고정 */}
+          <div className="relative w-full aspect-video">
+            <iframe
+              src={youtubeEmbedUrl}
+              title="대회 메인 영상"
+              className="absolute inset-0 h-full w-full pointer-events-none"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 데스크톱 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
+      {!showSkeleton && !youtubeEmbedUrl && desktopImage && (
         <Image
           src={desktopImage}
           alt="Background"
@@ -245,8 +303,8 @@ export default function TopSection({
         />
       )}
 
-      {/* 모바일 배경 이미지 - 스켈레톤이 아닐 때만 표시 */}
-      {!showSkeleton && mobileImage && (
+      {/* 모바일 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
+      {!showSkeleton && !youtubeEmbedUrl && mobileImage && (
         <Image
           src={mobileImage}
           alt="Mobile Background"
@@ -259,7 +317,7 @@ export default function TopSection({
       )}
 
       {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 (배너 이미지 있을 때만) */}
-      {!showSkeleton && hasImages && (
+      {!showSkeleton && hasImages && !youtubeEmbedUrl && (
         <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
           <div className="container mx-auto">
             <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 text-white">

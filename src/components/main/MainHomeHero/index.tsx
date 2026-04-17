@@ -924,7 +924,7 @@ function HeroMobileDeadlineInBanner({
 }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-20 xl:hidden"
+      className="pointer-events-none absolute inset-0 z-20 lg:hidden"
       aria-label="마감임박 대회"
       aria-busy={popularLoading}
     >
@@ -932,10 +932,10 @@ function HeroMobileDeadlineInBanner({
         <div className="flex items-end justify-end gap-2" />
       </div>
 
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-4 pb-5 pt-12 md:px-6 md:pb-7 md:pt-14">
-        <div className="w-[min(92vw,19rem)]">
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-4 pb-6 pt-12 md:px-6 md:pb-7 md:pt-14">
+        <div className="w-[min(88vw,17rem)]">
           <PopularDeadlineBanner
-            variant="mobile"
+            variant="mobileDesktopLike"
             item={popularItems[0] ?? null}
             loading={popularLoading}
           />
@@ -1488,11 +1488,11 @@ function HeroEventOverlay({
 }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[12] hidden xl:flex xl:flex-col xl:justify-end xl:pb-24 xl:pt-[max(5.5rem,calc(var(--kma-main-header-offset,64px)+1.75rem))]"
+      className="pointer-events-none absolute inset-0 z-[12] hidden lg:flex lg:flex-col lg:justify-end lg:pb-24 lg:pt-[max(5.5rem,calc(var(--kma-main-header-offset,64px)+1.75rem))]"
       role="region"
       aria-label="주요 대회 미리보기"
     >
-      <div className="pointer-events-auto mx-auto w-full max-w-[1920px] px-4 xl:px-[6vw]">
+      <div className="pointer-events-auto mx-auto w-full max-w-[1920px] px-4 lg:px-[6vw]">
         {/* 좌: 마감임박 카드 */}
         <div className="flex w-[min(100%,540px)] shrink-0 flex-col">
           <PopularDeadlineBanner

@@ -124,6 +124,10 @@ export class FormDataBuilder {
         key: 'eventAdvertiseBanner',
         file: imageFiles.eventAdvertiseBannerImage,
       },
+      // 선택: 이벤트 페이지 이미지
+      { key: 'specialEventImage', file: imageFiles.specialEventImage },
+      // 선택: 시상안내 페이지 이미지
+      { key: 'awardInfoImage', file: imageFiles.awardInfoImage },
     ];
 
     for (const { key, file } of otherImages) {
@@ -548,6 +552,20 @@ export class FormDataBuilder {
       const file = uploads.bannerAdvertise![0].file;
       if (file) {
         formData.append('eventAdvertiseBanner', file);
+      }
+    }
+
+    if (hasImage(uploads.specialEventImage || [])) {
+      const file = uploads.specialEventImage![0].file;
+      if (file) {
+        formData.append('specialEventImage', file);
+      }
+    }
+
+    if (hasImage(uploads.awardInfoImage || [])) {
+      const file = uploads.awardInfoImage![0].file;
+      if (file) {
+        formData.append('awardInfoImage', file);
       }
     }
 

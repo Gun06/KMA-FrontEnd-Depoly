@@ -8,6 +8,18 @@ export type PublicEventTerm = {
   termsLabel: string;
 };
 
+/** 라벨에 선택 표기가 있으면 API required와 무관하게 선택 약관으로 본다. */
+function hasOptionalMarkerInLabel(termsLabel: string): boolean {
+  return /<선택>|＜선택＞|\[선택\]|\(선택\)/u.test(termsLabel.trim());
+}
+
+/** 신청 진행에 반드시 체크해야 하는지 (선택 항목은 false). */
+export function isEffectivelyRequired(term: PublicEventTerm): boolean {
+  if (!term.required) return false;
+  if (hasOptionalMarkerInLabel(term.termsLabel)) return false;
+  return true;
+}
+
 export type PublicEventTermsResult = {
   allAgreeLabel: string;
   eventTerms: PublicEventTerm[];

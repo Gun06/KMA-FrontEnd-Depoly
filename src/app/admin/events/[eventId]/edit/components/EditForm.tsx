@@ -185,6 +185,7 @@ export default function EditForm({
       account: s.account,
       homeUrl: s.homeUrl,
       eventPageUrl: s.eventPageUrl,
+      youtubeUrl: s.youtubeUrl,
       agreeAllLabel: s.agreeAllLabel,
       maxParticipants: s.maxParticipants?.toString(),
       groups:
@@ -200,6 +201,8 @@ export default function EditForm({
         })) ?? [],
       termsInfo: s.termsInfo ?? [],
       applyStatus: s.applyStatus,
+      specialEventImage: s.specialEventImage ?? [],
+      awardInfoImage: s.awardInfoImage ?? [],
     };
 
     f.hydrateSnapshot?.(snapshotData);

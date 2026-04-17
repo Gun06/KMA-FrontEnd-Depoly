@@ -53,6 +53,12 @@ export type EventDetailData = {
   paymentDeadline?: string;
   /** 전체 동의 체크박스 라벨 */
   agreeAllLabel?: string;
+  /** 이벤트 페이지 이미지 URL */
+  specialEventImageUrl?: string;
+  /** 시상안내 페이지 이미지 URL */
+  awardInfoImageUrl?: string;
+  /** 메인 첫 화면 유튜브 임베딩 링크 */
+  youtubeUrl?: string;
   /** 은행명 (예: 국민은행) */
   bank?: string;
   /** 가상계좌/입금 계좌번호 */

@@ -95,6 +95,9 @@ type PrefillUploads = {
 
   // 🔹 사이드 광고 배너
   bannerAdvertise?: UploadItem[] | Array<{ url: string }>;
+  // 🔹 이벤트/시상안내 페이지 이미지
+  specialEventImage?: UploadItem[] | Array<{ url: string }>;
+  awardInfoImage?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일) 새로 추가
   bannerGuideDesktop?: UploadItem[] | Array<{ url: string }>;
@@ -190,6 +193,7 @@ export type UseCompetitionPrefill = Partial<
     paymentDeadlineDate?: string;
     paymentDeadlineHh?: string;
     paymentDeadlineMm?: string;
+    youtubeUrl?: string;
     agreeAllLabel?: string;
     termsInfo?: TermsInfoItem[];
   }
@@ -219,6 +223,7 @@ export type HydrateSnapshotInput = {
   accountHolderName?: string;
   homeUrl?: string;
   eventPageUrl?: string;
+  youtubeUrl?: string;
   maxParticipants?: string;
   groups?: CourseGroup[];
   hostItems?: PartyItem[];
@@ -235,6 +240,8 @@ export type HydrateSnapshotInput = {
   bannerInstagram?: UploadItem[];
   bannerSideMenu?: UploadItem[];
   bannerAdvertise?: UploadItem[];
+  specialEventImage?: UploadItem[];
+  awardInfoImage?: UploadItem[];
   bannerGuideDesktop?: UploadItem[];
   bannerGuideMobile?: UploadItem[];
   bannerMainDesktop?: UploadItem[];
@@ -319,6 +326,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [accountHolderName, setAccountHolderName] = React.useState<string>('');
   const [homeUrl, setHomeUrl] = React.useState('');
   const [eventPageUrl, setEventPageUrl] = React.useState('');
+  const [youtubeUrl, setYoutubeUrl] = React.useState('');
 
   /** 신청여부(라디오) */
   const [applyStatus, setApplyStatus] = React.useState<RegStatus>('접수중');
@@ -365,6 +373,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [bannerAdvertise, setBannerAdvertise] = React.useState<UploadItem[]>(
     []
   );
+  const [specialEventImage, setSpecialEventImage] = React.useState<UploadItem[]>(
+    []
+  );
+  const [awardInfoImage, setAwardInfoImage] = React.useState<UploadItem[]>([]);
 
   // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
   const [bannerGuideDesktop, setBannerGuideDesktop] = React.useState<
@@ -456,6 +468,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setAccountHolderName((prefill as any)?.accountHolderName ?? '');
     setHomeUrl(prefill.homeUrl ?? '');
     setEventPageUrl(prefill.eventPageUrl ?? '');
+    setYoutubeUrl((prefill as { youtubeUrl?: string }).youtubeUrl ?? '');
     setAgreeAllLabel((prefill as any)?.agreeAllLabel ?? '');
 
     // 접수 인원수 프리필
@@ -691,6 +704,12 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       setBannerAdvertise(
         convertToUploadItems(prefill.uploads.bannerAdvertise)
       );
+      setSpecialEventImage(
+        convertToUploadItems(prefill.uploads.specialEventImage)
+      );
+      setAwardInfoImage(
+        convertToUploadItems(prefill.uploads.awardInfoImage)
+      );
 
       // 페이지 상단 배너 (요강/메인 D/M)
       setBannerGuideDesktop(
@@ -835,6 +854,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     accountHolderName,
     homeUrl,
     eventPageUrl,
+    youtubeUrl,
     maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
     courses: groups.map(g => g.course.name).filter(Boolean),
     gifts: groups.flatMap(g => g.gifts.map(x => x.label)).filter(Boolean),
@@ -1036,6 +1056,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         bannerInstagram,
         bannerSideMenu, // 사이드메뉴배너(herosection 이미지)
         bannerAdvertise,
+        specialEventImage,
+        awardInfoImage,
 
         // 🔹 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
         bannerGuideDesktop,
@@ -1056,6 +1078,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       autoStart,
       autoDeadline,
       autoMaxRegist,
+      youtubeUrl: youtubeUrl.trim(),
       termsInfo: termsInfo.map((item, index) => ({
         content: item.content.trim(),
         required: item.required === true,
@@ -1092,6 +1115,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if ((s as any).accountHolderName !== undefined) setAccountHolderName((s as any).accountHolderName);
     if (s.homeUrl !== undefined) setHomeUrl(s.homeUrl);
     if (s.eventPageUrl !== undefined) setEventPageUrl(s.eventPageUrl);
+    if (s.youtubeUrl !== undefined) setYoutubeUrl(s.youtubeUrl);
     if (s.maxParticipants !== undefined) setMaxParticipants(s.maxParticipants);
     if (s.agreeAllLabel !== undefined) setAgreeAllLabel(s.agreeAllLabel);
     setGroups(s.groups ?? []);
@@ -1140,6 +1164,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBannerInstagram(s.bannerInstagram ?? []);
     setBannerSideMenu(s.bannerSideMenu ?? []);
     setBannerAdvertise(s.bannerAdvertise ?? []);
+    setSpecialEventImage(s.specialEventImage ?? []);
+    setAwardInfoImage(s.awardInfoImage ?? []);
 
     setBannerGuideDesktop(s.bannerGuideDesktop ?? []);
     setBannerGuideMobile(s.bannerGuideMobile ?? []);
@@ -1244,6 +1270,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setHomeUrl,
     eventPageUrl,
     setEventPageUrl,
+    youtubeUrl,
+    setYoutubeUrl,
 
     /** ✅ 신청여부 */
     applyStatus,
@@ -1287,6 +1315,10 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setBannerSideMenu,
     bannerAdvertise,
     setBannerAdvertise,
+    specialEventImage,
+    setSpecialEventImage,
+    awardInfoImage,
+    setAwardInfoImage,
 
     // uploads — 페이지 상단 배너 (요강/메인 - D/M)
     bannerGuideDesktop,

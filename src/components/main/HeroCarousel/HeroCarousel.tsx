@@ -98,7 +98,7 @@ export default function MarathonHeroCarousel() {
   }, []);
 
   return (
-    <div className="relative aspect-[16/10] w-full min-h-[260px] sm:min-h-[320px] xl:min-h-[400px] max-h-[880px] hero-section">
+    <div className="relative aspect-[16/10] w-full min-h-[400px] max-h-[880px] hero-section">
       {/* 스켈레톤: 첫 페인트부터 보이도록 전환 지연 없음. 데이터 로드 전까지 Swiper는 마운트하지 않음(빈 슬라이드 플래시 방지). */}
       {showSkeleton ? (
         <div
@@ -155,19 +155,9 @@ export default function MarathonHeroCarousel() {
         .hero-section {
           width: 100%;
           aspect-ratio: 16/10;
-          min-height: 260px;
+          min-height: 400px;
           max-height: 880px;
           contain: layout;
-        }
-        @media (min-width: 640px) {
-          .hero-section {
-            min-height: 320px;
-          }
-        }
-        @media (min-width: 1280px) {
-          .hero-section {
-            min-height: 400px;
-          }
         }
         .hero-section > div,
         .hero-section .swiper,

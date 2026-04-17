@@ -139,10 +139,11 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
           onTouchEnd={handlePointerUp}
         >
           <ul
-            className={`flex w-max min-w-full list-none gap-3 pb-2 ${isEmbedded
-              ? 'px-4 md:px-6 lg:px-[6vw]'
-              : 'pl-[18px] md:pl-[82px]'
-              }`}
+            className={`flex w-max min-w-full list-none gap-3 pb-2 ${
+              isEmbedded
+                ? 'px-4 md:px-6 lg:px-[6vw]'
+                : 'pl-[18px] md:pl-[82px]'
+            }`}
           >
             {isLoading || error ? (
               Array.from({ length: 9 }).map((_, i) => (

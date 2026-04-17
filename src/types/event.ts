@@ -142,6 +142,7 @@ export interface EventTopSectionInfo {
   mainBannerColor: string;
   mainBannerMobileImageUrl: string;
   mainBannerPcImageUrl: string;
+  youtubeUrl?: string;
 }
 
 export interface EventMiddleSectionInfo {

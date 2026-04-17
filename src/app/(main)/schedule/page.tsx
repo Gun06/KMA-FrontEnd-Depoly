@@ -164,10 +164,7 @@ export default function SchedulePage() {
     const element = monthRefs.current[monthIndex];
     if (element) {
       // 데스크톱 리스트 모드: 콘텐츠 전용 스크롤 영역만 이동
-      if (
-        listScrollRef.current &&
-        listScrollRef.current.scrollHeight > listScrollRef.current.clientHeight
-      ) {
+      if (listScrollRef.current) {
         const containerRect = listScrollRef.current.getBoundingClientRect();
         const elementRect = element.getBoundingClientRect();
         const relativeTop = elementRect.top - containerRect.top;

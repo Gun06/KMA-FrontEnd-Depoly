@@ -39,6 +39,8 @@ export interface EventInfo {
   autoMaxRegist?: boolean;
   /** 신청 페이지 전체 동의 체크박스 문구 */
   agreeAllLabel?: string;
+  /** 메인 첫 화면 유튜브 임베딩 링크 */
+  youtubeUrl?: string;
 }
 
 // 기념품 정보
@@ -125,6 +127,10 @@ export interface EventImageFiles {
   sideMenuBannerImage?: File;
   /** 사이드 광고 배너 — FormData 키: eventAdvertiseBanner */
   eventAdvertiseBannerImage?: File;
+  /** 이벤트 페이지 이미지 — FormData 키: specialEventImage */
+  specialEventImage?: File;
+  /** 시상안내 페이지 이미지 — FormData 키: awardInfoImage */
+  awardInfoImage?: File;
   // 주최/주관/후원/협력 배너 이미지 배열 (eventBannerInfoList와 순서 일치)
   eventBannerImages?: File[];
 }
@@ -178,6 +184,7 @@ export type EventFormState = {
   accountHolderName?: string;
   homeUrl: string;
   eventPageUrl: string; // 대회 페이지 주소명
+  youtubeUrl?: string; // 유튜브 임베딩 링크
   maxParticipants?: number; // 접수 인원수
   hosts: string[];
   organizers: string[];
@@ -212,6 +219,10 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     bannerSideMenu?: UploadItem[];
     /** 사이드 광고 배너 */
     bannerAdvertise?: UploadItem[];
+    /** 이벤트 페이지 이미지 */
+    specialEventImage?: UploadItem[];
+    /** 시상안내 페이지 이미지 */
+    awardInfoImage?: UploadItem[];
     // 페이지 상단 배너 (요강/메인 - 데스크탑/모바일)
     bannerGuideDesktop?: UploadItem[];
     bannerGuideMobile?: UploadItem[];
@@ -224,6 +235,8 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
     imgConfirm?: UploadItem[];
     imgResult?: UploadItem[];
   };
+  /** 메인 첫 화면 유튜브 임베딩 링크 */
+  youtubeUrl?: string;
   fees?: Array<{ name: string; price: number }>;
   groups?: Array<{
     course: { name: string; price: number; isActive?: boolean };

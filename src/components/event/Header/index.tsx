@@ -110,6 +110,8 @@ export default function EventHeader({
       { label: '대회유의사항', href: `/event/${eventId}/guide/caution` },
       { label: '대회코스', href: `/event/${eventId}/guide/course` },
       { label: '집결 / 출발', href: `/event/${eventId}/guide/gathering` },
+      { label: '이벤트', href: `/event/${eventId}/guide/event` },
+      { label: '시상안내', href: `/event/${eventId}/guide/award` },
     ],
     apply: [
       // 참가자 동의사항 서브메뉴 제거 (이슈: 참가자 유의사항 & 약관 멘트 수정 및 유의사항 서브메뉴 없앰)

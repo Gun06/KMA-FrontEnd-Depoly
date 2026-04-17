@@ -5,6 +5,7 @@ import FormTable from "@/components/admin/Form/FormTable";
 import NoticeMessage from "@/components/admin/Form/NoticeMessage";
 import FileSection from "@/components/admin/Form/FileSection";
 import SortableFileSection from "@/components/admin/Form/SortableFileSection";
+import TextField from "@/components/common/TextField/TextField";
 import { Minus, Plus } from "lucide-react";
 import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
@@ -25,6 +26,9 @@ export type CompetitionForm = {
 
   bannerMainMobile: UploadItem[] | undefined;
   setBannerMainMobile: (items: UploadItem[]) => void;
+  // 메인 첫 화면 유튜브 임베딩 링크
+  youtubeUrl?: string;
+  setYoutubeUrl?: (value: string) => void;
 
   // 홍보용(인스타)
   bannerInstagram: UploadItem[] | undefined;
@@ -37,6 +41,11 @@ export type CompetitionForm = {
   // 사이드 광고 배너
   bannerAdvertise: UploadItem[] | undefined;
   setBannerAdvertise: (items: UploadItem[]) => void;
+  // 이벤트/시상 안내 페이지 이미지
+  specialEventImage: UploadItem[] | undefined;
+  setSpecialEventImage: (items: UploadItem[]) => void;
+  awardInfoImage: UploadItem[] | undefined;
+  setAwardInfoImage: (items: UploadItem[]) => void;
 
   // 페이지별 이미지
   imgNotice: UploadItem[] | undefined;
@@ -87,6 +96,7 @@ const toRO = (arr: UploadItem[] | undefined): ReadonlyFile[] =>
 const contentPad = (count: number) => (count > 0 ? "items-start py-2" : "items-center py-0");
 
 export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
+  const noop = () => {};
   const termsRows = f.termsInfo ?? [];
   const [previewIndex, setPreviewIndex] = React.useState<number | null>(null);
   const previewTerm =
@@ -122,6 +132,29 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           contentClassName={cn("px-4", contentPad((f.bannerMainMobile ?? []).length))}
           single={true}
         />
+        <div
+          className="grid border-b border-neutral-200"
+          style={{ gridTemplateColumns: "200px 1fr" }}
+        >
+          <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
+            메인 배너 첫화면 영상(URL)
+          </div>
+          <div className="bg-white px-4 min-h-[52px] flex items-center">
+            <TextField
+              placeholder="https://www.youtube.com/embed/... 형태의 링크를 입력하세요."
+              value={f.youtubeUrl ?? ""}
+              onChange={(e) =>
+                readOnly || !f.setYoutubeUrl
+                  ? noop()
+                  : f.setYoutubeUrl(e.currentTarget.value)
+              }
+              className="w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none"
+              fontSizePx={13}
+              heightPx={52}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
         <FileSection
           label="대회메인 중간배너-데스크탑"
           editable={!readOnly}
@@ -191,6 +224,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
       <div className="flex mx-auto px-4">
         <NoticeMessage
           items={[
+            { text: "※ 유튜브 URL은 메인 상단 첫번째에 노출되며 선택 항목입니다." },
             { text: "※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다." },
             { text: "※ 실제 사이즈는 1440px × 200px을 지원합니다." },
             {
@@ -257,6 +291,36 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           onChangeEditable={f.setImgConfirm}
           valueReadonly={toRO(f.imgConfirm)}
           contentClassName={cn("px-4", contentPad((f.imgConfirm ?? []).length))}
+        />
+        <FileSection
+          label="이벤트 이미지 (선택)"
+          editable={!readOnly}
+          accept="image/*"
+          maxSizeMB={30}
+          helper={"선택된 파일 없음 / 30MB 이내"}
+          valueEditable={f.specialEventImage}
+          onChangeEditable={f.setSpecialEventImage}
+          valueReadonly={toRO(f.specialEventImage)}
+          contentClassName={cn(
+            "px-4",
+            contentPad((f.specialEventImage ?? []).length)
+          )}
+          single={true}
+        />
+        <FileSection
+          label="시상안내 이미지 (선택)"
+          editable={!readOnly}
+          accept="image/*"
+          maxSizeMB={30}
+          helper={"선택된 파일 없음 / 30MB 이내"}
+          valueEditable={f.awardInfoImage}
+          onChangeEditable={f.setAwardInfoImage}
+          valueReadonly={toRO(f.awardInfoImage)}
+          contentClassName={cn(
+            "px-4",
+            contentPad((f.awardInfoImage ?? []).length)
+          )}
+          single={true}
         />
       </FormTable>
 

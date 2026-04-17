@@ -334,6 +334,12 @@ export function transformApiResponseToFormPrefill(
     bannerAdvertise: eventInfo.eventAdvertiseBannerUrl
       ? [{ url: eventInfo.eventAdvertiseBannerUrl }]
       : [],
+    specialEventImage: eventInfo.specialEventImageUrl
+      ? [{ url: eventInfo.specialEventImageUrl }]
+      : [],
+    awardInfoImage: eventInfo.awardInfoImageUrl
+      ? [{ url: eventInfo.awardInfoImageUrl }]
+      : [],
     imgResult: eventInfo.resultImageUrl
       ? [{ url: eventInfo.resultImageUrl }]
       : [],
@@ -378,6 +384,7 @@ export function transformApiResponseToFormPrefill(
     accountHolderName: eventInfo.accountHolderName || '',
     homeUrl: eventInfo.eventsPageUrl || '',
     eventPageUrl: eventInfo.eventsPageUrl || '',
+    youtubeUrl: eventInfo.youtubeUrl || '',
     maxParticipants: eventInfo.registMaximum || 0,
     hosts: hosts.length > 0 ? hosts : [],
     organizers: organizers.length > 0 ? organizers : [],
