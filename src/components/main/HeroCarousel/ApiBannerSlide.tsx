@@ -116,7 +116,7 @@ export default function ApiBannerSlide({
       {/* 텍스트 오버레이 — 모바일·태블릿: 좌측 하단 / 데스크톱: 투르 드 프랑스형 좌상단(≈left 10%, 세로는 히어로 비율+헤더 안전) */}
       {showOverlay && (
         <div
-          className="absolute left-3 right-4 top-[calc(var(--kma-main-header-offset,64px)+1.2rem)] z-10 flex max-w-[min(100%,1000px)] flex-col items-start text-left sm:left-4 sm:right-6 sm:top-[calc(var(--kma-main-header-offset,64px)+0.9rem)] md:left-5 md:right-8 md:top-[calc(var(--kma-main-header-offset,64px)+1.05rem)] lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(1000px,64vw)] lg:px-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
+          className="absolute left-3 right-4 bottom-14 z-10 flex max-w-[min(100%,1000px)] flex-col items-start text-left sm:left-4 sm:right-6 sm:bottom-16 md:left-5 md:right-8 md:bottom-20 xl:right-auto xl:left-[6%] xl:bottom-auto xl:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] xl:max-w-[min(1000px,64vw)] xl:px-0 2xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
         >
           {hasDateRow && (
             <div className="hero-anim hero-badge mb-3 flex flex-col items-start gap-2 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
@@ -140,59 +140,32 @@ export default function ApiBannerSlide({
           )}
           {title?.trim() && (
             <h1
-              className={`hero-anim hero-title font-giants text-[1.625rem] font-bold leading-[1.15] tracking-[-0.02em] text-white sm:text-3xl sm:leading-tight sm:tracking-[-0.025em] md:text-4xl md:leading-[1.1] lg:text-5xl lg:leading-[1.06] xl:text-[3.125rem] 2xl:text-[3.375rem] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${HERO_TEXT_SHADOW}`}
+              className={`hero-anim hero-title font-giants text-[1.25rem] font-bold leading-[1.18] tracking-[-0.02em] text-white sm:text-3xl sm:leading-tight sm:tracking-[-0.025em] md:text-4xl md:leading-[1.1] xl:text-5xl xl:leading-[1.06] 2xl:text-[3.125rem] overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] ${HERO_TEXT_SHADOW}`}
             >
               {title.trim()}
             </h1>
           )}
           {subtitle?.trim() && (
             <p
-              className={`hero-anim hero-date font-pretendard mt-2 max-w-prose text-base font-medium leading-relaxed text-white sm:mt-3 sm:text-lg md:text-xl lg:mt-4 lg:text-xl xl:text-2xl ${HERO_TEXT_SHADOW}`}
+              className={`hero-anim hero-date font-pretendard mt-1.5 max-w-prose text-sm font-medium leading-relaxed text-white sm:mt-3 sm:text-lg md:text-xl xl:mt-4 xl:text-xl 2xl:text-2xl ${HERO_TEXT_SHADOW}`}
             >
               {subtitle.trim()}
             </p>
           )}
 
           {hasEventId ? (
-            <span className="hero-anim hero-readmore pointer-events-none mt-4 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-5 py-2.5 font-pretendard-bold text-sm font-bold uppercase tracking-[0.14em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base">
+            <span className="hero-anim hero-readmore pointer-events-none mt-3 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base">
               READ MORE
             </span>
           ) : null}
 
           {/* Action buttons: 태블릿 이상에서만 노출 (KMA-Mobile에는 없음, 웹만 유지) */}
           {hasEventId && (
-            <div className="hero-anim hero-buttons hidden sm:flex flex-row gap-2 md:gap-3 mt-4">
-              <HeroButton
-                variant="main"
-                tone="blue"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/apply`;
-                }}
-              >
-                신청하기
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="blue"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/apply`;
-                }}
-              >
-                신청하기
-              </HeroButton>
+            <div className="hero-anim hero-buttons hidden xl:flex flex-row gap-2 md:gap-3 mt-4">
               <HeroButton
                 variant="main"
                 tone="blue"
                 size="md"
-                className="hidden lg:inline-flex"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -204,21 +177,7 @@ export default function ApiBannerSlide({
               <HeroButton
                 variant="main"
                 tone="white"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/guide/overview`;
-                }}
-              >
-                대회 요강
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
+                size="md"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -231,46 +190,6 @@ export default function ApiBannerSlide({
                 variant="main"
                 tone="white"
                 size="md"
-                className="hidden lg:inline-flex"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/guide/overview`;
-                }}
-              >
-                대회 요강
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/confirm`;
-                }}
-              >
-                신청 확인
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/confirm`;
-                }}
-              >
-                신청 확인
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="md"
-                className="hidden lg:inline-flex"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();

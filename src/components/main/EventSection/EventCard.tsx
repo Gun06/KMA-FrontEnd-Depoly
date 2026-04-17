@@ -93,14 +93,14 @@ export default function EventCard({
     const today = new Date();
     // eventStartDate가 있으면 eventStartDate 기준, 없으면 fallback (eventDate) 기준
     const targetDate = startDateStr ? new Date(startDateStr) : new Date(fallbackDateStr);
-    
+
     // 시간을 제거하고 날짜만 비교
     today.setHours(0, 0, 0, 0);
     targetDate.setHours(0, 0, 0, 0);
-    
+
     const diffTime = targetDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 0) {
       return { dDay: `D-${diffDays}`, status: '접수중' };
     } else if (diffDays === 0) {
@@ -124,7 +124,7 @@ export default function EventCard({
 
   // eventStartDate를 기준으로 D-day 계산 (표시용)
   const { dDay, status: dynamicStatus } = calculateDday(eventStartDate, eventDate);
-  
+
   // 서버에서 받은 status를 한글로 변환하여 사용 (서버 상태 우선)
   // API status가 있으면 항상 그것을 사용하고, 없거나 빈 문자열이면 날짜 기반 계산 사용
   const translatedStatus = status ? translateStatus(status) : '';
@@ -153,7 +153,7 @@ export default function EventCard({
   };
 
   // size에 따른 정보 영역 높이 클래스 설정
-  const infoHeightClasses = { 
+  const infoHeightClasses = {
     small: "h-[82px] md:h-[86px] lg:h-[92px]",
     medium: "h-[114px] md:h-[118px] lg:h-[124px]",
     large: "h-[128px] md:h-[180px] lg:h-[200px]",
@@ -308,12 +308,12 @@ export default function EventCard({
           {displayStatus}
         </div>
       </div>
-      
+
       {/* 정보 영역 */}
       <div className={clsx("p-2 md:p-4 flex flex-col", infoHeightClasses[size])}>
         <div className="space-y-1 md:space-y-2">
           {/* 이벤트 제목 */}
-          <h4 
+          <h4
             className="font-medium text-gray-800 text-xs md:text-base lg:text-lg leading-tight truncate"
             title={title}
           >
@@ -323,21 +323,21 @@ export default function EventCard({
           <p className="text-sm md:text-xl font-black text-gray-900 font-pretendard-extrabold line-clamp-1" title={primaryInfoText}>
             {primaryInfoText}
           </p>
-          
+
           {/* 날짜/시간 */}
-          <p 
+          <p
             className="text-xs md:text-sm text-gray-600 leading-relaxed line-clamp-1"
             title={date}
           >
             {date}
           </p>
         </div>
-        
+
         {/* 하단 상태 정보 및 가기 버튼 */}
         <div className={clsx(
           "flex items-center justify-between mt-2 md:mt-5 lg:mt-6 transition-all duration-300",
-          size === 'test' 
-            ? "gap-1 sm:gap-1.5 md:gap-2 lg:gap-3" 
+          size === 'test'
+            ? "gap-1 sm:gap-1.5 md:gap-2 lg:gap-3"
             : "gap-2 md:gap-3"
         )}>
           <div className={clsx(
