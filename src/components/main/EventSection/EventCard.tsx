@@ -115,6 +115,7 @@ export default function EventCard({
     const statusMap: Record<string, string> = {
       'PENDING': '접수예정',
       'OPEN': '접수중',
+      'UPLOAD_APPLYING': '심사중',
       'FINAL_CLOSED': '접수마감',
       'CLOSED': '접수마감'
     };
@@ -197,6 +198,7 @@ export default function EventCard({
       PENDING: { text: '접수예정', bg: '#FF6B00' },
       ONGOING: { text: '접수중', bg: '#00C73C' },
       OPEN: { text: '접수중', bg: '#00C73C' },
+      UPLOAD_APPLYING: { text: '심사중', bg: '#FF6B00' },
       COMPLETED: { text: '접수마감', bg: '#999999' },
       CANCELLED: { text: '접수마감', bg: '#999999' },
       CLOSED: { text: '접수마감', bg: '#999999' },
