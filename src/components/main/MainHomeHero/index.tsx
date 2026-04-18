@@ -271,13 +271,20 @@ function PopularDeadlineBanner({
             className={cn(
               'flex w-full items-stretch',
               isDesktopLikeMobile
-                ? 'max-w-[min(94vw,20.5rem)] origin-top-left'
+                ? 'max-w-[min(86vw,17.5rem)] origin-top-left sm:max-w-[min(90vw,19rem)]'
                 : 'origin-center rotate-[-4.5deg]'
             )}
             aria-busy="true"
             aria-label="마감임박 대회 로딩"
           >
-            <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/15">
+            <div
+              className={cn(
+                'relative min-w-0 overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/15',
+                isDesktopLikeMobile
+                  ? 'basis-[54%] max-w-[54%] shrink-0 sm:basis-[66%] sm:max-w-[66%] sm:shrink sm:flex-1'
+                  : 'flex-1'
+              )}
+            >
               <div
                 className="w-full animate-pulse bg-white/20"
                 style={{ aspectRatio: '332/166' }}
@@ -285,14 +292,18 @@ function PopularDeadlineBanner({
             </div>
             <div
               className={cn(
-                'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
+                'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
                 isDesktopLikeMobile
-                  ? '-ml-[2.85rem] w-[9.25rem] pr-2 pl-6 sm:-ml-14 sm:w-36 sm:pr-2.5 sm:pl-8'
-                  : '-ml-32 w-80 pr-8 pl-20'
+                  ? 'items-end -ml-[2.65rem] w-[min(42vw,10.5rem)] pr-1.5 pl-3 sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
+                  : 'items-center justify-center -ml-32 w-80 pr-8 pl-20'
               )}
-              style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
+              style={{
+                background: isDesktopLikeMobile
+                  ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.55) 22%, #09090b 52%, #09090b 100%)'
+                  : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
+              }}
             >
-              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-2 gap-2.5 sm:translate-x-3 sm:gap-3' : 'translate-x-10 gap-[2.125rem]')}>
+              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? '-translate-x-2 gap-2.5 pr-0.5 sm:-translate-x-1 sm:gap-3 sm:pr-1' : 'translate-x-10 gap-[2.125rem]')}>
                 <div className={cn('animate-pulse rounded-xl bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-5 w-10 sm:h-6 sm:w-12' : 'h-9 w-[4.25rem]')} />
                 <div className="flex items-end justify-center gap-1 tabular-nums">
                   <div className="flex flex-col items-center gap-0.5">
@@ -378,7 +389,7 @@ function PopularDeadlineBanner({
         className={cn(
           'flex w-full items-stretch',
           isDesktopLike
-            ? 'max-w-[min(94vw,20.5rem)] origin-top-left'
+            ? 'max-w-[min(86vw,17.5rem)] origin-top-left sm:max-w-[min(90vw,19rem)]'
             : 'max-w-[92%] origin-center rotate-[-4.5deg]'
         )}
       >
@@ -387,7 +398,7 @@ function PopularDeadlineBanner({
         <div
           className={cn(
             'relative min-w-0 overflow-hidden rounded-2xl',
-            isDesktopLike ? 'basis-[68%] max-w-[68%] min-w-0 aspect-[332/166] sm:basis-[72%] sm:max-w-[72%]' : 'flex-1'
+            isDesktopLike ? 'basis-[54%] max-w-[54%] min-w-0 aspect-[332/166] sm:basis-[66%] sm:max-w-[66%] md:basis-[72%] md:max-w-[72%]' : 'flex-1'
           )}
         >
           {isDesktopLike ? (
@@ -414,12 +425,16 @@ function PopularDeadlineBanner({
         {/* 우측 — D-day 카드 (이미지 위로 살짝 겹침) */}
         <div
           className={cn(
-            'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl',
+            'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl',
             isDesktopLike
-              ? '-ml-[2.85rem] w-[9.25rem] pr-2 pl-6 sm:-ml-14 sm:w-36 sm:pr-2.5 sm:pl-8'
-              : '-ml-28 w-72 pr-6 pl-16'
+              ? 'items-end -ml-[2.65rem] w-[min(42vw,10.5rem)] pr-1.5 pl-3 sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
+              : 'items-center justify-center -ml-28 w-72 pr-6 pl-16'
           )}
-          style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
+          style={{
+            background: isDesktopLike
+              ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.55) 22%, #09090b 52%, #09090b 100%)'
+              : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
+          }}
           role="timer"
           aria-live="off"
           aria-label={`접수 마감까지 남은 시간: ${daysLabel}일 ${pad2(cd.hrs)}시간 ${pad2(cd.mins)}분 ${pad2(cd.secs)}초`}
@@ -429,7 +444,7 @@ function PopularDeadlineBanner({
             className={cn(
               'flex flex-col items-center text-center',
               isDesktopLike
-                ? 'translate-x-2 gap-2.5 sm:translate-x-3 sm:gap-3'
+                ? '-translate-x-2 gap-2 pr-0.5 sm:-translate-x-1 sm:gap-3 sm:pr-1'
                 : 'translate-x-10 gap-[2.125rem]'
             )}
           >
@@ -444,7 +459,7 @@ function PopularDeadlineBanner({
                 className={cn(
                   'font-giants font-black leading-none tracking-tight text-black',
                   isDesktopLike
-                    ? 'text-[clamp(9px,2.4vw,13px)] sm:text-[clamp(10px,2.6vw,13px)]'
+                    ? 'text-[clamp(11px,3vw,15px)]'
                     : 'text-[clamp(16px,2.6vw,26px)]'
                 )}
               >
@@ -455,22 +470,22 @@ function PopularDeadlineBanner({
             <div
               className={cn(
                 'flex items-end justify-center tabular-nums',
-                isDesktopLike ? 'ml-2 gap-0.5 sm:ml-4' : 'gap-1'
+                isDesktopLike ? 'gap-0.5 sm:gap-1' : 'gap-1'
               )}
             >
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.hrs)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>hrs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(11px,3.2vw,17px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.hrs)}</span>
+                <span className={cn('font-semibold tracking-widest text-white/60 uppercase', isDesktopLike ? 'text-[8px] sm:text-[9px]' : 'text-[9px]')}>hrs</span>
               </div>
-              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-1.5 text-[clamp(9px,2.2vw,12px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/35', isDesktopLike ? 'mb-1 text-[clamp(10px,2.8vw,14px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.mins)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>mins</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(11px,3.2vw,17px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.mins)}</span>
+                <span className={cn('font-semibold tracking-widest text-white/60 uppercase', isDesktopLike ? 'text-[8px] sm:text-[9px]' : 'text-[9px]')}>mins</span>
               </div>
-              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-1.5 text-[clamp(9px,2.2vw,12px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/35', isDesktopLike ? 'mb-1 text-[clamp(10px,2.8vw,14px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.secs)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>secs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(11px,3.2vw,17px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.secs)}</span>
+                <span className={cn('font-semibold tracking-widest text-white/60 uppercase', isDesktopLike ? 'text-[8px] sm:text-[9px]' : 'text-[9px]')}>secs</span>
               </div>
             </div>
             {cd.expired && (
@@ -932,8 +947,8 @@ function HeroMobileDeadlineInBanner({
         <div className="flex items-end justify-end gap-2" />
       </div>
 
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-10 sm:px-5 sm:pb-6 sm:pt-12 md:px-6 md:pb-7 md:pt-14">
-        <div className="w-full max-w-[min(94vw,20.5rem)]">
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-5 sm:pb-6 sm:pt-12 md:px-6 md:pb-7 md:pt-14">
+        <div className="w-full max-w-[min(86vw,17.5rem)] sm:max-w-[min(90vw,19rem)]">
           <PopularDeadlineBanner
             variant="mobileDesktopLike"
             item={popularItems[0] ?? null}
