@@ -271,7 +271,7 @@ function PopularDeadlineBanner({
             className={cn(
               'flex w-full items-stretch',
               isDesktopLikeMobile
-                ? 'max-w-[min(88vw,17rem)] origin-top-left'
+                ? 'max-w-[min(94vw,20.5rem)] origin-top-left'
                 : 'origin-center rotate-[-4.5deg]'
             )}
             aria-busy="true"
@@ -287,13 +287,13 @@ function PopularDeadlineBanner({
               className={cn(
                 'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
                 isDesktopLikeMobile
-                  ? '-ml-14 w-36 pr-2.5 pl-8'
+                  ? '-ml-[2.85rem] w-[9.25rem] pr-2 pl-6 sm:-ml-14 sm:w-36 sm:pr-2.5 sm:pl-8'
                   : '-ml-32 w-80 pr-8 pl-20'
               )}
               style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
             >
-              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-3 gap-3' : 'translate-x-10 gap-[2.125rem]')}>
-                <div className={cn('animate-pulse rounded-xl bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-6 w-12' : 'h-9 w-[4.25rem]')} />
+              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-2 gap-2.5 sm:translate-x-3 sm:gap-3' : 'translate-x-10 gap-[2.125rem]')}>
+                <div className={cn('animate-pulse rounded-xl bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-5 w-10 sm:h-6 sm:w-12' : 'h-9 w-[4.25rem]')} />
                 <div className="flex items-end justify-center gap-1 tabular-nums">
                   <div className="flex flex-col items-center gap-0.5">
                     <div className={cn('animate-pulse rounded bg-white/30', isDesktopLikeMobile ? 'h-3.5 w-5' : 'h-5 w-7')} />
@@ -378,7 +378,7 @@ function PopularDeadlineBanner({
         className={cn(
           'flex w-full items-stretch',
           isDesktopLike
-            ? 'max-w-[min(88vw,17rem)] origin-top-left'
+            ? 'max-w-[min(94vw,20.5rem)] origin-top-left'
             : 'max-w-[92%] origin-center rotate-[-4.5deg]'
         )}
       >
@@ -387,7 +387,7 @@ function PopularDeadlineBanner({
         <div
           className={cn(
             'relative min-w-0 overflow-hidden rounded-2xl',
-            isDesktopLike ? 'basis-[72%] max-w-[72%] aspect-[332/166]' : 'flex-1'
+            isDesktopLike ? 'basis-[68%] max-w-[68%] min-w-0 aspect-[332/166] sm:basis-[72%] sm:max-w-[72%]' : 'flex-1'
           )}
         >
           {isDesktopLike ? (
@@ -416,7 +416,7 @@ function PopularDeadlineBanner({
           className={cn(
             'relative z-10 flex shrink-0 flex-col items-center justify-center rounded-2xl shadow-xl',
             isDesktopLike
-              ? '-ml-14 w-36 pr-2.5 pl-8'
+              ? '-ml-[2.85rem] w-[9.25rem] pr-2 pl-6 sm:-ml-14 sm:w-36 sm:pr-2.5 sm:pl-8'
               : '-ml-28 w-72 pr-6 pl-16'
           )}
           style={{ background: 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)' }}
@@ -429,7 +429,7 @@ function PopularDeadlineBanner({
             className={cn(
               'flex flex-col items-center text-center',
               isDesktopLike
-                ? 'translate-x-3 gap-3'
+                ? 'translate-x-2 gap-2.5 sm:translate-x-3 sm:gap-3'
                 : 'translate-x-10 gap-[2.125rem]'
             )}
           >
@@ -437,14 +437,14 @@ function PopularDeadlineBanner({
             <div
               className={cn(
                 'rounded-xl bg-[#FFDC12] shadow-lg',
-                isDesktopLike ? 'px-2 py-1' : 'px-3 py-1.5'
+                isDesktopLike ? 'px-1.5 py-0.5 sm:px-2 sm:py-1' : 'px-3 py-1.5'
               )}
             >
               <span
                 className={cn(
                   'font-giants font-black leading-none tracking-tight text-black',
                   isDesktopLike
-                    ? 'text-[clamp(10px,2.6vw,13px)]'
+                    ? 'text-[clamp(9px,2.4vw,13px)] sm:text-[clamp(10px,2.6vw,13px)]'
                     : 'text-[clamp(16px,2.6vw,26px)]'
                 )}
               >
@@ -455,22 +455,22 @@ function PopularDeadlineBanner({
             <div
               className={cn(
                 'flex items-end justify-center tabular-nums',
-                isDesktopLike ? 'ml-4 gap-0.5' : 'gap-1'
+                isDesktopLike ? 'ml-2 gap-0.5 sm:ml-4' : 'gap-1'
               )}
             >
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.hrs)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>hrs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.hrs)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>hrs</span>
               </div>
-              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-2 text-[clamp(10px,2.4vw,12px)]' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-1.5 text-[clamp(9px,2.2vw,12px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.mins)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>mins</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.mins)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>mins</span>
               </div>
-              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-2 text-[clamp(10px,2.4vw,12px)]' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
+              <span className={cn('font-giants font-bold leading-none text-white/30', isDesktopLike ? 'mb-1.5 text-[clamp(9px,2.2vw,12px)] sm:mb-2' : 'mb-3 text-[clamp(13px,2vw,20px)]')}>:</span>
               <div className="flex flex-col items-center gap-0">
-                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.secs)}</span>
-                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[7px]' : 'text-[9px]')}>secs</span>
+                <span className={cn('font-giants font-bold leading-none text-white', isDesktopLike ? 'text-[clamp(8px,2vw,11px)] sm:text-[clamp(9px,2.2vw,11px)]' : 'text-[clamp(13px,2vw,20px)]')}>{pad2(cd.secs)}</span>
+                <span className={cn('font-medium tracking-widest text-white/50 uppercase', isDesktopLike ? 'text-[6px] sm:text-[7px]' : 'text-[9px]')}>secs</span>
               </div>
             </div>
             {cd.expired && (
@@ -932,8 +932,8 @@ function HeroMobileDeadlineInBanner({
         <div className="flex items-end justify-end gap-2" />
       </div>
 
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent px-4 pb-6 pt-12 md:px-6 md:pb-7 md:pt-14">
-        <div className="w-[min(88vw,17rem)]">
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] pt-10 sm:px-5 sm:pb-6 sm:pt-12 md:px-6 md:pb-7 md:pt-14">
+        <div className="w-full max-w-[min(94vw,20.5rem)]">
           <PopularDeadlineBanner
             variant="mobileDesktopLike"
             item={popularItems[0] ?? null}
@@ -989,48 +989,48 @@ function HeroMobileBelowHero({
             {isLoading
               ? [0, 1, 2].map((i) => oliveCardSkeletonLi(`m-bl-sk-${i}`))
               : mainThree.map((ev, i) => {
-                  if (!ev) {
-                    return (
-                      <li
-                        key={`m-bl-empty-${i}`}
-                        className="w-[240px] shrink-0 list-none md:w-[267px]"
-                        aria-hidden
-                      >
-                        <div className="aspect-[16/10] w-full rounded-xl border border-dashed border-gray-200 bg-gray-50" />
-                        <div className="mt-2.5 h-10 rounded bg-gray-50" />
-                      </li>
-                    );
-                  }
-                  const ymd = toYmd(ev.eventDate) || '2099-12-31';
+                if (!ev) {
                   return (
-                    <EventCard
-                      key={ev.eventId || `bl-${i}`}
-                      imageSrc={blockListDisplayImageSrc(ev)}
-                      imageAlt={ev.eventNameKr}
-                      title={ev.eventNameKr}
-                      subtitle={ev.eventNameEn}
-                      date={new Date(ymd).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                      categoryNames={ev.categoryNames}
-                      status={ev.status}
-                      eventDate={ymd}
-                      eventDeadLine={
-                        ev.registDeadline
-                          ? toYmd(ev.registDeadline)
-                          : ev.eventDeadLine
-                            ? toYmd(ev.eventDeadLine)
-                            : undefined
-                      }
-                      eventId={ev.eventId}
-                      eventUrl={ev.eventUrl}
-                      size="olive"
-                      className={cardHover}
-                    />
+                    <li
+                      key={`m-bl-empty-${i}`}
+                      className="w-[240px] shrink-0 list-none md:w-[267px]"
+                      aria-hidden
+                    >
+                      <div className="aspect-[16/10] w-full rounded-xl border border-dashed border-gray-200 bg-gray-50" />
+                      <div className="mt-2.5 h-10 rounded bg-gray-50" />
+                    </li>
                   );
-                })}
+                }
+                const ymd = toYmd(ev.eventDate) || '2099-12-31';
+                return (
+                  <EventCard
+                    key={ev.eventId || `bl-${i}`}
+                    imageSrc={blockListDisplayImageSrc(ev)}
+                    imageAlt={ev.eventNameKr}
+                    title={ev.eventNameKr}
+                    subtitle={ev.eventNameEn}
+                    date={new Date(ymd).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                    categoryNames={ev.categoryNames}
+                    status={ev.status}
+                    eventDate={ymd}
+                    eventDeadLine={
+                      ev.registDeadline
+                        ? toYmd(ev.registDeadline)
+                        : ev.eventDeadLine
+                          ? toYmd(ev.eventDeadLine)
+                          : undefined
+                    }
+                    eventId={ev.eventId}
+                    eventUrl={ev.eventUrl}
+                    size="olive"
+                    className={cardHover}
+                  />
+                );
+              })}
           </HeroOliveCarousel>
         </div>
       </div>
@@ -1055,8 +1055,8 @@ const SP_VISIBLE = 5.5;
 const SP_GAP = 8;
 const SP_ASPECT = 9 / 16; // 가로형 로고
 
-interface AdHoverInfo  { item: MainPageAdvertiseItem; top: number; }
-interface SpHoverInfo  { item: SponsorBanner;          top: number; }
+interface AdHoverInfo { item: MainPageAdvertiseItem; top: number; }
+interface SpHoverInfo { item: SponsorBanner; top: number; }
 
 /** 공용 마퀴 빌더 */
 function buildMarquee<T>(
@@ -1099,11 +1099,11 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
     return Array.from({ length: minCount * 2 }, (_, i) => items[i % items.length]);
   }, [items]);
 
-  const wrapRef  = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
   const pausedRef = useRef(false);
-  const rafRef    = useRef<number>(0);
-  const listARef  = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const listARef = useRef<HTMLDivElement>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -1216,11 +1216,11 @@ function SponsorMarquee({ items, loading, outerRef, onHoverChange }: {
     return Array.from({ length: minCount * 2 }, (_, i) => items[i % items.length]);
   }, [items]);
 
-  const wrapRef   = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
   const pausedRef = useRef(false);
-  const rafRef    = useRef<number>(0);
-  const listARef  = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const listARef = useRef<HTMLDivElement>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {

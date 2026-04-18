@@ -17,7 +17,7 @@ function HeroBannerSkeleton() {
       <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-400 via-zinc-500 to-zinc-600" />
       <div className="pointer-events-none absolute inset-0 bg-black/45" aria-hidden />
       <div
-        className="absolute left-3 right-4 top-[calc(var(--kma-main-header-offset,64px)+1.2rem)] z-10 flex max-w-[min(100%,1000px)] flex-col items-start gap-3 text-left sm:left-4 sm:right-6 sm:top-[calc(var(--kma-main-header-offset,64px)+0.9rem)] md:left-5 md:right-8 md:top-[calc(var(--kma-main-header-offset,64px)+1.05rem)] lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(1000px,64vw)] lg:px-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
+        className="absolute left-3 right-4 top-[calc(var(--kma-main-header-offset,64px)+0.75rem)] z-10 flex max-w-[min(100%,1000px)] flex-col items-start gap-2.5 pb-[clamp(6.75rem,28vw,10rem)] text-left sm:left-4 sm:right-6 sm:top-[calc(var(--kma-main-header-offset,64px)+0.9rem)] sm:gap-3 md:left-5 md:right-8 md:top-[calc(var(--kma-main-header-offset,64px)+1.05rem)] lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(1000px,64vw)] lg:px-0 lg:pb-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
       >
         <div className="mb-1 flex flex-col gap-2 sm:mb-0 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
           <div className="h-7 w-14 shrink-0 animate-pulse rounded-md bg-white/35 sm:h-9 sm:w-16" />
@@ -98,7 +98,7 @@ export default function MarathonHeroCarousel() {
   }, []);
 
   return (
-    <div className="relative aspect-[16/10] w-full min-h-[400px] max-h-[880px] hero-section">
+    <div className="relative w-full max-h-[880px] hero-section">
       {/* 스켈레톤: 첫 페인트부터 보이도록 전환 지연 없음. 데이터 로드 전까지 Swiper는 마운트하지 않음(빈 슬라이드 플래시 방지). */}
       {showSkeleton ? (
         <div
@@ -154,10 +154,27 @@ export default function MarathonHeroCarousel() {
       <style jsx global>{`
         .hero-section {
           width: 100%;
-          aspect-ratio: 16/10;
-          min-height: 400px;
           max-height: 880px;
           contain: layout;
+        }
+        @media (max-width: 639px) {
+          .hero-section {
+            aspect-ratio: 3 / 4;
+            min-height: min(72vw, 380px);
+            max-height: min(88vh, 560px);
+          }
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .hero-section {
+            aspect-ratio: 16 / 10;
+            min-height: 320px;
+          }
+        }
+        @media (min-width: 1024px) {
+          .hero-section {
+            aspect-ratio: 16 / 10;
+            min-height: 400px;
+          }
         }
         .hero-section > div,
         .hero-section .swiper,
