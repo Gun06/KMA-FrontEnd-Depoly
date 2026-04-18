@@ -66,7 +66,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
 
   return (
     <>
-      <div className={`${sectionBg} pt-8 ${embedded ? 'pt-2' : ''} ${className || ''}`}>
+      <div className={`${sectionBg} ${embedded ? 'pt-[10px]' : 'pt-8'} ${className || ''}`}>
         <div className={embedded ? 'w-full min-w-0' : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10'}>
           <div className="flex items-end justify-between">
             <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
