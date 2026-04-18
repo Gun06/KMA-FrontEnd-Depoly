@@ -80,12 +80,14 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
           fullBleed
           showChevron={false}
           titleClassName=""
+          frameXPaddingClass="px-3 sm:px-4 md:px-5 lg:px-[6vw]"
+          titleXPaddingClass="pl-0"
         >
           {/* 빈 children으로 에러 방지 */}
         </SectionPanel>
         
         {/* Contact 내용을 SectionPanel 아래에 별도 배치 */}
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw] relative">
+        <div className="relative mx-auto w-full max-w-[1920px] px-3 sm:px-4 md:px-5 lg:px-[6vw]">
           {/* slate 배경을 Contact 내용에도 적용 - 높이 확장 */}
           <div
             aria-hidden
@@ -93,26 +95,26 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
             style={{ clipPath: `inset(30% 0 0 0)` }}
           />
           
-          <div className="px-8 md:px-9 lg:px-0 py-8 md:py-12 relative z-10">
+          <div className="relative z-10 py-8 md:py-12">
             {/* 컨텐츠 */}
             <div className="relative">
               <div className="grid grid-cols-2 gap-y-12 md:gap-y-16 gap-x-1 md:grid-cols-3 md:gap-x-2 lg:grid-cols-5 lg:gap-x-3 items-start relative z-10">
               {items.map((item) => (
                 <div key={item.type} className="flex flex-col items-center gap-4 md:gap-5 text-center">
                   <IconBox>{renderIcon(item.type)}</IconBox>
-                  <div className="font-giants text-[20px] md:text-[24px] text-gray-900">{item.title}</div>
+                  <div className="font-giants text-[22px] text-gray-900 md:text-[28px]">{item.title}</div>
                   {item.description && (
                     item.href ? (
                       <a
                         href={item.href}
                         target={item.type === 'youtube' || item.type === 'instagram' ? '_blank' : undefined}
                         rel={item.type === 'youtube' || item.type === 'instagram' ? 'noopener noreferrer' : undefined}
-                        className="text-[14px] md:text-[16px] text-gray-600 hover:text-gray-900 transition-colors duration-200 whitespace-pre-line"
+                        className="text-sm leading-relaxed text-gray-600 transition-colors duration-200 hover:text-gray-900 whitespace-pre-line md:text-[15px] md:leading-relaxed"
                       >
                         {item.description}
                       </a>
                     ) : (
-                      <span className="text-[14px] md:text-[16px] text-gray-600 whitespace-pre-line">
+                      <span className="text-sm leading-relaxed text-gray-600 whitespace-pre-line md:text-[15px] md:leading-relaxed">
                         {item.description}
                       </span>
                     )

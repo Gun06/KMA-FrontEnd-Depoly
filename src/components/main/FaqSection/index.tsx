@@ -133,25 +133,28 @@ export default function FaqSection({
         fullBleed
         showChevron={false}
         backgroundLayer={undefined}
-        titleClassName="">
+        titleClassName=""
+        frameXPaddingClass="px-3 sm:px-4 md:px-5 lg:px-[6vw]"
+        titleXPaddingClass="pl-0"
+      >
         {/* 빈 children으로 에러 방지 */}
       </SectionPanel>
       
       {/* FAQ 내용을 SectionPanel 아래에 별도 배치 */}
-      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw]">
-        <div className="px-8 md:px-9 lg:px-0">
+      <div className="mx-auto w-full max-w-[1920px] px-3 sm:px-4 md:px-5 lg:px-[6vw]">
+        <div>
           {isLoading ? (
             // 스켈레톤 UI
-            <div className="divide-y divide-gray-200 bg-white rounded-md">
+            <div className="divide-y divide-gray-200 rounded-md bg-white">
               {Array.from({ length: 5 }).map((_, idx) => (
-                <div key={`skeleton-${idx}`} className="py-6">
-                  <div className="w-full flex items-center gap-4">
+                <div key={`skeleton-${idx}`} className="py-4 sm:py-5 md:py-6">
+                  <div className="flex w-full items-center gap-3 sm:gap-4">
                     {/* Q 마크 스켈레톤 */}
-                    <div className="w-6 md:w-7 h-6 md:h-7 bg-gray-200 rounded animate-pulse flex-shrink-0" />
+                    <div className="h-5 w-5 shrink-0 animate-pulse rounded bg-gray-200 md:h-6 md:w-6" />
                     {/* 질문 텍스트 스켈레톤 */}
-                    <div className="flex-1 space-y-2">
-                      <div className="h-5 md:h-6 w-full bg-gray-200 rounded animate-pulse" />
-                      <div className="h-5 md:h-6 w-3/4 bg-gray-200 rounded animate-pulse" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-[14px] w-full animate-pulse rounded bg-gray-200 md:h-4" />
+                      <div className="h-[14px] w-3/4 animate-pulse rounded bg-gray-200 md:h-4" />
                     </div>
                     {/* 화살표 아이콘 스켈레톤 */}
                     <div className="w-4 h-4 md:w-5 md:h-5 bg-gray-200 rounded animate-pulse flex-shrink-0" />
@@ -160,7 +163,7 @@ export default function FaqSection({
               ))}
             </div>
           ) : faqItemsWithHtml.length > 0 ? (
-            <div className="divide-y divide-gray-200 bg-white rounded-md">
+            <div className="divide-y divide-gray-200 rounded-md bg-white">
               {faqItemsWithHtml.map((item, index) => {
                 const isOpen = openSet.has(index)
                 const buttonId = `faq-button-${index}`
@@ -172,13 +175,13 @@ export default function FaqSection({
                       aria-controls={panelId}
                       aria-expanded={isOpen}
                       onClick={() => toggle(index)}
-                      className="w-full flex items-center gap-4 py-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 pl-0 pr-0"
+                      className="flex w-full items-center gap-3 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4 sm:py-5 md:py-6"
                     >
-                      <span aria-hidden className="text-gray-800 font-giants text-[22px] md:text-[28px] leading-none">
+                      <span aria-hidden className="shrink-0 font-giants text-base font-bold leading-none text-gray-800 md:text-lg">
                         Q
                       </span>
                       <span 
-                        className="flex-1 font-pretendard text-[16px] md:text-[18px] text-gray-900 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
+                        className="min-w-0 flex-1 font-pretendard text-sm leading-relaxed text-gray-900 md:text-[15px] md:leading-relaxed [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: item.questionHtml }}
                       />
                       <span aria-hidden>
@@ -196,10 +199,10 @@ export default function FaqSection({
                       role="region"
                       aria-labelledby={buttonId}
                       hidden={!isOpen}
-                      className="pb-6 pl-10 pr-0"
+                      className="pb-4 sm:pb-5 md:pb-6"
                     >
                       <div 
-                        className="mt-2 rounded-md bg-gray-100 p-4 md:p-6 min-h-[120px] md:min-h-[160px] text-gray-700 text-[14px] md:text-[16px] [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6]"
+                        className="mt-1 min-h-[100px] w-full rounded-md bg-gray-100 p-3 text-sm leading-relaxed text-gray-700 sm:mt-2 sm:p-4 md:min-h-[140px] md:p-5 md:text-[15px] md:leading-relaxed [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: item.answerHtml }}
                       />
                     </div>
@@ -209,7 +212,7 @@ export default function FaqSection({
             </div>
           ) : (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500">FAQ가 없습니다.</div>
+              <div className="text-sm text-gray-500">FAQ가 없습니다.</div>
             </div>
           )}
         </div>

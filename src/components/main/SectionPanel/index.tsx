@@ -6,6 +6,10 @@ interface SectionPanelProps {
   containerClassName?: string
   contentClassName?: string
   titleClassName?: string
+  /** max-w 컨테이너 가로 패딩 (기본: 메인 공통). 공지/문의와 맞출 때 `px-3 sm:px-4 md:px-5 lg:px-[6vw]` 등 */
+  frameXPaddingClass?: string
+  /** 타이틀 행 추가 좌패딩 (기본: 타이틀만 살짝 들여쓰기) */
+  titleXPaddingClass?: string
   /** 타이틀이 시작되는 가로 오프셋(px, %, rem 등 CSS 값) */
   titleStart?: string
   showChevron?: boolean
@@ -19,6 +23,8 @@ export default function SectionPanel({
   containerClassName = '',
   contentClassName = '',
   titleClassName = '',
+  frameXPaddingClass = 'px-4 md:px-6 lg:px-[6vw]',
+  titleXPaddingClass = 'pl-4 md:pl-3 lg:pl-0',
   titleStart,
   showChevron = true,
   fullBleed = false,
@@ -27,10 +33,10 @@ export default function SectionPanel({
   return (
     <div className={`relative overflow-hidden h-16 md:h-20 ${fullBleed ? 'rounded-none' : 'rounded-md'} ${containerClassName}`}>
       {backgroundLayer}
-      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 lg:px-[6vw] h-full">
+      <div className={`w-full max-w-[1920px] mx-auto h-full ${frameXPaddingClass}`}>
         {/* Title */}
         <div
-          className={`h-full flex items-center pl-4 md:pl-3 lg:pl-0 relative z-10 ${titleClassName}`}
+          className={`h-full flex items-center relative z-10 ${titleXPaddingClass} ${titleClassName}`}
           style={titleStart ? { paddingLeft: titleStart } : undefined}
         >
           <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900 flex items-center">
