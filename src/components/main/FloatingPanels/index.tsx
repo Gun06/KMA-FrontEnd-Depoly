@@ -5,24 +5,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MainPageAdvertiseItem, SponsorBanner } from '@/types/event';
 
 /* ─── 공용 상수 ─── */
-const PANEL_W     = 200;
-const POPCARD_W   = 260;
+const PANEL_W = 200;
+const POPCARD_W = 260;
 const POPCARD_GAP = 10;
 
 /* 대회안내 마퀴 */
 const AD_MARQUEE_SPEED = 0.5;
-const AD_VISIBLE       = 6;
-const AD_GAP           = 8;
-const AD_ASPECT        = 166 / 332;
+const AD_VISIBLE = 6;
+const AD_GAP = 8;
+const AD_ASPECT = 166 / 332;
 
 /* 스폰서 마퀴 */
 const SP_MARQUEE_SPEED = 0.5;
-const SP_VISIBLE       = 5.5;
-const SP_GAP           = 8;
-const SP_ASPECT        = 9 / 16;
+const SP_VISIBLE = 5.5;
+const SP_GAP = 8;
+const SP_ASPECT = 9 / 16;
 
 interface AdHoverInfo { item: MainPageAdvertiseItem; top: number; }
-interface SpHoverInfo { item: SponsorBanner;          top: number; }
+interface SpHoverInfo { item: SponsorBanner; top: number; }
 
 /** 헤더와 동일한 다크 프로스트 글라스 */
 const GLASS_STYLE: React.CSSProperties = {
@@ -61,9 +61,9 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
   outerRef: React.RefObject<HTMLDivElement | null>;
   onHoverChange: (info: AdHoverInfo | null) => void;
 }) {
-  const itemH        = Math.round(PANEL_W * AD_ASPECT);
-  const itemWithGap  = itemH + AD_GAP;
-  const containerH   = AD_VISIBLE * itemWithGap - AD_GAP;
+  const itemH = Math.round(PANEL_W * AD_ASPECT);
+  const itemWithGap = itemH + AD_GAP;
+  const containerH = AD_VISIBLE * itemWithGap - AD_GAP;
 
   const loopItems = useMemo(() => {
     if (items.length === 0) return [];
@@ -71,12 +71,12 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
     return Array.from({ length: min * 2 }, (_, i) => items[i % items.length]);
   }, [items]);
 
-  const wrapRef            = useRef<HTMLDivElement>(null);
-  const offsetRef          = useRef(0);
-  const pausedRef          = useRef(false);
-  const rafRef             = useRef<number>(0);
-  const listARef           = useRef<HTMLDivElement>(null);
-  const leaveTimer         = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+  const rafRef = useRef<number>(0);
+  const listARef = useRef<HTMLDivElement>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
     </div>
   );
 
-  const half  = Math.ceil(loopItems.length / 2);
+  const half = Math.ceil(loopItems.length / 2);
   const listA = loopItems.slice(0, half);
   const listB = loopItems.slice(half);
 
@@ -126,7 +126,7 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
     const handleEnter = (e: React.MouseEvent) => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
       pausedRef.current = true;
-      const rect      = e.currentTarget.getBoundingClientRect();
+      const rect = e.currentTarget.getBoundingClientRect();
       const panelRect = outerRef.current?.getBoundingClientRect();
       onHoverChange({ item, top: panelRect ? rect.top - panelRect.top : 0 });
     };
@@ -169,9 +169,9 @@ function SponsorMarquee({ items, loading, outerRef, onHoverChange }: {
   outerRef: React.RefObject<HTMLDivElement | null>;
   onHoverChange: (info: SpHoverInfo | null) => void;
 }) {
-  const itemH       = Math.round(PANEL_W * SP_ASPECT);
+  const itemH = Math.round(PANEL_W * SP_ASPECT);
   const itemWithGap = itemH + SP_GAP;
-  const containerH  = SP_VISIBLE * itemWithGap - SP_GAP;
+  const containerH = SP_VISIBLE * itemWithGap - SP_GAP;
 
   const loopItems = useMemo(() => {
     if (items.length === 0) return [];
@@ -179,12 +179,12 @@ function SponsorMarquee({ items, loading, outerRef, onHoverChange }: {
     return Array.from({ length: min * 2 }, (_, i) => items[i % items.length]);
   }, [items]);
 
-  const wrapRef            = useRef<HTMLDivElement>(null);
-  const offsetRef          = useRef(0);
-  const pausedRef          = useRef(false);
-  const rafRef             = useRef<number>(0);
-  const listARef           = useRef<HTMLDivElement>(null);
-  const leaveTimer         = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+  const rafRef = useRef<number>(0);
+  const listARef = useRef<HTMLDivElement>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -226,7 +226,7 @@ function SponsorMarquee({ items, loading, outerRef, onHoverChange }: {
     </div>
   );
 
-  const half  = Math.ceil(loopItems.length / 2);
+  const half = Math.ceil(loopItems.length / 2);
   const listA = loopItems.slice(0, half);
   const listB = loopItems.slice(half);
 
@@ -234,7 +234,7 @@ function SponsorMarquee({ items, loading, outerRef, onHoverChange }: {
     const handleEnter = (e: React.MouseEvent) => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
       pausedRef.current = true;
-      const rect      = e.currentTarget.getBoundingClientRect();
+      const rect = e.currentTarget.getBoundingClientRect();
       const panelRect = outerRef.current?.getBoundingClientRect();
       onHoverChange({ item, top: panelRect ? rect.top - panelRect.top : 0 });
     };
@@ -322,10 +322,10 @@ function SpPopCard({ info, onEnter, onLeave }: { info: SpHoverInfo; onEnter: () 
 
 /* ─── 메인 export: 레이아웃에서 사용 ─── */
 export default function FloatingPanels() {
-  const [advertiseItems, setAdvertiseItems]   = useState<MainPageAdvertiseItem[]>([]);
+  const [advertiseItems, setAdvertiseItems] = useState<MainPageAdvertiseItem[]>([]);
   const [advertiseLoading, setAdvertiseLoading] = useState(true);
-  const [sponsorItems, setSponsorItems]       = useState<SponsorBanner[]>([]);
-  const [sponsorLoading, setSponsorLoading]   = useState(true);
+  const [sponsorItems, setSponsorItems] = useState<SponsorBanner[]>([]);
+  const [sponsorLoading, setSponsorLoading] = useState(true);
 
   useEffect(() => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
@@ -368,7 +368,7 @@ export default function FloatingPanels() {
     void fetchSponsors();
   }, []);
 
-  const panelRef     = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>('sp');
   const [adPopInfo, setAdPopInfo] = useState<AdHoverInfo | null>(null);
   const [spPopInfo, setSpPopInfo] = useState<SpHoverInfo | null>(null);
