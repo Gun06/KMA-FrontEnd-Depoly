@@ -30,6 +30,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const [apiTerms, setApiTerms] = useState<PublicEventTerm[]>([]);
   const [allAgreeLabel, setAllAgreeLabel] = useState("");
   const [_termsLoading, setTermsLoading] = useState(true);
+  const [isStaticTermsAgreed, setIsStaticTermsAgreed] = useState(false);
   const [checkedTermIds, setCheckedTermIds] = useState<Record<string, boolean>>(
     {}
   );
@@ -144,32 +145,26 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     [apiTerms, checkedTermIds]
   );
 
-  const hasEffectivelyRequiredTerms = useMemo(
-    () => apiTerms.some(isEffectivelyRequired),
+  const requiredApiTermKeys = useMemo(
+    () =>
+      apiTerms
+        .map((term, idx) => ({ term, key: getEventTermKey(term, idx) }))
+        .filter(({ term }) => isEffectivelyRequired(term))
+        .map(({ key }) => key),
     [apiTerms]
   );
 
-  const anyApiTermChecked = useMemo(
+  const areRequiredApiTermsChecked = useMemo(
     () =>
-      apiTerms.some(
-        (term, idx) => checkedTermIds[getEventTermKey(term, idx)] === true
-      ),
-    [apiTerms, checkedTermIds]
+      requiredApiTermKeys.length === 0 ||
+      requiredApiTermKeys.every((key) => checkedTermIds[key] === true),
+    [requiredApiTermKeys, checkedTermIds]
   );
 
   useEffect(() => {
-    if (apiTerms.length === 0) return;
-    if (hasEffectivelyRequiredTerms) {
-      setIsFinalAgreed(requiredApiTermsOk);
-    } else {
-      setIsFinalAgreed(anyApiTermChecked);
-    }
-  }, [
-    apiTerms.length,
-    hasEffectivelyRequiredTerms,
-    requiredApiTermsOk,
-    anyApiTermChecked,
-  ]);
+    // 하단 최종 동의 체크는 "필수 동의 완료 여부"와 동일하게 동기화한다.
+    setIsFinalAgreed(isStaticTermsAgreed && areRequiredApiTermsChecked);
+  }, [isStaticTermsAgreed, areRequiredApiTermsChecked]);
 
   const handleToggleAllApiTerms = (checked: boolean) => {
     const next: Record<string, boolean> = {};
@@ -177,6 +172,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
       next[getEventTermKey(term, idx)] = checked;
     });
     setCheckedTermIds(next);
+    setIsStaticTermsAgreed(checked);
     setIsFinalAgreed(checked);
   };
 
@@ -191,10 +187,21 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
 
   const canSubmitApply =
     isFinalAgreed &&
-    requiredApiTermsOk &&
     possibleToRequest !== false &&
     eventStatus !== "CLOSED" &&
     eventStatus !== "FINAL_CLOSED";
+
+  const handleToggleFinalAgreement = (checked: boolean) => {
+    setIsStaticTermsAgreed(checked);
+    setCheckedTermIds((prev) => {
+      const next = { ...prev };
+      requiredApiTermKeys.forEach((key) => {
+        next[key] = checked;
+      });
+      return next;
+    });
+    setIsFinalAgreed(checked);
+  };
 
   const proceedApply = (kind: "individual" | "group") => {
     router.push(
@@ -203,6 +210,11 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   };
 
   const handleApplyClick = (kind: "individual" | "group") => {
+    if (!isStaticTermsAgreed) {
+      showAlert("필수 약관에 동의해 주세요.");
+      return;
+    }
+
     if (apiTerms.length > 0 && !requiredApiTermsOk) {
       showAlert("필수 대회 약관에 동의해 주세요.");
       return;
@@ -337,12 +349,35 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
           {/* 약관 섹션 */}
           <div className="bg-white p-6 mb-6">
             {/* 약관 헤더 */}
-            <div className="text-left mb-6">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">약관</h2>
-              <hr className="border-black mb-3" style={{ borderWidth: '1.7px' }} />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 sm:mb-0">
+                약관
+              </h2>
             </div>
+            <hr className="border-black mb-3" style={{ borderWidth: '1.7px' }} />
 
-            <p className="text-sm sm:text-base text-gray-900">※ 마라톤대회 신청 약관(필독)</p>
+            <EventTermsInlineSection
+              terms={apiTerms}
+              allAgreeLabel={allAgreeLabel}
+              checkedTermIds={checkedTermIds}
+              onToggleAll={handleToggleAllApiTerms}
+              onToggleTerm={handleToggleOneApiTerm}
+              showMasterCheckbox={true}
+              showTermItems={false}
+            />
+
+            <label className="mb-2 inline-flex cursor-pointer items-center gap-1.5 px-0 py-1 text-sm sm:text-[15px] font-semibold text-gray-900">
+              <input
+                type="checkbox"
+                checked={isStaticTermsAgreed}
+                onChange={(e) => setIsStaticTermsAgreed(e.target.checked)}
+                className="h-5 w-5 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
+                필수
+              </span>
+              <span>[대회신청 약관 안내 동의]</span>
+            </label>
             {/* 안전 안내 (고정 블록) */}
             <div className="bg-gray-100 rounded-lg p-4 mb-4 min-h-[250px]">
               <p className="font-bold text-gray-800 mb-4">
@@ -350,11 +385,16 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               </p>
 
               <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
-                <p>
+                <p
+                  style={{
+                    fontWeight: 400,
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+                  }}
+                >
                   뛰는 동안 자신의 몸 상태를 확인하고 이상이 있는 경우 뛰는 것을 바로 멈춰야 합니다.<br />
                   (달리는 도중 어지러움, 가슴 통증, 심한 숨 가쁨, 극심한 피로감, 근육 경련, 탈수 등의 증상)<br />
-                  무리하게 달리면 심각한 경우 쓰러지거나 심근경색 등 심혈관계 질환의 가능성이 있으므로<br />
-                  달리기를 멈추고 즉시 의료진의 도움을 받아야 합니다.<br />
+                  무리하게 달리면 심각한 경우 쓰러지거나 심근경색 등 심혈관계 질환의 가능성이 있으므로 달리기를 멈추고 즉시 의료진의 도움을 받아야 합니다.<br />
                   훈련이 제대로 되지 않은 상태에서는 자신의 체력과 능력을 고려하고 속도를 조절하며 달려주세요.<br />
                   달리기 전 준비 운동과 충분한 수분 섭취 필수! 달린 후 충분한 휴식을 가지는 것이 중요!
                 </p>
@@ -377,6 +417,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               checkedTermIds={checkedTermIds}
               onToggleAll={handleToggleAllApiTerms}
               onToggleTerm={handleToggleOneApiTerm}
+              showMasterCheckbox={false}
+              showTermItems={true}
             />
           </div>
 
@@ -389,10 +431,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                   type="checkbox"
                   id="agreement-checkbox"
                   checked={isFinalAgreed}
-                  onChange={(e) => {
-                    const next = e.target.checked;
-                    setIsFinalAgreed(next);
-                  }}
+                  onChange={(e) => handleToggleFinalAgreement(e.target.checked)}
                   className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
                 <label htmlFor="agreement-checkbox" className="text-sm sm:text-base text-gray-700">
@@ -406,8 +445,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               <button
                 type="button"
                 className={`px-8 py-3 rounded font-semibold transition-colors ${canSubmitApply
-                    ? "bg-black text-white hover:bg-gray-800"
-                    : "bg-gray-300 text-gray-500 cursor-pointer"
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "bg-gray-300 text-gray-500 cursor-pointer"
                   }`}
                 onClick={() => handleApplyClick("individual")}
               >
@@ -416,8 +455,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               <button
                 type="button"
                 className={`px-8 py-3 rounded font-semibold transition-colors ${canSubmitApply
-                    ? "bg-black text-white hover:bg-gray-800"
-                    : "bg-gray-300 text-gray-500 cursor-pointer"
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "bg-gray-300 text-gray-500 cursor-pointer"
                   }`}
                 onClick={() => handleApplyClick("group")}
               >

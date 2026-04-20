@@ -54,7 +54,7 @@ export default function MainBannerForm({
         setEventOptions([]);
       }
     };
-    
+
     loadEventOptions();
   }, []);
 
@@ -85,13 +85,13 @@ export default function MainBannerForm({
   // 이미지 미리보기 컴포넌트 (2:1 비율, 가로 1600px 기준)
   const ImagePreview = () => {
     return (
-      <div className="relative h-[200px] w-[400px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0">
+      <div className="relative aspect-[2/1] w-full max-w-[400px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0">
         {previewUrl ? (
           <Image
             src={previewUrl}
             alt="메인 배너 이미지 미리보기"
             fill
-            sizes="400px"
+            sizes="(max-width: 1024px) 100vw, 400px"
             unoptimized
             style={{ objectFit: 'cover' }}
             priority={false}
@@ -138,9 +138,9 @@ export default function MainBannerForm({
             </FormRow>
           </div>
 
-          {/* 3) 날짜 */}
+          {/* 3) 날짜 or 상단 내용 */}
           <div className={pad}>
-            <FormRow label="날짜">
+            <FormRow label="날짜 or 상단 내용">
               <TextField
                 placeholder="대회 날짜(예: 2025.11.03)"
                 value={value.date}
@@ -155,7 +155,7 @@ export default function MainBannerForm({
 
           {/* 4) 대회 선택 */}
           <div className={pad}>
-            <FormRow label="대회 선택">
+            <FormRow label="대회 선택" contentClassName="items-center px-4">
               <EventDropdownPortal
                 value={value.eventId}
                 onChange={(id) => !readOnly && patch({ eventId: id })}
@@ -168,7 +168,7 @@ export default function MainBannerForm({
 
           {/* 5) 이미지 */}
           <div className={pad}>
-            <FormRow 
+            <FormRow
               label={
                 <div className="flex items-center gap-2">
                   <span>이미지</span>
@@ -183,7 +183,7 @@ export default function MainBannerForm({
                   </div>
                 </div>
               }
-              contentClassName="items-start py-4 pl-4"
+              contentClassName="items-start py-4 px-4"
             >
               <div className="w-full space-y-4">
                 {/* 업로드 버튼과 안내문 - 상단 */}

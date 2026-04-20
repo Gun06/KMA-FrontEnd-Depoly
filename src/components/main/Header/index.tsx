@@ -296,7 +296,7 @@ export default function Header() {
         >
           <Link
             href="/"
-            className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden transition-all hover:brightness-125 sm:gap-2.5"
+            className="flex min-w-0 flex-1 items-center gap-2 transition-all hover:brightness-125 sm:gap-2.5"
           >
             <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full ring-2 ring-green-600 sm:h-8 sm:w-8">
               <Image

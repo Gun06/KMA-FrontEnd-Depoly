@@ -4,8 +4,8 @@ import React from "react";
 import { X } from "lucide-react";
 import MainBannerForm from "./MainBannerForm";
 import type { UploadItem } from "@/components/common/Upload/types";
-import Image from "next/image";
 import type { MainBannerFormData } from "../types";
+import ApiBannerSlide from "@/components/main/HeroCarousel/ApiBannerSlide";
 
 interface MainBannerModalProps {
   isOpen: boolean;
@@ -50,6 +50,10 @@ export default function MainBannerModal({
       setPreviewUrl("");
     }
   }, [imageFile, imageItem]);
+
+  const previewImageSrc =
+    previewUrl ||
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='750'%3E%3Crect fill='%23d1d5db' width='1200' height='750'/%3E%3Ctext fill='%236b7280' font-family='sans-serif' font-size='30' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E%EB%AF%B8%EB%A6%AC%EB%B3%B4%EA%B8%B0%20%EC%9D%B4%EB%AF%B8%EC%A7%80%EA%B0%80%20%EC%97%86%EC%8A%B5%EB%8B%88%EB%8B%A4%3C/text%3E%3C/svg%3E";
 
   if (!isOpen) return null;
 
@@ -106,102 +110,18 @@ export default function MainBannerModal({
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-4">미리보기</h3>
                   <div className="flex justify-center">
-                    <div className="relative w-full max-w-[600px] aspect-[2/1] overflow-hidden rounded-lg border border-gray-200 bg-white">
-                      <div
-                        className={`relative block w-full h-full rounded-lg overflow-hidden ${value.eventId ? 'cursor-pointer' : ''}`}
-                        onClick={value.eventId ? (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          window.open(`/event/${value.eventId}/guide/overview`, '_blank');
-                        } : undefined}
-                      >
-                        {previewUrl ? (
-                          <Image
-                            src={previewUrl || '/placeholder.svg'}
-                            alt={value.title || '배너'}
-                            fill
-                            sizes="600px"
-                            unoptimized
-                            className="object-cover object-center"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400" />
-                        )}
-                        {/* 텍스트가 있을 때만 오버레이와 콘텐츠 표시 */}
-                        {(value.title || value.subtitle || value.date) && (
-                          <>
-                            {/* Dark overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/70 to-black/30" />
-                            {/* Content overlay - 축소 버전 */}
-                            <div className="absolute inset-0 flex items-center justify-start">
-                              <div className="text-left text-white max-w-full px-4 sm:px-6 flex flex-col relative">
-                                <div className="relative z-10 w-full">
-                                  {/* Category badge - 축소, 텍스트가 있을 때만 */}
-                                  {value.eventId && (
-                                    <div className="inline-block w-fit bg-white/30 backdrop-blur-sm rounded-full text-[8px] font-medium px-1.5 py-0.5 mb-1.5 border border-white/20">
-                                      대회 안내
-                                    </div>
-                                  )}
-                                  {/* Main title & description - 축소 */}
-                                  {(value.title || value.subtitle) && (
-                                    <h1 className="font-giants text-sm sm:text-base font-bold mb-1 leading-tight text-left">
-                                      {value.title && (
-                                        <div className="whitespace-nowrap">{value.title}</div>
-                                      )}
-                                      {value.subtitle && (
-                                        <div className="whitespace-nowrap">{value.subtitle}</div>
-                                      )}
-                                    </h1>
-                                  )}
-                                  {/* Date - 축소 */}
-                                  {value.date && (
-                                    <p className="text-[10px] sm:text-xs text-white/95 mb-2">
-                                      {value.date}
-                                    </p>
-                                  )}
-                                  {/* Action buttons - 축소 버전, 텍스트가 있고 eventId가 있을 때만 표시 */}
-                                  {value.eventId && (
-                                    <div className="hidden sm:flex flex-row gap-1.5 mt-1.5">
-                                      <button
-                                        className="px-2 py-1 text-[10px] font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        신청하기
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 text-[10px] font-medium text-gray-900 bg-white rounded hover:bg-gray-100 transition-colors"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        대회 요강
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 text-[10px] font-medium text-gray-900 bg-white rounded hover:bg-gray-100 transition-colors"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                        }}
-                                      >
-                                        신청 확인
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                        {/* per-slide fraction - 축소 */}
-                        <div className="absolute right-2 bottom-2 z-10">
-                          <div className="px-1.5 py-0.5 rounded-full bg-black/50 text-white text-[10px] backdrop-blur-sm border border-white/20">
-                            1/1
-                          </div>
-                        </div>
+                    <div className="relative w-full max-w-[600px] hero-preview-shell overflow-hidden rounded-lg border border-gray-200 bg-white">
+                      <div className="hero-preview-scaled">
+                        <ApiBannerSlide
+                          id={0}
+                          imageUrl={previewImageSrc}
+                          title={value.title || ""}
+                          subtitle={value.subtitle || ""}
+                          date={value.date || ""}
+                          eventId={value.eventId || ""}
+                          total={1}
+                          currentIndex={0}
+                        />
                       </div>
                     </div>
                   </div>
@@ -296,6 +216,25 @@ export default function MainBannerModal({
           )}
         </div>
       </div>
+      <style jsx global>{`
+        .hero-preview-shell {
+          width: 100%;
+          max-height: 880px;
+          contain: layout;
+          aspect-ratio: 16 / 10;
+          min-height: 260px;
+        }
+        .hero-preview-scaled {
+          width: calc(100% / 0.62);
+          height: calc(100% / 0.62);
+          transform: scale(0.62);
+          transform-origin: top left;
+        }
+        .hero-preview-scaled > div,
+        .hero-preview-scaled .hero-slide {
+          height: 100%;
+        }
+      `}</style>
     </div>
   );
 }

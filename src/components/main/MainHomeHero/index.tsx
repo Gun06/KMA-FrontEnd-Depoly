@@ -362,14 +362,15 @@ function PopularDeadlineBanner({
   }
 
   if (!item?.url?.trim()) {
+    const useDesktopFallback = !isMobile || isDesktopLikeMobile;
     return (
       <p
         className={cn(
           'flex items-center justify-center px-3 text-center text-[11px] leading-relaxed md:text-xs',
           isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS,
-          isMobile
-            ? 'rounded-2xl bg-zinc-100 py-8 text-zinc-500'
-            : 'rounded-lg bg-black/30 text-white/55 ring-1 ring-white/10'
+          useDesktopFallback
+            ? 'rounded-lg bg-black/30 py-8 text-white/55 ring-1 ring-white/10'
+            : 'rounded-2xl bg-zinc-100 py-8 text-zinc-500'
         )}
       >
         마감임박 배너를 불러오지 못했거나, 표시할 대회가 없습니다.

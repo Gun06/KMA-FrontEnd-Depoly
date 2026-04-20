@@ -3,7 +3,14 @@
  */
 export default function MarathonApplyStaticTerms() {
   return (
-    <div className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">
+    <div
+      className="space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed"
+      style={{
+        fontWeight: 400,
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+      }}
+    >
       <div>
         <p className="font-bold text-gray-800 mb-2">
           ◆ 본 대회에 참가 신청을 완료한 모든 참가자는 아래의 모든 내용을 충분히 숙지하고

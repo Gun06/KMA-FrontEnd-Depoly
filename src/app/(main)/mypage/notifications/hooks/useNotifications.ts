@@ -38,6 +38,17 @@ function createEmptyNotificationResponse(page: number, size: number): Notificati
 }
 
 /**
+ * 서버(5xx) 오류는 사용자에게 노출하지 않고 빈 목록으로 폴백
+ */
+function isServerError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if ('status' in error && typeof error.status === 'number') {
+    return error.status >= 500;
+  }
+  return false;
+}
+
+/**
  * 전체 알림 목록 조회 훅
  */
 export function useGlobalNotifications(page: number = 1, size: number = 20) {
@@ -45,11 +56,18 @@ export function useGlobalNotifications(page: number = 1, size: number = 20) {
   const hasToken =
     !!accessToken ||
     (typeof window !== 'undefined' && !!localStorage.getItem('kmaAccessToken'));
-  
+
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'global', page, size],
     queryFn: async () => {
-      return await getGlobalNotifications(page, size);
+      try {
+        return await getGlobalNotifications(page, size);
+      } catch (error) {
+        if (isServerError(error)) {
+          return createEmptyNotificationResponse(page, size);
+        }
+        throw error;
+      }
     },
     enabled: hasHydrated && (isLoggedIn || hasToken), // 스토어와 토큰 상태를 함께 확인
     staleTime: 1 * 60 * 1000, // 1분
@@ -65,11 +83,18 @@ export function useEventNotifications(page: number = 1, size: number = 20) {
   const hasToken =
     !!accessToken ||
     (typeof window !== 'undefined' && !!localStorage.getItem('kmaAccessToken'));
-  
+
   return useQuery<NotificationListResponse>({
     queryKey: ['notifications', 'event', page, size],
     queryFn: async () => {
-      return await getEventNotifications(page, size);
+      try {
+        return await getEventNotifications(page, size);
+      } catch (error) {
+        if (isServerError(error)) {
+          return createEmptyNotificationResponse(page, size);
+        }
+        throw error;
+      }
     },
     enabled: hasHydrated && (isLoggedIn || hasToken), // 스토어와 토큰 상태를 함께 확인
     staleTime: 1 * 60 * 1000, // 1분
