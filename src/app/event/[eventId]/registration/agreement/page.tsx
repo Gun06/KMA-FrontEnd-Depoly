@@ -24,11 +24,11 @@ export default function AgreementPage({ params }: { params: { eventId: string } 
           setAgreementData(fallback);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [params.eventId]);
 
   return (
-    <SubmenuLayout 
+    <SubmenuLayout
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
@@ -52,36 +52,36 @@ export default function AgreementPage({ params }: { params: { eventId: string } 
                 참가자 유의사항
               </h1>
             </div>
-            
+
             <hr className="border-black mb-6" style={{ borderWidth: '1.7px' }} />
-            
+
             {/* 상세 내용 */}
             <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상상태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품은 발송)</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">고혈압, 심근검색, 심장병, 당뇨, 기타질병으로 인하여 대회 사망시 주최측에서 책임을 지지 않으며, 보험혜택을 받을 수 없습니다.</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">종목별 제한시간이 초과 된 경우 시상에서 제외됩니다.</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">애완동물 동반 참가불가</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">택배배송 : 주최측 부담일 경우 기념품, 책자, 배번호, 칩 일괄배송(대회 사정상 변경될 수 있습니다.)</span>
               </div>
-              
+
               <div className="flex items-start space-x-2">
                 <span className="text-gray-700 flex-shrink-0">•</span>
                 <span className="text-gray-700">수신자 부담일 경우 대회당일 현장 배부 (대회 미참가 시 수신자 부담으로 기념품 배송)</span>
@@ -96,27 +96,24 @@ export default function AgreementPage({ params }: { params: { eventId: string } 
               <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">약관</h2>
               <hr className="border-black mb-3" style={{ borderWidth: '1.7px' }} />
             </div>
-            
+
             <p className="text-sm sm:text-base text-gray-900">※ 마라톤대회 신청 약관(필독)</p>
             {/* 약관 내용 */}
-            <div className="bg-gray-100 rounded-lg p-4 mb-4 min-h-[250px]">
+            <div className="bg-gray-100 rounded-lg p-4 mb-4">
               <p className="font-bold text-gray-800 mb-4">
                 안전한 레이스를 위한 안내 사항 (필독)!!!
               </p>
-              
-                              <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
-                  <p>
-                    뛰는 동안 자신의 몸 상태를 확인하고 이상이 있는 경우 뛰는 것을 바로 멈춰야 합니다.<br />
-                    (달리는 도중 어지러움, 가슴 통증, 심한 숨 가쁨, 극심한 피로감, 근육 경련, 탈수 등의 증상)<br />
-                    무리하게 달리면 심각한 경우 쓰러지거나 심근경색 등 심혈관계 질환의 가능성이 있으므로<br />
-                    달리기를 멈추고 즉시 의료진의 도움을 받아야 합니다.<br />
-                    훈련이 제대로 되지 않은 상태에서는 자신의 체력과 능력을 고려하고 속도를 조절하며 달려주세요.<br />
-                    달리기 전 준비 운동과 충분한 수분 섭취 필수! 달린 후 충분한 휴식을 가지는 것이 중요!
-                  </p>
-                  <p className="font-semibold text-gray-800">
-                    위와 같이 안전한 레이스를 지키지 않거나 질병이나 본인의 과실로 인한 사고는 보험 적용이 되지 않습니다.
-                  </p>
-                </div>
+
+              <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
+                <p>
+                  레이스 중 이상 증상이 느껴지면 즉시 중단하고 진행 요원이나 의료진의 도움을 받으시기 바랍니다.<br />
+                  (예: 어지러움, 가슴 통증, 숨 가쁨, 극심한 피로, 근육 경련 등)<br />
+                  체력과 운동 능력을 고려해 적절한 속도 유지가 필요하며, 충분한 준비 운동과 레이스 후 휴식을 권장합니다.
+                </p>
+                <p className="font-semibold text-gray-800">
+                  건강 상태 미고려, 기저 질환 등으로 발생한 본인 과실 사고는 보험 적용 대상에서 제외됩니다.
+                </p>
+              </div>
             </div>
 
             {/* 추가 약관 내용 영역 */}
@@ -210,7 +207,7 @@ export default function AgreementPage({ params }: { params: { eventId: string } 
                 </div>
               </div>
             </div>
-           </div>
+          </div>
         </div>
       </div>
     </SubmenuLayout>

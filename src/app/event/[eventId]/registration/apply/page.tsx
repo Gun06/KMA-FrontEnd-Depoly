@@ -379,7 +379,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               <span>[대회신청 약관 안내 동의]</span>
             </label>
             {/* 안전 안내 (고정 블록) */}
-            <div className="bg-gray-100 rounded-lg p-4 mb-4 min-h-[250px]">
+            <div className="bg-gray-100 rounded-lg p-4 mb-4">
               <p className="font-bold text-gray-800 mb-4">
                 안전한 레이스를 위한 안내 사항 (필독)!!!
               </p>
@@ -392,14 +392,12 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
                   }}
                 >
-                  뛰는 동안 자신의 몸 상태를 확인하고 이상이 있는 경우 뛰는 것을 바로 멈춰야 합니다.<br />
-                  (달리는 도중 어지러움, 가슴 통증, 심한 숨 가쁨, 극심한 피로감, 근육 경련, 탈수 등의 증상)<br />
-                  무리하게 달리면 심각한 경우 쓰러지거나 심근경색 등 심혈관계 질환의 가능성이 있으므로 달리기를 멈추고 즉시 의료진의 도움을 받아야 합니다.<br />
-                  훈련이 제대로 되지 않은 상태에서는 자신의 체력과 능력을 고려하고 속도를 조절하며 달려주세요.<br />
-                  달리기 전 준비 운동과 충분한 수분 섭취 필수! 달린 후 충분한 휴식을 가지는 것이 중요!
+                  레이스 중 이상 증상이 느껴지면 즉시 중단하고 진행 요원이나 의료진의 도움을 받으시기 바랍니다.<br />
+                  (예: 어지러움, 가슴 통증, 숨 가쁨, 극심한 피로, 근육 경련 등)<br />
+                  체력과 운동 능력을 고려해 적절한 속도 유지가 필요하며, 충분한 준비 운동과 레이스 후 휴식을 권장합니다.
                 </p>
                 <p className="font-semibold text-gray-800">
-                  위와 같이 안전한 레이스를 지키지 않거나 질병이나 본인의 과실로 인한 사고는 보험 적용이 되지 않습니다.
+                  건강 상태 미고려, 기저 질환 등으로 발생한 본인 과실 사고는 보험 적용 대상에서 제외됩니다.
                 </p>
               </div>
             </div>
