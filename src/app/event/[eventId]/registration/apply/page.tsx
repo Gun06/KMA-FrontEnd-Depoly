@@ -29,7 +29,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [apiTerms, setApiTerms] = useState<PublicEventTerm[]>([]);
   const [allAgreeLabel, setAllAgreeLabel] = useState("");
-  const [_termsLoading, setTermsLoading] = useState(true);
+  const [termsLoading, setTermsLoading] = useState(true);
   const [isStaticTermsAgreed, setIsStaticTermsAgreed] = useState(false);
   const [checkedTermIds, setCheckedTermIds] = useState<Record<string, boolean>>(
     {}
@@ -161,8 +161,10 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     [requiredApiTermKeys, checkedTermIds]
   );
 
+  const hasCustomEventTerms = apiTerms.length > 0;
+  const showFinalAgreementCheckbox = !termsLoading && !hasCustomEventTerms;
+
   useEffect(() => {
-    // 하단 최종 동의 체크는 "필수 동의 완료 여부"와 동일하게 동기화한다.
     setIsFinalAgreed(isStaticTermsAgreed && areRequiredApiTermsChecked);
   }, [isStaticTermsAgreed, areRequiredApiTermsChecked]);
 
@@ -185,8 +187,13 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     setCheckedTermIds((prev) => ({ ...prev, [key]: checked }));
   };
 
+  const agreementComplete =
+    hasCustomEventTerms || termsLoading
+      ? isStaticTermsAgreed && requiredApiTermsOk
+      : isFinalAgreed;
+
   const canSubmitApply =
-    isFinalAgreed &&
+    agreementComplete &&
     possibleToRequest !== false &&
     eventStatus !== "CLOSED" &&
     eventStatus !== "FINAL_CLOSED";
@@ -219,7 +226,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
       showAlert("필수 대회 약관에 동의해 주세요.");
       return;
     }
-    if (!isFinalAgreed) {
+    if (!hasCustomEventTerms && !termsLoading && !isFinalAgreed) {
       showAlert("약관에 동의하셔야 신청이 가능합니다.");
       return;
     }
@@ -381,7 +388,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             {/* 안전 안내 (고정 블록) */}
             <div className="bg-gray-100 rounded-lg p-4 mb-4">
               <p className="font-bold text-gray-800 mb-4">
-                안전한 레이스를 위한 안내 사항 (필독)!!!
+                안전한 레이스를 위한 안내 사항 (필독)
               </p>
 
               <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
@@ -422,21 +429,27 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
 
           {/* 동의 및 신청 섹션 */}
           <div className="bg-white p-6">
-            {/* 동의 체크박스 */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="agreement-checkbox"
-                  checked={isFinalAgreed}
-                  onChange={(e) => handleToggleFinalAgreement(e.target.checked)}
-                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="agreement-checkbox" className="text-sm sm:text-base text-gray-700">
-                  약관 내용을 이해하였으며, 약관에 동의합니다.
-                </label>
+            {showFinalAgreementCheckbox ? (
+              <div className="mb-6 flex items-center justify-center">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="agreement-checkbox"
+                    checked={isFinalAgreed}
+                    onChange={(e) =>
+                      handleToggleFinalAgreement(e.target.checked)
+                    }
+                    className="h-5 w-5 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor="agreement-checkbox"
+                    className="text-sm text-gray-700 sm:text-base"
+                  >
+                    약관 내용을 이해하였으며, 약관에 동의합니다.
+                  </label>
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {/* 버튼 그룹 */}
             <div className="flex flex-row gap-3 justify-center">
