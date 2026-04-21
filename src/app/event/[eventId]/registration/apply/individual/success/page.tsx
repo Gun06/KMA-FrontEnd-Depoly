@@ -2,10 +2,9 @@
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function IndividualApplySuccessPage({ params }: { params: { eventId: string } }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const customerName = searchParams.get('name') || '고객';
   const mode = searchParams.get('mode');
@@ -33,17 +32,21 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
             
             {/* 메인 제목 */}
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-4">
-              {customerName} 회원님!
+              {customerName}님!
             </h1>
             
             {/* 신청 완료 메시지 */}
             <p className="text-xl sm:text-2xl font-bold text-black mb-6">
-              {isOwnedEditMode ? '소유 신청이 수정되었습니다.' : isEditMode ? '마라톤 신청이 수정되었습니다.' : '마라톤 신청이 완료되었습니다.'}
+              {isOwnedEditMode ? '소유 신청이 수정되었습니다.' : isEditMode ? '신청 정보가 수정되었습니다.' : '대회 접수가 완료되었습니다.'}
             </p>
             
             {/* 안내 메시지 1 */}
             <p className="text-base sm:text-lg text-gray-700 mb-3">
-              신청하신 현황은 참가신청 &gt; 신청확인 메뉴에서 확인 하실 수 있습니다.
+              마감 전까지 입금 후, 신청확인을 통해 결제완료 상태를 꼭 확인하시기 바랍니다. (입금일로부터 평일 기준 3일 뒤 확인 가능)
+            </p>
+
+            <p className="text-base sm:text-lg text-gray-700 mb-3">
+              신청현황은 참가신청 &gt; 신청확인 메뉴에서 확인하실 수 있습니다.
             </p>
             
             {/* 안내 메시지 2 */}

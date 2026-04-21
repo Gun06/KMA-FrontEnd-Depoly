@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import InquiryListPage from "@/components/admin/boards/inquiry/InquiryListPage";
+import { InquiryToggleTabs } from "@/components/admin/boards/inquiry/InquiryToggleTabs";
 
 export default function Page() {
   const router = useRouter();
@@ -10,13 +11,15 @@ export default function Page() {
   return (
     <InquiryListPage
       apiType="homepage"
-      title="전마협 메인 문의사항"
-      headerButton={{
-        label: "대회사이트 문의사항 관리하기 >",
-        onClick: () => router.push("/admin/boards/inquiry/"),
-        size: "sm",          // 버튼 크기
-        tone: "competition",     // 버튼 색상
-      }}
+      titleAddon={
+        <InquiryToggleTabs
+          active="main"
+          onSelect={(value) => {
+            if (value === "all") router.push("/admin/boards/inquiry/all");
+            if (value === "event") router.push("/admin/boards/inquiry");
+          }}
+        />
+      }
       linkForRow={(r) => r.__replyOf
         ? `/admin/boards/inquiry/main/${r.__replyOf}#answer`
         : `/admin/boards/inquiry/main/${r.id}`

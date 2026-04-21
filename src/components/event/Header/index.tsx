@@ -5,6 +5,10 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores';
 import { useMainBanner } from '@/components/providers/MainBannerContext';
 import { forceLogout } from '@/services/authPublic';
+import {
+  fetchAwardInfoImageUrl,
+  fetchSpecialEventImageUrl,
+} from '@/services/publicEventAssets';
 
 interface EventHeaderProps {
   eventName?: string;
@@ -39,6 +43,10 @@ export default function EventHeader({
   const [mobileExpandedKey, setMobileExpandedKey] = React.useState<string | null>(
     null
   );
+  const [guideMenuVisibility, setGuideMenuVisibility] = useState({
+    showEventMenu: true,
+    showAwardMenu: true,
+  });
   const { isLoggedIn, user } = useAuthStore();
   const pathname = usePathname();
 
@@ -87,6 +95,54 @@ export default function EventHeader({
 
     fetchEventInfo();
   }, [eventId]);
+
+  useEffect(() => {
+    if (!eventId) return;
+
+    const fetchGuideMenuVisibility = async () => {
+      try {
+        const cacheKey = `event_guide_menu_visibility_${eventId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData) as {
+            timestamp?: number;
+            data?: { showEventMenu?: boolean; showAwardMenu?: boolean };
+          };
+          const cacheTime = parsedData.timestamp ?? 0;
+          const oneHour = 60 * 60 * 1000;
+
+          if (Date.now() - cacheTime < oneHour && parsedData.data) {
+            setGuideMenuVisibility({
+              showEventMenu: Boolean(parsedData.data.showEventMenu),
+              showAwardMenu: Boolean(parsedData.data.showAwardMenu),
+            });
+            return;
+          }
+        }
+
+        const [specialEventImageUrl, awardInfoImageUrl] = await Promise.all([
+          fetchSpecialEventImageUrl(eventId),
+          fetchAwardInfoImageUrl(eventId),
+        ]);
+
+        const nextVisibility = {
+          showEventMenu: Boolean(specialEventImageUrl),
+          showAwardMenu: Boolean(awardInfoImageUrl),
+        };
+
+        setGuideMenuVisibility(nextVisibility);
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ data: nextVisibility, timestamp: Date.now() })
+        );
+      } catch (_error) {
+        // 노출 조건 조회 실패 시 기존 메뉴 노출 유지
+      }
+    };
+
+    void fetchGuideMenuVisibility();
+  }, [eventId]);
   
   // 색상 우선순위: prop(accentColor) > 컨텍스트 > API 데이터 > 기본값
   const finalAccentColor =
@@ -110,8 +166,12 @@ export default function EventHeader({
       { label: '대회유의사항', href: `/event/${eventId}/guide/caution` },
       { label: '대회코스', href: `/event/${eventId}/guide/course` },
       { label: '집결 / 출발', href: `/event/${eventId}/guide/gathering` },
-      { label: '이벤트', href: `/event/${eventId}/guide/event` },
-      { label: '시상안내', href: `/event/${eventId}/guide/award` },
+      ...(guideMenuVisibility.showEventMenu
+        ? [{ label: '이벤트', href: `/event/${eventId}/guide/event` }]
+        : []),
+      ...(guideMenuVisibility.showAwardMenu
+        ? [{ label: '시상안내', href: `/event/${eventId}/guide/award` }]
+        : []),
     ],
     apply: [
       // 참가자 동의사항 서브메뉴 제거 (이슈: 참가자 유의사항 & 약관 멘트 수정 및 유의사항 서브메뉴 없앰)
@@ -133,7 +193,7 @@ export default function EventHeader({
       { label: '문의사항', href: `/event/${eventId}/notices/inquiry` },
       { label: 'FAQ', href: `/event/${eventId}/notices/faq` },
     ],
-  }), [eventId]);
+  }), [eventId, guideMenuVisibility.showAwardMenu, guideMenuVisibility.showEventMenu]);
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

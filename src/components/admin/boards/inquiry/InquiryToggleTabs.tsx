@@ -2,28 +2,31 @@
 
 import { cn } from '@/utils/cn';
 
-type TabKey = 'event' | 'all';
+export type InquiryScopeTab = 'all' | 'event' | 'main';
+
+const TAB_ORDER: InquiryScopeTab[] = ['all', 'event', 'main'];
+
+const LABELS: Record<InquiryScopeTab, string> = {
+  all: '전체',
+  event: '대회별',
+  main: '메인 문의사항',
+};
 
 interface InquiryToggleTabsProps {
-  active: TabKey;
-  onSelect: (value: TabKey) => void;
+  active: InquiryScopeTab;
+  onSelect: (value: InquiryScopeTab) => void;
   className?: string;
 }
-
-const LABELS: Record<TabKey, string> = {
-  event: '대회별 문의사항',
-  all: '전체 문의사항',
-};
 
 export function InquiryToggleTabs({ active, onSelect, className }: InquiryToggleTabsProps) {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border border-[#E5E7EB] bg-white p-1 shadow-sm',
+        'inline-flex w-fit max-w-full flex-wrap items-center gap-1 self-start rounded-full border border-[#E5E7EB] bg-white p-1 shadow-sm',
         className
       )}
     >
-      {(Object.keys(LABELS) as TabKey[]).map((key) => {
+      {TAB_ORDER.map((key) => {
         const isActive = key === active;
         return (
           <button
@@ -32,7 +35,7 @@ export function InquiryToggleTabs({ active, onSelect, className }: InquiryToggle
             aria-pressed={isActive}
             onClick={isActive ? undefined : () => onSelect(key)}
             className={cn(
-              'h-9 px-4 rounded-full text-sm font-semibold transition-colors',
+              'h-9 px-3 sm:px-4 rounded-full text-sm font-semibold transition-colors whitespace-nowrap',
               isActive
                 ? 'bg-[#111827] text-white shadow'
                 : 'bg-white text-[#1F2937] hover:bg-gray-100'
@@ -45,4 +48,3 @@ export function InquiryToggleTabs({ active, onSelect, className }: InquiryToggle
     </div>
   );
 }
-

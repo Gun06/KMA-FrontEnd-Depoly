@@ -11,6 +11,7 @@ import { InquiryItem, deleteInquiry, deleteAnswer, resetInquiryPassword } from "
 import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { formatDateShort } from "@/utils/formatDate";
 import ConfirmModal from "@/components/common/Modal/ConfirmModal";
 import PasswordModal from "@/components/common/Modal/PasswordModal";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
@@ -33,7 +34,7 @@ type Props = {
   
   linkForRow: (row: ViewRow) => string;
   onDelete: (id: string, meta?: { total: number; page: number; pageSize: number }) => void;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   headerButton?: {
     label: string;
     onClick: () => void;
@@ -192,8 +193,7 @@ export default function InquiryListPage({
     for (let i = 0; i < data.content.length; i++) {
       const item = data.content[i];
       
-      // 날짜 포맷팅 최적화
-      const formattedDate = item.createdAt.split('T')[0].replace(/-/g, '.');
+      const formattedDate = formatDateShort(item.createdAt);
       
       // 원글 추가
       const baseRow: ViewRow = {
@@ -213,7 +213,7 @@ export default function InquiryListPage({
 
       // 답변이 있는 경우 답변 행 추가
       if (item.answer) {
-        const answerDate = item.answer.createdAt.split('T')[0].replace(/-/g, '.');
+        const answerDate = formatDateShort(item.answer.createdAt);
         
         rows.push({
           ...baseRow,
@@ -448,8 +448,8 @@ export default function InquiryListPage({
   return (
     <div className="mx-auto max-w-[1300px] px-4 py-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[16px] font-semibold">{title}</h3>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          {title ? <h3 className="text-[16px] font-semibold">{title}</h3> : null}
           {titleAddon}
         </div>
         {headerButton && (

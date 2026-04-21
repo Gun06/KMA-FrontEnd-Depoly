@@ -173,7 +173,7 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
             {detail.answer.title || "답변"}
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            작성자 {detail.answer.author} · {detail.answer.date}
+            작성자 {detail.answer.author} · 작성일 {detail.answer.date}
           </p>
           <div 
             className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"

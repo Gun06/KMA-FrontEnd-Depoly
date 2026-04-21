@@ -16,6 +16,7 @@ export default function Page() {
           active="all"
           onSelect={(value) => {
             if (value === "event") router.push("/admin/boards/inquiry");
+            if (value === "main") router.push("/admin/boards/inquiry/main");
           }}
         />
       }

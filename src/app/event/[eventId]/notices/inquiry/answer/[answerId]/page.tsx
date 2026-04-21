@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { fetchAnswerDetail, type AnswerDetail } from '../../api/inquiryApi';
-import { formatDate } from '../../utils/formatters';
+import { formatInquiryAdminDateTime } from '@/utils/formatDate';
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 
 export default function AnswerDetailPage() {
@@ -121,7 +121,9 @@ export default function AnswerDetailPage() {
                 
                 <div className="flex items-center gap-1 whitespace-nowrap">
                   <span className="font-medium">답변일:</span>
-                  <span className="truncate">{formatDate(answerDetail.createdAt)}</span>
+                  <span className="min-w-0 break-words">
+                    {formatInquiryAdminDateTime(answerDetail.createdAt)}
+                  </span>
                 </div>
               </div>
             </div>

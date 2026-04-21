@@ -1,6 +1,6 @@
 import { ChevronLeft, Edit, Trash2, Lock } from 'lucide-react';
 import { InquiryDetail, AnswerHeader } from '../types';
-import { formatDate } from '../utils/formatters';
+import { formatInquiryAdminDateTime } from '@/utils/formatDate';
 import { InquiryContent } from './InquiryContent';
 
 // 이름 마스킹 함수 (마스킹 비활성화)
@@ -109,9 +109,11 @@ export const InquiryHeader = ({
               <span className="truncate max-w-[100px] sm:max-w-none">{maskAuthorName(inquiryDetail?.author || '', currentUserId)}</span>
             </div>
             
-            <div className="flex items-center gap-1 whitespace-nowrap">
-              <span className="font-medium">작성일:</span>
-              <span className="truncate">{formatDate(inquiryDetail?.createdAt || '')}</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              <span className="font-medium shrink-0">작성일:</span>
+              <span className="min-w-0 break-words">
+                {formatInquiryAdminDateTime(inquiryDetail?.createdAt || '')}
+              </span>
             </div>
           </div>
         </div>

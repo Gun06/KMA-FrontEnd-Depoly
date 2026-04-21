@@ -15,11 +15,10 @@ export default function InquiryClient() {
           active="event"
           onSelect={(value) => {
             if (value === 'all') router.push('/admin/boards/inquiry/all');
+            if (value === 'main') router.push('/admin/boards/inquiry/main');
           }}
         />
       }
-      tableCtaLabel="전마협 메인 문의사항 관리하기 >"
-      tableCtaHref="/admin/boards/inquiry/main"
       basePath="inquiry"
     />
   );

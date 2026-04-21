@@ -1,8 +1,3 @@
-export const formatDate = (dateString: string) => {
-  if (!dateString) return '';
-  return dateString.split('T')[0];
-};
-
 export const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;

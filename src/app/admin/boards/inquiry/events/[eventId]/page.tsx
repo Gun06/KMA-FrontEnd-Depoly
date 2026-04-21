@@ -19,21 +19,22 @@ export default function Page() {
     <InquiryListPage
       apiType="event"
       eventId={eventId}
-      title={<span>선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> 문의사항</span>}
       titleAddon={
-        <InquiryToggleTabs
-          active="event"
-          onSelect={(value) => {
-            if (value === 'all') router.push('/admin/boards/inquiry/all');
-          }}
-        />
+        <div className="flex w-full min-w-0 flex-col items-start gap-2">
+          <InquiryToggleTabs
+            active="event"
+            onSelect={(value) => {
+              if (value === 'all') router.push('/admin/boards/inquiry/all');
+              if (value === 'main') router.push('/admin/boards/inquiry/main');
+            }}
+          />
+          <h3 className="w-full min-w-0 text-[16px] font-semibold">
+            <span>
+              선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> 문의사항
+            </span>
+          </h3>
+        </div>
       }
-      headerButton={{
-        label: "전마협 메인 문의사항 관리하기 >",
-        size: "sm",
-        tone: "primary",
-        onClick: () => router.push("/admin/boards/inquiry/main")
-      }}
       linkForRow={(r) => r.__replyOf
         ? `/admin/boards/inquiry/events/${eventId}/${r.__replyOf}#answer`
         : `/admin/boards/inquiry/events/${eventId}/${r.id}`

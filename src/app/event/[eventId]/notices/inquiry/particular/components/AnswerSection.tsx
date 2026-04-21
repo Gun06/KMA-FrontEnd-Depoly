@@ -1,6 +1,7 @@
 import { Download, ChevronLeft } from 'lucide-react';
 import { AnswerHeader, AnswerDetail, InquiryDetail } from '../types';
-import { formatDate, formatFileSize } from '../utils/formatters';
+import { formatFileSize } from '../utils/formatters';
+import { formatInquiryAdminDateTime } from '@/utils/formatDate';
 import { AnswerContent } from './AnswerContent';
 
 // 이름 마스킹 함수
@@ -116,10 +117,12 @@ export const AnswerSection = ({
                 </span>
               </div>
               
-              <div className="flex items-center gap-1 whitespace-nowrap">
-                <span className="font-medium">답변일:</span>
-                <span className="truncate">
-                  {formatDate(answerHeader?.createdAt || answerDetail?.created_at || '')}
+              <div className="flex min-w-0 flex-wrap items-center gap-1">
+                <span className="font-medium shrink-0">답변일:</span>
+                <span className="min-w-0 break-words">
+                  {formatInquiryAdminDateTime(
+                    answerHeader?.createdAt || answerDetail?.created_at || ''
+                  )}
                 </span>
               </div>
             </div>
@@ -203,10 +206,12 @@ export const AnswerSection = ({
                 </span>
               </div>
               
-              <div className="flex items-center gap-1 whitespace-nowrap">
-                <span className="font-medium">답변일:</span>
-                <span className="truncate">
-                  {formatDate(answerHeader?.createdAt || answerDetail?.created_at || '')}
+              <div className="flex min-w-0 flex-wrap items-center gap-1">
+                <span className="font-medium shrink-0">답변일:</span>
+                <span className="min-w-0 break-words">
+                  {formatInquiryAdminDateTime(
+                    answerHeader?.createdAt || answerDetail?.created_at || ''
+                  )}
                 </span>
               </div>
             </div>

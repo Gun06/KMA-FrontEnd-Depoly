@@ -1,11 +1,16 @@
 /**
- * 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD)
+ * 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD, 서버/클라 TZ와 무관하게 문자열 앞부분 우선)
  */
 export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  const head = dateString.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  if (head) return head[1];
   try {
-    return new Date(dateString).toISOString().split('T')[0];
-  } catch (error) {
-    return '2025-01-01';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  } catch {
+    return '';
   }
 };
 

@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
 import { InquiryDetail } from "@/services/admin/inquiries";
 import type { InquiryFile } from "@/types/inquiry";
+import { formatInquiryAdminDateTime } from "@/utils/formatDate";
 
 export default function Page() {
   const { eventId, inquiryId } = useParams<{ eventId: string; inquiryId: string }>();
@@ -49,7 +50,7 @@ export default function Page() {
       id: question.id,
       title: question.title,
       author: question.author,
-      date: question.createdAt?.split('T')[0]?.replace(/-/g, '.') || '', // 안전한 접근
+      date: formatInquiryAdminDateTime(question.createdAt),
       views: 0, // API에서 조회수 정보가 없으므로 0으로 설정
       content: question.content,
       secret: question.secret, // 비밀글 정보 추가
@@ -63,7 +64,7 @@ export default function Page() {
       answer: answer ? {
         title: answer.title,
         author: answer.author,
-        date: answer.createdAt?.split('T')[0]?.replace(/-/g, '.') || '',
+        date: formatInquiryAdminDateTime(answer.createdAt),
         content: answer.content || '', // 실제 답변 내용 표시
         files: answer.attachmentUrls?.map((url: string, index: number) => {
           const fileName = url.split('/').pop() || `답변첨부파일-${index + 1}`;

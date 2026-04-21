@@ -427,15 +427,6 @@ export default function EventInquiryPage() {
       const items: TableNoticeItem[] = [];
       
       inquiryData.content.forEach((inquiry: InquiryItem) => {
-        // 날짜 포맷팅 (ISO 8601 -> YYYY-MM-DD)
-        const formatDate = (dateString: string) => {
-          try {
-            return new Date(dateString).toISOString().split('T')[0];
-          } catch (error) {
-            return '2025-01-01';
-          }
-        };
-        
         // 질문 항목 추가 - 백엔드에서 받은 no 사용
         const questionItem: TableNoticeItem = {
           id: inquiry.questionHeader.id,
