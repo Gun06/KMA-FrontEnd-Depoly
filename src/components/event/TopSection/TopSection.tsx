@@ -210,7 +210,8 @@ export default function TopSection({
   const youtubeEmbedUrl = normalizeYoutubeEmbedUrl(
     isMounted ? resolvedInfo?.youtubeUrl : propEventInfo?.youtubeUrl
   );
-  const hasMedia = hasImages || (showYoutube && Boolean(youtubeEmbedUrl));
+  const shouldShowTopYoutube = showYoutube && Boolean(youtubeEmbedUrl);
+  const hasMedia = hasImages || shouldShowTopYoutube;
 
   // 제목/부제목은 API 데이터만 사용 (더미 config 제거)
   const title = resolvedInfo
@@ -277,7 +278,7 @@ export default function TopSection({
         </div>
 
       {/* 유튜브 URL이 있으면 메인 첫 화면에 영상 우선 노출 */}
-      {!showSkeleton && showYoutube && youtubeEmbedUrl && (
+      {!showSkeleton && shouldShowTopYoutube && youtubeEmbedUrl && (
         <div className="relative w-full bg-black">
           {/* 모바일/데스크탑 모두 16:9 비율 고정 */}
           <div className="relative w-full aspect-video">
@@ -293,7 +294,7 @@ export default function TopSection({
       )}
 
       {/* 데스크톱 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
-      {!showSkeleton && !youtubeEmbedUrl && desktopImage && (
+      {!showSkeleton && !shouldShowTopYoutube && desktopImage && (
         <Image
           src={desktopImage}
           alt="Background"
@@ -306,7 +307,7 @@ export default function TopSection({
       )}
 
       {/* 모바일 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
-      {!showSkeleton && !youtubeEmbedUrl && mobileImage && (
+      {!showSkeleton && !shouldShowTopYoutube && mobileImage && (
         <Image
           src={mobileImage}
           alt="Mobile Background"
@@ -319,7 +320,7 @@ export default function TopSection({
       )}
 
       {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 (배너 이미지 있을 때만) */}
-      {!showSkeleton && hasImages && !youtubeEmbedUrl && (
+      {!showSkeleton && hasImages && !shouldShowTopYoutube && (
         <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
           <div className="container mx-auto">
             <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 text-white">
