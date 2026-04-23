@@ -92,14 +92,16 @@ interface TopSectionProps {
   config?: TopSectionConfig;
   // API에서 가져온 이벤트 정보
   eventInfo?: EventTopSectionInfo;
+  showYoutube?: boolean;
 }
 
 export default function TopSection({
   eventId,
   backgroundImage,
   mobileBackgroundImage,
-  config,
+  config: _config,
   eventInfo: propEventInfo,
+  showYoutube = true,
 }: TopSectionProps) {
   // 캐시된 데이터를 즉시 복구 (정규화하여 반환, 30분 만료)
   const CACHE_TTL = 15 * 60 * 1000;
@@ -208,7 +210,7 @@ export default function TopSection({
   const youtubeEmbedUrl = normalizeYoutubeEmbedUrl(
     isMounted ? resolvedInfo?.youtubeUrl : propEventInfo?.youtubeUrl
   );
-  const hasMedia = hasImages || Boolean(youtubeEmbedUrl);
+  const hasMedia = hasImages || (showYoutube && Boolean(youtubeEmbedUrl));
 
   // 제목/부제목은 API 데이터만 사용 (더미 config 제거)
   const title = resolvedInfo
@@ -275,7 +277,7 @@ export default function TopSection({
         </div>
 
       {/* 유튜브 URL이 있으면 메인 첫 화면에 영상 우선 노출 */}
-      {!showSkeleton && youtubeEmbedUrl && (
+      {!showSkeleton && showYoutube && youtubeEmbedUrl && (
         <div className="relative w-full bg-black">
           {/* 모바일/데스크탑 모두 16:9 비율 고정 */}
           <div className="relative w-full aspect-video">
