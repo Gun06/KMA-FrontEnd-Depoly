@@ -24,7 +24,14 @@ type ToolbarAction =
   | 'downloadGroupForm'
   | 'uploadGroupForm'
   | 'downloadPersonalForm'
-  | 'uploadPersonalForm';
+  | 'uploadPersonalForm'
+  | 'downloadTermsAgreed';
+
+export type ApplicantsManageTableHandle = {
+  enterEdit: () => void;
+  saveEdit: () => Promise<void>;
+  cancelEdit: () => void;
+};
 
 type Props = {
   rows: ApplicantManageRow[];
@@ -55,6 +62,10 @@ type Props = {
   isUploadStatusVisible?: boolean;
   /** ✅ 업로드 진행률 (0 ~ 100) */
   uploadProgress?: number;
+  /** 상단에서 수정 버튼을 렌더할 때 내부 버튼 숨김 */
+  hideInternalEditControls?: boolean;
+  /** 편집 상태 변경 콜백 */
+  onEditingStateChange?: (editing: boolean) => void;
 };
 
 /* ---------- 포털 드롭다운 (대회 드롭다운 스타일) ---------- */
@@ -142,7 +153,7 @@ function DropdownPortal({
   );
 }
 
-export default function ApplicantsManageTable({
+const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Props>(function ApplicantsManageTable({
   rows, total, page, pageSize, isLoading: _isLoading, onPageChange,
   onSearch, onSearchFieldChange, onFilterPaidChange, onSortKeyChange,
   onResetFilters, selectedIds, onToggleSelectOne, onToggleSelectAll, onToolbarAction,
@@ -153,7 +164,9 @@ export default function ApplicantsManageTable({
   onCancelUploadPayments,
   isUploadStatusVisible = false,
   uploadProgress = 0,
-}: Props) {
+  hideInternalEditControls = false,
+  onEditingStateChange,
+}: Props, ref) {
   const updatePaymentStatusMutation = useUpdatePaymentStatus();
   const controlled = Array.isArray(selectedIds) && !!onToggleSelectOne;
 
@@ -272,6 +285,16 @@ export default function ApplicantsManageTable({
   const setDraftField = <K extends keyof ApplicantManageRow>(id: string, key: K, value: ApplicantManageRow[K]) => {
     setDrafts(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), [key]: value } }));
   };
+
+  React.useImperativeHandle(ref, () => ({
+    enterEdit,
+    saveEdit,
+    cancelEdit,
+  }), [enterEdit, saveEdit, cancelEdit]);
+
+  React.useEffect(() => {
+    onEditingStateChange?.(editing);
+  }, [editing, onEditingStateChange]);
 
   const isRowEditing = (id: string) => editing && editableIdsRef.current.has(id);
 
@@ -535,28 +558,31 @@ export default function ApplicantsManageTable({
         </div>
       )}
 
-      {/* ✅ 초기화 옆 "수정하기 / 저장 / 취소" */}
-      {!editing ? (
-        <button
-          className="rounded-md border px-4 h-10 text-sm text-blue-600 hover:bg-gray-20"
-          onClick={enterEdit}
-        >
-          수정하기
-        </button>
-      ) : (
+      {!hideInternalEditControls && (
         <>
-          <button
-            className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
-            onClick={saveEdit}
-          >
-            저장
-          </button>
-          <button
-            className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
-            onClick={cancelEdit}
-          >
-            취소
-          </button>
+          {!editing ? (
+            <button
+              className="rounded-md border px-4 h-10 text-sm text-blue-600 hover:bg-gray-20"
+              onClick={enterEdit}
+            >
+              수정하기
+            </button>
+          ) : (
+            <>
+              <button
+                className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                onClick={saveEdit}
+              >
+                저장
+              </button>
+              <button
+                className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
+                onClick={cancelEdit}
+              >
+                취소
+              </button>
+            </>
+          )}
         </>
       )}
     </div>
@@ -591,4 +617,6 @@ export default function ApplicantsManageTable({
       />
     </div>
   );
-}
+});
+
+export default ApplicantsManageTable;

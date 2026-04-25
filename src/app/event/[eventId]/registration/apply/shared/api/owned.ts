@@ -30,7 +30,8 @@ export interface OwnedRegistrationUpdatePayload {
     address: {
       address: string;
       zipCode: string;
-      addressDetail: string;
+      /** 없으면 요청 JSON에서 생략 */
+      addressDetail?: string;
     } | null; // checkAddressIsBasedOnOrganization이 true일 경우 null
   };
   registrationPw: string;

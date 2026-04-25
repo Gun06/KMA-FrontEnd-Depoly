@@ -7,6 +7,8 @@ import { handleGroupInputChange, handleParticipantChange, handleGroupAddressSele
 import { transformGroupFormDataToApi, transformGroupFormDataToUpdateApi } from '../utils/transformers';
 import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
 import { formatError } from '../utils/errorHandler';
+import { mapLoadedAddressDetail } from '../constants/addressField';
+import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
 import { useRouter } from 'next/navigation';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
@@ -117,12 +119,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
             let baseAddress = cleanAddress(fullAddress, zipCode);
             let detailedAddress = addressDetail;
 
-            // 상세주소가 없고 전체 주소에 쉼표가 있는 경우 첫 번째 쉼표 기준으로 분리
-            if (!addressDetail && baseAddress && baseAddress.includes(',')) {
-              const firstCommaIndex = baseAddress.indexOf(',');
-              detailedAddress = baseAddress.substring(firstCommaIndex + 1).trim();
-              baseAddress = baseAddress.substring(0, firstCommaIndex).trim();
-            }
+            // 예전 추론 로직(쉼표 기준 분리)은 도로명 주소/참고주소를 잘못 상세주소로 옮길 수 있어 비활성화
 
 
             // 참가자 데이터 변환
@@ -165,6 +162,8 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
               };
             });
 
+            const addressDetailMapped = mapLoadedAddressDetail(detailedAddress);
+
             const updatedFormData = {
               ...formData,
               // 새로운 스키마 필드 우선, 없으면 기존 필드 사용
@@ -175,8 +174,8 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
               leaderName: editData.leaderName || '',
               postalCode: editData.zipCode || editData.postalCode || '',
               address: baseAddress,
-              detailedAddress: detailedAddress,
-              extraAddress: '',
+              detailedAddress: addressDetailMapped.detailedAddress,
+              noDetailedAddress: addressDetailMapped.noDetailedAddress,
               phone1: phoneParts[0] || '010',
               phone2: phoneParts[1] || '',
               phone3: phoneParts[2] || '',
@@ -323,7 +322,12 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           }
         } else {
           // 신규 신청 모드: POST API 호출
-          const requestData = transformGroupFormDataToApi(formData, eventInfo);
+          const eventTermsAgreeRequestList = loadEventTermsAgreement(eventId);
+          const requestData = transformGroupFormDataToApi(
+            formData,
+            eventInfo,
+            eventTermsAgreeRequestList
+          );
           response = await submitGroupRegistration(eventId, requestData);
         }
         // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
@@ -450,7 +454,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
       // emailDomainRef // API 구조 변경으로 제거
     },
     handlers: {
-      handleInputChange: (field: keyof GroupFormData, value: string) =>
+      handleInputChange: (field: keyof GroupFormData, value: string | boolean) =>
         handleGroupInputChange(setFormData, field, value),
       handleParticipantChange: handleParticipantChangeCallback,
       handleParticipantsChange,

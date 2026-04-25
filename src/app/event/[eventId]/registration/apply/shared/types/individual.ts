@@ -11,6 +11,8 @@ export interface IndividualFormData {
   postalCode: string;
   address: string;
   detailedAddress: string;
+  /** true면 상세주소 없음(단독주택 등) — detailedAddress는 비워 둠(선택·API 빈값) */
+  noDetailedAddress: boolean;
   extraAddress: string;
   phone1: string;
   phone2: string;

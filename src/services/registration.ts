@@ -139,6 +139,64 @@ export async function downloadRegistrationList(eventIds: string | string[]): Pro
   }
 }
 
+// 대회별 약관 동의 여부 Excel 다운로드 (eventId 단건)
+export async function downloadTermsAgreedList(eventId: string): Promise<void> {
+  if (!eventId) {
+    throw new Error('eventId가 필요합니다.');
+  }
+
+  const url = `/api/v1/${eventId}/terms-agreed/download`;
+
+  const token = tokenService.getAdminAccessToken();
+  if (!token) {
+    throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
+  const fullUrl = `${baseUrl}${url}`;
+
+  const response = await fetch(fullUrl, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`다운로드 실패: ${response.status} ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition');
+  let filename: string | undefined;
+
+  if (contentDisposition) {
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
+    if (utf8Match && utf8Match[1]) {
+      filename = decodeURIComponent(utf8Match[1]);
+    } else {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+  }
+
+  if (!filename) {
+    throw new Error('백엔드에서 파일명을 제공하지 않았습니다.');
+  }
+
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(blobUrl);
+}
+
 // 입금 내역 Excel 업로드 (기존 - 호환성 유지)
 export async function uploadPaymentHistory(
   eventId: string,

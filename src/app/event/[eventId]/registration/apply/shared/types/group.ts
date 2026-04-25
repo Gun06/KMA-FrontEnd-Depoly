@@ -1,4 +1,5 @@
 // 단체신청 관련 타입 정의
+import type { EventTermsAgreeRequestItem } from './common';
 
 // 참가자 정보 타입
 export interface ParticipantData {
@@ -46,7 +47,9 @@ export interface GroupFormData {
   postalCode: string;
   address: string;
   detailedAddress: string;
-  
+  /** true면 상세주소 없음(단독주택 등) — detailedAddress는 비워 둠(선택·API 빈값) */
+  noDetailedAddress: boolean;
+
   // 개인 정보 (연락처만)
   phone1: string;
   phone2: string;
@@ -74,7 +77,8 @@ export interface GroupApiRequestData {
       address: {
         address: string; // 단일 문자열 주소 (개인신청과 동일)
         zipCode: string;
-        addressDetail: string;
+        /** 없으면 요청 JSON에서 생략 */
+        addressDetail?: string;
       };
       birth: string;
       phNum: string;
@@ -86,6 +90,7 @@ export interface GroupApiRequestData {
       paymenterName: string;
     };
   };
+  eventTermsAgreeRequestList?: EventTermsAgreeRequestItem[];
   registrationInfoPerUserList: Array<{
     registrationId?: string | null; // 수정 모드에서 사용, 새로 추가된 row는 null
     mustRegistrationInfo: {

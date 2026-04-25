@@ -51,14 +51,21 @@ export interface ApiSubmitData {
     address: {
       address: string;
       zipCode: string;
-      addressDetail: string;
+      /** 없으면 요청 JSON에서 생략 */
+      addressDetail?: string;
     };
     paymentDefaultInfo: {
       paymentType: string;
       paymenterName: string;
     };
+    eventTermsAgreeRequestList?: EventTermsAgreeRequestItem[];
   };
   registrationPw: string;
+}
+
+export interface EventTermsAgreeRequestItem {
+  id: string;
+  agreed: boolean;
 }
 
 // 약관 데이터 인터페이스

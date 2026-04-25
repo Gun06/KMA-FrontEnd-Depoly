@@ -8,7 +8,7 @@ import { GroupFormData } from '../../shared/types/group';
 
 interface GroupInfoSectionProps {
   formData: GroupFormData;
-  onInputChange: (field: keyof GroupFormData, value: string) => void;
+  onInputChange: (field: keyof GroupFormData, value: string | boolean) => void;
   onAddressSelect: (postalCode: string, address: string) => void;
   onGroupNameCheck: () => void;
   onGroupIdCheck: () => void;
@@ -252,9 +252,11 @@ export default function GroupInfoSection({
             postalCode={formData.postalCode}
             address={formData.address}
             detailedAddress={formData.detailedAddress}
+            noDetailedAddress={formData.noDetailedAddress}
             onPostalCodeChange={(value) => onInputChange('postalCode', value)}
             onAddressChange={(value) => onInputChange('address', value)}
             onDetailedAddressChange={(value) => onInputChange('detailedAddress', value)}
+            onNoDetailedAddressChange={(checked) => onInputChange('noDetailedAddress', checked)}
             onAddressSelect={onAddressSelect}
           />
         </FormField>

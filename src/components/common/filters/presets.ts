@@ -113,6 +113,12 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "개인 신청 양식 업로드",     value: "uploadPersonalForm" },
           ],
         },
+        {
+          label: "약관 Excel",
+          tone: "primary",
+          icon: "download",
+          actionValue: "downloadTermsAgreed",
+        },
       ],
       showReset: true,
       resetPosition: "afterSearch",

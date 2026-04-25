@@ -12,6 +12,7 @@ import RefundUploadModal from '@/components/admin/applications/RefundUploadModal
 import GroupUploadModal from '@/components/admin/applications/GroupUploadModal';
 import PersonalUploadModal from '@/components/admin/applications/PersonalUploadModal';
 import { downloadRegistrationList } from '@/services/registration';
+import { downloadTermsAgreedList } from '@/services/registration';
 import { downloadGroupForm, uploadGroupForm } from '@/components/admin/applications/api/groupUpload';
 import { downloadPersonalForm } from '@/components/admin/applications/api/personalUpload';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ import {
   convertRegistrationToManageRow,
   convertFiltersToApiParams
 } from '@/types/registration';
+import type { ApplicantsManageTableHandle } from '@/components/admin/applications/ApplicantsManageTable';
 
 type Props = {
   eventId: string;
@@ -63,6 +65,8 @@ export default function Client({
   const [sortKey, setSortKey] = React.useState<SortKey>(() => readInit().sort);
   const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>(() => readInit().field);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const tableRef = React.useRef<ApplicantsManageTableHandle>(null);
+  const [isTableEditing, setIsTableEditing] = React.useState(false);
 
   // eventId가 변경되면 selectedEventIds에 추가
   React.useEffect(() => {
@@ -386,7 +390,7 @@ export default function Client({
   };
 
   // 툴바 액션 처리
-  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'uploadRefundExcel' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm') => {
+  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'uploadRefundExcel' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm' | 'downloadTermsAgreed') => {
     if (action === 'downloadApplicants') {
       handleDownloadApplicants();
     } else if (action === 'uploadPayments') {
@@ -401,6 +405,15 @@ export default function Client({
       handleDownloadPersonalForm();
     } else if (action === 'uploadPersonalForm') {
       handleUploadPersonalForm();
+    } else if (action === 'downloadTermsAgreed') {
+      void (async () => {
+        try {
+          await downloadTermsAgreedList(eventId);
+          toast.success('약관동의 다운로드가 완료되었습니다!');
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
+        }
+      })();
     }
   };
 
@@ -509,31 +522,62 @@ export default function Client({
             </div>
           )}
           
-          {/* 드롭다운 버튼 */}
-          <button
-            type="button"
-            onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
-            className={clsx(
-              'flex items-center justify-between w-auto min-w-[400px] max-w-[800px] px-4 py-2.5 text-sm font-medium',
-              'bg-white border border-gray-300 rounded-md shadow-sm',
-              'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-              'transition-colors'
-            )}
-            aria-haspopup="listbox"
-            aria-expanded={isEventDropdownOpen}
-          >
-            <span className="text-left">
-              {selectedEvents.length > 0 
-                ? `${selectedEvents.length}개 대회의 신청자를 조회 중입니다.` 
-                : '대회를 선택하세요'}
-            </span>
-            <ChevronDown
+          <div className="flex w-full items-center gap-2">
+            {/* 드롭다운 버튼 */}
+            <button
+              type="button"
+              onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
               className={clsx(
-                'ml-2 h-4 w-4 text-gray-500 transition-transform flex-shrink-0',
-                isEventDropdownOpen && 'rotate-180'
+                'flex items-center justify-between w-auto min-w-[400px] max-w-[800px] px-4 py-2.5 text-sm font-medium',
+                'bg-white border border-gray-300 rounded-md shadow-sm',
+                'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+                'transition-colors'
               )}
-            />
-          </button>
+              aria-haspopup="listbox"
+              aria-expanded={isEventDropdownOpen}
+            >
+              <span className="text-left">
+                {selectedEvents.length > 0 
+                  ? `${selectedEvents.length}개 대회의 신청자를 조회 중입니다.` 
+                  : '대회를 선택하세요'}
+              </span>
+              <ChevronDown
+                className={clsx(
+                  'ml-2 h-4 w-4 text-gray-500 transition-transform flex-shrink-0',
+                  isEventDropdownOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            <div className="ml-auto flex items-center gap-2">
+              {!isTableEditing ? (
+                <button
+                  type="button"
+                  className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50"
+                  onClick={() => tableRef.current?.enterEdit()}
+                >
+                  수정하기
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                    onClick={() => tableRef.current?.saveEdit()}
+                  >
+                    저장
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
+                    onClick={() => tableRef.current?.cancelEdit()}
+                  >
+                    취소
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
           
           {/* 드롭다운 메뉴 */}
           {isEventDropdownOpen && (
@@ -614,6 +658,7 @@ export default function Client({
       )}
 
       <ApplicantsManageTable
+        ref={tableRef}
         rows={rows}
         total={total}
         page={page}
@@ -636,6 +681,8 @@ export default function Client({
         onCancelUploadPayments={handleCancelUploadPayments}
         /** ⬇️ 전역 수정 모드 저장 콜백(다건) */
         onBulkUpdateRows={handleBulkUpdateRows}
+        hideInternalEditControls
+        onEditingStateChange={setIsTableEditing}
 
         // 행 클릭 -> 상세 드로어 열기
         onRowClick={(row) => { setSelectedId(row.id); setOpen(true); }}

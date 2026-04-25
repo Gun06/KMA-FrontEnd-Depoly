@@ -12,9 +12,6 @@ import GroupRefundUserSelectModal from "@/components/event/Registration/GroupRef
 import { requestGroupRefund, BatchValidationErrorResponse, BatchValidationError } from "@/app/event/[eventId]/registration/apply/shared/api/group";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
-import CashReceiptModal from "@/app/event/[eventId]/registration/confirm/shared/components/CashReceiptModal";
-import { fetchCashReceipt } from "@/app/event/[eventId]/registration/confirm/shared/api/cashReceipt";
-import { CASH_RECEIPT_STATUS_LABEL, CASH_RECEIPT_STATUS_COLOR, CashReceiptStatus } from "@/app/event/[eventId]/registration/confirm/shared/types/cashReceipt";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -30,6 +27,7 @@ export default function GroupApplicationConfirmResultPage() {
   const [loadedParticipantsMap, setLoadedParticipantsMap] = useState<Map<string, InnerUserRegistration>>(new Map()); // 상세 정보가 로드된 참가자들 (registrationId를 키로)
   const [bankName, setBankName] = useState('');
   const [virtualAccount, setVirtualAccount] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
   const [isRefundLoading, setIsRefundLoading] = useState(false);
   const [isUnpaidAlertOpen, setIsUnpaidAlertOpen] = useState(false);
@@ -41,9 +39,6 @@ export default function GroupApplicationConfirmResultPage() {
   const [requestReason, setRequestReason] = useState<string | null>(null);
   const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [isFinalClosedAlertOpen, setIsFinalClosedAlertOpen] = useState(false);
-  const [isCashReceiptModalOpen, setIsCashReceiptModalOpen] = useState(false);
-  const [cashReceiptModalMode, setCashReceiptModalMode] = useState<'request' | 'view'>('request');
-  const [cashReceiptStatus, setCashReceiptStatus] = useState<{ exists: boolean; latestStatus?: CashReceiptStatus } | null>(null);
 
   // 참가자 상세 정보 로드 함수
   const loadParticipantDetails = useCallback(async (participants: InnerUserRegistration[], startIndex: number, count: number): Promise<Map<string, InnerUserRegistration>> => {
@@ -437,25 +432,6 @@ export default function GroupApplicationConfirmResultPage() {
     }
   }, [eventId]);
 
-  // 현금영수증 상태 조회
-  useEffect(() => {
-    if (!groupApplicationData?.organizationId) return;
-    const loadCashReceiptStatus = async () => {
-      try {
-        const data = await fetchCashReceipt(eventId, groupApplicationData.organizationId!, 'organization');
-        if (data.isCashReceiptExist && data.cashReceiptInfo?.length > 0) {
-          const latest = data.cashReceiptInfo[data.cashReceiptInfo.length - 1];
-          setCashReceiptStatus({ exists: true, latestStatus: latest.status as CashReceiptStatus });
-        } else {
-          setCashReceiptStatus({ exists: false });
-        }
-      } catch {
-        setCashReceiptStatus({ exists: false });
-      }
-    };
-    loadCashReceiptStatus();
-  }, [groupApplicationData?.organizationId, eventId]);
-
   // 결제 계좌 정보 로드 (신청하기와 동일한 방식)
   useEffect(() => {
     let ignore = false;
@@ -473,6 +449,7 @@ export default function GroupApplicationConfirmResultPage() {
           if (!ignore) {
             setBankName(String(data?.bankName || ''));
             setVirtualAccount(String(data?.virtualAccount || ''));
+            setAccountHolderName(String(data?.accountHolderName || ''));
           }
           return;
         }
@@ -492,6 +469,7 @@ export default function GroupApplicationConfirmResultPage() {
           if (eventData?.eventInfo) {
             setBankName(String(eventData.eventInfo.bank || ''));
             setVirtualAccount(String(eventData.eventInfo.virtualAccount || ''));
+            setAccountHolderName(String(eventData.eventInfo.accountHolderName || ''));
           }
           // 이벤트 상태 추출
           if (eventData?.eventInfo?.eventStatus) {
@@ -1274,6 +1252,14 @@ export default function GroupApplicationConfirmResultPage() {
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                 <div className="space-y-2 text-sm text-gray-700">
                   <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
+                  {accountHolderName && (
+                    <p>
+                      예금주명 :{' '}
+                      <span className="bg-yellow-200 font-medium px-2 py-1 rounded">
+                        {accountHolderName}
+                      </span>
+                    </p>
+                  )}
                   <p>
                     계좌번호 :{' '}
                     <span className="bg-yellow-200 font-medium px-2 py-1 rounded">
@@ -1312,37 +1298,6 @@ export default function GroupApplicationConfirmResultPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between pb-4">
-                  <label className="font-medium text-gray-500 min-w-[112px] pr-4">현금영수증</label>
-                  {cashReceiptStatus?.exists ? (
-                    <div className="flex items-center gap-2">
-                      <span className={`font-semibold ${CASH_RECEIPT_STATUS_COLOR[cashReceiptStatus.latestStatus!]}`}>
-                        {CASH_RECEIPT_STATUS_LABEL[cashReceiptStatus.latestStatus!]}
-                      </span>
-                      <button
-                        onClick={() => {
-                          setCashReceiptModalMode('view');
-                          setIsCashReceiptModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors"
-                      >
-                        상세보기
-                      </button>
-                    </div>
-                  ) : groupApplicationData.paymentStatus === 'COMPLETED' ? (
-                    <button
-                      onClick={() => {
-                        setCashReceiptModalMode('request');
-                        setIsCashReceiptModalOpen(true);
-                      }}
-                      className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 rounded-full hover:bg-blue-700 transition-colors"
-                    >
-                      신청하기
-                    </button>
-                  ) : (
-                    <span className="text-xs text-gray-400">결제 완료 후 신청 가능</span>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -1682,30 +1637,6 @@ export default function GroupApplicationConfirmResultPage() {
         confirmText="확인"
       />
 
-      {groupApplicationData?.organizationId && (
-        <CashReceiptModal
-          isOpen={isCashReceiptModalOpen}
-          onClose={() => {
-            setIsCashReceiptModalOpen(false);
-            if (groupApplicationData?.organizationId) {
-              fetchCashReceipt(eventId, groupApplicationData.organizationId, 'organization')
-                .then((data) => {
-                  if (data.isCashReceiptExist && data.cashReceiptInfo?.length > 0) {
-                    const latest = data.cashReceiptInfo[data.cashReceiptInfo.length - 1];
-                    setCashReceiptStatus({ exists: true, latestStatus: latest.status as CashReceiptStatus });
-                  } else {
-                    setCashReceiptStatus({ exists: false });
-                  }
-                })
-                .catch(() => {});
-            }
-          }}
-          eventId={eventId}
-          targetId={groupApplicationData.organizationId}
-          targetType="organization"
-          initialMode={cashReceiptModalMode}
-        />
-      )}
     </SubmenuLayout>
   );
 }

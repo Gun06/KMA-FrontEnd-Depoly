@@ -1,4 +1,4 @@
-import { CashReceiptRequest, CashReceiptResponse } from '@/app/event/[eventId]/registration/confirm/shared/types/cashReceipt';
+import { CashReceiptRequest, CashReceiptResponse } from '../types/cashReceipt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 

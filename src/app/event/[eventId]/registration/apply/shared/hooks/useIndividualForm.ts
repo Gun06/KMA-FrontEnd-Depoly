@@ -9,6 +9,8 @@ import { submitIndividualRegistration, updateIndividualRegistration, UserData } 
 import { EventRegistrationInfo, CategorySouvenir } from '../types/common';
 import { useRouter } from 'next/navigation';
 import { formatError } from '../utils/errorHandler';
+import { mapLoadedAddressDetail } from '../constants/addressField';
+import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
 
@@ -134,12 +136,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           let baseAddress = cleanAddress(fullAddress, zipCode);
           let detailedAddress = addressDetail;
           
-          // 상세주소가 없고 전체 주소에 쉼표가 있는 경우 첫 번째 쉼표 기준으로 분리
-          if (!addressDetail && baseAddress && baseAddress.includes(',')) {
-            const firstCommaIndex = baseAddress.indexOf(',');
-            detailedAddress = baseAddress.substring(firstCommaIndex + 1).trim();
-            baseAddress = baseAddress.substring(0, firstCommaIndex).trim();
-          }
+          // 예전 추론 로직(쉼표 기준 분리)은 도로명 주소/참고주소를 잘못 상세주소로 옮길 수 있어 비활성화
           
           // category가 있으면 해당 category의 distance 찾기
           // eventCategoryName이 "TEST|테스트1 마라톤" 형식일 수 있으므로 분리 필요
@@ -177,6 +174,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
 
           const guardianPhoneParts = String(guardianPhNumFromEditData || '').split('-');
 
+          const addressDetailMapped = mapLoadedAddressDetail(detailedAddress);
+
           setFormData(prev => ({
             ...prev,
             name: editData.name || '',
@@ -187,7 +186,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             jeonmahyupId: editData.personalAccount || '',
             postalCode: editData.zipCode || '',
             address: baseAddress,
-            detailedAddress: detailedAddress,
+            detailedAddress: addressDetailMapped.detailedAddress,
+            noDetailedAddress: addressDetailMapped.noDetailedAddress,
             extraAddress: '',
             phone1: phoneParts[0] || '010',
             phone2: phoneParts[1] || '',
@@ -351,9 +351,10 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
         setIsSubmitted(true);
 
         // API 스키마에 맞는 데이터로 변환 (수정 모드에서는 souvenir 필드 제거)
+        const eventTermsAgreeRequestList = isEditMode ? [] : loadEventTermsAgreement(eventId);
         const apiData = isEditMode ? 
           transformFormDataToUpdateApi(formData, eventInfo) : 
-          transformFormDataToApi(formData, eventInfo);
+          transformFormDataToApi(formData, eventInfo, eventTermsAgreeRequestList);
         
         let _result: any;
         if (isEditMode) {
@@ -570,8 +571,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
     
     // 주소 정보 처리 (address.address 또는 roadAddress 사용)
     const fullAddress = userData.address?.address || userData.address?.roadAddress || '';
-    const addressDetail = userData.address?.addressDetail || '';
-    
+    const addressDetailMapped = mapLoadedAddressDetail(userData.address?.addressDetail);
+
     setFormData(prev => ({
       ...prev,
       jeonmahyupId: accountId || prev.jeonmahyupId, // 전마협 아이디 설정
@@ -582,7 +583,8 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       gender: userData.gender === '남자' ? 'male' : 'female',
       postalCode: userData.address?.zipCode || '',
       address: fullAddress,
-      detailedAddress: addressDetail,
+      detailedAddress: addressDetailMapped.detailedAddress,
+      noDetailedAddress: addressDetailMapped.noDetailedAddress,
       phone1: phoneParts[0] || '010',
       phone2: phoneParts[1] || '',
       phone3: phoneParts[2] || '',
@@ -682,7 +684,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       paymentMethodRef
     },
     handlers: {
-      handleInputChange: (field: keyof IndividualFormData, value: string | Array<{souvenirId: string, souvenirName: string, size: string}>) => 
+      handleInputChange: (field: keyof IndividualFormData, value: string | boolean | Array<{souvenirId: string, souvenirName: string, size: string}>) =>
         handleInputChange(setFormData, field, value),
       handleIdCheck: () => handleIdCheck(formData.jeonmahyupId, setIdCheckResult),
       handleAddressSelect: (postalCode: string, address: string) => 

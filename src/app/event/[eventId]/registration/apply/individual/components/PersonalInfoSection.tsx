@@ -13,7 +13,7 @@ interface PersonalInfoSectionProps {
   formData: IndividualFormData;
   idCheckResult?: IdCheckResult;
   openDropdown: OpenDropdown;
-  onInputChange: (field: keyof IndividualFormData, value: string) => void;
+  onInputChange: (field: keyof IndividualFormData, value: string | boolean) => void;
   onIdCheck?: () => void;
   onAddressSelect: (postalCode: string, address: string) => void;
   onDropdownToggle: (dropdown: OpenDropdown) => void;
@@ -260,9 +260,11 @@ export default function PersonalInfoSection({
                 postalCode={formData.postalCode}
                 address={formData.address}
                 detailedAddress={formData.detailedAddress}
+                noDetailedAddress={formData.noDetailedAddress}
                 onPostalCodeChange={(value) => onInputChange('postalCode', value)}
                 onAddressChange={(value) => onInputChange('address', value)}
                 onDetailedAddressChange={(value) => onInputChange('detailedAddress', value)}
+                onNoDetailedAddressChange={(checked) => onInputChange('noDetailedAddress', checked)}
                 onAddressSelect={onAddressSelect}
               />
             </FormField>

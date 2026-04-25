@@ -15,9 +15,11 @@ import { useGlobalNotifications, useEventNotifications } from '../notifications/
 import type { NotificationItem } from '../notifications/types/notification'
 import Pagination from '@/components/common/Pagination/Pagination'
 import PaginationBar from '@/components/common/Pagination/PaginationBar'
-import type { ApplicationItem } from './types/application'
+import type { ApplicationItem, EventSearchItem } from './types/application'
 import { useMyProfile } from '../profile/shared'
 import { useAuthStore } from '@/stores/authStore'
+import CashReceiptModal from './cash-receipt/components/CashReceiptModal'
+import GroupCashReceiptEntryModal from './components/GroupCashReceiptEntryModal'
 
 // 상태 매핑 함수
 // 백엔드 응답: '신청 취소', '참가 완료', '신청 완료' 3가지
@@ -127,6 +129,16 @@ export default function Client() {
   const pageSize = 10
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedApplication, setSelectedApplication] = useState<ApplicationItem | null>(null)
+  const [isCashReceiptModalOpen, setIsCashReceiptModalOpen] = useState(false)
+  const [cashReceiptModalMode, setCashReceiptModalMode] = useState<'request' | 'view'>('request')
+  const [showGroupCashReceiptEntry, setShowGroupCashReceiptEntry] = useState(false)
+  const [groupCashReceiptTarget, setGroupCashReceiptTarget] = useState<{
+    eventId: string
+    organizationId: string
+  } | null>(null)
+  const [isGroupCashReceiptModalOpen, setIsGroupCashReceiptModalOpen] = useState(false)
+  /** 단체 인증 직후 현금영수증으로 갔다가 `<`로 복귀할 때 2단계에 쓸 대회 정보 */
+  const [groupCashResumeEvent, setGroupCashResumeEvent] = useState<EventSearchItem | null>(null)
   const { data: globalCountData } = useGlobalNotifications(1, 20)
   const { data: eventCountData } = useEventNotifications(1, 20)
   const unreadCount =
@@ -206,8 +218,40 @@ export default function Client() {
     setShowDetailModal(true)
   }, [])
 
+  const selectedApplicationType = selectedApplication?.cashReceiptRequestable?.type ?? '미확인'
+  const selectedRegistrationId = selectedApplication?.registrationId || selectedApplication?.registraitonId
+  const isPersonalApplication = selectedApplicationType === '개인 신청'
+  const isCashReceiptRequestable = Boolean(selectedApplication?.cashReceiptRequestable?.requestable)
+  const canOpenCashReceipt =
+    Boolean(selectedApplication?.eventId) &&
+    Boolean(selectedRegistrationId) &&
+    isPersonalApplication &&
+    isCashReceiptRequestable
+  const nonPersonalCashReceiptGuide =
+    "현금영수증은 개인 신청 건만 이곳에서 처리됩니다. 단체는 목록 상단의 ‘단체 현금영수증’을 이용해 주세요. (단체·소유 신청의 현금영수증은 단체장만 신청할 수 있습니다.)"
+
+  const GROUP_LEADER_ONLY_CASH_RECEIPT_REASON =
+    '단체 신청 및 소유 신청은 단체장만 현금영수증을 신청할 수 있습니다.'
+
+  const apiCashReceiptReason = selectedApplication?.cashReceiptRequestable?.reason?.trim() ?? ''
+  const normalizedApiReason = apiCashReceiptReason.replace(/\s+/g, ' ').trim()
+  const normalizedLeaderReason = GROUP_LEADER_ONLY_CASH_RECEIPT_REASON.replace(/\s+/g, ' ').trim()
+  const isGroupLeaderOnlyCashReceiptReason =
+    normalizedApiReason === normalizedLeaderReason ||
+    normalizedApiReason === `${normalizedLeaderReason}.`
+
+  const cashReceiptDisabledReason = isGroupLeaderOnlyCashReceiptReason
+    ? nonPersonalCashReceiptGuide
+    : apiCashReceiptReason || '현금영수증 신청이 불가능한 신청 건입니다.'
+
   const isAuthenticated = isLoggedIn && Boolean(accessToken)
   const showLoginGuide = !isAuthenticated
+
+  const handleGroupCashReceiptBackFromOrgModal = useCallback(() => {
+    setIsGroupCashReceiptModalOpen(false)
+    setGroupCashReceiptTarget(null)
+    setShowGroupCashReceiptEntry(true)
+  }, [])
 
   return (
     <SubmenuLayout
@@ -238,7 +282,25 @@ export default function Client() {
 
         {/* 필터 섹션 */}
         <div className="bg-white border border-gray-200 p-4 sm:p-6 rounded-2xl mt-4 mb-4">
-          <div className="text-[11px] tracking-[0.12em] text-gray-400 font-medium mb-3">FILTER</div>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="text-[11px] tracking-[0.12em] text-gray-400 font-medium">FILTER</div>
+            <button
+              type="button"
+              onClick={() => {
+                setGroupCashResumeEvent(null)
+                setShowGroupCashReceiptEntry(true)
+              }}
+              disabled={!isAuthenticated}
+              title={!isAuthenticated ? '로그인 후 이용할 수 있습니다.' : '단체 신청 건의 현금영수증 신청·조회'}
+              className={`text-xs font-semibold rounded-lg px-3 py-1.5 border transition-colors shrink-0 ${
+                isAuthenticated
+                  ? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
+                  : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              단체 현금영수증
+            </button>
+          </div>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* 기간 세그먼트 - 모바일: 텍스트 형태, 데스크탑: SegmentedControl */}
             <div className="w-full lg:w-auto">
@@ -326,7 +388,7 @@ export default function Client() {
             ) : (
               paginatedData.map((item, index) => (
                 <div
-                  key={item.regiNum || `item-${index}`}
+                  key={item.registrationId || item.registraitonId || item.eventId || `item-${index}`}
                   role="button"
                   tabIndex={0}
                   onClick={() => handleApplicationClick(item)}
@@ -344,9 +406,6 @@ export default function Client() {
                         <span className="font-medium">
                           신청: {formatDateForDisplay(item.date)}
                         </span>
-                        {item.regiNum && (
-                          <span className="text-gray-500"> · 접수번호 {item.regiNum}</span>
-                        )}
                       </div>
                       <div className="mt-1 text-base font-semibold text-gray-900">{item.eventName}</div>
                     </div>
@@ -364,6 +423,8 @@ export default function Client() {
                     <div className="text-gray-900 truncate">{item.souvenir}</div>
                     <div className="text-gray-500">코스</div>
                     <div className="text-gray-900 truncate">{item.course}</div>
+                    <div className="text-gray-500">신청 유형</div>
+                    <div className="text-gray-900 truncate">{item.cashReceiptRequestable?.type || '-'}</div>
                   </div>
                 </div>
               ))
@@ -380,10 +441,10 @@ export default function Client() {
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50/70">
                     <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청날짜</th>
-                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">접수번호</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">대회명</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">기념품</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">코스</th>
+                    <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청 유형</th>
                     <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">상태</th>
                   </tr>
                 </thead>
@@ -394,9 +455,6 @@ export default function Client() {
                         <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mx-auto" />
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
-                        <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mx-auto" />
-                      </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
                         <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mx-auto" />
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
@@ -404,6 +462,9 @@ export default function Client() {
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
                         <div className="h-4 w-28 bg-gray-200 rounded animate-pulse mx-auto" />
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
+                        <div className="h-4 w-16 bg-gray-200 rounded animate-pulse mx-auto" />
                       </td>
                       <td className="px-3 sm:px-6 py-3 sm:py-5 text-center">
                         <div className="h-6 w-16 bg-gray-200 rounded animate-pulse mx-auto" />
@@ -428,10 +489,10 @@ export default function Client() {
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50/70">
                       <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청날짜</th>
-                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">접수번호</th>
                       <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">대회명</th>
                       <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">기념품</th>
                       <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">코스</th>
+                      <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">신청 유형</th>
                       <th className="px-3 sm:px-6 py-3 text-center text-[11px] tracking-[0.12em] font-medium text-gray-500">
                         <div className="flex items-center justify-center space-x-1">
                           <span>상태</span>
@@ -443,19 +504,19 @@ export default function Client() {
                   <tbody className="divide-y divide-gray-200">
                     {paginatedData.map((item, index) => (
                       <tr
-                        key={item.regiNum || `item-${index}`}
+                        key={item.registrationId || item.registraitonId || item.eventId || `item-${index}`}
                         className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                         onClick={() => handleApplicationClick(item)}
                       >
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-700 text-center">
                           {formatDateForDisplay(item.date)}
                         </td>
-                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center">
-                          {item.regiNum || '-'}
-                        </td>
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-900 text-center max-w-[240px] truncate">{item.eventName}</td>
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center max-w-[160px] truncate">{item.souvenir}</td>
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center max-w-[200px] truncate">{item.course}</td>
+                        <td className="px-3 sm:px-6 py-4 sm:py-5 text-gray-800 text-center whitespace-nowrap">
+                          {item.cashReceiptRequestable?.type || '-'}
+                        </td>
                         <td className="px-3 sm:px-6 py-4 sm:py-5 text-center whitespace-nowrap">
                           {(() => {
                             const statusInfo = getStatusConfig(item.status)
@@ -538,9 +599,6 @@ export default function Client() {
                   <span className="text-gray-500">신청날짜</span>
                   <span className="text-gray-900">{formatDateForDisplay(selectedApplication.date)}</span>
 
-                  <span className="text-gray-500">접수번호</span>
-                  <span className="text-gray-900">{selectedApplication.regiNum || '-'}</span>
-
                   <span className="text-gray-500">대회명</span>
                   <span className="text-gray-900 break-words">{selectedApplication.eventName}</span>
 
@@ -549,6 +607,9 @@ export default function Client() {
 
                   <span className="text-gray-500">코스</span>
                   <span className="text-gray-900 break-words">{selectedApplication.course}</span>
+
+                  <span className="text-gray-500">신청 유형</span>
+                  <span className="text-gray-900">{selectedApplication.cashReceiptRequestable?.type || '-'}</span>
 
                   <span className="text-gray-500">상태</span>
                   <span>
@@ -563,8 +624,74 @@ export default function Client() {
                   </span>
                 </div>
               </div>
+              <div className="px-5 pb-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDetailModal(false)
+                    setCashReceiptModalMode('request')
+                    setIsCashReceiptModalOpen(true)
+                  }}
+                  disabled={!canOpenCashReceipt}
+                  title={!canOpenCashReceipt ? cashReceiptDisabledReason : '현금영수증 신청/확인'}
+                  className={`w-full rounded-lg py-2.5 text-sm font-semibold transition-colors ${
+                    canOpenCashReceipt
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  현금영수증 확인/신청
+                </button>
+                {!canOpenCashReceipt && (
+                  <p className="mt-2 text-xs text-blue-700">{cashReceiptDisabledReason}</p>
+                )}
+              </div>
             </div>
           </div>
+        )}
+        {selectedApplication?.eventId && selectedRegistrationId && (
+          <CashReceiptModal
+            isOpen={isCashReceiptModalOpen}
+            onClose={() => setIsCashReceiptModalOpen(false)}
+            eventId={selectedApplication.eventId}
+            targetId={selectedRegistrationId}
+            targetType="registration"
+            initialMode={cashReceiptModalMode}
+          />
+        )}
+
+        <GroupCashReceiptEntryModal
+          isOpen={showGroupCashReceiptEntry}
+          onClose={() => {
+            setShowGroupCashReceiptEntry(false)
+            setGroupCashResumeEvent(null)
+          }}
+          resumeToAuth={groupCashResumeEvent}
+          onResumeConsumed={() => setGroupCashResumeEvent(null)}
+          onVerified={({ eventId, organizationId, eventName, eventDate }) => {
+            setShowGroupCashReceiptEntry(false)
+            setGroupCashResumeEvent({ eventId, eventName, eventDate })
+            setGroupCashReceiptTarget({ eventId, organizationId })
+            setCashReceiptModalMode('request')
+            setIsGroupCashReceiptModalOpen(true)
+          }}
+        />
+
+        {groupCashReceiptTarget && (
+          <CashReceiptModal
+            key={`org-${groupCashReceiptTarget.eventId}-${groupCashReceiptTarget.organizationId}`}
+            isOpen={isGroupCashReceiptModalOpen}
+            onClose={() => {
+              setIsGroupCashReceiptModalOpen(false)
+              setGroupCashReceiptTarget(null)
+              setGroupCashResumeEvent(null)
+            }}
+            eventId={groupCashReceiptTarget.eventId}
+            targetId={groupCashReceiptTarget.organizationId}
+            targetType="organization"
+            initialMode="request"
+            onBack={handleGroupCashReceiptBackFromOrgModal}
+          />
         )}
             </>
           </div>

@@ -3,13 +3,16 @@ import { IndividualFormData } from "../types/individual";
 import { ApiSubmitData } from "../types/common";
 import { GroupFormData, GroupApiRequestData } from "../types/group";
 import { EventRegistrationInfo } from "../types/common";
+import type { EventTermsAgreeRequestItem } from "../types/common";
 import { formatBirthDate, formatPhoneNumber, formatEmail } from "./formatters";
 import { parseCategoryWithDistance } from "@/components/event/GroupRegistration/utils/participantHelpers";
+import { buildRegistrationAddressPayload } from "../constants/addressField";
 
 // 개인신청 데이터 변환
 export const transformFormDataToApi = (
   formData: IndividualFormData,
-  eventInfo: EventRegistrationInfo | null
+  eventInfo: EventRegistrationInfo | null,
+  eventTermsAgreeRequestList?: EventTermsAgreeRequestItem[]
 ): ApiSubmitData => {
   if (!eventInfo) {
     throw new Error('이벤트 정보가 없습니다.');
@@ -105,18 +108,17 @@ export const transformFormDataToApi = (
         },
         registrationInfo
       },
-      address: {
-        address: formData.address,
-        zipCode: formData.postalCode,
-        addressDetail: formData.detailedAddress
-      },
+      address: buildRegistrationAddressPayload(formData),
       paymentDefaultInfo: {
         paymentType:
           formData.paymentMethod === 'bank_transfer'
             ? 'ACCOUNT_TRANSFER'
             : 'CARD',
         paymenterName: formData.depositorName
-      }
+      },
+      ...(eventTermsAgreeRequestList && eventTermsAgreeRequestList.length > 0
+        ? { eventTermsAgreeRequestList }
+        : {})
     },
     registrationPw: formData.password
   };
@@ -216,11 +218,7 @@ export const transformFormDataToUpdateApi = (
         },
         registrationInfo
       },
-      address: {
-        address: formData.address,
-        zipCode: formData.postalCode,
-        addressDetail: formData.detailedAddress
-      },
+      address: buildRegistrationAddressPayload(formData),
       paymentDefaultInfo: {
         paymentType: formData.paymentMethod === 'bank_transfer' ? 'ACCOUNT_TRANSFER' : 'CARD',
         paymenterName: formData.depositorName
@@ -233,7 +231,11 @@ export const transformFormDataToUpdateApi = (
 };
 
 // 단체신청 데이터 변환
-export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: any): GroupApiRequestData => {
+export const transformGroupFormDataToApi = (
+  formData: GroupFormData,
+  eventInfo: any,
+  eventTermsAgreeRequestList?: EventTermsAgreeRequestItem[]
+): GroupApiRequestData => {
   // 단체 정보에서 기념품 정보를 JSON으로 변환
   const souvenirJson = formData.participants.map(participant => ({
     category: participant.category,
@@ -249,11 +251,12 @@ export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: 
         organizationPassword: formData.groupPassword
       },
       organizationProfile: {
-          address: {
-            address: formData.address || '', // 단일 문자열 주소 (개인신청과 동일)
-            zipCode: formData.postalCode || '',
-            addressDetail: formData.detailedAddress || ''
-          },
+          address: buildRegistrationAddressPayload({
+            address: formData.address || '',
+            postalCode: formData.postalCode || '',
+            detailedAddress: formData.detailedAddress,
+            noDetailedAddress: formData.noDetailedAddress
+          }),
         birth: formData.representativeBirthDate,
         phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
         email: formatEmail(formData.email1, formData.emailDomain, ''),
@@ -264,6 +267,9 @@ export const transformGroupFormDataToApi = (formData: GroupFormData, eventInfo: 
         paymenterName: formData.depositorName
       }
     },
+    ...(eventTermsAgreeRequestList && eventTermsAgreeRequestList.length > 0
+      ? { eventTermsAgreeRequestList }
+      : {}),
     registrationInfoPerUserList: formData.participants.map((participant, index) => {
       // 참가자 데이터 유효성 검사
       if (!participant.category || participant.category === '종목' || participant.category === '') {
@@ -510,11 +516,12 @@ export const transformGroupFormDataToUpdateApi = (
         organizationPassword: formData.groupPassword
       },
       organizationProfile: {
-        address: {
-          address: formData.address || '', // 단일 문자열 주소 (개인신청과 동일)
-          zipCode: formData.postalCode || '',
-          addressDetail: formData.detailedAddress || '' // 세부주소 (상세주소)
-        },
+        address: buildRegistrationAddressPayload({
+          address: formData.address || '',
+          postalCode: formData.postalCode || '',
+          detailedAddress: formData.detailedAddress,
+          noDetailedAddress: formData.noDetailedAddress
+        }),
         birth: formData.representativeBirthDate,
         phNum: formatPhoneNumber(formData.phone1, formData.phone2, formData.phone3),
         email: formatEmail(formData.email1, formData.emailDomain, ''),

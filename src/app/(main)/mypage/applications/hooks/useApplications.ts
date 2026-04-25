@@ -1,8 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { getApplications } from '../api/applicationApi';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  getApplications,
+  searchEvents,
+  verifyOrganization,
+} from '../api/applicationApi';
 import type {
   ApplicationListResponse,
   ApplicationListParams,
+  EventSearchResponse,
+  VerifyOrganizationRequest,
+  VerifyOrganizationResponse,
 } from '../types/application';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -26,5 +33,34 @@ export function useApplications(params: ApplicationListParams = {}) {
     staleTime: 1 * 60 * 1000, // 1분
     retry: false, // 에러 발생 시 재시도 안 함
     placeholderData: (previousData) => previousData, // 기존 데이터 유지하여 깜빡임 방지
+  });
+}
+
+/**
+ * 단체 현금영수증 Step1: 대회 검색 훅
+ */
+export function useEventSearch(keyword: string, page: number = 1, size: number = 10) {
+  const { isLoggedIn, hasHydrated } = useAuthStore();
+  const normalizedKeyword = keyword.trim();
+
+  return useQuery<EventSearchResponse>({
+    queryKey: ['applications', 'event-search', normalizedKeyword, page, size],
+    queryFn: async () => {
+      return await searchEvents({ keyword: normalizedKeyword, page, size });
+    },
+    enabled: hasHydrated && isLoggedIn && normalizedKeyword.length > 0,
+    staleTime: 30 * 1000,
+    retry: false,
+  });
+}
+
+/**
+ * 단체 현금영수증 Step2: 단체 계정 1회 인증 훅
+ */
+export function useVerifyOrganization() {
+  return useMutation<VerifyOrganizationResponse, unknown, { eventId: string; body: VerifyOrganizationRequest }>({
+    mutationFn: async ({ eventId, body }) => {
+      return await verifyOrganization(eventId, body);
+    },
   });
 }

@@ -21,6 +21,11 @@ import { updateOwnedRegistration, OwnedRegistrationUpdatePayload } from "../../s
 import { commitStagedRegistration, reissueStagedOtp } from "../../shared/api/individual";
 import { formatEmail } from "../../shared/utils/formatters";
 import { fetchOwnedRegistrationView } from "../../../confirm/group/api";
+import {
+  buildRegistrationAddressPayload,
+  mapLoadedAddressDetail
+} from "../../shared/constants/addressField";
+import { isRegistrationDetailedAddressValid } from "../../shared/utils/validation";
 
 interface OwnedRegistrationEditClientProps {
   eventId: string;
@@ -137,6 +142,8 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
         const isGuardianDelegated = ownedData.checkGuardianBasedOnOrgLeader === true;
         const guardianPhoneParts = String(isGuardianDelegated ? '' : (ownedData.guardianPhNum || '')).split('-');
 
+        const addressDetailMapped = mapLoadedAddressDetail(ownedData.address?.addressDetail);
+
         setFormData((prev) => ({
           ...prev,
           name: ownedData.name,
@@ -161,7 +168,8 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
           size: selectedSouvenirs[0]?.size || '',
           postalCode: ownedData.address?.zipCode || '',
           address: ownedData.address?.address || '',
-          detailedAddress: ownedData.address?.addressDetail || '',
+          detailedAddress: addressDetailMapped.detailedAddress,
+          noDetailedAddress: addressDetailMapped.noDetailedAddress,
           note: ''
         }));
 
@@ -210,6 +218,13 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
     if (!addressIsBasedOnOrganization) {
       if (!formData.postalCode.trim()) return { valid: false, message: '우편번호를 입력해주세요.' };
       if (!formData.address.trim()) return { valid: false, message: '주소를 입력해주세요.' };
+      if (!isRegistrationDetailedAddressValid(formData)) {
+        return {
+          valid: false,
+          message:
+            '상세주소를 입력해 주세요. 동·호수 등이 없으면 아래 「상세주소 없음」을 체크해 주세요.'
+        };
+      }
     }
     if (!formData.phone1 || !formData.phone2 || !formData.phone3) return { valid: false, message: '휴대폰번호를 모두 입력해주세요.' };
     if (!formData.category) return { valid: false, message: '참가종목을 선택해주세요.' };
@@ -287,11 +302,12 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
           checkGuardianIsBasedOnOrganization: guardianIsBasedOnOrgLeader,
           address: addressIsBasedOnOrganization
             ? null
-            : {
+            : buildRegistrationAddressPayload({
                 address: formData.address || '',
-                zipCode: formData.postalCode || '',
-                addressDetail: formData.detailedAddress || ''
-              }
+                postalCode: formData.postalCode || '',
+                detailedAddress: formData.detailedAddress,
+                noDetailedAddress: formData.noDetailedAddress
+              })
         },
         registrationPw: formData.password,
         note: formData.note || ''
@@ -435,9 +451,11 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
                         if (isChecked) {
                           // 체크 시: 원래 주소 복원 (필드에 데이터 표시)
                           if (originalAddress) {
+                            const restored = mapLoadedAddressDetail(originalAddress.detailedAddress);
                             handlers.handleInputChange('postalCode', originalAddress.postalCode);
                             handlers.handleInputChange('address', originalAddress.address);
-                            handlers.handleInputChange('detailedAddress', originalAddress.detailedAddress);
+                            handlers.handleInputChange('detailedAddress', restored.detailedAddress);
+                            handlers.handleInputChange('noDetailedAddress', restored.noDetailedAddress);
                           }
                         } else {
                           // 체크 해제 시: 현재 주소를 저장하고 초기화 (필드는 보이지만 데이터 없음)
@@ -451,6 +469,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
                           handlers.handleInputChange('postalCode', '');
                           handlers.handleInputChange('address', '');
                           handlers.handleInputChange('detailedAddress', '');
+                          handlers.handleInputChange('noDetailedAddress', false);
                         }
                       }}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
@@ -467,9 +486,13 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
                         postalCode={formData.postalCode}
                         address={formData.address}
                         detailedAddress={formData.detailedAddress}
+                        noDetailedAddress={formData.noDetailedAddress}
                         onPostalCodeChange={(value) => handlers.handleInputChange('postalCode', value)}
                         onAddressChange={(value) => handlers.handleInputChange('address', value)}
                         onDetailedAddressChange={(value) => handlers.handleInputChange('detailedAddress', value)}
+                        onNoDetailedAddressChange={(checked) =>
+                          handlers.handleInputChange('noDetailedAddress', checked)
+                        }
                         onAddressSelect={handlers.handleAddressSelect}
                         disabled={false}
                       />

@@ -7,7 +7,7 @@ import { GroupFormData as GroupFormDataType } from "../types/group";
 export const handleInputChange = (
   setFormData: Dispatch<SetStateAction<IndividualFormData>>,
   field: keyof IndividualFormData,
-  value: string | Array<{souvenirId: string, souvenirName: string, size: string}>
+  value: string | boolean | Array<{souvenirId: string, souvenirName: string, size: string}>
 ) => {
   setFormData(prev => {
     // 카테고리가 변경되면 기념품 관련 필드들 초기화
@@ -60,7 +60,9 @@ export const handleAddressSelect = (
   setFormData(prev => ({
     ...prev,
     postalCode,
-    address
+    address,
+    detailedAddress: '',
+    noDetailedAddress: false
   }));
 };
 
@@ -68,7 +70,7 @@ export const handleAddressSelect = (
 export const handleGroupInputChange = (
   setFormData: Dispatch<SetStateAction<GroupFormDataType>>,
   field: keyof GroupFormDataType,
-  value: string
+  value: string | boolean
 ) => {
   setFormData(prev => ({
     ...prev,
@@ -98,7 +100,9 @@ export const handleGroupAddressSelect = (
   setFormData(prev => ({
     ...prev,
     postalCode,
-    address
+    address,
+    detailedAddress: '',
+    noDetailedAddress: false
   }));
 };
 

@@ -13,6 +13,7 @@ export const initialIndividualFormData: IndividualFormData = {
   postalCode: '',
   address: '',
   detailedAddress: '',
+  noDetailedAddress: false,
   extraAddress: '',
   phone1: '010',
   phone2: '',

@@ -15,6 +15,10 @@ import MarathonApplyStaticTerms from "./shared/components/MarathonApplyStaticTer
 import EventTermsInlineSection, {
   getEventTermKey,
 } from "./shared/components/EventTermsInlineSection";
+import {
+  buildEventTermsAgreeRequestList,
+  saveEventTermsAgreement,
+} from "./shared/utils/eventTermsAgreement";
 
 export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -211,6 +215,13 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   };
 
   const proceedApply = (kind: "individual" | "group") => {
+    const termsAgreeRequestList = buildEventTermsAgreeRequestList(
+      apiTerms,
+      checkedTermIds,
+      getEventTermKey
+    );
+    saveEventTermsAgreement(params.eventId, termsAgreeRequestList);
+
     router.push(
       `/event/${params.eventId}/registration/apply/${kind === "individual" ? "individual" : "group"}`
     );

@@ -24,6 +24,8 @@ interface CashReceiptModalProps {
   targetId: string;
   targetType: 'registration' | 'organization';
   initialMode?: 'request' | 'view';
+  /** 단체·신청 화면에서만: `<`로 단체 인증 단계로 복귀 (내역 화면에서는 버튼 미표시) */
+  onBack?: () => void;
 }
 
 export default function CashReceiptModal({
@@ -33,11 +35,12 @@ export default function CashReceiptModal({
   targetId,
   targetType,
   initialMode = 'request',
+  onBack,
 }: CashReceiptModalProps) {
   const [mode, setMode] = useState<'request' | 'view'>(initialMode);
   const [receipts, setReceipts] = useState<CashReceiptInfo[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [_isLoading, _setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -52,6 +55,7 @@ export default function CashReceiptModal({
 
   const loadReceipts = useCallback(async () => {
     setError(null);
+    setIsLoading(true);
     try {
       const data = await fetchCashReceipt(eventId, targetId, targetType);
       setReceipts(data.cashReceiptInfo || []);
@@ -61,6 +65,8 @@ export default function CashReceiptModal({
       }
     } catch {
       // 조회 실패 시 무시 (신청 폼은 계속 표시)
+    } finally {
+      setIsLoading(false);
     }
   }, [eventId, targetId, targetType]);
 
@@ -81,6 +87,14 @@ export default function CashReceiptModal({
     setMemo('');
     setPassword('');
     setValueError(null);
+  };
+
+  /** 개인 신청은 비표시. 단체는 '신청' 탭에서만 표시 — '내역'에서는 숨김 */
+  const showHeaderBack = targetType === 'organization' && mode === 'request' && Boolean(onBack);
+
+  const handleHeaderBack = () => {
+    if (onBack) onBack();
+    else onClose();
   };
 
   const handlePresetChange = (newPreset: CashReceiptPreset) => {
@@ -156,12 +170,29 @@ export default function CashReceiptModal({
 
       <div className="relative bg-white rounded-lg shadow-xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col" style={{ maxWidth: '448px' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900">
-            {mode === 'request' ? '현금영수증 신청' : '현금영수증 내역'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-5 h-5" />
+        <div className="flex items-center justify-between gap-2 p-5 border-b border-gray-200">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            {showHeaderBack && (
+              <button
+                type="button"
+                onClick={handleHeaderBack}
+                className="shrink-0 rounded-md p-1.5 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                aria-label="단체 인증으로 돌아가기"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
+            <h3 className="truncate text-base font-semibold text-gray-900">
+              {mode === 'request' ? '현금영수증 신청' : '현금영수증 내역'}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="닫기"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -172,7 +203,24 @@ export default function CashReceiptModal({
             </div>
           )}
 
-          {mode === 'view' && receipts.length > 0 ? (
+          {isLoading ? (
+            <div className="min-h-[360px]">
+              <div className="animate-pulse space-y-4">
+                <div className="flex items-center justify-center gap-3 py-2">
+                  <div className="h-4 w-4 rounded bg-gray-200" />
+                  <div className="h-4 w-12 rounded bg-gray-200" />
+                  <div className="h-4 w-4 rounded bg-gray-200" />
+                </div>
+                {Array.from({ length: 7 }).map((_, idx) => (
+                  <div key={`cash-receipt-skeleton-${idx}`} className="flex items-center justify-between border-b border-gray-100 py-3">
+                    <div className="h-4 w-20 rounded bg-gray-200" />
+                    <div className="h-4 w-28 rounded bg-gray-200" />
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-center text-sm text-gray-500">현금영수증 내역을 불러오는 중입니다...</p>
+            </div>
+          ) : mode === 'view' && receipts.length > 0 ? (
             <>
               {/* Pagination */}
               <div className="flex items-center justify-center gap-4 mb-5">
@@ -379,6 +427,7 @@ export default function CashReceiptModal({
                   {error && (
                     <p className="mt-1.5 text-xs text-red-500">{extractErrorMessage(error)}</p>
                   )}
+                  <p className="mt-1.5 text-xs text-gray-400">신청 시 입력한 비밀번호를 입력해 주세요.</p>
                 </div>
 
                 {/* Buttons */}

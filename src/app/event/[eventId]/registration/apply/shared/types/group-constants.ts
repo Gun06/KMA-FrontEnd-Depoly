@@ -33,7 +33,8 @@ export const initialGroupFormData: GroupFormData = {
   postalCode: '',
   address: '',
   detailedAddress: '',
-  
+  noDetailedAddress: false,
+
   // 개인 정보 (연락처만)
   phone1: '010',
   phone2: '',

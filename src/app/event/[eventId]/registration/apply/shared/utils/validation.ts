@@ -1,6 +1,7 @@
 // 공통 유효성 검사 함수들
 import { IndividualFormData } from '../types/individual';
 import { GroupFormData } from '../types/group';
+import { ADDRESS_DETAIL_NONE_LABEL } from '../constants/addressField';
 
 // 비밀번호 유효성 검사 (최소 6자리, 공백 없음)
 export const isPasswordValid = (password: string): boolean => {
@@ -34,6 +35,22 @@ export const isEmailValid = (email1: string, emailDomain: string): boolean => {
   return email1.trim() !== '' && emailDomain.trim() !== '' && emailDomain !== '직접입력';
 };
 
+const DETAILED_ADDRESS_HINT =
+  '• 상세주소를 입력해 주세요. 동·호수 등이 없으면 아래 「상세주소 없음」을 체크해 주세요.';
+
+/** 상세: 값이 있어야 함. 「상세주소 없음」 문구만 있을 때는 체크된 경우만 허용(직접 입력만으로는 불가) */
+export function isRegistrationDetailedAddressValid(
+  formData: Pick<IndividualFormData, 'detailedAddress' | 'noDetailedAddress'>
+): boolean {
+  const d = formData.detailedAddress.trim();
+  if (d === '') return false;
+  if (d === ADDRESS_DETAIL_NONE_LABEL) return formData.noDetailedAddress;
+  return true;
+}
+
+const hasDetailedAddressOrWaived = (formData: IndividualFormData | GroupFormData): boolean =>
+  isRegistrationDetailedAddressValid(formData);
+
 // 개인신청 폼 유효성 검사
 export const isIndividualFormValid = (formData: IndividualFormData): boolean => {
   return (
@@ -46,6 +63,7 @@ export const isIndividualFormValid = (formData: IndividualFormData): boolean => 
     formData.gender !== '' &&
     formData.postalCode.trim() !== '' &&
     formData.address.trim() !== '' &&
+    hasDetailedAddressOrWaived(formData) &&
     isPhoneValid(formData.phone1, formData.phone2, formData.phone3) &&
     // isEmailValid(formData.email1, formData.emailDomain) && // API 구조 변경으로 제거
     formData.category !== '' &&
@@ -73,6 +91,7 @@ export const isGroupFormValid = (formData: GroupFormData): boolean => {
     isPasswordMatch(formData.groupPassword, formData.confirmGroupPassword) &&
     formData.postalCode.trim() !== '' &&
     formData.address.trim() !== '' &&
+    hasDetailedAddressOrWaived(formData) &&
     isPhoneValid(formData.phone1, formData.phone2, formData.phone3) &&
     // isEmailValid(formData.email1, formData.emailDomain) && // 이메일은 선택사항으로 변경
     formData.participants.length > 0 &&
@@ -161,7 +180,11 @@ export const getGroupFormValidationErrors = (formData: GroupFormData): string =>
   if (formData.address.trim() === '') {
     basicInfoErrors.push('• 주소를 입력해주세요 (우편번호 찾기 버튼을 이용해주세요)');
   }
-  
+
+  if (!hasDetailedAddressOrWaived(formData)) {
+    basicInfoErrors.push(DETAILED_ADDRESS_HINT);
+  }
+
   // 연락처 정보 검증
   if (!isPhoneValid(formData.phone1, formData.phone2, formData.phone3)) {
     contactErrors.push('• 대표자 휴대폰번호를 모두 입력해주세요');
@@ -272,7 +295,11 @@ export const getIndividualFormValidationErrors = (formData: IndividualFormData):
   if (formData.address.trim() === '') {
     basicInfoErrors.push('• 주소를 입력해주세요 (우편번호 찾기 버튼을 이용해주세요)');
   }
-  
+
+  if (!hasDetailedAddressOrWaived(formData)) {
+    basicInfoErrors.push(DETAILED_ADDRESS_HINT);
+  }
+
   // 연락처 정보 검증
   if (!isPhoneValid(formData.phone1, formData.phone2, formData.phone3)) {
     contactErrors.push('• 휴대폰번호를 모두 입력해주세요');
