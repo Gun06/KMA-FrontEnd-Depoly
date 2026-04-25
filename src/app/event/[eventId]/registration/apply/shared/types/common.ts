@@ -51,8 +51,8 @@ export interface ApiSubmitData {
     address: {
       address: string;
       zipCode: string;
-      /** 없으면 요청 JSON에서 생략 */
-      addressDetail?: string;
+      /** 상세주소 없음이면 빈 문자열 */
+      addressDetail: string;
     };
     paymentDefaultInfo: {
       paymentType: string;

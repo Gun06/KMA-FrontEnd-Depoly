@@ -43,10 +43,14 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
   
   // 오류 메시지가 변경되면 모달 열기
   useEffect(() => {
+    if (modal.otp.isOpen) {
+      setIsErrorModalOpen(false);
+      return;
+    }
     if (error.submitError) {
       setIsErrorModalOpen(true);
     }
-  }, [error.submitError]);
+  }, [error.submitError, modal.otp.isOpen]);
 
   return (
     <SubmenuLayout 
@@ -155,7 +159,7 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
       
       {/* 오류 모달 */}
       <ErrorModal
-        isOpen={isErrorModalOpen}
+        isOpen={isErrorModalOpen && !modal.otp.isOpen}
         onClose={() => {
           setIsErrorModalOpen(false);
           error.clearSubmitError();

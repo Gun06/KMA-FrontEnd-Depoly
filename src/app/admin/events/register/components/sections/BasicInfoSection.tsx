@@ -382,21 +382,6 @@ export default function BasicInfoSection({
     />
   </FormRow>
 
-      {/* 대회 페이지 주소명 */}
-      <FormRow label="대회 페이지 주소명">
-        <TextField
-          placeholder="대회 페이지 주소명을 입력하세요. (예: seoul-marathon-2025)"
-          value={f.eventPageUrl}
-          onChange={e =>
-            readOnly ? noop() : f.setEventPageUrl(e.currentTarget.value)
-          }
-          className={cn(fieldCls, inputColorCls)}
-          fontSizePx={13}
-          heightPx={52}
-          readOnly={readOnly}
-        />
-      </FormRow>
-
       {/* 결제 정보: 은행명 / 계좌번호 / 예금주명 */}
       <FormRow label="결제 정보" contentClassName="!py-0 items-stretch">
         <div

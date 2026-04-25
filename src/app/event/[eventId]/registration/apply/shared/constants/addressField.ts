@@ -32,14 +32,14 @@ type RegistrationAddressFormSlice = {
   noDetailedAddress: boolean;
 };
 
-/** noDetailedAddress면 `addressDetail` 생략, 아니면 값이 있을 때만 trim해서 전송 */
+/** addressDetail 필드는 항상 전송, 상세주소 없음/빈값은 빈 문자열 */
 export function buildRegistrationAddressPayload(
   formData: RegistrationAddressFormSlice
-): { address: string; zipCode: string; addressDetail?: string } {
+): { address: string; zipCode: string; addressDetail: string } {
   const d = formData.detailedAddress.trim();
   return {
     address: formData.address,
     zipCode: formData.postalCode,
-    ...(formData.noDetailedAddress ? {} : (d ? { addressDetail: d } : {}))
+    addressDetail: formData.noDetailedAddress || !d ? '' : d
   };
 }

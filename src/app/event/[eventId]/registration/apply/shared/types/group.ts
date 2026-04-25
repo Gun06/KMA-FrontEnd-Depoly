@@ -77,8 +77,8 @@ export interface GroupApiRequestData {
       address: {
         address: string; // 단일 문자열 주소 (개인신청과 동일)
         zipCode: string;
-        /** 없으면 요청 JSON에서 생략 */
-        addressDetail?: string;
+        /** 상세주소 없음이면 빈 문자열 */
+        addressDetail: string;
       };
       birth: string;
       phNum: string;

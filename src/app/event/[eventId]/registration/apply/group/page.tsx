@@ -37,10 +37,14 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
   
   // 오류 메시지가 변경되면 모달 열기
   useEffect(() => {
+    if (otp.isOpen) {
+      setIsErrorModalOpen(false);
+      return;
+    }
     if (error.submitError) {
       setIsErrorModalOpen(true);
     }
-  }, [error.submitError]);
+  }, [error.submitError, otp.isOpen]);
 
   return (
     <SubmenuLayout 
@@ -137,7 +141,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
 
       {/* 오류 모달 */}
       <ErrorModal
-        isOpen={isErrorModalOpen}
+        isOpen={isErrorModalOpen && !otp.isOpen}
         onClose={() => {
           setIsErrorModalOpen(false);
           error.clearSubmitError();

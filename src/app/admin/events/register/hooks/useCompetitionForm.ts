@@ -853,7 +853,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     virtualAccount,
     accountHolderName,
     homeUrl,
-    eventPageUrl,
+    // 대회 페이지 주소명은 관리자 UI에서 더 이상 입력받지 않으며 항상 빈값으로 유지
+    eventPageUrl: '',
     youtubeUrl,
     maxParticipants: maxParticipants ? Number(maxParticipants) : undefined,
     courses: groups.map(g => g.course.name).filter(Boolean),

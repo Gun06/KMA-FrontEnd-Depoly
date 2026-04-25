@@ -202,10 +202,14 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
 
   // 오류 메시지가 변경되면 모달 열기
   useEffect(() => {
+    if (isOtpModalOpen) {
+      setIsErrorModalOpen(false);
+      return;
+    }
     if (error.submitError) {
       setIsErrorModalOpen(true);
     }
-  }, [error.submitError]);
+  }, [error.submitError, isOtpModalOpen]);
 
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string>('');
 
@@ -597,7 +601,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
       
       {/* 오류 모달 */}
       <ErrorModal
-        isOpen={isErrorModalOpen}
+        isOpen={isErrorModalOpen && !isOtpModalOpen}
         onClose={() => {
           setIsErrorModalOpen(false);
           error.clearSubmitError();
