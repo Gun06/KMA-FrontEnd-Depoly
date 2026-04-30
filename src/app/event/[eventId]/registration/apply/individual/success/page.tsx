@@ -12,7 +12,7 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
   const isOwnedEditMode = mode === 'owned-edit';
 
   return (
-    <SubmenuLayout 
+    <SubmenuLayout
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
@@ -29,26 +29,28 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            
+
             {/* 메인 제목 */}
             <h1 className="text-2xl sm:text-3xl font-bold text-black mb-4">
               {customerName}님!
             </h1>
-            
+
             {/* 신청 완료 메시지 */}
             <p className="text-xl sm:text-2xl font-bold text-black mb-6">
               {isOwnedEditMode ? '소유 신청이 수정되었습니다.' : isEditMode ? '신청 정보가 수정되었습니다.' : '대회 접수가 완료되었습니다.'}
             </p>
-            
+
             {/* 안내 메시지 1 */}
             <p className="text-base sm:text-lg text-gray-700 mb-3">
-              마감 전까지 입금 후, 신청확인을 통해 결제완료 상태를 꼭 확인하시기 바랍니다. (입금일로부터 평일 기준 3일 뒤 확인 가능)
+              마감 전까지 입금 후, 신청확인을 통해{' '}
+              <span className="text-red-600 font-semibold">결제완료 상태를 반드시 확인</span>
+              하시기 바랍니다. (입금일로부터 평일 기준 3일 뒤 확인 가능)
             </p>
 
             <p className="text-base sm:text-lg text-gray-700 mb-3">
               신청현황은 참가신청 &gt; 신청확인 메뉴에서 확인하실 수 있습니다.
             </p>
-            
+
             {/* 안내 메시지 2 */}
             <p className="text-base sm:text-lg text-gray-700 mb-8">
               궁금하신 점은 언제든지{' '}
@@ -61,7 +63,7 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
               </Link>
               를 확인해주시기 바랍니다.
             </p>
-            
+
             {/* 버튼 그룹 */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
               {/* 신청확인 버튼 */}
@@ -71,7 +73,7 @@ export default function IndividualApplySuccessPage({ params }: { params: { event
               >
                 신청확인
               </Link>
-              
+
               {/* 대회홈 버튼 */}
               <Link
                 href={`/event/${params.eventId}`}
