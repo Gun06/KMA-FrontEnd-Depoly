@@ -45,9 +45,10 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
 
             {/* 안내 메시지 1 */}
             <p className="text-base sm:text-lg text-gray-700 mb-3">
-              마감 전까지 입금 후, 신청확인을 통해{' '}
-              <span className="text-red-600 font-semibold">결제완료 상태를 반드시 확인</span>
-              하시기 바랍니다. (입금일로부터 평일 기준 3일 뒤 확인 가능)
+              <span className="text-red-600 font-semibold whitespace-nowrap">
+                마감 전까지 입금 후, 신청확인을 통해 결제완료 상태를 반드시 확인하시기 바랍니다.
+              </span>{' '}
+              (입금일로부터 평일 기준 3일 뒤 확인 가능)
             </p>
 
             <p className="text-base sm:text-lg text-gray-700 mb-3">
