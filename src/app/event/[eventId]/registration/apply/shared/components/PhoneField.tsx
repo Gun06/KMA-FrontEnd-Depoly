@@ -1,5 +1,5 @@
 // 전화번호 입력 필드 컴포넌트
-import React from 'react';
+import React, { useRef } from 'react';
 import Dropdown from './Dropdown';
 import { phonePrefixes } from '../types/constants';
 
@@ -24,6 +24,8 @@ export default function PhoneField({
   isOpen,
   onToggle
 }: PhoneFieldProps) {
+  const phone3Ref = useRef<HTMLInputElement>(null);
+
   return (
     <div className="flex items-center gap-2">
       <div className="w-20 sm:w-20">
@@ -48,6 +50,9 @@ export default function PhoneField({
         onChange={(e) => {
           const value = e.target.value.replace(/[^0-9]/g, '');
           onPhone2Change(value);
+          if (value.length === 4) {
+            phone3Ref.current?.focus();
+          }
         }}
         className="w-16 sm:w-20 px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base text-center"
         placeholder="0000"
@@ -56,6 +61,7 @@ export default function PhoneField({
       <span className="text-gray-400 text-sm sm:text-base">-</span>
       
       <input
+        ref={phone3Ref}
         type="text"
         maxLength={4}
         value={phone3}

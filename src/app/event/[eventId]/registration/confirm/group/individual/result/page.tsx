@@ -199,7 +199,7 @@ export default function IndividualGroupConfirmResultPage() {
         eventId={eventId}
         breadcrumb={{
           mainMenu: "참가신청",
-          subMenu: "단체 신청 개별 확인 결과"
+          subMenu: "단체 신청 개별 조회 결과"
         }}
       >
         <div className="container mx-auto px-4 py-8">
@@ -220,7 +220,7 @@ export default function IndividualGroupConfirmResultPage() {
         eventId={eventId}
         breadcrumb={{
           mainMenu: "참가신청",
-          subMenu: "단체 신청 개별 확인 결과"
+          subMenu: "단체 신청 개별 조회 결과"
         }}
       >
         <div className="container mx-auto px-4 py-8">
@@ -247,7 +247,7 @@ export default function IndividualGroupConfirmResultPage() {
         eventId={eventId}
         breadcrumb={{
           mainMenu: "참가신청",
-          subMenu: "단체 신청 개별 확인 결과"
+          subMenu: "단체 신청 개별 조회 결과"
         }}
       >
         <div className="container mx-auto px-4 py-8">
@@ -272,7 +272,7 @@ export default function IndividualGroupConfirmResultPage() {
       eventId={eventId}
       breadcrumb={{
         mainMenu: "참가신청",
-        subMenu: "단체 신청 개별 확인 결과"
+        subMenu: "단체 신청 개별 조회 결과"
       }}
     >
       <div className="container mx-auto px-4 py-8">

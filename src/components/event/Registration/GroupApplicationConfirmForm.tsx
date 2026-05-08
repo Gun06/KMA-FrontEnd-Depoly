@@ -102,6 +102,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
   const yearRef = useRef<HTMLDivElement>(null);
   const monthRef = useRef<HTMLDivElement>(null);
   const dayRef = useRef<HTMLDivElement>(null);
+  const individualPhone3Ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -405,7 +406,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          단체신청확인
+          단체 신청 조회
         </button>
         <button
           onClick={() => setActiveTab('individual')}
@@ -415,7 +416,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          단체 개별 확인
+          단체 개별 조회
         </button>
       </div>
 
@@ -538,7 +539,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
           {/* 섹션 제목 */}
           <div className="mb-3 sm:mb-4">
             <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">INDIVIDUAL CHECK</p>
-            <h2 className="text-lg sm:text-xl font-semibold text-black text-left">단체 신청 개별 확인</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-black text-left">단체 신청 개별 조회</h2>
           </div>
 
           {/* 안내 문구 */}
@@ -732,6 +733,9 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^0-9]/g, '');
                   handleIndividualInputChange('phone2', value);
+                  if (value.length === 4) {
+                    individualPhone3Ref.current?.focus();
+                  }
                 }}
                 autoComplete="off"
                 name="no-autofill-individual-phone2"
@@ -740,6 +744,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
               />
               <span className="text-black text-lg sm:text-xl font-bold self-center select-none" aria-hidden="true">-</span>
               <input
+                ref={individualPhone3Ref}
                 type="text"
                 placeholder=""
                 value={individualFormData.phone3}

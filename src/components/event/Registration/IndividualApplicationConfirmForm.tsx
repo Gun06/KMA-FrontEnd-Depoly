@@ -13,6 +13,7 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
   const yearRef = useRef<HTMLDivElement>(null);
   const monthRef = useRef<HTMLDivElement>(null);
   const dayRef = useRef<HTMLDivElement>(null);
+  const phone3Ref = useRef<HTMLInputElement>(null);
 
 
 
@@ -438,6 +439,9 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
               onChange={(e) => {
                 const value = e.target.value.replace(/[^0-9]/g, '');
                 handleInputChange('phone2', value);
+                if (value.length === 4) {
+                  phone3Ref.current?.focus();
+                }
               }}
               autoComplete="off"
               name="no-autofill-individual-phone2"
@@ -446,6 +450,7 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
             />
             <span className="text-black text-lg sm:text-xl font-bold self-center select-none" aria-hidden="true">-</span>
             <input
+              ref={phone3Ref}
               type="text"
               placeholder=""
               value={formData.phone3}

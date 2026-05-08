@@ -146,7 +146,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
         // 저장된 데이터가 없으면 에러 표시
         if (!baseData) {
-          setError('신청 정보를 불러올 수 없습니다. 신청 확인 페이지에서 다시 인증해주세요.');
+          setError('신청 정보를 불러올 수 없습니다. 신청 조회 페이지에서 다시 인증해주세요.');
           setIsLoading(false);
           return;
         }
@@ -486,7 +486,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         eventId={params.eventId}
         breadcrumb={{
           mainMenu: "참가신청",
-          subMenu: "개인 신청 확인 결과"
+          subMenu: "개인 신청 조회 결과"
         }}
       >
         <div className="container mx-auto px-4 py-8">
@@ -505,7 +505,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         eventId={params.eventId}
         breadcrumb={{
           mainMenu: "참가신청",
-          subMenu: "개인 신청 확인 결과"
+          subMenu: "개인 신청 조회 결과"
         }}
       >
         <div className="container mx-auto px-4 py-8">
@@ -530,7 +530,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
-        subMenu: "개인 신청 확인 결과"
+        subMenu: "개인 신청 조회 결과"
       }}
     >
       <div className="container mx-auto px-4 py-8">

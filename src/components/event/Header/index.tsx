@@ -180,7 +180,7 @@ export default function EventHeader({
       //   href: `/event/${eventId}/registration/agreement`,
       // },
       { label: '신청하기', href: `/event/${eventId}/registration/apply` },
-      { label: '신청확인', href: `/event/${eventId}/registration/confirm` },
+      { label: '신청조회', href: `/event/${eventId}/registration/confirm` },
       // 마라톤 버스예약 메뉴 제거 (현재는 별도 페이지 제공하지 않음)
     ],
     records: [

@@ -98,6 +98,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
 }: ParticipantsSectionProps) {
   const [pendingParticipantCount, setPendingParticipantCount] = useState(() => participants.length);
   const [errorModalState, setErrorModalState] = useState({ isOpen: false, message: '' });
+  const phone3Refs = useRef<(HTMLInputElement | null)[]>([]);
 
   const {
     handleParticipantChange,
@@ -629,7 +630,11 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       disabled={isDisabled}
                       onChange={(e) => {
                         if (isDisabled) return;
-                        handleParticipantChange(index, 'phone2', e.target.value.replace(/[^0-9]/g, ''));
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleParticipantChange(index, 'phone2', value);
+                        if (value.length === 4) {
+                          phone3Refs.current[index]?.focus();
+                        }
                       }}
                       className={`w-16 px-1 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       maxLength={4}
@@ -637,6 +642,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     <span className="text-sm text-gray-400">-</span>
                     <input
                       key={`phone3-${index}`}
+                      ref={(el) => { phone3Refs.current[index] = el; }}
                       type="text"
                       value={participant.phone3}
                       disabled={isDisabled}

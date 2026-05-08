@@ -46,13 +46,13 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
             {/* 안내 메시지 1 */}
             <p className="text-base sm:text-lg text-gray-700 mb-3">
               <span className="text-red-600 font-semibold whitespace-nowrap">
-                마감 전까지 입금 후, 신청확인을 통해 결제완료 상태를 반드시 확인하시기 바랍니다.
+                마감 전까지 입금 후, 신청조회를 통해 결제완료 상태를 반드시 확인하시기 바랍니다.
               </span>{' '}
               (입금일로부터 평일 기준 3일 뒤 확인 가능)
             </p>
 
             <p className="text-base sm:text-lg text-gray-700 mb-3">
-              신청현황은 참가신청 &gt; 신청확인 메뉴에서 확인하실 수 있습니다.
+              신청현황은 참가신청 &gt; 신청조회 메뉴에서 확인하실 수 있습니다.
             </p>
 
             {/* 안내 메시지 2 */}
@@ -70,12 +70,12 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
 
             {/* 버튼 그룹 */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
-              {/* 신청확인 버튼 */}
+              {/* 신청조회 버튼 */}
               <Link
                 href={`/event/${params.eventId}/registration/confirm`}
                 className="inline-block px-8 sm:px-12 py-3 sm:py-4 bg-white border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium text-base sm:text-lg"
               >
-                신청확인
+                신청조회
               </Link>
 
               {/* 대회홈 버튼 */}

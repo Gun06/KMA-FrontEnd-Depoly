@@ -9,7 +9,7 @@ export default function IndividualApplicationConfirmPage({ params }: { params: {
       eventId={params.eventId}
       breadcrumb={{
         mainMenu: "참가신청",
-        subMenu: "개인 신청 확인"
+        subMenu: "개인 신청 조회"
       }}
     >
       <div className="container mx-auto px-4 py-8">
