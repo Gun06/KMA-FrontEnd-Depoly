@@ -22,7 +22,7 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* 신청 완료 메시지 박스 */}
-          <div className="bg-white rounded-lg p-8 sm:p-12 text-center max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg p-8 sm:p-12 text-center max-w-2xl lg:max-w-5xl mx-auto">
             {/* 성공 아이콘 */}
             <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,19 +44,23 @@ export default function GroupApplySuccessPage({ params }: { params: { eventId: s
             </p>
 
             {/* 안내 메시지 1 */}
-            <p className="text-base sm:text-lg text-gray-700 mb-3">
-              <span className="text-red-600 font-semibold whitespace-nowrap">
-                마감 전까지 입금 후, 신청조회를 통해 결제완료 상태를 반드시 확인하시기 바랍니다.
-              </span>{' '}
-              (입금일로부터 평일 기준 3일 뒤 확인 가능)
-            </p>
+            <div className="mb-3 space-y-1">
+              <p className="text-base sm:text-lg text-gray-700 break-keep lg:break-normal lg:whitespace-nowrap">
+                <span className="text-red-600 font-semibold">
+                  마감 전까지 입금 후, 신청조회를 통해 결제완료 상태를 반드시 확인하시기 바랍니다.
+                </span>
+              </p>
+              <p className="text-base sm:text-lg text-gray-700 break-keep">
+                (입금일로부터 평일 기준 3일 뒤 확인 가능)
+              </p>
+            </div>
 
-            <p className="text-base sm:text-lg text-gray-700 mb-3">
+            <p className="text-base sm:text-lg text-gray-700 mb-3 break-keep">
               신청현황은 참가신청 &gt; 신청조회 메뉴에서 확인하실 수 있습니다.
             </p>
 
             {/* 안내 메시지 2 */}
-            <p className="text-base sm:text-lg text-gray-700 mb-8">
+            <p className="text-base sm:text-lg text-gray-700 mb-8 break-keep">
               궁금하신 점은 언제든지{' '}
               <Link href={`/event/${params.eventId}/notices/inquiry`} className="underline cursor-pointer hover:text-blue-600">
                 문의사항

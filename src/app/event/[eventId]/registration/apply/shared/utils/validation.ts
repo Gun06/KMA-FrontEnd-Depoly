@@ -143,13 +143,13 @@ export const getGroupFormValidationErrors = (formData: GroupFormData): string =>
   }
   
   if (formData.groupId.trim() === '') {
-    basicInfoErrors.push('• 단체신청용 ID를 입력해주세요');
+    basicInfoErrors.push('• 단체 조회용 ID를 입력해주세요');
   } else {
     const isGroupIdValid = formData.groupId.length >= 5 && 
                           formData.groupId.length <= 20 && 
                           !/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(formData.groupId);
     if (!isGroupIdValid) {
-      basicInfoErrors.push('• 단체신청용 ID는 5-20자이며 한글은 사용할 수 없습니다');
+      basicInfoErrors.push('• 단체 조회용 ID는 5-20자이며 한글은 사용할 수 없습니다');
     }
   }
   

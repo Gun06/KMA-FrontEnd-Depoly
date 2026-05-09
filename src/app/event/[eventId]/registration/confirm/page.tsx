@@ -72,7 +72,7 @@ export default function ConfirmPage({ params }: { params: { eventId: string } })
             <div className="text-xs sm:text-sm text-gray-600 space-y-1 sm:space-y-2">
               <p>• 신청 시 입력한 정보와 동일하게 입력하세요</p>
               <p>• 개인 신청의 경우 이름, 생년월일, 휴대폰번호를 입력하세요</p>
-              <p>• 단체 신청의 경우 단체명, 단체신청용 ID, 단체 비밀번호를 입력하세요</p>
+              <p>• 단체 신청의 경우 단체명, 단체 조회용 ID, 단체 비밀번호를 입력하세요</p>
               <p>• 비밀번호를 잊어버린 경우, 각 신청 유형(개인/단체)에 맞는 신청 조회 페이지에서 비밀번호 재발급을 진행해주세요</p>
             </div>
           </div>

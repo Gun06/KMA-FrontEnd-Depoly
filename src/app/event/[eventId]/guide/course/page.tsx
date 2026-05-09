@@ -86,8 +86,11 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
         subMenu: "대회 코스"
       }}
     >
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="container mx-auto px-4 pt-1 pb-4 sm:pt-2 sm:pb-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
+          <p className="mb-4 text-sm sm:text-base text-black text-center font-light">
+            안전 및 원활한 대회 진행을 위해 코스는 조정될 수 있습니다.
+          </p>
           {/* coursePageImageUrl 이미지 표시 */}
           {images.length > 0 && (
             <div>

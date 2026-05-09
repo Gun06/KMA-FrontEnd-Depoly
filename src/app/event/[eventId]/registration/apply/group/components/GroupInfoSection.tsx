@@ -82,11 +82,11 @@ export default function GroupInfoSection({
         
         {/* 단체 아이디 */}
         <div>
-          <FormField label="단체신청용 ID" required>
+          <FormField label="단체 조회용 ID" required labelHint="(신청조회시 사용)">
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full sm:w-auto">
               <input
                 type="text"
-                placeholder="단체신청용 ID를 입력해주세요 (5-20자, 영문/숫자/특문)"
+                placeholder="단체 조회용 ID를 입력해주세요 (5-20자, 영문/숫자/특문)"
                 value={formData.groupId}
                 onChange={(e) => {
                   // 5-20자, 영문대소문자/숫자/특문 허용, 한글 불허
@@ -141,13 +141,13 @@ export default function GroupInfoSection({
               {groupIdCheckResult === 'available' && (
                 <div className="flex items-center">
                   <span className="text-green-600 mr-2">•</span>
-                  <span className="text-green-600 text-sm">사용 가능한 단체신청용 ID입니다.</span>
+                  <span className="text-green-600 text-sm">사용 가능한 단체 조회용 ID입니다.</span>
                 </div>
               )}
               {groupIdCheckResult === 'unavailable' && (
                 <div className="flex items-center">
                   <span className="text-red-600 mr-2">•</span>
-                  <span className="text-red-600 text-sm">이미 사용 중인 단체신청용 ID입니다. 다른 ID를 입력해주세요.</span>
+                  <span className="text-red-600 text-sm">이미 사용 중인 단체 조회용 ID입니다. 다른 ID를 입력해주세요.</span>
                 </div>
               )}
               {groupIdCheckResult === 'error' && (

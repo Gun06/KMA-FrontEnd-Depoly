@@ -142,7 +142,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
   // 폼 유효성 검사
   const validateForm = () => {
     if (!formData.groupName.trim()) {
-      setError('단체신청용 ID를 입력해주세요.');
+      setError('단체 조회용 ID를 입력해주세요.');
       return false;
     }
     if (!formData.password.trim()) {
@@ -192,7 +192,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
   // 개별 확인 폼 유효성 검사
   const validateIndividualForm = () => {
     if (!individualFormData.orgAccount.trim()) {
-      setIndividualError('단체신청용 ID를 입력해주세요.');
+      setIndividualError('단체 조회용 ID를 입력해주세요.');
       return false;
     }
     if (!individualFormData.name.trim()) {
@@ -448,15 +448,18 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
           {/* 폼 */}
           <div className="space-y-4 sm:space-y-6">
             {/* 단체 ID */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-              <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-                단체신청용 ID
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-0">
+              <div className="w-full sm:w-32 flex flex-col gap-0.5 shrink-0">
+                <label className="text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
+                  단체 조회용 ID
+                </label>
+                <span className="text-xs text-gray-500 leading-snug">(신청조회시 사용)</span>
+              </div>
               <input
                 type="text"
                 value={formData.groupName}
                 onChange={(e) => handleInputChange("groupName", e.target.value)}
-                placeholder="띄어쓰기 없이 입력해주세요."
+                placeholder="5-20자, 영문/숫자/특문을 입력해주세요"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="none"
@@ -554,16 +557,19 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
 
           {/* 개별 확인 폼 */}
           <div className="space-y-4 sm:space-y-6">
-          {/* 단체신청용 ID */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-            <label className="w-full sm:w-32 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
-              단체신청용 ID
-            </label>
+          {/* 단체 조회용 ID */}
+          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-0">
+            <div className="w-full sm:w-32 flex flex-col gap-0.5 shrink-0">
+              <label className="text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
+                단체 조회용 ID
+              </label>
+              <span className="text-xs text-gray-500 leading-snug">(신청조회시 사용)</span>
+            </div>
             <input
               type="text"
               value={individualFormData.orgAccount}
               onChange={(e) => handleIndividualInputChange("orgAccount", e.target.value)}
-              placeholder="띄어쓰기 없이 입력해주세요."
+              placeholder="5-20자, 영문/숫자/특문을 입력해주세요"
               autoComplete="off"
               className="w-full sm:w-[500px] px-3 sm:px-4 py-3 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />

@@ -331,35 +331,33 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
             <hr className="border-black mb-6" style={{ borderWidth: '1.7px' }} />
 
             {/* 상세 내용 */}
-            <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">천재지변(자연재해) 및 전쟁, 국가비상상태, 재난(전염병(질병)) 등으로 인하여 대회가 취소될시 참가금 환불 안됨. (단, 기념품은 발송)</span>
+            <div className="space-y-5 text-sm sm:text-base text-gray-700 leading-relaxed">
+              <div>
+                <p className="font-semibold text-gray-900 mb-1">1. 건강 상태 확인</p>
+                <p>
+                  참가자는 건강 상태 및 기저질환(고혈압, 심장질환, 당뇨 등)을 사전에 확인하고, 참가 가능 여부를 스스로 판단해야 합니다.
+                  이를 고려하지 않고 발생한 사고(사망 포함)에 대해 주최 측은 책임을 지지 않으며, 보험 혜택도 적용되지 않습니다.
+                </p>
               </div>
 
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">고혈압, 심근검색, 심장병, 당뇨, 기타질병으로 인하여 대회 사망시 주최측에서 책임을 지지 않으며, 보험혜택을 받을 수 없습니다.</span>
+              <div>
+                <p className="font-semibold text-gray-900 mb-1">2. 출전 제한</p>
+                <p>
+                  걸을 수 있는 유아부터 참가 신청이 가능하며, 유아차/킥보드/전동 휠체어로 참여하는 것은 불가합니다.
+                  풀코스는 만 18세 이상 성인만 신청할 수 있습니다.
+                </p>
+                <p className="mt-2">
+                  반려동물과 동반 참가는 불가합니다. 엘리트 선수(현역 또는 해지 후 4년 미만 경과자)는 대회 참여는 가능하나 시상 제외 처리가 필요하므로
+                  대회 전 미리 연락 바랍니다.
+                </p>
               </div>
 
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">종목별 제한시간이 초과 된 경우 시상에서 제외됩니다.</span>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">애완동물 동반 참가불가</span>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">택배배송 : 주최측 부담일 경우 기념품, 책자, 배번호, 칩 일괄배송(대회 사정상 변경될 수 있습니다.)</span>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <span className="text-gray-700 flex-shrink-0">•</span>
-                <span className="text-gray-700">수신자 부담일 경우 대회당일 현장 배부 (대회 미참가 시 수신자 부담으로 기념품 배송)</span>
+              <div>
+                <p className="font-semibold text-gray-900 mb-1">3. 신청·입금·취소</p>
+                <p>
+                  참가 신청, 입금, 변경, 취소/환불은 각 마감일(선착순 조기 마감을 포함)까지만 가능하며, 마감일 이후 요청 사항은 처리되지 않습니다.
+                  자세한 일정은 공지사항을 확인하시기 바랍니다.
+                </p>
               </div>
             </div>
           </div>

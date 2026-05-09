@@ -151,7 +151,7 @@ export default function GroupApplicationConfirmResultPage() {
         }
 
         if (!organizationAccount) {
-          setError('단체신청용 ID를 찾을 수 없습니다.');
+          setError('단체 조회용 ID를 찾을 수 없습니다.');
           setIsLoading(false);
           return;
         }
@@ -1024,7 +1024,7 @@ export default function GroupApplicationConfirmResultPage() {
                 </div>
 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
-                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">단체신청용 ID</label>
+                  <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">단체 조회용 ID</label>
                   <span className="text-sm font-medium text-gray-800">{groupApplicationData.organizationAccount}</span>
                 </div>
 
