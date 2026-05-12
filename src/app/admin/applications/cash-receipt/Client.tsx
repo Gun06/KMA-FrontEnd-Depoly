@@ -3,6 +3,7 @@
 import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 import type { Column } from '@/components/common/Table/BaseTable';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import FilterBar from '@/components/common/filters/FilterBar';
@@ -11,7 +12,11 @@ import { useEventList } from '@/hooks/useNotices';
 import { useCashReceiptSearch } from './hooks/useCashReceiptAdmin';
 import CashReceiptDetailDrawer from './CashReceiptDetailDrawer';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
-import { updateCashReceipt } from './services/cashReceiptAdmin';
+import {
+  bulkCompleteCashReceiptsFromFile,
+  downloadRequestedCashReceiptsExcel,
+  updateCashReceipt,
+} from './services/cashReceiptAdmin';
 import type { EventListResponse } from '@/types/eventList';
 import type { CashReceiptAdminStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
 
@@ -48,6 +53,9 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [eventId, setEventId] = React.useState<string>(sp.get('eventId') ?? 'ALL');
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
   const [keyword, setKeyword] = React.useState<string>(sp.get('q') ?? '');
+  const [isCashReceiptDownloading, setIsCashReceiptDownloading] = React.useState(false);
+  const [isCashReceiptBulkUploading, setIsCashReceiptBulkUploading] = React.useState(false);
+  const bulkCompleteInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     const qs = new URLSearchParams();
@@ -181,60 +189,127 @@ export default function Client({ initialPage, pageSize }: Props) {
     }
   }, [rows, editedStatusMap, originalStatusMap, queryClient, cancelInlineEdit]);
 
+  const handleCashReceiptExcelDownload = React.useCallback(() => {
+    void (async () => {
+      if (isCashReceiptDownloading) return;
+      setIsCashReceiptDownloading(true);
+      try {
+        await downloadRequestedCashReceiptsExcel();
+        toast.success('다운로드가 완료되었습니다.');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
+      } finally {
+        setIsCashReceiptDownloading(false);
+      }
+    })();
+  }, [isCashReceiptDownloading]);
+
+  const handleCashReceiptBulkFileChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      void (async () => {
+        if (isCashReceiptBulkUploading) return;
+        setIsCashReceiptBulkUploading(true);
+        try {
+          await bulkCompleteCashReceiptsFromFile(file);
+          toast.success('일괄 등록이 완료되었습니다.');
+          await queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] });
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : '일괄 등록에 실패했습니다.');
+        } finally {
+          setIsCashReceiptBulkUploading(false);
+        }
+      })();
+    },
+    [isCashReceiptBulkUploading, queryClient]
+  );
+
   return (
     <div className="space-y-4">
-      <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
+      <div className="flex w-full min-w-0 items-center justify-between gap-4">
+        <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
+        <div className="flex shrink-0 items-center gap-2">
+          {!isInlineEditing ? (
+            <button
+              type="button"
+              className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50"
+              onClick={enterInlineEdit}
+            >
+              수정하기
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                onClick={() => void saveInlineEdit()}
+                disabled={isSavingInline}
+              >
+                {isSavingInline ? '저장 중...' : '저장'}
+              </button>
+              <button
+                type="button"
+                className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
+                onClick={cancelInlineEdit}
+              >
+                취소
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <input
+        ref={bulkCompleteInputRef}
+        type="file"
+        className="hidden"
+        accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        onChange={handleCashReceiptBulkFileChange}
+      />
 
       {preset && (
-        <FilterBar
-          {...{
-            ...preset,
-            buttons: [{ label: '검색', tone: 'dark', iconOnly: true }],
-          }}
-          className="!gap-2"
-          onFieldChange={(label, value) => {
-            if (label === '대회') setEventId(value || 'ALL');
-            if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
-            setPage(1);
-          }}
-          onSearch={(q) => {
-            setKeyword(q);
-            setPage(1);
-          }}
-          onReset={() => {
-            setEventId('ALL');
-            setStatus('');
-            setKeyword('');
-            setPage(1);
-          }}
-          onActionClick={() => {}}
-          renderAfterReset={
-            !isInlineEditing ? (
-              <button
-                className="rounded-md bg-blue-600 px-4 h-10 text-sm text-white hover:bg-blue-700"
-                onClick={enterInlineEdit}
-              >
-                수정하기
-              </button>
-            ) : (
-              <>
-                <button
-                  className="rounded-md bg-blue-600 px-4 h-10 text-sm font-medium text-white hover:bg-blue-700"
-                  onClick={() => void saveInlineEdit()}
-                  disabled={isSavingInline}
-                >
-                  {isSavingInline ? '저장 중...' : '저장'}
-                </button>
-                <button
-                  className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
-                  onClick={cancelInlineEdit}
-                >
-                  취소
-                </button>
-              </>
-            )
-          }
-        />
+        <div className="w-full min-w-0">
+          <FilterBar
+            {...preset}
+            searchFlexGrow
+            className="!gap-3"
+            buttons={[
+              { label: '검색', tone: 'dark', iconOnly: true },
+              {
+                label: '목록',
+                tone: 'primary',
+                icon: 'download',
+                onClick: handleCashReceiptExcelDownload,
+                disabled: isCashReceiptDownloading,
+              },
+              {
+                label: '일괄등록',
+                tone: 'primary',
+                iconRight: true,
+                onClick: () => bulkCompleteInputRef.current?.click(),
+                disabled: isCashReceiptBulkUploading,
+              },
+            ]}
+            onFieldChange={(label, value) => {
+              if (label === '대회') setEventId(value || 'ALL');
+              if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
+              setPage(1);
+            }}
+            onSearch={(q) => {
+              setKeyword(q);
+              setPage(1);
+            }}
+            onReset={() => {
+              setEventId('ALL');
+              setStatus('');
+              setKeyword('');
+              setPage(1);
+            }}
+            onActionClick={() => {}}
+          />
+        </div>
       )}
 
       <AdminTable<CashReceiptSearchItem>

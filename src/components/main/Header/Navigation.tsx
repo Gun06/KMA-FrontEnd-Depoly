@@ -31,7 +31,7 @@ const menuColumns = [
     label: '게시판',
     items: [
           { name: '공지사항', href: '/notice' },
-    { name: '문의사항', href: '/notice/inquiry' },
+    // { name: '문의사항', href: '/notice/inquiry' },
     ],
   },
   {

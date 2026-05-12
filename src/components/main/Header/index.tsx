@@ -69,7 +69,7 @@ const subMenus: Record<string, SubMenu> = {
   게시판: {
     items: [
       { label: '공지사항', href: '/notice/notice' },
-      { label: '문의사항', href: '/notice/inquiry' },
+      // { label: '문의사항', href: '/notice/inquiry' },
       { label: 'FAQ', href: '/notice/faq' },
     ],
   },

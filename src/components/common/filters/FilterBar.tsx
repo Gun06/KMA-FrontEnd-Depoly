@@ -22,6 +22,7 @@ export type FilterButtonSpec = {
   /** onActionClick으로 전달할 값 (label과 분리) */
   actionValue?: string;
   onClick?: () => void;
+  disabled?: boolean;
   menu?: FilterButtonMenuItem[]; // 드롭다운 메뉴 버튼일 때만 설정
 };
 
@@ -34,6 +35,10 @@ export type FilterBarProps = {
     fieldClassName?: string;
   }[];
   searchPlaceholder?: string;
+  /** SearchBox 가로(px). 미지정 시 SearchBox 기본값(368) */
+  searchWidth?: number;
+  /** true면 검색창이 필터 줄에서 남는 가로를 채움 */
+  searchFlexGrow?: boolean;
   className?: string;
   buttonTextMode?: "label" | "current";
   buttons?: FilterButtonSpec[];
@@ -51,6 +56,8 @@ export type FilterBarProps = {
 export default function FilterBar({
   fields = [],
   searchPlaceholder = "검색어를 입력해주세요.",
+  searchWidth,
+  searchFlexGrow = false,
   className = "",
   buttonTextMode = "current",
   buttons = [],
@@ -121,20 +128,23 @@ export default function FilterBar({
   ) : null;
 
   return (
-    <div className={`flex items-start gap-5 ${className}`}>
+    <div
+      className={`flex items-start gap-5 ${searchFlexGrow ? 'w-full min-w-0' : ''} ${className}`.trim()}
+    >
       {/* 필터 Selects */}
       {fields.map((f, i) => (
-        <SelectMenu
-          key={`${f.label}-${i}`}
-          label={f.label}
-          value={values[i]}
-          onChange={(v) => handleChange(i, v)}
-          options={f.options}
-          buttonTextMode={buttonTextMode}
-          menuMaxHeight={f.menuMaxHeight}
-          fullWidth={!!f.fullWidth}
-          className={f.fieldClassName}
-        />
+        <div key={`${f.label}-${i}`} className="shrink-0">
+          <SelectMenu
+            label={f.label}
+            value={values[i]}
+            onChange={(v) => handleChange(i, v)}
+            options={f.options}
+            buttonTextMode={buttonTextMode}
+            menuMaxHeight={f.menuMaxHeight}
+            fullWidth={!!f.fullWidth}
+            className={f.fieldClassName}
+          />
+        </div>
       ))}
 
       {/* 검색 */}
@@ -143,6 +153,8 @@ export default function FilterBar({
         onChange={setQ}
         onEnter={(v) => onSearch?.(v)}
         placeholder={searchPlaceholder}
+        flexGrow={searchFlexGrow}
+        {...(searchFlexGrow ? {} : searchWidth != null ? { width: searchWidth } : {})}
       />
 
       {/* 오른쪽 버튼들 */}
@@ -173,6 +185,7 @@ export default function FilterBar({
                 iconLeft={resolvedIconLeft}
                 aria-label={isIconOnly ? b.label : undefined}
                 title={isIconOnly ? b.label : undefined}
+                disabled={b.disabled}
                 onClick={
                   b.onClick
                     ? b.onClick
@@ -204,6 +217,7 @@ export default function FilterBar({
                 widthType="pager"
                 iconRight     // “Excel >” 유지
                 className="shrink-0"
+                disabled={b.disabled}
               >
                 {b.label}
               </Button>
