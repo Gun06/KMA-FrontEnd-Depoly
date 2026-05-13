@@ -26,7 +26,21 @@ interface SearchableSelectProps<T = string> {
   showPlaceholderColor?: boolean;
   /** 드롭다운 최대 높이 (Tailwind 클래스, 예: 'max-h-60', 'max-h-96') */
   maxHeight?: string;
+  /** 트리거(닫힌 상태) 밀도 — compact: 관리자 툴바 버튼과 동일 h-10·text-sm */
+  variant?: 'default' | 'compact';
 }
+
+const TRIGGER_VARIANT: Record<'default' | 'compact', { button: string; label: string }> = {
+  default: {
+    button: 'w-full rounded border px-2 py-1 text-left bg-white hover:bg-gray-50 relative',
+    label: 'block pr-8',
+  },
+  compact: {
+    button:
+      'flex h-10 w-full items-center rounded-md border border-gray-300 bg-white px-3 text-left text-sm hover:bg-gray-50 relative',
+    label: 'min-w-0 flex-1 truncate pr-8',
+  },
+};
 
 export function SearchableSelect<T = string>({
   value,
@@ -38,10 +52,13 @@ export function SearchableSelect<T = string>({
   className = '',
   showPlaceholderColor = true,
   maxHeight = 'max-h-60',
+  variant = 'default',
 }: SearchableSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const trigger = TRIGGER_VARIANT[variant];
 
   // 외부 클릭 감지
   useEffect(() => {
@@ -81,19 +98,21 @@ export function SearchableSelect<T = string>({
       {/* 선택된 값 표시 버튼 */}
       <button
         type="button"
-        className="w-full rounded border px-2 py-1 text-left bg-white hover:bg-gray-50 relative"
+        className={trigger.button}
         onClick={() => {
           setIsOpen(!isOpen);
           setSearchKeyword('');
         }}
       >
-        <span className={`block pr-8 ${
-          selectedOption 
-            ? 'text-gray-900' 
-            : showPlaceholderColor 
-              ? 'text-gray-400' 
-              : 'text-gray-900'
-        }`}>
+        <span
+          className={`${trigger.label} ${
+            selectedOption
+              ? 'text-gray-900'
+              : showPlaceholderColor
+                ? 'text-gray-400'
+                : 'text-gray-900'
+          }`}
+        >
           {selectedOption?.label || placeholder}
         </span>
         <svg 

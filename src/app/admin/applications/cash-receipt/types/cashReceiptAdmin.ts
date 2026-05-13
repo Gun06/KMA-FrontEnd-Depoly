@@ -31,6 +31,12 @@ export interface CashReceiptSearchParams {
   size?: number;
 }
 
+/** PATCH /api/v1/cash-receipt/list 일괄 상태 변경 */
+export interface CashReceiptBulkStatusRequest {
+  ids: string[];
+  targetStatus: CashReceiptAdminStatus;
+}
+
 export type CashReceiptPurpose = 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
 export type CashReceiptRequesterType = 'INDIVIDUAL' | 'BUSINESS';
 export type CashReceiptIdentifierType = 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';

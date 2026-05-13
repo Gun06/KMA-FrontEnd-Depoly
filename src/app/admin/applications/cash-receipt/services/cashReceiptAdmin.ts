@@ -5,6 +5,7 @@ import type {
   CashReceiptSearchResponse,
   CashReceiptDetail,
   CashReceiptUpdateRequest,
+  CashReceiptBulkStatusRequest,
 } from '../types/cashReceiptAdmin';
 
 export async function searchCashReceiptList(
@@ -53,6 +54,18 @@ export async function updateCashReceipt(
   return request<string>(
     'admin',
     `/api/v1/cash-receipt/${cashReceiptId}`,
+    'PATCH',
+    body,
+    true
+  ) as Promise<string>;
+}
+
+export async function updateCashReceiptsStatusBulk(
+  body: CashReceiptBulkStatusRequest
+): Promise<string> {
+  return request<string>(
+    'admin',
+    '/api/v1/cash-receipt/list',
     'PATCH',
     body,
     true

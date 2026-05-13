@@ -15,7 +15,7 @@ import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect'
 import {
   bulkCompleteCashReceiptsFromFile,
   downloadRequestedCashReceiptsExcel,
-  updateCashReceipt,
+  updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
 import type { EventListResponse } from '@/types/eventList';
 import type { CashReceiptAdminStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
@@ -37,6 +37,12 @@ const STATUS_CLASS: Record<CashReceiptAdminStatus, string> = {
   CANCELED: 'text-[#D12D2D]',
 };
 
+const CASH_RECEIPT_STATUS_SELECT_OPTIONS = [
+  { value: 'REQUESTED' as const, label: '처리 대기' },
+  { value: 'COMPLETED' as const, label: '발급 완료' },
+  { value: 'CANCELED' as const, label: '발급 취소' },
+];
+
 export default function Client({ initialPage, pageSize }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -46,16 +52,16 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [page, setPage] = React.useState<number>(initialPage);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [isInlineEditing, setIsInlineEditing] = React.useState(false);
-  const [isSavingInline, setIsSavingInline] = React.useState(false);
-  const [editedStatusMap, setEditedStatusMap] = React.useState<Record<string, CashReceiptAdminStatus>>({});
-  const [originalStatusMap, setOriginalStatusMap] = React.useState<Record<string, CashReceiptAdminStatus>>({});
   const [eventId, setEventId] = React.useState<string>(sp.get('eventId') ?? 'ALL');
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
   const [keyword, setKeyword] = React.useState<string>(sp.get('q') ?? '');
   const [isCashReceiptDownloading, setIsCashReceiptDownloading] = React.useState(false);
   const [isCashReceiptBulkUploading, setIsCashReceiptBulkUploading] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [bulkTargetStatus, setBulkTargetStatus] = React.useState<CashReceiptAdminStatus>('COMPLETED');
+  const [isBulkStatusUpdating, setIsBulkStatusUpdating] = React.useState(false);
   const bulkCompleteInputRef = React.useRef<HTMLInputElement>(null);
+  const headCbRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     const qs = new URLSearchParams();
@@ -102,92 +108,98 @@ export default function Client({ initialPage, pageSize }: Props) {
     };
   }, [presetBase, eventOptions, eventId, status, keyword]);
 
-  const columns: Column<CashReceiptSearchItem>[] = [
-    { key: 'no', header: '번호', width: 90, align: 'center' },
-    { key: 'eventName', header: '대회명', align: 'left', headerAlign: 'center', className: 'text-left' },
-    { key: 'requesterName', header: '신청자명', width: 230, align: 'center' },
-    {
-      key: 'status',
-      header: '처리상태',
-      width: 140,
-      align: 'center',
-      render: (row) => (
-        isInlineEditing ? (
-          <div data-stop-bubble="true" className="flex justify-center">
-            <SearchableSelect
-              value={editedStatusMap[row.id] ?? row.status}
-              options={[
-                { value: 'REQUESTED', label: '처리 대기' },
-                { value: 'COMPLETED', label: '발급 완료' },
-                { value: 'CANCELED', label: '발급 취소' },
-              ]}
-              onChange={(v) => {
-                setEditedStatusMap((prev) => ({ ...prev, [row.id]: v as CashReceiptAdminStatus }));
-              }}
-              className="w-[120px]"
-            />
-          </div>
-        ) : (
-          <span className={`font-semibold ${STATUS_CLASS[row.status] ?? 'text-gray-700'}`}>
-            {STATUS_LABEL[row.status] ?? row.status}
-          </span>
-        )
-      ),
-    },
-    {
-      key: 'id',
-      header: '환불 ID',
-      width: 250,
-      align: 'left',
-      headerAlign: 'center',
-      className: 'text-left text-xs font-mono text-gray-600 truncate max-w-[250px]',
-      render: (row) => (
-        <div className="truncate" title={row.id}>
-          {row.id}
-        </div>
-      ),
-    },
-  ];
-
   const rows = React.useMemo(() => data?.content ?? [], [data]);
   const total = data?.totalElements ?? 0;
 
-  const enterInlineEdit = React.useCallback(() => {
-    const map = Object.fromEntries(rows.map((r) => [r.id, r.status])) as Record<string, CashReceiptAdminStatus>;
-    setOriginalStatusMap(map);
-    setEditedStatusMap(map);
-    setIsInlineEditing(true);
-  }, [rows]);
+  const idsOnPage = React.useMemo(() => rows.map((r) => r.id), [rows]);
 
-  const cancelInlineEdit = React.useCallback(() => {
-    setIsInlineEditing(false);
-    setEditedStatusMap({});
-    setOriginalStatusMap({});
-  }, []);
+  React.useEffect(() => {
+    setSelectedIds([]);
+  }, [page, eventId, status, keyword]);
 
-  const saveInlineEdit = React.useCallback(async () => {
-    const changed = rows.filter((r) => editedStatusMap[r.id] && editedStatusMap[r.id] !== originalStatusMap[r.id]);
-    if (changed.length === 0) {
-      setIsInlineEditing(false);
-      return;
-    }
+  const pageAllSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r.id));
+  const pageSomeSelected = rows.some((r) => selectedIds.includes(r.id)) && !pageAllSelected;
 
-    setIsSavingInline(true);
-    try {
-      await Promise.all(
-        changed.map((r) =>
-          updateCashReceipt(r.id, {
-            updateStatus: editedStatusMap[r.id],
-            adminAnswer: '',
-          })
-        )
+  React.useEffect(() => {
+    if (headCbRef.current) headCbRef.current.indeterminate = pageSomeSelected;
+  }, [pageSomeSelected]);
+
+  const handleToggleSelectAll = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.checked) setSelectedIds(idsOnPage);
+      else setSelectedIds([]);
+    },
+    [idsOnPage]
+  );
+
+  const handleToggleSelectOne = React.useCallback(
+    (id: string, checked: boolean) => {
+      setSelectedIds((prev) =>
+        checked ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((x) => x !== id)
       );
-      await queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] });
-      cancelInlineEdit();
-    } finally {
-      setIsSavingInline(false);
-    }
-  }, [rows, editedStatusMap, originalStatusMap, queryClient, cancelInlineEdit]);
+    },
+    []
+  );
+
+  const columns: Column<CashReceiptSearchItem>[] = React.useMemo(
+    () => [
+      {
+        key: '__sel',
+        header: (
+          <div className="inline-flex w-full items-center justify-center" data-allow-bubble="true">
+            <input
+              ref={headCbRef}
+              type="checkbox"
+              aria-label="전체 선택"
+              checked={pageAllSelected}
+              onChange={handleToggleSelectAll}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        ),
+        width: 56,
+        align: 'center',
+        headerAlign: 'center',
+        render: (row) => (
+          <input
+            type="checkbox"
+            aria-label={`${row.id} 선택`}
+            checked={selectedIds.includes(row.id)}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => handleToggleSelectOne(row.id, e.target.checked)}
+          />
+        ),
+      },
+      { key: 'no', header: '번호', width: 90, align: 'center' },
+      { key: 'eventName', header: '대회명', align: 'left', headerAlign: 'center', className: 'text-left' },
+      { key: 'requesterName', header: '신청자명', width: 230, align: 'center' },
+      {
+        key: 'status',
+        header: '처리상태',
+        width: 140,
+        align: 'center',
+        render: (row) => (
+          <span className={`font-semibold ${STATUS_CLASS[row.status] ?? 'text-gray-700'}`}>
+            {STATUS_LABEL[row.status] ?? row.status}
+          </span>
+        ),
+      },
+      {
+        key: 'id',
+        header: '환불 ID',
+        width: 250,
+        align: 'left',
+        headerAlign: 'center',
+        className: 'text-left text-xs font-mono text-gray-600 truncate max-w-[250px]',
+        render: (row) => (
+          <div className="truncate" title={row.id}>
+            {row.id}
+          </div>
+        ),
+      },
+    ],
+    [handleToggleSelectAll, handleToggleSelectOne, pageAllSelected, selectedIds]
+  );
 
   const handleCashReceiptExcelDownload = React.useCallback(() => {
     void (async () => {
@@ -226,38 +238,46 @@ export default function Client({ initialPage, pageSize }: Props) {
     [isCashReceiptBulkUploading, queryClient]
   );
 
+  const handleBulkStatusApply = React.useCallback(async () => {
+    if (selectedIds.length === 0) {
+      toast.warning('변경할 항목을 선택해주세요.');
+      return;
+    }
+    setIsBulkStatusUpdating(true);
+    try {
+      await updateCashReceiptsStatusBulk({ ids: selectedIds, targetStatus: bulkTargetStatus });
+      toast.success('처리상태가 변경되었습니다.');
+      setSelectedIds([]);
+      await queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '상태 변경에 실패했습니다.');
+    } finally {
+      setIsBulkStatusUpdating(false);
+    }
+  }, [selectedIds, bulkTargetStatus, queryClient]);
+
   return (
     <div className="space-y-4">
       <div className="flex w-full min-w-0 items-center justify-between gap-4">
         <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
-        <div className="flex shrink-0 items-center gap-2">
-          {!isInlineEditing ? (
+        <div className="flex shrink-0 flex-wrap items-center justify-end">
+          <div data-stop-bubble="true" className="flex flex-wrap items-center gap-2">
+            <SearchableSelect
+              value={bulkTargetStatus}
+              options={CASH_RECEIPT_STATUS_SELECT_OPTIONS}
+              variant="compact"
+              onChange={(v) => setBulkTargetStatus(v as CashReceiptAdminStatus)}
+              className="w-[120px]"
+            />
             <button
               type="button"
-              className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50"
-              onClick={enterInlineEdit}
+              className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={selectedIds.length === 0 || isBulkStatusUpdating}
+              onClick={() => void handleBulkStatusApply()}
             >
-              수정하기
+              {isBulkStatusUpdating ? '처리 중...' : '선택 항목에 적용'}
             </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
-                onClick={() => void saveInlineEdit()}
-                disabled={isSavingInline}
-              >
-                {isSavingInline ? '저장 중...' : '저장'}
-              </button>
-              <button
-                type="button"
-                className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
-                onClick={cancelInlineEdit}
-              >
-                취소
-              </button>
-            </>
-          )}
+          </div>
         </div>
       </div>
 
@@ -317,7 +337,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         rows={rows}
         rowKey={(r) => r.id}
         pagination={{ page, pageSize, total, onChange: setPage, align: 'center' }}
-        minWidth={1200}
+        minWidth={1256}
         loadingMessage={isLoading ? '현금영수증 목록을 불러오는 중입니다.' : undefined}
         emptyMessage={
           !isLoading && rows.length === 0 
@@ -325,7 +345,6 @@ export default function Client({ initialPage, pageSize }: Props) {
             : undefined
         }
         onRowClick={(row) => {
-          if (isInlineEditing) return;
           setSelectedId(row.id);
           setDrawerOpen(true);
         }}
