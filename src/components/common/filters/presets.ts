@@ -86,8 +86,10 @@ export const PRESETS: Record<string, FilterBarPreset> = {
         {
           label: "신청자",
           tone: "primary",
-          icon: "download",
-          actionValue: "downloadApplicants",
+          menu: [
+            { label: "전체 다운로드", value: "downloadApplicants" },
+            { label: "선택 항목 다운로드", value: "downloadApplicantsSelected" },
+          ],
         },
         {
           label: "입금/환불",

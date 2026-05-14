@@ -14,6 +14,7 @@ import CashReceiptDetailDrawer from './CashReceiptDetailDrawer';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import {
   bulkCompleteCashReceiptsFromFile,
+  downloadCashReceiptTemplate,
   downloadRequestedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
@@ -56,6 +57,7 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
   const [keyword, setKeyword] = React.useState<string>(sp.get('q') ?? '');
   const [isCashReceiptDownloading, setIsCashReceiptDownloading] = React.useState(false);
+  const [isCashReceiptTemplateDownloading, setIsCashReceiptTemplateDownloading] = React.useState(false);
   const [isCashReceiptBulkUploading, setIsCashReceiptBulkUploading] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [bulkTargetStatus, setBulkTargetStatus] = React.useState<CashReceiptAdminStatus>('COMPLETED');
@@ -216,6 +218,21 @@ export default function Client({ initialPage, pageSize }: Props) {
     })();
   }, [isCashReceiptDownloading]);
 
+  const handleCashReceiptTemplateDownload = React.useCallback(() => {
+    void (async () => {
+      if (isCashReceiptTemplateDownloading) return;
+      setIsCashReceiptTemplateDownloading(true);
+      try {
+        await downloadCashReceiptTemplate();
+        toast.success('기본 양식 다운로드가 완료되었습니다.');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
+      } finally {
+        setIsCashReceiptTemplateDownloading(false);
+      }
+    })();
+  }, [isCashReceiptTemplateDownloading]);
+
   const handleCashReceiptBulkFileChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -298,11 +315,12 @@ export default function Client({ initialPage, pageSize }: Props) {
             buttons={[
               { label: '검색', tone: 'dark', iconOnly: true },
               {
-                label: '목록',
+                label: '다운로드',
                 tone: 'primary',
-                icon: 'download',
-                onClick: handleCashReceiptExcelDownload,
-                disabled: isCashReceiptDownloading,
+                menu: [
+                  { label: '전체 목록 다운로드', value: 'downloadList' },
+                  { label: '기본 양식 다운로드', value: 'downloadTemplate' },
+                ],
               },
               {
                 label: '일괄등록',
@@ -327,7 +345,10 @@ export default function Client({ initialPage, pageSize }: Props) {
               setKeyword('');
               setPage(1);
             }}
-            onActionClick={() => {}}
+            onActionClick={(value) => {
+              if (value === 'downloadList') handleCashReceiptExcelDownload();
+              if (value === 'downloadTemplate') handleCashReceiptTemplateDownload();
+            }}
           />
         </div>
       )}

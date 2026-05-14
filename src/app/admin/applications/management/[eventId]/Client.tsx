@@ -308,6 +308,21 @@ export default function Client({
     }
   };
 
+  // 선택 항목만 Excel 다운로드
+  const handleDownloadApplicantsSelected = async () => {
+    if (selectedIds.length === 0) {
+      toast.warning('다운로드할 항목을 선택해주세요.');
+      return;
+    }
+    try {
+      const eventIdsToDownload = selectedEventIds.length > 0 ? selectedEventIds : [eventId];
+      await downloadRegistrationList(eventIdsToDownload, selectedIds);
+      toast.success(`선택된 ${selectedIds.length}건의 Excel 다운로드가 완료되었습니다!`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
+    }
+  };
+
   // Excel 업로드 처리 (모달 열기)
   const handleUploadPayments = () => {
     setIsPaymentUploadModalOpen(true);
@@ -390,9 +405,11 @@ export default function Client({
   };
 
   // 툴바 액션 처리
-  const handleToolbarAction = (action: 'downloadApplicants' | 'uploadPayments' | 'uploadRefundExcel' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm' | 'downloadTermsAgreed') => {
+  const handleToolbarAction = (action: 'downloadApplicants' | 'downloadApplicantsSelected' | 'uploadPayments' | 'uploadRefundExcel' | 'downloadGroupForm' | 'uploadGroupForm' | 'downloadPersonalForm' | 'uploadPersonalForm' | 'downloadTermsAgreed') => {
     if (action === 'downloadApplicants') {
       handleDownloadApplicants();
+    } else if (action === 'downloadApplicantsSelected') {
+      handleDownloadApplicantsSelected();
     } else if (action === 'uploadPayments') {
       handleUploadPayments();
     } else if (action === 'uploadRefundExcel') {

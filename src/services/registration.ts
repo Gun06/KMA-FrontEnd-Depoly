@@ -56,15 +56,21 @@ export async function searchRegistrationList(params: RegistrationSearchRequest):
 }
 
 // 신청자 목록 Excel 다운로드
-export async function downloadRegistrationList(eventIds: string | string[]): Promise<void> {
+// registrationIds가 있으면 해당 항목만, 없으면 eventIds 기준 전체 다운로드
+// TODO: GET → POST 변경 요청 필요 (대량 ID 전달 시 414 URI Too Long 발생 가능)
+export async function downloadRegistrationList(
+  eventIds: string | string[],
+  registrationIds?: string[]
+): Promise<void> {
   const searchParams = new URLSearchParams();
-  
-  // 여러 eventIds를 각각 추가
-  const ids = Array.isArray(eventIds) ? eventIds : [eventIds];
-  ids.forEach(id => {
-    searchParams.append('eventIds', id);
-  });
-  
+
+  if (registrationIds && registrationIds.length > 0) {
+    registrationIds.forEach(id => searchParams.append('registrationIds', id));
+  } else {
+    const ids = Array.isArray(eventIds) ? eventIds : [eventIds];
+    ids.forEach(id => searchParams.append('eventIds', id));
+  }
+
   const url = `/api/v1/registration/download?${searchParams.toString()}`;
   
   

@@ -19,6 +19,7 @@ type SortKey = 'id' | 'name' | 'org' | 'birth';
 type SearchField = 'name' | 'tel' | 'org' | 'birth' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all';
 type ToolbarAction =
   | 'downloadApplicants'
+  | 'downloadApplicantsSelected'
   | 'uploadPayments'
   | 'uploadRefundExcel'
   | 'downloadGroupForm'
