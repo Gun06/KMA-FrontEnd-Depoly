@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import SelectMenu from "./SelectMenu";
 import SearchBox from "./SearchBox";
 import Button from "@/components/common/Button/Button";
-import { Download, RotateCcw, Search } from "lucide-react";
+import { Download, Loader2, RotateCcw, Search } from "lucide-react";
 import { Dropdown } from "@/components/common/Dropdown/Dropdown";
 
 type Opt = { label: string; value: string };
@@ -23,6 +23,8 @@ export type FilterButtonSpec = {
   actionValue?: string;
   onClick?: () => void;
   disabled?: boolean;
+  /** true면 메뉴 대신 비활성 로딩 버튼 표시 (드롭다운 트리거용) */
+  loading?: boolean;
   menu?: FilterButtonMenuItem[]; // 드롭다운 메뉴 버튼일 때만 설정
 };
 
@@ -160,6 +162,27 @@ export default function FilterBar({
       {/* 오른쪽 버튼들 */}
       {buttons.map((b, i) => {
         const hasMenu = Array.isArray(b.menu) && b.menu.length > 0;
+
+        if (hasMenu && b.loading) {
+          return (
+            <Button
+              key={`${b.label}-${i}`}
+              type="button"
+              tone={b.tone ?? "primary"}
+              variant={b.variant ?? "solid"}
+              size="sm"
+              widthType="pager"
+              iconLeft={<Loader2 className="h-[18px] w-[18px] shrink-0 animate-spin" aria-hidden />}
+              className="shrink-0 !justify-start !px-2 [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate"
+              disabled
+              aria-busy="true"
+              aria-live="polite"
+              title="다운로드 중"
+            >
+              다운로드 중
+            </Button>
+          );
+        }
 
         if (!hasMenu) {
           const isSearchIconOnly = b.iconOnly && b.label === "검색";

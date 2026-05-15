@@ -8,6 +8,7 @@ import { ChevronDown as Caret, Check } from 'lucide-react';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import { Column } from '@/components/common/Table/BaseTable';
 import FilterBar from '@/components/common/filters/FilterBar';
+import type { FilterButtonSpec } from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import { useUpdatePaymentStatus } from '@/hooks/useRegistration';
@@ -63,6 +64,8 @@ type Props = {
   isUploadStatusVisible?: boolean;
   /** ✅ 업로드 진행률 (0 ~ 100) */
   uploadProgress?: number;
+  /** 신청자 Excel 다운로드(전체/선택) 진행 중 — 툴바 「신청자」 버튼 로딩 표시 */
+  isApplicantsDownloadLoading?: boolean;
   /** 상단에서 수정 버튼을 렌더할 때 내부 버튼 숨김 */
   hideInternalEditControls?: boolean;
   /** 편집 상태 변경 콜백 */
@@ -165,6 +168,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
   onCancelUploadPayments,
   isUploadStatusVisible = false,
   uploadProgress = 0,
+  isApplicantsDownloadLoading = false,
   hideInternalEditControls = false,
   onEditingStateChange,
 }: Props, ref) {
@@ -462,6 +466,14 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
   const preset = PRESETS['참가신청 / 신청자관리(정렬)']?.props;
   const norm = (s?: string) => (s ?? '').replace(/\s/g, '');
 
+  const toolbarButtons = React.useMemo((): FilterButtonSpec[] => {
+    const raw = preset?.buttons;
+    if (!raw) return [];
+    return raw.map((btn) =>
+      btn.label === '신청자' ? { ...btn, loading: isApplicantsDownloadLoading } : btn
+    );
+  }, [preset?.buttons, isApplicantsDownloadLoading]);
+
   // 필드 순서: 입금여부(0), 이름(1)
   const initialValues = React.useMemo(() => {
     if (!preset?.fields) return undefined;
@@ -472,6 +484,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
     <div className="ml-auto flex items-center gap-2">
       <FilterBar
         {...preset}
+        buttons={toolbarButtons}
         className="!gap-3"
         showReset
         initialValues={initialValues}

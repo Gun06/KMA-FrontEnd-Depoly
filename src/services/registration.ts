@@ -55,92 +55,83 @@ export async function searchRegistrationList(params: RegistrationSearchRequest):
   ) as Promise<RegistrationListResponse>;
 }
 
-// 신청자 목록 Excel 다운로드
-// registrationIds가 있으면 해당 항목만, 없으면 eventIds 기준 전체 다운로드
-// TODO: GET → POST 변경 요청 필요 (대량 ID 전달 시 414 URI Too Long 발생 가능)
+// 신청자 목록 Excel 다운로드 (POST /api/v1/registration/download)
+// 쿼리: eventIds(필수). 바디: registrationIds — 비어 있으면 대회별 전체, 있으면 해당 건만(백엔드에서 eventIds 무시 가능)
 export async function downloadRegistrationList(
   eventIds: string | string[],
   registrationIds?: string[]
 ): Promise<void> {
-  const searchParams = new URLSearchParams();
-
-  if (registrationIds && registrationIds.length > 0) {
-    registrationIds.forEach(id => searchParams.append('registrationIds', id));
-  } else {
-    const ids = Array.isArray(eventIds) ? eventIds : [eventIds];
-    ids.forEach(id => searchParams.append('eventIds', id));
+  const ids = Array.isArray(eventIds) ? eventIds : [eventIds];
+  if (ids.length === 0) {
+    throw new Error('대회를 선택해주세요.');
   }
 
+  const searchParams = new URLSearchParams();
+  ids.forEach((id) => searchParams.append('eventIds', id));
+
+  const body = {
+    registrationIds:
+      registrationIds && registrationIds.length > 0 ? registrationIds : [],
+  };
+
   const url = `/api/v1/registration/download?${searchParams.toString()}`;
-  
-  
+
   try {
-    // tokenService를 사용하여 토큰 가져오기
     const token = tokenService.getAdminAccessToken();
-    
+
     if (!token) {
       throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
     }
-    
-    // baseUrl을 직접 구성하여 전체 URL 생성
+
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
     const fullUrl = `${baseUrl}${url}`;
-    
-    
-    // Authorization 헤더를 추가하여 fetch로 요청
+
     const response = await fetch(fullUrl, {
-      method: 'GET',
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
+        Authorization: `Bearer ${token}`,
+        Accept:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(body),
     });
-    
-    
+
     if (!response.ok) {
       throw new Error(`다운로드 실패: ${response.status} ${response.statusText}`);
     }
-    
-    // Blob으로 변환 후 다운로드 (새 창 없이)
+
     const blob = await response.blob();
-    
-    // Content-Disposition 헤더에서 파일명 추출 (하드코딩 없음)
+
     const contentDisposition = response.headers.get('content-disposition');
     let filename: string | undefined;
-    
+
     if (contentDisposition) {
-      
-      // UTF-8 인코딩된 파일명을 우선적으로 찾기
       const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
       if (utf8Match && utf8Match[1]) {
         filename = decodeURIComponent(utf8Match[1]);
       } else {
-        // UTF-8 파일명이 없으면 일반 filename 사용
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '');
-        } else {
         }
       }
-    } else {
     }
-    
-    // 파일명이 없으면 다운로드하지 않음
+
     if (!filename) {
       throw new Error('백엔드에서 파일명을 제공하지 않았습니다.');
     }
-    
+
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = blobUrl;
-    link.download = filename; // 백엔드에서 제공한 파일명 사용
-    // target 제거하여 새 창이 뜨지 않도록 함
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(blobUrl);
-    
   } catch (error) {
+    if (error instanceof Error) throw error;
     throw new Error('다운로드에 실패했습니다.');
   }
 }

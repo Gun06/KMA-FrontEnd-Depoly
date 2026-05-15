@@ -72,8 +72,8 @@ export async function updateCashReceiptsStatusBulk(
   ) as Promise<string>;
 }
 
-/** 처리 대기 건 엑셀 다운로드 (GET /api/v1/cash-receipt/download) */
-export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
+/** POST /api/v1/cash-receipt/download — cashReceiptIds 비어 있으면 전체(대기 등, 서버 정책), 있으면 해당 건만 */
+async function postCashReceiptDownloadExcel(cashReceiptIds: string[]): Promise<void> {
   const token = tokenService.getAdminAccessToken();
   if (!token) {
     throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
@@ -83,12 +83,14 @@ export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
   const fullUrl = `${baseUrl.replace(/\/+$/, '')}/api/v1/cash-receipt/download`;
 
   const response = await fetch(fullUrl, {
-    method: 'GET',
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
       Accept:
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
     },
+    body: JSON.stringify({ cashReceiptIds }),
   });
 
   if (!response.ok) {
@@ -123,6 +125,19 @@ export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
   link.click();
   document.body.removeChild(link);
   window.URL.revokeObjectURL(blobUrl);
+}
+
+/** 처리 대기 건 전체 엑셀 다운로드 */
+export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
+  return postCashReceiptDownloadExcel([]);
+}
+
+/** 선택한 현금영수증 건만 엑셀 다운로드 */
+export async function downloadSelectedCashReceiptsExcel(cashReceiptIds: string[]): Promise<void> {
+  if (cashReceiptIds.length === 0) {
+    throw new Error('다운로드할 항목을 선택해주세요.');
+  }
+  return postCashReceiptDownloadExcel(cashReceiptIds);
 }
 
 /** 현금영수증 기본 양식 다운로드 (GET /api/v1/cash-receipt/template) */

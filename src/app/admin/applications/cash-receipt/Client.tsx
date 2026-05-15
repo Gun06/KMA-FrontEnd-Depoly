@@ -16,6 +16,7 @@ import {
   bulkCompleteCashReceiptsFromFile,
   downloadCashReceiptTemplate,
   downloadRequestedCashReceiptsExcel,
+  downloadSelectedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
 import type { EventListResponse } from '@/types/eventList';
@@ -43,6 +44,12 @@ const CASH_RECEIPT_STATUS_SELECT_OPTIONS = [
   { value: 'COMPLETED' as const, label: '발급 완료' },
   { value: 'CANCELED' as const, label: '발급 취소' },
 ];
+
+const CASH_RECEIPT_DOWNLOAD_MENU = [
+  { label: '전체 목록 다운로드', value: 'downloadList' },
+  { label: '선택 목록 다운로드', value: 'downloadSelectedList' },
+  { label: '기본 양식 다운로드', value: 'downloadTemplate' },
+] as const;
 
 export default function Client({ initialPage, pageSize }: Props) {
   const router = useRouter();
@@ -218,6 +225,25 @@ export default function Client({ initialPage, pageSize }: Props) {
     })();
   }, [isCashReceiptDownloading]);
 
+  const handleCashReceiptSelectedExcelDownload = React.useCallback(() => {
+    if (selectedIds.length === 0) {
+      toast.warning('다운로드할 항목을 선택해주세요.');
+      return;
+    }
+    void (async () => {
+      if (isCashReceiptDownloading) return;
+      setIsCashReceiptDownloading(true);
+      try {
+        await downloadSelectedCashReceiptsExcel(selectedIds);
+        toast.success('선택 항목 다운로드가 완료되었습니다.');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
+      } finally {
+        setIsCashReceiptDownloading(false);
+      }
+    })();
+  }, [isCashReceiptDownloading, selectedIds]);
+
   const handleCashReceiptTemplateDownload = React.useCallback(() => {
     void (async () => {
       if (isCashReceiptTemplateDownloading) return;
@@ -273,6 +299,26 @@ export default function Client({ initialPage, pageSize }: Props) {
     }
   }, [selectedIds, bulkTargetStatus, queryClient]);
 
+  const filterBarButtons = React.useMemo(
+    () => [
+      { label: '검색', tone: 'dark' as const, iconOnly: true as const },
+      {
+        label: '다운로드',
+        tone: 'primary' as const,
+        loading: isCashReceiptDownloading,
+        menu: [...CASH_RECEIPT_DOWNLOAD_MENU],
+      },
+      {
+        label: '일괄등록',
+        tone: 'primary' as const,
+        iconRight: true as const,
+        onClick: () => bulkCompleteInputRef.current?.click(),
+        disabled: isCashReceiptBulkUploading,
+      },
+    ],
+    [isCashReceiptDownloading, isCashReceiptBulkUploading]
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex w-full min-w-0 items-center justify-between gap-4">
@@ -312,24 +358,7 @@ export default function Client({ initialPage, pageSize }: Props) {
             {...preset}
             searchFlexGrow
             className="!gap-3"
-            buttons={[
-              { label: '검색', tone: 'dark', iconOnly: true },
-              {
-                label: '다운로드',
-                tone: 'primary',
-                menu: [
-                  { label: '전체 목록 다운로드', value: 'downloadList' },
-                  { label: '기본 양식 다운로드', value: 'downloadTemplate' },
-                ],
-              },
-              {
-                label: '일괄등록',
-                tone: 'primary',
-                iconRight: true,
-                onClick: () => bulkCompleteInputRef.current?.click(),
-                disabled: isCashReceiptBulkUploading,
-              },
-            ]}
+            buttons={filterBarButtons}
             onFieldChange={(label, value) => {
               if (label === '대회') setEventId(value || 'ALL');
               if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
@@ -347,6 +376,7 @@ export default function Client({ initialPage, pageSize }: Props) {
             }}
             onActionClick={(value) => {
               if (value === 'downloadList') handleCashReceiptExcelDownload();
+              if (value === 'downloadSelectedList') handleCashReceiptSelectedExcelDownload();
               if (value === 'downloadTemplate') handleCashReceiptTemplateDownload();
             }}
           />

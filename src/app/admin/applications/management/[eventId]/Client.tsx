@@ -65,6 +65,7 @@ export default function Client({
   const [sortKey, setSortKey] = React.useState<SortKey>(() => readInit().sort);
   const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>(() => readInit().field);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [isApplicantsDownloadLoading, setIsApplicantsDownloadLoading] = React.useState(false);
   const tableRef = React.useRef<ApplicantsManageTableHandle>(null);
   const [isTableEditing, setIsTableEditing] = React.useState(false);
 
@@ -297,15 +298,30 @@ export default function Client({
     setSelectedIds([]);
   };
 
+  /** 빠른 완료 시 깜빡임 방지: 일정 시간 후에만 로딩 UI 표시 */
+  const runWithDelayedApplicantsLoading = React.useCallback(async (fn: () => Promise<void>) => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) setIsApplicantsDownloadLoading(true);
+    }, 180);
+    try {
+      await fn();
+    } finally {
+      cancelled = true;
+      clearTimeout(timer);
+      setIsApplicantsDownloadLoading(false);
+    }
+  }, []);
+
   // Excel 다운로드 처리 (다중 대회 지원)
   const handleDownloadApplicants = async () => {
-    try {
+    await runWithDelayedApplicantsLoading(async () => {
       const eventIdsToDownload = selectedEventIds.length > 0 ? selectedEventIds : [eventId];
       await downloadRegistrationList(eventIdsToDownload);
       toast.success(`선택된 ${eventIdsToDownload.length}개 대회의 Excel 다운로드가 완료되었습니다!`);
-    } catch (_error) {
-      toast.error('다운로드에 실패했습니다.');
-    }
+    }).catch((error: unknown) => {
+      toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
+    });
   };
 
   // 선택 항목만 Excel 다운로드
@@ -314,13 +330,13 @@ export default function Client({
       toast.warning('다운로드할 항목을 선택해주세요.');
       return;
     }
-    try {
+    await runWithDelayedApplicantsLoading(async () => {
       const eventIdsToDownload = selectedEventIds.length > 0 ? selectedEventIds : [eventId];
       await downloadRegistrationList(eventIdsToDownload, selectedIds);
       toast.success(`선택된 ${selectedIds.length}건의 Excel 다운로드가 완료되었습니다!`);
-    } catch (error) {
+    }).catch((error: unknown) => {
       toast.error(error instanceof Error ? error.message : '다운로드에 실패했습니다.');
-    }
+    });
   };
 
   // Excel 업로드 처리 (모달 열기)
@@ -696,6 +712,7 @@ export default function Client({
         isUploadStatusVisible={isUploadStatusVisible}
         uploadProgress={uploadProgress}
         onCancelUploadPayments={handleCancelUploadPayments}
+        isApplicantsDownloadLoading={isApplicantsDownloadLoading}
         /** ⬇️ 전역 수정 모드 저장 콜백(다건) */
         onBulkUpdateRows={handleBulkUpdateRows}
         hideInternalEditControls
