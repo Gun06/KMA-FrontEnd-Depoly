@@ -1,5 +1,7 @@
 import React from 'react';
+import { cn } from '@/utils/cn';
 import type { PopupRow } from '../../types';
+import { isPopupRowUnsaved } from '../../utils/helpers';
 import PopupCardFront from './PopupCardFront';
 import PopupCardBack from './PopupCardBack';
 
@@ -37,6 +39,8 @@ export default function PopupCard({
   eventId,
   onBatchSave,
 }: PopupCardProps) {
+  const showUnsaved = isPopupRowUnsaved(row);
+
   return (
     <div
       className="relative"
@@ -44,7 +48,10 @@ export default function PopupCard({
     >
       {/* 플립 카드 컨테이너 */}
       <div
-        className="relative w-full cursor-pointer"
+        className={cn(
+          'relative w-full cursor-pointer rounded-xl transition-[box-shadow,transform]',
+          showUnsaved && 'ring-2 ring-[#1E5EFF]/70 ring-offset-2'
+        )}
         style={{
           transformStyle: 'preserve-3d',
           transition: 'transform 0.6s',

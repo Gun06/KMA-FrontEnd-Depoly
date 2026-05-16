@@ -2,12 +2,14 @@ import React from 'react';
 import { Pencil } from 'lucide-react';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { PopupRow } from '../../types';
+import { popupDatetimeForApi } from '../../utils/helpers';
 import { inputCls, smallInputCls } from '../../utils/styles';
 import { CircleBtn } from '../shared/CircleBtn';
 import { useApiMutation } from '@/hooks/useFetch';
 import { POPUP_API_ENDPOINTS } from '../../api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PopupUpdateRequest } from '@/types/popup';
+import { toast } from 'react-toastify';
 
 interface PopupCardBackProps {
   row: PopupRow;
@@ -40,7 +42,7 @@ export default function PopupCardBack({
   onBatchSave,
 }: PopupCardBackProps) {
   const queryClient = useQueryClient();
-  
+
   // 개별 팝업 저장 mutation (draft가 아닐 때만 사용)
   const updateMutation = useApiMutation(
     row.id.startsWith('temp_') ? '' : POPUP_API_ENDPOINTS.POPUP_UPDATE(row.id),
@@ -51,11 +53,11 @@ export default function PopupCardBack({
       onSuccess: () => {
         const queryKey = eventId ? ['eventPopups', eventId] : ['homepagePopups'];
         queryClient.invalidateQueries({ queryKey });
-        alert('저장되었습니다.');
+        toast.success('수정이 완료되었습니다.');
         onToggleEdit(); // 수정 모드 종료
       },
       onError: (error: Error) => {
-        alert(`저장 실패: ${error.message}`);
+        toast.error(error.message || '수정에 실패했습니다. 다시 시도해주세요.');
       }
     }
   );
@@ -63,7 +65,7 @@ export default function PopupCardBack({
   const handleSaveClick = () => {
     // draft 항목은 개별 저장 불가
     if (row.id.startsWith('temp_')) {
-      alert('새로 추가한 항목은 상단의 "저장하기" 버튼을 사용해주세요.');
+      toast.info('새로 추가한 항목은 상단의 "저장하기" 버튼을 사용해주세요.');
       return;
     }
 
@@ -72,8 +74,8 @@ export default function PopupCardBack({
 
     const popupUpdateRequest: PopupUpdateRequest = {
       url: row.url || '',
-      startAt: row.startAt ? new Date(row.startAt).toISOString() : now.toISOString(),
-      endAt: row.endAt ? new Date(row.endAt).toISOString() : defaultEndTime.toISOString(),
+      startAt: popupDatetimeForApi(row.startAt, now),
+      endAt: popupDatetimeForApi(row.endAt, defaultEndTime),
       device: row.device
     };
 
@@ -150,10 +152,34 @@ export default function PopupCardBack({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-2">
-            <CircleBtn kind="up" onClick={() => onMove(-1)} />
-            <CircleBtn kind="down" onClick={() => onMove(+1)} />
-            <CircleBtn kind="plus" onClick={onAddAfter} />
-            <CircleBtn kind="minus" onClick={onRemove} />
+            <CircleBtn
+              kind="up"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(-1);
+              }}
+            />
+            <CircleBtn
+              kind="down"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(+1);
+              }}
+            />
+            <CircleBtn
+              kind="plus"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddAfter();
+              }}
+            />
+            <CircleBtn
+              kind="minus"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+            />
           </div>
           {row.id.startsWith('temp_') ? (
             // draft 항목: 저장하기 버튼

@@ -13,37 +13,60 @@ interface UsePopupRowsOptions {
 /**
  * 팝업 rows 상태 관리 및 CRUD 로직을 담당하는 커스텀 훅
  */
-export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOptions) {
-  const [rows, setRows] = React.useState<PopupRow[]>([]);
+function buildApiPopupsSignature(popups: PopupItem[] | undefined): string {
+  if (!popups?.length) return '';
+  return [...popups]
+    .sort((a, b) => Number(a.orderNo) - Number(b.orderNo))
+    .map((p) => `${p.id}:${p.orderNo}:${p.url}:${p.startAt}:${p.endAt}:${p.device}`)
+    .join('|');
+}
 
-  // API 데이터를 PopupRow로 변환
-  React.useEffect(() => {
-    if (!mounted) return;
-    
-    if (apiPopups && Array.isArray(apiPopups) && apiPopups.length > 0) {
-      const convertedRows: PopupRow[] = apiPopups.map((popup: PopupItem) => ({
-        id: popup.id,
-        url: popup.url || '',
-        image: popup.imageUrl ? {
+function convertApiPopupsToRows(popups: PopupItem[], eventId?: string): PopupRow[] {
+  const sorted = [...popups].sort((a, b) => Number(a.orderNo) - Number(b.orderNo));
+
+  return sorted.map((popup: PopupItem, index) => ({
+    id: popup.id,
+    url: popup.url || '',
+    image: popup.imageUrl
+      ? {
           id: `${popup.id}_image`,
           file: new File([], `placeholder_${popup.id}`),
           name: getFileNameFromUrl(popup.imageUrl),
           size: 0,
           sizeMB: 0,
           tooLarge: false,
-          url: popup.imageUrl
-        } as UploadItem : null,
-        visible: true,
-        device: popup.device,
-        startAt: formatDateForInput(popup.startAt),
-        endAt: formatDateForInput(popup.endAt),
-        orderNo: popup.orderNo,
-        eventId: popup.eventId,
-        draft: false
-      }));
+          url: popup.imageUrl,
+        }
+      : null,
+    visible: true,
+    device: popup.device,
+    startAt: formatDateForInput(popup.startAt),
+    endAt: formatDateForInput(popup.endAt),
+    orderNo: index + 1,
+    eventId: popup.eventId ?? eventId,
+    draft: false,
+  }));
+}
 
-      setRows(convertedRows);
-    } else {
+export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOptions) {
+  const [rows, setRows] = React.useState<PopupRow[]>([]);
+  const lastSyncedContextRef = React.useRef<string | null>(null);
+  const apiSignature = React.useMemo(
+    () => buildApiPopupsSignature(apiPopups),
+    [apiPopups]
+  );
+
+  // API 데이터가 실제로 바뀔 때만 로컬 rows 동기화 (재조회만으로 순서 변경이 초기화되지 않도록)
+  React.useEffect(() => {
+    if (!mounted) return;
+
+    const syncContext = `${eventId ?? 'main'}::${apiSignature}`;
+    if (syncContext === lastSyncedContextRef.current) return;
+    lastSyncedContextRef.current = syncContext;
+
+    if (apiPopups && Array.isArray(apiPopups) && apiPopups.length > 0) {
+      setRows(convertApiPopupsToRows(apiPopups, eventId));
+    } else if (!apiSignature) {
       const newPopupRow: PopupRow = {
         id: `temp_${Date.now()}`,
         url: '',
@@ -54,12 +77,12 @@ export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOption
         endAt: '',
         orderNo: 1,
         eventId: eventId,
-        draft: true
+        draft: true,
       };
 
       setRows([newPopupRow]);
     }
-  }, [apiPopups, mounted, eventId]);
+  }, [apiSignature, mounted, eventId, apiPopups]);
 
   const updateRow = React.useCallback((id: string, patch: Partial<PopupRow>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -67,14 +90,13 @@ export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOption
 
   const move = React.useCallback((idx: number, dir: -1 | 1) => {
     setRows((prev) => {
-      const next = [...prev];
       const j = idx + dir;
-      if (j < 0 || j >= next.length) return prev;
+      if (j < 0 || j >= prev.length) return prev;
+
+      const next = [...prev];
       [next[idx], next[j]] = [next[j], next[idx]];
-      next.forEach((row, index) => {
-        row.orderNo = index + 1;
-      });
-      return next;
+
+      return next.map((row, index) => ({ ...row, orderNo: index + 1 }));
     });
   }, []);
 
@@ -94,10 +116,7 @@ export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOption
         eventId: eventId,
         draft: true,
       });
-      next.forEach((row, index) => {
-        row.orderNo = index + 1;
-      });
-      return next;
+      return next.map((row, index) => ({ ...row, orderNo: index + 1 }));
     });
   }, [eventId]);
 
@@ -121,13 +140,11 @@ export function usePopupRows({ apiPopups, eventId, mounted }: UsePopupRowsOption
   }, [eventId]);
 
   const removeAt = React.useCallback((idx: number) => {
-    setRows((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      next.forEach((row, index) => {
-        row.orderNo = index + 1;
-      });
-      return next;
-    });
+    setRows((prev) =>
+      prev
+        .filter((_, i) => i !== idx)
+        .map((row, index) => ({ ...row, orderNo: index + 1 }))
+    );
   }, []);
 
   return {

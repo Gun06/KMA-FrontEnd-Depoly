@@ -4,15 +4,13 @@ import React from 'react';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import type { PopupItem, PopupBatchRequest } from '@/types/popup';
 import type { PopupListManagerRef } from '../../types';
-import { useMounted } from '../../utils/helpers';
+import { useMounted, popupDatetimeForApi } from '../../utils/helpers';
 import { usePopupList, usePopupSave, usePopupRows } from '../../hooks';
 import PopupPreview from '../PopupPreview';
 import PopupListManagerHeader from './PopupListManagerHeader';
 import PopupCard from './PopupCard';
-import type { PopupUpdateRequest } from '@/types/popup';
-import { useQueryClient } from '@tanstack/react-query';
-import { useApiMutation } from '@/hooks/useFetch';
-import { POPUP_API_ENDPOINTS } from '../../api';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 
 const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: string }>(
   ({ eventId }, ref) => {
@@ -20,6 +18,15 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
   const [mode, setMode] = React.useState<'manage' | 'preview'>('manage');
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set());
   const [editingIds, setEditingIds] = React.useState<Set<string>>(new Set());
+  const [successModal, setSuccessModal] = React.useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+  }>({ isOpen: false, message: '' });
+  const [errorModal, setErrorModal] = React.useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
 
   // API 데이터 조회
   const { data: apiPopups } = usePopupList(eventId);
@@ -43,11 +50,18 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
   const saveMutation = usePopupSave({
     eventId,
     onSuccess: () => {
-      alert('저장되었습니다.');
+      setSuccessModal({
+        isOpen: true,
+        title: '저장되었습니다',
+        message: '팝업 정보가 성공적으로 저장되었습니다.',
+      });
       setMode('preview');
     },
     onError: (error: Error) => {
-      alert(`저장 실패: ${error.message}`);
+      setErrorModal({
+        isOpen: true,
+        message: error.message || '저장에 실패했습니다. 다시 시도해주세요.',
+      });
     }
   });
 
@@ -60,13 +74,13 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
     const now = new Date();
     const defaultEndTime = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
-    const popupInfos = rows.map(row => ({
+    const popupInfos = rows.map((row, index) => ({
       id: row.draft ? undefined : row.id,
       url: row.url || '',
-      startAt: row.startAt || now.toISOString(),
-      endAt: row.endAt || defaultEndTime.toISOString(),
+      startAt: popupDatetimeForApi(row.startAt, now),
+      endAt: popupDatetimeForApi(row.endAt, defaultEndTime),
       device: row.device,
-      orderNo: row.orderNo,
+      orderNo: index + 1,
       eventId: row.eventId
     }));
 
@@ -168,6 +182,7 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
               items={[
                 { text: '※ 카드를 클릭하여 뒤집으면 상세 정보를 확인할 수 있습니다.' },
                 { text: '※ 수정 버튼을 누르면 바로 수정할 수 있습니다. 수정 모드가 아닐 때는 읽기 전용입니다.' },
+                { text: '※ 카드를 뒤집은 뒤 ▲ / ▼ 버튼으로 순서를 바꿀 수 있으며, 변경 후 상단 저장하기를 눌러야 반영됩니다.' },
                 { text: '※ 기간을 비우면 항상 노출로 간주됩니다. (실서비스에서는 서버 검증 권장)' },
                 { text: '※ 이미지는 JPG/PNG 권장, 가로 1200px 이상, 20MB 이하.' },
               ]}
@@ -179,6 +194,19 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
           <PopupPreview rows={rows} showControls ignorePeriod/>
         </div>
       )}
+
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, message: '' })}
+        title={successModal.title}
+        message={successModal.message}
+      />
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="오류"
+        message={errorModal.message}
+      />
     </div>
   );
 });

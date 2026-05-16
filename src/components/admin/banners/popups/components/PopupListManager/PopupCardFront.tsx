@@ -1,5 +1,6 @@
 import React from 'react';
 import type { PopupRow } from '../../types';
+import { getPopupImageSrc, isPopupRowUnsaved } from '../../utils/helpers';
 import { VisibilityChip } from '../shared/VisibilityChip';
 import { VisibilityChipsEditable } from '../shared/VisibilityChipsEditable';
 
@@ -9,10 +10,23 @@ interface PopupCardFrontProps {
   onVisibilityChange: (value: boolean) => void;
 }
 
+function UnsavedBadge({ className = '' }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border border-[#1E5EFF] bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-[#1E5EFF] shadow-sm backdrop-blur-sm ${className}`}
+    >
+      미저장
+    </span>
+  );
+}
+
 /**
  * 팝업 카드 앞면 컴포넌트
  */
 export default function PopupCardFront({ row, index, onVisibilityChange }: PopupCardFrontProps) {
+  const imageSrc = getPopupImageSrc(row.image);
+  const showUnsaved = isPopupRowUnsaved(row);
+
   return (
     <div
       className="relative w-full bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
@@ -21,16 +35,13 @@ export default function PopupCardFront({ row, index, onVisibilityChange }: Popup
         WebkitBackfaceVisibility: 'hidden',
       }}
     >
-      {/* 이미지 또는 플레이스홀더 */}
-      {row.image?.url ? (
+      {imageSrc ? (
         <div className="relative w-full aspect-[4/5] overflow-hidden bg-slate-100 rounded-xl">
           <img
-            src={row.image.url}
+            src={imageSrc}
             alt="팝업 이미지"
             className="w-full h-full object-cover"
-            style={{ 
-              display: 'block'
-            }}
+            style={{ display: 'block' }}
           />
         </div>
       ) : (
@@ -43,29 +54,31 @@ export default function PopupCardFront({ row, index, onVisibilityChange }: Popup
           </div>
         </div>
       )}
-      
-      {/* 순서 배지 */}
-      <div className="absolute top-3 left-3 flex items-center justify-center w-8 h-8 rounded-full bg-[#1E5EFF] text-white font-semibold text-sm shadow-lg z-10">
-        {index + 1}
+
+      <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1E5EFF] text-sm font-semibold text-white shadow-lg">
+          {index + 1}
+        </div>
+        {showUnsaved && <UnsavedBadge />}
       </div>
-      
-      {/* 공개 상태 배지 */}
+
       <div className="absolute top-3 right-3 z-10">
         {row.draft
-          ? <VisibilityChipsEditable 
-              value={row.visible} 
+          ? (
+            <VisibilityChipsEditable
+              value={row.visible}
               onChange={onVisibilityChange}
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             />
-          : <VisibilityChip value={row.visible} />
-        }
+          )
+          : (
+            <VisibilityChip value={row.visible} />
+          )}
       </div>
 
-      {/* 클릭 힌트 */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1.5 rounded-full text-xs">
         클릭하여 뒤집기
       </div>
     </div>
   );
 }
-

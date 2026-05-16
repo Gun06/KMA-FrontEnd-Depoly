@@ -5,7 +5,16 @@ export type { PopupRow, PopupListManagerRef } from './types';
 export { POPUP_LS_KEY } from './utils/constants';
 
 // Utils
-export { useMounted, formatDateForInput, getFileNameFromUrl, inRange } from './utils/helpers';
+export {
+  useMounted,
+  formatDateForInput,
+  popupDatetimeForApi,
+  getPopupImageSrc,
+  isPopupImageUnsaved,
+  isPopupRowUnsaved,
+  getFileNameFromUrl,
+  inRange,
+} from './utils/helpers';
 export { inputCls, smallInputCls } from './utils/styles';
 
 // Components

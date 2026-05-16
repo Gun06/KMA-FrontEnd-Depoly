@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
 
 export function CircleBtn({ 
@@ -5,7 +6,7 @@ export function CircleBtn({
   onClick 
 }: { 
   kind: 'up' | 'down' | 'plus' | 'minus'; 
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }) {
   const base = 'inline-flex items-center justify-center h-9 w-9 rounded-lg select-none transition-all hover:scale-105 active:scale-95';
   const isMove = kind === 'up' || kind === 'down';

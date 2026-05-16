@@ -1,15 +1,19 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/common/Button/Button';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 import type { PopupUpdateRequest } from '@/types/popup';
 import { inputCls, smallInputCls } from '../../utils/styles';
-import { formatDateForInput, getFileNameFromUrl } from '../../utils/helpers';
+import { formatDateForInput, getFileNameFromUrl, popupDatetimeForApi } from '../../utils/helpers';
 import { usePopupEdit, usePopupUpdate } from '../../hooks';
+import SuccessModal from '@/components/common/Modal/SuccessModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 
 export default function PopupEditForm({ id, eventId }: { id: string; eventId?: string }) {
+  const router = useRouter();
   const [formData, setFormData] = React.useState({
     url: '',
     startAt: '',
@@ -17,6 +21,15 @@ export default function PopupEditForm({ id, eventId }: { id: string; eventId?: s
     device: 'BOTH' as 'PC' | 'MOBILE' | 'BOTH',
     image: null as UploadItem | null
   });
+  const [successModal, setSuccessModal] = React.useState<{
+    isOpen: boolean;
+    title?: string;
+    message: string;
+  }>({ isOpen: false, message: '' });
+  const [errorModal, setErrorModal] = React.useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
 
   // 팝업 목록에서 해당 팝업 데이터 찾기
   const { popupData, isLoading } = usePopupEdit(id, eventId);
@@ -56,10 +69,17 @@ export default function PopupEditForm({ id, eventId }: { id: string; eventId?: s
     id,
     eventId,
     onSuccess: () => {
-      alert('저장되었습니다.');
+      setSuccessModal({
+        isOpen: true,
+        title: '저장되었습니다',
+        message: '팝업 정보가 성공적으로 저장되었습니다.',
+      });
     },
     onError: (error: Error) => {
-      alert(`저장 실패: ${error.message}`);
+      setErrorModal({
+        isOpen: true,
+        message: error.message || '저장에 실패했습니다. 다시 시도해주세요.',
+      });
     }
   });
 
@@ -67,13 +87,13 @@ export default function PopupEditForm({ id, eventId }: { id: string; eventId?: s
     setFormData(prev => ({ ...prev, ...patch }));
 
   const onSave = () => {
-    const startAt = formData.startAt ? new Date(formData.startAt).toISOString() : new Date().toISOString();
-    const endAt = formData.endAt ? new Date(formData.endAt).toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date();
+    const defaultEndTime = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
     const popupUpdateRequest: PopupUpdateRequest = {
       url: formData.url || '',
-      startAt,
-      endAt,
+      startAt: popupDatetimeForApi(formData.startAt, now),
+      endAt: popupDatetimeForApi(formData.endAt, defaultEndTime),
       device: formData.device
     };
 
@@ -171,6 +191,26 @@ export default function PopupEditForm({ id, eventId }: { id: string; eventId?: s
           목록으로
         </Button>
       </div>
+
+      <SuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => {
+          setSuccessModal({ isOpen: false, message: '' });
+          if (eventId) {
+            router.push(`/admin/banners/popups/events/${eventId}`);
+          } else {
+            router.push('/admin/banners/popups/main');
+          }
+        }}
+        title={successModal.title}
+        message={successModal.message}
+      />
+      <ErrorModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal({ isOpen: false, message: '' })}
+        title="오류"
+        message={errorModal.message}
+      />
     </div>
   );
 }

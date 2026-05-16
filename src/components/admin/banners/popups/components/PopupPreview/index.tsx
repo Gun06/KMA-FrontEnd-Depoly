@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { PopupRow } from '../../types';
-import { inRange } from '../../utils/helpers';
+import { getPopupImageSrc, inRange } from '../../utils/helpers';
 import DesktopPreview from './DesktopPreview';
 import MobilePreview from './MobilePreview';
 
@@ -39,7 +39,7 @@ export default function PopupPreview({
     });
     
     const built = visible.map((r) => {
-      const src = r.image?.url || '';
+      const src = getPopupImageSrc(r.image);
       if (!src) return null;
       return { src, href: r.url || '#' };
     }).filter(Boolean) as { src: string; href: string }[];
@@ -59,7 +59,7 @@ export default function PopupPreview({
     });
     
     const built = visible.map((r) => {
-      const src = r.image?.url || '';
+      const src = getPopupImageSrc(r.image);
       if (!src) return null;
       return { src, href: r.url || '#' };
     }).filter(Boolean) as { src: string; href: string }[];
