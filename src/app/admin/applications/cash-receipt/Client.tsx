@@ -71,6 +71,7 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [isBulkStatusUpdating, setIsBulkStatusUpdating] = React.useState(false);
   const bulkCompleteInputRef = React.useRef<HTMLInputElement>(null);
   const headCbRef = React.useRef<HTMLInputElement>(null);
+  const autoOpenedFromQueryRef = React.useRef(false);
 
   React.useEffect(() => {
     const qs = new URLSearchParams();
@@ -78,8 +79,9 @@ export default function Client({ initialPage, pageSize }: Props) {
     if (eventId !== 'ALL') qs.set('eventId', eventId);
     if (status) qs.set('status', status);
     if (keyword.trim()) qs.set('q', keyword.trim());
+    if (drawerOpen && selectedId) qs.set('id', selectedId);
     router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname);
-  }, [router, pathname, page, eventId, status, keyword]);
+  }, [router, pathname, page, eventId, status, keyword, drawerOpen, selectedId]);
 
   const { data: eventData } = useEventList(1, 200) as { data: EventListResponse | undefined };
   const eventOptions = React.useMemo(
@@ -119,6 +121,32 @@ export default function Client({ initialPage, pageSize }: Props) {
 
   const rows = React.useMemo(() => data?.content ?? [], [data]);
   const total = data?.totalElements ?? 0;
+
+  const deepLinkId = sp.get('id');
+  const deepLinkQ = sp.get('q')?.trim() ?? '';
+
+  // 신청자 관리 등에서 넘어온 id/q로 해당 건 상세 자동 오픈
+  React.useEffect(() => {
+    if (deepLinkId) {
+      setSelectedId(deepLinkId);
+      setDrawerOpen(true);
+      return;
+    }
+
+    if (!deepLinkQ || autoOpenedFromQueryRef.current || isLoading || rows.length === 0) return;
+
+    const match =
+      rows.find((row) => row.requesterName === deepLinkQ) ?? (rows.length === 1 ? rows[0] : undefined);
+    if (match) {
+      autoOpenedFromQueryRef.current = true;
+      setSelectedId(match.id);
+      setDrawerOpen(true);
+    }
+  }, [deepLinkId, deepLinkQ, isLoading, rows]);
+
+  React.useEffect(() => {
+    autoOpenedFromQueryRef.current = false;
+  }, [deepLinkId, deepLinkQ]);
 
   const idsOnPage = React.useMemo(() => rows.map((r) => r.id), [rows]);
 
@@ -404,7 +432,14 @@ export default function Client({ initialPage, pageSize }: Props) {
       <CashReceiptDetailDrawer
         open={drawerOpen}
         cashReceiptId={selectedId}
-        onClose={() => { setDrawerOpen(false); setSelectedId(null); }}
+        onClose={() => {
+          setDrawerOpen(false);
+          setSelectedId(null);
+          autoOpenedFromQueryRef.current = false;
+          const qs = new URLSearchParams(sp.toString());
+          qs.delete('id');
+          router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname);
+        }}
         onUpdated={() => { queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] }); }}
       />
     </div>

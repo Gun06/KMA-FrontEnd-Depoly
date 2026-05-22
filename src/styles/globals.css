@@ -202,3 +202,25 @@ img {
   touch-action: auto;
   -ms-touch-action: auto;
 }
+
+/* 관리자 방문자 현황 차트·기간 분석 애니메이션 */
+@keyframes kma-visitor-bar-rise {
+  from {
+    height: 0;
+    opacity: 0.35;
+  }
+  to {
+    height: var(--visitor-bar-h);
+    opacity: 1;
+  }
+}
+
+.kma-visitor-bar {
+  animation: kma-visitor-bar-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kma-visitor-bar {
+    animation: none !important;
+  }
+}

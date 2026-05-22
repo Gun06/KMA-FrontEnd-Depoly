@@ -316,8 +316,8 @@ export default function IndividualGroupConfirmResultPage() {
           setShowPasswordResetRequestModal(true);
         }}
         title="비밀번호 초기화 필요"
-        message={`신청 내역을 수정하려면 먼저 비밀번호를 초기화하여
-소유 신청으로 전환해야 합니다.
+        message={`신청 내역을 수정하려면 비밀번호를 초기화하여
+[본인 소유로 전환]해야 합니다.
 
 비밀번호 초기화를 진행하시겠습니까?`}
         confirmText="비밀번호 초기화 진행"

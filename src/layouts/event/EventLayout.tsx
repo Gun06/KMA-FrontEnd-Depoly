@@ -2,6 +2,7 @@ import React from 'react'
 import EventHeader from '@/components/event/Header'
 import EventFooter from '@/components/event/Footer'
 import SponsorsMarquee from '@/components/event/Sponsors/index'
+import { FloatingVisitorCount } from '@/components/common/VisitorCount'
 import { MainBannerProvider, useMainBanner } from '@/components/providers/MainBannerContext';
 import { useSearchParams } from 'next/navigation';
 
@@ -355,6 +356,7 @@ function EventLayoutContent({
       {/* 스폰서 마퀸 섹션 */}
       <SponsorsMarquee eventId={eventId} />
       <EventFooter footerBgClass={footerBgClass} accentColor={accentColor} />
+      {eventId ? <FloatingVisitorCount variant="event" eventId={eventId} /> : null}
     </div>
   )
 }
@@ -378,6 +380,7 @@ export function EventLayoutThemed({ children, eventId, headerBgClass, footerBgCl
       {/* 스폰서 마퀸 섹션 */}
       <SponsorsMarquee eventId={eventId} />
       <EventFooter footerBgClass={footerBgClass} accentColor={accentColor} />
+      {eventId ? <FloatingVisitorCount variant="event" eventId={eventId} /> : null}
     </div>
   )
 }

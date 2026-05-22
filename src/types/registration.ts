@@ -51,6 +51,22 @@ export interface RegistrationItem {
   accountHolderName?: string;     // 예금주명
   refundRequestedAt?: string;     // 환불요청시각 (ISO 8601 형식)
   refundDate?: string | null;     // 환불완료시각 (ISO 8601 형식, null이면 아직 환불처리 안됨)
+  cashReceiptId?: string | null;  // cashReceiptDetailResponse.id
+  cashReceiptRequest?: RegistrationCashReceiptRequest | null;
+}
+
+export type CashReceiptRequestStatus = 'REQUESTED' | 'COMPLETED' | 'CANCELED';
+export type CashReceiptRequestPurpose = 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
+export type CashReceiptRequesterType = 'INDIVIDUAL' | 'BUSINESS';
+export type CashReceiptIdentifierType = 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';
+
+export interface RegistrationCashReceiptRequest {
+  purpose: CashReceiptRequestPurpose;
+  requesterType: CashReceiptRequesterType;
+  type: CashReceiptIdentifierType;
+  value: string;
+  adminAnswer?: string | null;
+  status: CashReceiptRequestStatus;
 }
 
 export interface RegistrationListResponse {

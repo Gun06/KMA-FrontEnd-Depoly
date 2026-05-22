@@ -3,7 +3,16 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import type { RegistrationItem } from '@/types/registration';
+import type { RegistrationItem, CashReceiptRequestStatus, RegistrationCashReceiptRequest } from '@/types/registration';
+import type {
+  CashReceiptPurpose,
+  CashReceiptRequesterType,
+  CashReceiptIdentifierType,
+} from '@/app/admin/applications/cash-receipt/types/cashReceiptAdmin';
+import {
+  getCashReceiptForRegistration,
+  updateCashReceipt,
+} from '@/app/admin/applications/cash-receipt/services/cashReceiptAdmin';
 import { updateRegistrationDetail, resetRegistrationPassword, resetOrganizationPassword, deleteRegistration } from '@/services/registration';
 import { formatBirthInput, formatPhoneInput, genderToApiEnum, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import { toast } from 'react-toastify';
@@ -11,6 +20,7 @@ import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
+import { REFUND_BANK_LIST } from '@/components/event/Registration/RefundModal';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -72,6 +82,34 @@ const extractZipCode = (address: string | undefined): { zipCode: string; cleanAd
   return { zipCode, cleanAddress };
 };
 
+const CASH_RECEIPT_PURPOSE_LABEL: Record<CashReceiptPurpose, string> = {
+  INCOME_DEDUCTION: '소득공제',
+  EXPENSE_PROOF: '지출증빙',
+};
+
+const CASH_RECEIPT_REQUESTER_TYPE_LABEL: Record<CashReceiptRequesterType, string> = {
+  INDIVIDUAL: '개인',
+  BUSINESS: '사업자',
+};
+
+const CASH_RECEIPT_IDENTIFIER_TYPE_LABEL: Record<CashReceiptIdentifierType, string> = {
+  PHONE_NUMBER: '휴대전화 번호',
+  BUSINESS_REG_NO: '사업자 등록번호',
+  CASH_RECEIPT_CARD_NO: '현금영수증 카드번호',
+};
+
+const CASH_RECEIPT_STATUS_LABEL: Record<CashReceiptRequestStatus, string> = {
+  REQUESTED: '처리 대기',
+  COMPLETED: '발급 완료',
+  CANCELED: '발급 취소',
+};
+
+const CASH_RECEIPT_STATUS_CLASS: Record<CashReceiptRequestStatus, string> = {
+  REQUESTED: 'text-[#E6A400] bg-amber-50 border-amber-200',
+  COMPLETED: 'text-[#1F8A3B] bg-green-50 border-green-200',
+  CANCELED: 'text-[#D12D2D] bg-red-50 border-red-200',
+};
+
 type Props = {
   open: boolean;
   item: RegistrationItem | null;
@@ -105,6 +143,10 @@ export default function RegistrationDetailDrawer({
   } = useEventCategoryDropdown(effectiveEventId);
   const [memo, setMemo] = React.useState('');
   const [detailMemo, setDetailMemo] = React.useState('');
+  const [cashReceiptStatus, setCashReceiptStatus] = React.useState<CashReceiptRequestStatus>('REQUESTED');
+  const [cashReceiptAdminAnswer, setCashReceiptAdminAnswer] = React.useState('');
+  const [linkedCashReceipt, setLinkedCashReceipt] = React.useState<RegistrationCashReceiptRequest | null>(null);
+  const [linkedCashReceiptId, setLinkedCashReceiptId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   // 메모와 상세메모의 초기값을 추적 (저장 버튼 활성화 여부 판단용)
   const initialMemoRef = React.useRef<string>('');
@@ -199,6 +241,9 @@ export default function RegistrationDetailDrawer({
     souvenirJsonList: [] as Array<{ souvenirId: string; selectedSize: string }>,
     organizationId: null as string | null,
     organizationName: '',
+    paymenterBank: '',
+    accountNumber: '',
+    accountHolderName: '',
   });
 
   // 단체 검색 관련 상태
@@ -421,11 +466,74 @@ export default function RegistrationDetailDrawer({
       souvenirJsonList: currentSouvenirList,
       organizationId: item.organizationId || null,
       organizationName: item.organizationName && item.organizationName !== '개인' ? item.organizationName : '',
+      paymenterBank: String(item.paymenterBank || ''),
+      accountNumber: String(item.accountNumber || ''),
+      accountHolderName: String(item.accountHolderName || ''),
     });
     if (open && idChanged) {
       setIsEditing(false);
     }
   }, [item, open, dropdownCategories]);
+
+  const displayCashReceipt = item?.cashReceiptRequest ?? linkedCashReceipt;
+  const effectiveCashReceiptId = item?.cashReceiptId ?? linkedCashReceiptId;
+
+  const cashReceiptManageHref = React.useMemo(() => {
+    const params = new URLSearchParams();
+    if (effectiveCashReceiptId) {
+      params.set('id', effectiveCashReceiptId);
+    } else {
+      const name = (item?.name || item?.userName || '').trim();
+      if (name) params.set('q', name);
+    }
+    if (effectiveEventId) params.set('eventId', effectiveEventId);
+    const qs = params.toString();
+    return qs ? `/admin/applications/cash-receipt?${qs}` : '/admin/applications/cash-receipt';
+  }, [effectiveCashReceiptId, effectiveEventId, item?.name, item?.userName]);
+
+  React.useEffect(() => {
+    if (!open || !item) {
+      setLinkedCashReceipt(null);
+      setLinkedCashReceiptId(null);
+      return;
+    }
+
+    if (item.cashReceiptRequest) {
+      setLinkedCashReceipt(null);
+      setLinkedCashReceiptId(item.cashReceiptId ?? null);
+      setCashReceiptStatus(item.cashReceiptRequest.status);
+      setCashReceiptAdminAnswer(item.cashReceiptRequest.adminAnswer ?? '');
+      return;
+    }
+
+    let cancelled = false;
+    getCashReceiptForRegistration(item.id, {
+      eventId: effectiveEventId,
+      requesterName: item.name || item.userName,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result) {
+          setLinkedCashReceipt(result.request);
+          setLinkedCashReceiptId(result.cashReceiptId);
+          setCashReceiptStatus(result.request.status);
+          setCashReceiptAdminAnswer(result.request.adminAnswer ?? '');
+        } else {
+          setLinkedCashReceipt(null);
+          setLinkedCashReceiptId(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLinkedCashReceipt(null);
+          setLinkedCashReceiptId(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, item?.id, item?.cashReceiptRequest, item?.cashReceiptId, item?.name, item?.userName, effectiveEventId]);
 
   // 이벤트 데이터 로드 후 코스 ID 자동 매핑 (없을 때만)
   React.useEffect(() => {
@@ -658,8 +766,36 @@ export default function RegistrationDetailDrawer({
                             amount: selectedCategory?.amount,
                             memo: memo ?? '',
                             detailMemo: detailMemo ?? '',
+                            ...(item.paymenterBank ||
+                              item.accountNumber ||
+                              item.accountHolderName ||
+                              item.refundRequestedAt ||
+                              item.refundDate ||
+                              form.paymenterBank.trim() ||
+                              form.accountNumber.trim() ||
+                              form.accountHolderName.trim()) && {
+                              paymenterBank: form.paymenterBank.trim(),
+                              accountNumber: form.accountNumber.trim(),
+                              accountHolderName: form.accountHolderName.trim(),
+                            },
+                            ...(displayCashReceipt && !effectiveCashReceiptId && {
+                              cashReceiptRequest: {
+                                purpose: displayCashReceipt.purpose,
+                                requesterType: displayCashReceipt.requesterType,
+                                type: displayCashReceipt.type,
+                                value: displayCashReceipt.value,
+                                adminAnswer: cashReceiptAdminAnswer,
+                                status: cashReceiptStatus,
+                              },
+                            }),
                           };
                           await updateRegistrationDetail(registrationId, payload);
+                          if (effectiveCashReceiptId && displayCashReceipt) {
+                            await updateCashReceipt(effectiveCashReceiptId, {
+                              adminAnswer: cashReceiptAdminAnswer,
+                              updateStatus: cashReceiptStatus,
+                            });
+                          }
                           initialMemoRef.current = memo ?? '';
                           initialDetailMemoRef.current = detailMemo ?? '';
                           setIsEditing(false);
@@ -714,9 +850,17 @@ export default function RegistrationDetailDrawer({
                           souvenirJsonList: currentSouvenirList,
                           organizationId: item.organizationId || null,
                           organizationName: item.organizationName && item.organizationName !== '개인' ? item.organizationName : '',
+                          paymenterBank: String(item.paymenterBank || ''),
+                          accountNumber: String(item.accountNumber || ''),
+                          accountHolderName: String(item.accountHolderName || ''),
                         });
                         setMemo(initialMemoRef.current);
                         setDetailMemo(initialDetailMemoRef.current);
+                        const resetReceipt = item.cashReceiptRequest ?? linkedCashReceipt;
+                        if (resetReceipt) {
+                          setCashReceiptStatus(resetReceipt.status);
+                          setCashReceiptAdminAnswer(resetReceipt.adminAnswer ?? '');
+                        }
                       }}
                     >
                       취소
@@ -1039,6 +1183,7 @@ export default function RegistrationDetailDrawer({
                   placeholder="입금여부를 선택하세요"
                 />
               ))}
+
               {!canEditFields ? line('입금자명', item.paymenterName || '-') : editLine('입금자명', (
                 <input className="w-full rounded border px-2 py-1" value={form.paymenterName} onChange={e => setForm(v => ({ ...v, paymenterName: e.target.value }))} />
               ))}
@@ -1108,6 +1253,7 @@ export default function RegistrationDetailDrawer({
                   <p className="mt-1 text-xs text-gray-400">상세메모도 &apos;수정하기&apos; 버튼을 눌러야 입력 가능합니다.</p>
                 )}
               </div>
+
               {(item.paymenterBank || item.accountNumber || item.accountHolderName || item.refundRequestedAt || item.refundDate) && (
                 <div className="mt-4 mb-2 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-3">
@@ -1117,17 +1263,61 @@ export default function RegistrationDetailDrawer({
                     <span className="text-sm text-orange-800">환불 계좌 정보</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex py-2 text-sm">
+                    <div className="flex py-2 text-sm items-center">
                       <div className="w-28 shrink-0 text-orange-700">환불 은행명</div>
-                      <div className="flex-1 text-gray-900">{item.paymenterBank || '-'}</div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <SearchableSelect
+                            value={form.paymenterBank}
+                            options={[
+                              { value: '', label: '은행 선택' },
+                              ...REFUND_BANK_LIST.map((bank) => ({ value: bank, label: bank })),
+                            ]}
+                            onChange={(v) => setForm((prev) => ({ ...prev, paymenterBank: v }))}
+                            placeholder="은행을 선택하세요"
+                            className="w-full"
+                          />
+                        ) : (
+                          <span className="text-gray-900">{form.paymenterBank || item.paymenterBank || '-'}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2 items-center">
                       <div className="w-28 shrink-0 text-orange-700">환불 계좌번호</div>
-                      <div className="flex-1 text-gray-900 font-mono">{item.accountNumber || '-'}</div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <input
+                            className="w-full rounded border px-2 py-1 font-mono"
+                            value={form.accountNumber}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                accountNumber: e.target.value.replace(/\D/g, ''),
+                              }))
+                            }
+                            placeholder="숫자만 입력"
+                          />
+                        ) : (
+                          <span className="text-gray-900 font-mono">{form.accountNumber || item.accountNumber || '-'}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2 items-center">
                       <div className="w-28 shrink-0 text-orange-700">예금주명</div>
-                      <div className="flex-1 text-gray-900">{item.accountHolderName || '-'}</div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <input
+                            className="w-full rounded border px-2 py-1"
+                            value={form.accountHolderName}
+                            onChange={(e) =>
+                              setForm((prev) => ({ ...prev, accountHolderName: e.target.value }))
+                            }
+                            placeholder="예금주명"
+                          />
+                        ) : (
+                          <span className="text-gray-900">{form.accountHolderName || item.accountHolderName || '-'}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
                       <div className="w-28 shrink-0 text-orange-700">환불요청시각</div>
@@ -1139,6 +1329,88 @@ export default function RegistrationDetailDrawer({
                         <div className="flex-1 text-gray-900">{formatDateTime(item.refundDate)}</div>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {displayCashReceipt && (
+                <div className="mt-4 mb-2 p-4 bg-sky-50 border-2 border-sky-200 rounded-lg">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-sm font-medium text-sky-900">현금영수증 신청</span>
+                    <a
+                      href={cashReceiptManageHref}
+                      className="text-xs text-sky-700 hover:underline shrink-0"
+                    >
+                      현금영수증 관리 →
+                    </a>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex py-2 text-sm">
+                      <div className="w-28 shrink-0 text-sky-800">발급 유형</div>
+                      <div className="flex-1 text-gray-900">
+                        {CASH_RECEIPT_PURPOSE_LABEL[displayCashReceipt.purpose] ?? displayCashReceipt.purpose}
+                      </div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                      <div className="w-28 shrink-0 text-sky-800">신청자 유형</div>
+                      <div className="flex-1 text-gray-900">
+                        {CASH_RECEIPT_REQUESTER_TYPE_LABEL[displayCashReceipt.requesterType] ?? displayCashReceipt.requesterType}
+                      </div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                      <div className="w-28 shrink-0 text-sky-800">인증 유형</div>
+                      <div className="flex-1 text-gray-900">
+                        {CASH_RECEIPT_IDENTIFIER_TYPE_LABEL[displayCashReceipt.type] ?? displayCashReceipt.type}
+                      </div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                      <div className="w-28 shrink-0 text-sky-800">인증 번호</div>
+                      <div className="flex-1 text-gray-900 font-mono">{displayCashReceipt.value || '-'}</div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2 items-center">
+                      <div className="w-28 shrink-0 text-sky-800">처리 상태</div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <SearchableSelect
+                            value={cashReceiptStatus}
+                            options={[
+                              { value: 'REQUESTED', label: '처리 대기' },
+                              { value: 'COMPLETED', label: '발급 완료' },
+                              { value: 'CANCELED', label: '발급 취소' },
+                            ]}
+                            onChange={(v) => setCashReceiptStatus(v as CashReceiptRequestStatus)}
+                            className="w-40"
+                          />
+                        ) : (
+                          <span
+                            className={clsx(
+                              'inline-block px-2 py-0.5 rounded border text-xs font-semibold',
+                              CASH_RECEIPT_STATUS_CLASS[displayCashReceipt.status]
+                            )}
+                          >
+                            {CASH_RECEIPT_STATUS_LABEL[displayCashReceipt.status] ?? displayCashReceipt.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                      <div className="w-28 shrink-0 text-sky-800">관리자 답변</div>
+                      <div className="flex-1">
+                        {isEditing ? (
+                          <textarea
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            rows={3}
+                            placeholder="관리자 답변을 입력해주세요."
+                            value={cashReceiptAdminAnswer}
+                            onChange={(e) => setCashReceiptAdminAnswer(e.target.value)}
+                          />
+                        ) : (
+                          <span className={displayCashReceipt.adminAnswer ? 'text-gray-900' : 'text-gray-400'}>
+                            {displayCashReceipt.adminAnswer || '-'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

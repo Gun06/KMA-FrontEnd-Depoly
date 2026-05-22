@@ -406,7 +406,7 @@ export default function GroupApplicationConfirmForm({ eventId }: { eventId: stri
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          단체 신청 조회
+          단체 전체 조회
         </button>
         <button
           onClick={() => setActiveTab('individual')}

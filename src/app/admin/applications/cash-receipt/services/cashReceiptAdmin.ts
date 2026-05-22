@@ -7,6 +7,79 @@ import type {
   CashReceiptUpdateRequest,
   CashReceiptBulkStatusRequest,
 } from '../types/cashReceiptAdmin';
+import type { RegistrationCashReceiptRequest } from '@/types/registration';
+import { parseCashReceiptRequest } from '@/services/registration';
+
+export function mapCashReceiptDetailToRequest(
+  detail: CashReceiptDetail
+): RegistrationCashReceiptRequest {
+  return {
+    purpose: detail.purpose,
+    requesterType: detail.requesterType,
+    type: detail.identifierType,
+    value: detail.cashReceiptRequestValue,
+    adminAnswer: detail.adminAnswer,
+    status: detail.status,
+  };
+}
+
+/** 신청 ID로 연결된 현금영수증 조회 (상세 API에 없을 때 보조) */
+export async function getCashReceiptForRegistration(
+  registrationId: string,
+  options?: { eventId?: string; requesterName?: string }
+): Promise<{ cashReceiptId: string; request: RegistrationCashReceiptRequest } | null> {
+  try {
+    const byRegistration = await request<Record<string, unknown>>(
+      'admin',
+      `/api/v1/cash-receipt/registration/${registrationId}`,
+      'GET',
+      undefined,
+      true
+    );
+    if (byRegistration && typeof byRegistration === 'object') {
+      const parsed = parseCashReceiptRequest(byRegistration);
+      const id = String(byRegistration.id ?? '');
+      if (parsed && id) {
+        return { cashReceiptId: id, request: parsed };
+      }
+    }
+  } catch {
+    // 전용 API 미제공 시 검색으로 fallback
+  }
+
+  const keywords = [registrationId];
+  const name = options?.requesterName?.trim();
+  if (name) keywords.push(name);
+
+  for (const keyword of keywords) {
+    try {
+      const res = await searchCashReceiptList({
+        eventId: options?.eventId || 'ALL',
+        keyword,
+        page: 1,
+        size: 10,
+      });
+      if (!res.content.length) continue;
+
+      const candidates =
+        name && keyword === name
+          ? res.content.filter((row) => row.requesterName === name)
+          : res.content;
+
+      for (const row of candidates.slice(0, 3)) {
+        const detail = await getCashReceiptDetail(row.id);
+        return {
+          cashReceiptId: detail.id,
+          request: mapCashReceiptDetailToRequest(detail),
+        };
+      }
+    } catch {
+      // 다음 키워드 시도
+    }
+  }
+
+  return null;
+}
 
 export async function searchCashReceiptList(
   params: CashReceiptSearchParams

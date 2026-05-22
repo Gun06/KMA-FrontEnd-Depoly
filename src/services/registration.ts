@@ -1,7 +1,39 @@
 import { request } from '@/hooks/useFetch';
 import { tokenService } from '@/utils/tokenService';
 import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
-import type { RegistrationListResponse, RegistrationListRequest, RegistrationSearchRequest, RegistrationItem } from '@/types/registration';
+import type {
+  RegistrationListResponse,
+  RegistrationListRequest,
+  RegistrationSearchRequest,
+  RegistrationItem,
+  RegistrationCashReceiptRequest,
+} from '@/types/registration';
+
+/** 신청 상세/수정 API의 현금영수증 필드 정규화 */
+export function parseCashReceiptRequest(data: unknown): RegistrationCashReceiptRequest | null {
+  if (!data || typeof data !== 'object') return null;
+  const raw = data as Record<string, unknown>;
+  const purpose = raw.purpose;
+  const status = raw.status;
+  const type = raw.type ?? raw.identifierType;
+  const value = raw.value ?? raw.cashReceiptRequestValue;
+  if (
+    typeof purpose !== 'string' ||
+    typeof status !== 'string' ||
+    typeof type !== 'string' ||
+    (typeof value !== 'string' && typeof value !== 'number')
+  ) {
+    return null;
+  }
+  return {
+    purpose: purpose as RegistrationCashReceiptRequest['purpose'],
+    requesterType: (raw.requesterType ?? 'INDIVIDUAL') as RegistrationCashReceiptRequest['requesterType'],
+    type: type as RegistrationCashReceiptRequest['type'],
+    value: String(value),
+    adminAnswer: typeof raw.adminAnswer === 'string' ? raw.adminAnswer : raw.adminAnswer ?? null,
+    status: status as RegistrationCashReceiptRequest['status'],
+  };
+}
 
 // 대회별 신청자 목록 조회
 export async function getRegistrationList(params: RegistrationListRequest): Promise<RegistrationListResponse> {
@@ -383,6 +415,18 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
     accountHolderName: data.accountHolderName, // 예금주명
     refundRequestedAt: data.refundRequestedAt, // 환불요청시각
     refundDate: data.refundDate, // 환불완료시각
+    cashReceiptRequest:
+      parseCashReceiptRequest(data.cashReceiptDetailResponse)
+      ?? parseCashReceiptRequest(data.cashReceiptRequest)
+      ?? parseCashReceiptRequest(data.cashReceipt)
+      ?? (Array.isArray(data.cashReceiptInfo) && data.cashReceiptInfo[0]
+        ? parseCashReceiptRequest(data.cashReceiptInfo[0])
+        : null),
+    cashReceiptId:
+      (typeof data.cashReceiptDetailResponse?.id === 'string'
+        ? data.cashReceiptDetailResponse.id
+        : null)
+      ?? (typeof data.cashReceiptId === 'string' ? data.cashReceiptId : null),
     // 대회 ID 추출: 여러 가능한 필드 확인
     eventId: data.eventId 
       || data.event?.id 
@@ -419,6 +463,17 @@ export type RegistrationUpdatePayload = {
   detailMemo?: string;
   souvenirJsonList?: Array<{ souvenirId: string; selectedSize: string }>; // 백엔드 스펙 명칭 기준
   amount?: number;
+  paymenterBank?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
+  cashReceiptRequest?: {
+    purpose: 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
+    requesterType: 'INDIVIDUAL' | 'BUSINESS';
+    type: 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';
+    value: string;
+    adminAnswer?: string | null;
+    status: 'REQUESTED' | 'COMPLETED' | 'CANCELED';
+  };
 };
 
 export async function updateRegistrationDetail(
@@ -452,6 +507,10 @@ export async function updateRegistrationDetail(
       ...(payload.detailMemo !== undefined && { detailMemo: payload.detailMemo }),
       ...(payload.souvenirJsonList && { souvenirJsonList: payload.souvenirJsonList }),
       ...(typeof payload.amount === 'number' && { amount: payload.amount }),
+      ...(payload.paymenterBank !== undefined && { paymenterBank: payload.paymenterBank }),
+      ...(payload.accountNumber !== undefined && { accountNumber: payload.accountNumber }),
+      ...(payload.accountHolderName !== undefined && { accountHolderName: payload.accountHolderName }),
+      ...(payload.cashReceiptRequest && { cashReceiptRequest: payload.cashReceiptRequest }),
     };
 
     const res = await request('admin', url, 'PATCH', requestBody, true);

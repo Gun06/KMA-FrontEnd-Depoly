@@ -177,7 +177,7 @@ export default function PasswordResetRequestModal({
         <div className="px-5 pt-6 pb-4 sm:px-8 sm:pt-8 sm:pb-6">
           {/* 제목 */}
           <h3 className="mb-4 sm:mb-6 text-lg sm:text-xl font-extrabold text-gray-900">
-            비밀번호 초기화
+            {isOwned ? '비밀번호 초기화 및 본인 소유로 전환' : '비밀번호 초기화'}
           </h3>
 
           {/* 소유 신청 안내 문구 */}

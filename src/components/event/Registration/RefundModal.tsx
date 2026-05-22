@@ -11,7 +11,7 @@ interface RefundModalProps {
   onSuccess?: () => void; // 성공 후 확인 버튼 클릭 시 호출
 }
 
-const BANK_LIST = [
+export const REFUND_BANK_LIST = [
   'NH농협',
   '카카오뱅크',
   'KB국민',
@@ -74,6 +74,8 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
     // 에러 메시지 초기화
     if (error) setError(null);
   };
+
+  const BANK_LIST = REFUND_BANK_LIST;
 
   const handleBankSelect = (bank: string) => {
     setFormData(prev => ({

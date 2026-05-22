@@ -9,11 +9,16 @@ import { useCashReceiptStatistics } from '@/app/admin/api/cashReceipt';
 import type { AdminEventItem } from '@/types/Admin';
 import RegistrationStatusBadge from '@/components/common/Badge/RegistrationStatusBadge';
 import type { EventRow } from '@/components/admin/events/EventTable';
+import VisitorTrendPanel from '@/app/admin/components/VisitorTrendPanel';
 
 export default function AdminHomePage() {
+  const quickActionsRef = React.useRef<HTMLDivElement>(null);
+  const recentEventsRef = React.useRef<HTMLDivElement>(null);
+  const [visitorPanelHeight, setVisitorPanelHeight] = React.useState<number | undefined>();
+
   // 대회 목록 조회 (통계용)
   const { data: eventData, isLoading: eventsLoading } = useAdminEventList({ page: 1, size: 100 });
-  
+
   // 문의사항 목록 조회 (통계용 - 전체 데이터를 가져오기 위해 size를 크게 설정)
   const { data: inquiryData, isLoading: inquiriesLoading } = useAllInquiries({ page: 1, size: 10000 });
   const { data: cashReceiptStatistics, isLoading: cashReceiptLoading } = useCashReceiptStatistics();
@@ -52,7 +57,7 @@ export default function AdminHomePage() {
     // eventName이 있으면 이벤트 문의, 없으면 메인 문의
     if (inquiry.eventName && eventContent.length > 0) {
       // eventName으로 대회 목록에서 eventId 찾기
-      const matchedEvent = eventContent.find((event: AdminEventItem) => 
+      const matchedEvent = eventContent.find((event: AdminEventItem) =>
         event.nameKr === inquiry.eventName
       );
       if (matchedEvent) {
@@ -141,6 +146,47 @@ export default function AdminHomePage() {
     },
   ];
 
+  const updateVisitorPanelHeight = React.useCallback(() => {
+    if (typeof window === 'undefined' || window.innerWidth < 1280) {
+      setVisitorPanelHeight(undefined);
+      return;
+    }
+    const quickEl = quickActionsRef.current;
+    const recentEl = recentEventsRef.current;
+    if (!quickEl || !recentEl) return;
+
+    const gap = 24;
+    const height =
+      recentEl.getBoundingClientRect().bottom -
+      quickEl.getBoundingClientRect().bottom -
+      gap;
+    setVisitorPanelHeight(Math.max(280, Math.round(height)));
+  }, []);
+
+  React.useEffect(() => {
+    const run = () => requestAnimationFrame(updateVisitorPanelHeight);
+    run();
+
+    window.addEventListener('resize', updateVisitorPanelHeight);
+    const observer = new ResizeObserver(updateVisitorPanelHeight);
+
+    if (quickActionsRef.current) observer.observe(quickActionsRef.current);
+    if (recentEventsRef.current) observer.observe(recentEventsRef.current);
+
+    return () => {
+      window.removeEventListener('resize', updateVisitorPanelHeight);
+      observer.disconnect();
+    };
+  }, [
+    updateVisitorPanelHeight,
+    eventsLoading,
+    inquiriesLoading,
+    cashReceiptLoading,
+    recentEvents.length,
+    totalInquiries,
+    unansweredInquiries,
+  ]);
+
   const inquirySummaryItems = [
     {
       title: '전체 문의사항',
@@ -177,70 +223,30 @@ export default function AdminHomePage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-8 space-y-6">
-          <SectionPanel
-            title="빠른 실행"
-            description="주요 관리 기능으로 즉시 이동합니다."
-            hideHeader
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {quickActions.map((item) => (
-                <QuickActionCard
-                  key={item.title}
-                  title={item.title}
-                  description={item.description}
-                  href={item.href}
-                  icon={item.icon}
-                  color={item.color}
-                />
-              ))}
-            </div>
-          </SectionPanel>
-
-          <SectionPanel
-            title="최근 등록된 대회"
-            description="최근 등록된 대회의 상태와 주요 정보를 확인합니다."
-            href="/admin/events/management"
-            hideHeader
-          >
-            {eventsLoading ? (
-              <PanelFallback label="로딩 중..." />
-            ) : recentEvents.length === 0 ? (
-              <PanelFallback label="등록된 대회가 없습니다." />
-            ) : (
-              <div>
-                <div className="space-y-2">
-                  {recentEvents.map((event: EventRow) => (
-                    <Link
-                      key={event.id}
-                      href={`/admin/events/${event.id}`}
-                      className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:bg-slate-50 transition-colors"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm md:text-base font-semibold text-slate-900 line-clamp-1">{event.title}</p>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                          <span>{formatDate(event.date)}</span>
-                          <span>•</span>
-                          <span className="line-clamp-1">{event.place}</span>
-                        </div>
-                      </div>
-                      <RegistrationStatusBadge status={event.applyStatus} size="smd" />
-                    </Link>
-                  ))}
-                </div>
-                <div className="mt-3 flex justify-end">
-                  <Link
-                    href="/admin/events/management"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
-                  >
-                    더보기
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+        <div className="flex flex-col gap-6 xl:col-span-8">
+          <div ref={quickActionsRef}>
+            <SectionPanel
+              title="빠른 실행"
+              description="주요 관리 기능으로 즉시 이동합니다."
+              hideHeader
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {quickActions.map((item) => (
+                  <QuickActionCard
+                    key={item.title}
+                    title={item.title}
+                    description={item.description}
+                    href={item.href}
+                    icon={item.icon}
+                    color={item.color}
+                  />
+                ))}
               </div>
-            )}
-          </SectionPanel>
+            </SectionPanel>
+          </div>
+
+          <VisitorTrendPanel panelHeight={visitorPanelHeight} />
         </div>
 
         <aside className="xl:col-span-4 space-y-6">
@@ -269,37 +275,34 @@ export default function AdminHomePage() {
             href="/admin/applications/cash-receipt"
             hideHeader
           >
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="grid grid-cols-3 gap-2">
-                <Link
-                  href="/admin/applications/cash-receipt"
-                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
-                >
-                  <p className="text-[11px] text-slate-500">전체 건수</p>
-                  <p className="mt-1 text-base font-bold text-slate-900">
-                    {cashReceiptLoading ? '...' : (cashReceiptStatistics?.totalCount ?? 0).toLocaleString()}
-                  </p>
-                </Link>
-                <Link
-                  href="/admin/applications/cash-receipt?status=REQUESTED"
-                  className="rounded-lg border border-amber-100/70 bg-amber-50/60 px-3 py-2 text-center hover:bg-amber-50 transition-colors"
-                >
-                  <p className="text-[11px] text-amber-600">처리 대기</p>
-                  <p className="mt-1 text-base font-bold text-amber-700">
-                    {cashReceiptLoading ? '...' : (cashReceiptStatistics?.requestedCount ?? 0).toLocaleString()}
-                  </p>
-                </Link>
-                <Link
-                  href="/admin/applications/cash-receipt"
-                  className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
-                >
-                  <p className="text-[11px] text-slate-500">처리율</p>
-                  <p className="mt-1 text-base font-bold text-slate-900">
-                    {cashReceiptLoading ? '...' : `${(cashReceiptStatistics?.processedPercent ?? 0).toFixed(1)}%`}
-                  </p>
-                </Link>
-              </div>
-
+            <div className="grid grid-cols-3 gap-2">
+              <Link
+                href="/admin/applications/cash-receipt"
+                className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
+              >
+                <p className="text-[11px] text-slate-500">전체 건수</p>
+                <p className="mt-1 text-base font-bold text-slate-900">
+                  {cashReceiptLoading ? '...' : (cashReceiptStatistics?.totalCount ?? 0).toLocaleString()}
+                </p>
+              </Link>
+              <Link
+                href="/admin/applications/cash-receipt?status=REQUESTED"
+                className="rounded-lg border border-amber-100/70 bg-amber-50/60 px-3 py-2 text-center hover:bg-amber-50 transition-colors"
+              >
+                <p className="text-[11px] text-amber-600">처리 대기</p>
+                <p className="mt-1 text-base font-bold text-amber-700">
+                  {cashReceiptLoading ? '...' : (cashReceiptStatistics?.requestedCount ?? 0).toLocaleString()}
+                </p>
+              </Link>
+              <Link
+                href="/admin/applications/cash-receipt"
+                className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-center hover:bg-slate-100 transition-colors"
+              >
+                <p className="text-[11px] text-slate-500">처리율</p>
+                <p className="mt-1 text-base font-bold text-slate-900">
+                  {cashReceiptLoading ? '...' : `${(cashReceiptStatistics?.processedPercent ?? 0).toFixed(1)}%`}
+                </p>
+              </Link>
             </div>
           </SectionPanel>
 
@@ -309,20 +312,22 @@ export default function AdminHomePage() {
             href="/admin/boards/inquiry/all"
             hideHeader
           >
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex items-end justify-between">
-                <p className="text-sm font-medium text-slate-600">답변 완료율</p>
-                <p className="text-2xl font-bold text-slate-900">
-                  {inquiriesLoading ? '...' : `${responseRate.toFixed(1)}%`}
-                </p>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-end justify-between">
+                  <p className="text-sm font-medium text-slate-600">답변 완료율</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {inquiriesLoading ? '...' : `${responseRate.toFixed(1)}%`}
+                  </p>
+                </div>
+                <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all"
+                    style={{ width: `${Math.min(Math.max(responseRate, 0), 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
-                <div
-                  className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all"
-                  style={{ width: `${Math.min(Math.max(responseRate, 0), 100)}%` }}
-                />
-              </div>
-              <div className="mt-3 space-y-2">
+              <div className="space-y-2">
                 {inquirySummaryItems.map((item) => (
                   <Link
                     key={item.title}
@@ -335,7 +340,7 @@ export default function AdminHomePage() {
                 ))}
               </div>
 
-              <div className="mt-4 space-y-2">
+              <div className="space-y-2">
                 {inquiriesLoading ? (
                   <PanelFallback label="로딩 중..." />
                 ) : recentInquiries.length === 0 ? (
@@ -369,7 +374,7 @@ export default function AdminHomePage() {
                   ))
                 )}
               </div>
-              <div className="mt-3 flex justify-end">
+              <div className="flex justify-end">
                 <Link
                   href="/admin/boards/inquiry"
                   className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
@@ -380,6 +385,52 @@ export default function AdminHomePage() {
               </div>
             </div>
           </SectionPanel>
+
+          <div ref={recentEventsRef}>
+            <SectionPanel
+              title="최근 등록된 대회"
+              description="최근 등록된 대회의 상태와 주요 정보를 확인합니다."
+              href="/admin/events/management"
+              hideHeader
+            >
+              {eventsLoading ? (
+                <PanelFallback label="로딩 중..." />
+              ) : recentEvents.length === 0 ? (
+                <PanelFallback label="등록된 대회가 없습니다." />
+              ) : (
+                <div>
+                  <div className="space-y-2">
+                    {recentEvents.map((event: EventRow) => (
+                      <Link
+                        key={event.id}
+                        href={`/admin/events/${event.id}`}
+                        className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm md:text-base font-semibold text-slate-900 line-clamp-1">{event.title}</p>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                            <span>{formatDate(event.date)}</span>
+                            <span>•</span>
+                            <span className="line-clamp-1">{event.place}</span>
+                          </div>
+                        </div>
+                        <RegistrationStatusBadge status={event.applyStatus} size="smd" />
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <Link
+                      href="/admin/events/management"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                    >
+                      더보기
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </SectionPanel>
+          </div>
         </aside>
       </div>
     </section>
