@@ -25,7 +25,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const scrollLeftRef = useRef(0);
 
   const { data, isPending, isFetching } = useMainPageGallery();
-  const galleryItems = data ?? [];
+  const galleryItems = useMemo(() => data ?? [], [data]);
   const displayedItems = useMemo(() => galleryItems.slice(0, SKELETON_COUNT), [galleryItems]);
   /** v5: 첫 로딩·빈 배열 재조회 시 스켈레톤 (isLoading은 캐시 있으면 false라 안 뜨는 경우 있음) */
   const showGallerySkeleton = isPending || (isFetching && galleryItems.length === 0);

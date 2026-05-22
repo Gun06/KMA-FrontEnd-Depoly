@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventHeader from '@/components/event/Header';
 import HeroSection from '@/components/event/HeroSection';
@@ -28,6 +28,37 @@ const MAP_BG: Record<string, string> = {
   'grad-cyan': 'bg-gradient-to-r from-cyan-900 via-cyan-800 to-cyan-600',
   'grad-yellow': 'bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-200',
 };
+
+const GRAD_END_MAP: Record<string, string> = {
+  'grad-indigo': '#4f46e5',
+  'grad-blue': '#2563eb',
+  'grad-emerald': '#059669',
+  'grad-red': '#dc2626',
+  'grad-purple': '#7c3aed',
+  'grad-orange': '#ea580c',
+  'grad-rose': '#e11d48',
+  'grad-cyan': '#0891b2',
+};
+
+function resolveAccent(key?: string): string | undefined {
+  if (!key) return undefined;
+  if (key === 'black' || key === 'dark' || key === 'slate') return '#ef4444';
+  if (key.startsWith('grad-')) {
+    return GRAD_END_MAP[key] || undefined;
+  }
+  const flatMap: Record<string, string> = {
+    indigo: '#4f46e5',
+    blue: '#2563eb',
+    green: '#059669',
+    red: '#dc2626',
+    purple: '#7c3aed',
+    orange: '#ea580c',
+    rose: '#e11d48',
+    cyan: '#0891b2',
+    yellow: '#fbbf24',
+  };
+  return flatMap[key] || undefined;
+}
 
 interface SubmenuLayoutProps {
   children: React.ReactNode
@@ -69,18 +100,7 @@ export default function SubmenuLayout({
   const normalizedHb = hb === 'white' ? '' : hb;
   
   // color 파라미터가 있으면 우선 사용, 없으면 theme/hb 사용
-  const gradEndMap: Record<string, string> = {
-    'grad-indigo': '#4f46e5',
-    'grad-blue': '#2563eb',
-    'grad-emerald': '#059669',
-    'grad-red': '#dc2626',
-    'grad-purple': '#7c3aed',
-    'grad-orange': '#ea580c',
-    'grad-rose': '#e11d48',
-    'grad-cyan': '#0891b2',
-  };
-
-  const getCachedHero = (): HeroEventData | null => {
+  const getCachedHero = useCallback((): HeroEventData | null => {
     if (typeof window === 'undefined') return null;
     try {
       const raw = localStorage.getItem(`hero_event_${eventId}`);
@@ -90,7 +110,7 @@ export default function SubmenuLayout({
     } catch {
       return null;
     }
-  };
+  }, [eventId]);
 
   const [heroEventData, setHeroEventData] = useState<HeroEventData | null>(getCachedHero());
   const [isLoading, setIsLoading] = useState(!getCachedHero());
@@ -137,28 +157,6 @@ export default function SubmenuLayout({
     (fallbackBannerColor && MAP_BG[fallbackBannerColor]) ||
     undefined;
   
-  // 그라데이션 키에서 끝색 추출하여 포인트색 결정
-  
-  const resolveAccent = (key?: string): string | undefined => {
-    if (!key) return undefined;
-    if (key === 'black' || key === 'dark' || key === 'slate') return '#ef4444';
-    if (key.startsWith('grad-')) {
-      return gradEndMap[key] || undefined;
-    }
-    const flatMap: Record<string, string> = {
-      indigo: '#4f46e5',
-      blue: '#2563eb',
-      green: '#059669',
-      red: '#dc2626',
-      purple: '#7c3aed',
-      orange: '#ea580c',
-      rose: '#e11d48',
-      cyan: '#0891b2',
-      yellow: '#fbbf24',
-    };
-    return flatMap[key] || undefined;
-  };
-  
   const accentColor = useMemo(() => {
     if (color) {
       return resolveAccent(color);
@@ -170,7 +168,7 @@ export default function SubmenuLayout({
 
     if (contextMainBannerColor) {
       if (contextMainBannerColor.startsWith('grad-')) {
-        return gradEndMap[contextMainBannerColor] || undefined;
+        return GRAD_END_MAP[contextMainBannerColor] || undefined;
       }
       if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(contextMainBannerColor)) {
         return contextMainBannerColor;
@@ -181,7 +179,7 @@ export default function SubmenuLayout({
     if (heroEventData?.eventInfo?.mainBannerColor) {
       const heroColor = heroEventData.eventInfo.mainBannerColor;
       if (heroColor.startsWith('grad-')) {
-        return gradEndMap[heroColor] || undefined;
+        return GRAD_END_MAP[heroColor] || undefined;
       }
       if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(heroColor)) {
         return heroColor;
@@ -222,7 +220,7 @@ export default function SubmenuLayout({
     };
 
     fetchHeroData();
-  }, [eventId]);
+  }, [eventId, getCachedHero]);
 
   // 로딩 상태를 표시하지 않고 기본 레이아웃을 즉시 렌더링
 

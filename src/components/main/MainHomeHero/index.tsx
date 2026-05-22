@@ -203,40 +203,40 @@ function useDeadlineCountdown(deadlineIso: string | undefined) {
     return () => window.clearInterval(id);
   }, [deadlineIso]);
 
-  return useMemo(() => {
-    if (!deadlineIso?.trim()) {
-      return {
-        days: 0,
-        hrs: 0,
-        mins: 0,
-        secs: 0,
-        expired: true as const,
-      };
-    }
-    let s = deadlineIso.trim();
-    if (!s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
-      s = `${s}Z`;
-    }
-    const end = new Date(s).getTime();
-    if (Number.isNaN(end)) {
-      return {
-        days: 0,
-        hrs: 0,
-        mins: 0,
-        secs: 0,
-        expired: true as const,
-      };
-    }
-    const now = Date.now();
-    const diff = Math.max(0, end - now);
-    const expired = end <= now;
-    const totalSecs = Math.floor(diff / 1000);
-    const days = Math.floor(totalSecs / 86400);
-    const hrs = Math.floor((totalSecs % 86400) / 3600);
-    const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
-    return { days, hrs, mins, secs, expired };
-  }, [deadlineIso, tick]);
+  void tick;
+
+  if (!deadlineIso?.trim()) {
+    return {
+      days: 0,
+      hrs: 0,
+      mins: 0,
+      secs: 0,
+      expired: true as const,
+    };
+  }
+  let s = deadlineIso.trim();
+  if (!s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
+    s = `${s}Z`;
+  }
+  const end = new Date(s).getTime();
+  if (Number.isNaN(end)) {
+    return {
+      days: 0,
+      hrs: 0,
+      mins: 0,
+      secs: 0,
+      expired: true as const,
+    };
+  }
+  const now = Date.now();
+  const diff = Math.max(0, end - now);
+  const expired = end <= now;
+  const totalSecs = Math.floor(diff / 1000);
+  const days = Math.floor(totalSecs / 86400);
+  const hrs = Math.floor((totalSecs % 86400) / 3600);
+  const mins = Math.floor((totalSecs % 3600) / 60);
+  const secs = totalSecs % 60;
+  return { days, hrs, mins, secs, expired };
 }
 
 /** 마감임박 1건: 이미지 + 하단 Tissot식 카운트다운 오버레이 */

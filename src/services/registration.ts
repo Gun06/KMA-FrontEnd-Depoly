@@ -30,7 +30,7 @@ export function parseCashReceiptRequest(data: unknown): RegistrationCashReceiptR
     requesterType: (raw.requesterType ?? 'INDIVIDUAL') as RegistrationCashReceiptRequest['requesterType'],
     type: type as RegistrationCashReceiptRequest['type'],
     value: String(value),
-    adminAnswer: typeof raw.adminAnswer === 'string' ? raw.adminAnswer : raw.adminAnswer ?? null,
+    adminAnswer: typeof raw.adminAnswer === 'string' ? raw.adminAnswer : null,
     status: status as RegistrationCashReceiptRequest['status'],
   };
 }
