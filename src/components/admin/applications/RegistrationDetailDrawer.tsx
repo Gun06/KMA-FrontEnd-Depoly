@@ -27,6 +27,7 @@ import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdo
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import { REFUND_BANK_LIST } from '@/components/event/Registration/RefundModal';
+import AdminCashReceiptRequestModal from '@/components/admin/applications/AdminCashReceiptRequestModal';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -163,6 +164,7 @@ export default function RegistrationDetailDrawer({
   const [pwdSaving, setPwdSaving] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showCashReceiptModal, setShowCashReceiptModal] = React.useState(false);
   const [showAddressModal, setShowAddressModal] = React.useState(false);
   const postcodeContainerRef = React.useRef<HTMLDivElement | null>(null);
   const handleAddressSelect = React.useCallback((postalCode: string, address: string) => {
@@ -645,6 +647,42 @@ export default function RegistrationDetailDrawer({
   };
   const formatAmount = (v?: number) =>
     typeof v === 'number' ? `${v.toLocaleString()}원` : '';
+
+  const formatPhoneDisplay = (ph?: string) => {
+    const digits = String(ph ?? '').replace(/\D+/g, '');
+    if (digits.length === 11) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+    }
+    if (digits.length === 10) {
+      return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return ph?.trim() || '-';
+  };
+
+  const handleCashReceiptRequestSuccess = async (request: RegistrationCashReceiptRequest) => {
+    setLinkedCashReceipt(request);
+    setLinkedCashReceiptId(null);
+    setCashReceiptStatus(request.status);
+    setCashReceiptAdminAnswer(request.adminAnswer ?? '');
+    toast.success('현금영수증 신청이 완료되었습니다.');
+    if (onSave) {
+      await onSave();
+    }
+  };
+
+  const cashReceiptContactAction = displayCashReceipt ? (
+    <span className="shrink-0 px-2.5 py-1 rounded border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium whitespace-nowrap">
+      현금영수증 신청완료
+    </span>
+  ) : (
+    <button
+      type="button"
+      className="shrink-0 px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
+      onClick={() => setShowCashReceiptModal(true)}
+    >
+      현금영수증 신청
+    </button>
+  );
 
   const line = (label: string, value?: React.ReactNode) => (
     <div className="flex py-2 text-sm">
@@ -1161,8 +1199,23 @@ export default function RegistrationDetailDrawer({
               {!canEditFields ? line('생년월일', (String(item.birth || '').replace(/\D+/g, '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))) : editLine('생년월일', (
                 <input className="w-full rounded border px-2 py-1" value={form.birth} onChange={e => setForm(v => ({ ...v, birth: formatBirthInput(e.target.value) }))} placeholder="YYYY-MM-DD" />
               ))}
-              {!canEditFields ? line('연락처', (String(item.phNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3'))) : editLine('연락처', (
-                <input className="w-full rounded border px-2 py-1" value={form.phNum} onChange={e => setForm(v => ({ ...v, phNum: formatPhoneInput(e.target.value) }))} />
+              {!canEditFields ? (
+                <div className="flex py-2 text-sm">
+                  <div className="w-28 shrink-0 text-gray-500">연락처</div>
+                  <div className="flex-1 flex items-center gap-2 flex-wrap text-gray-900">
+                    <span>{formatPhoneDisplay(item.phNum)}</span>
+                    {cashReceiptContactAction}
+                  </div>
+                </div>
+              ) : editLine('연락처', (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    className="flex-1 min-w-[140px] rounded border px-2 py-1"
+                    value={form.phNum}
+                    onChange={e => setForm(v => ({ ...v, phNum: formatPhoneInput(e.target.value) }))}
+                  />
+                  {cashReceiptContactAction}
+                </div>
               ))}
               {!canEditFields ? line('보호자 연락처', (String(item.guardianPhNum || '').replace(/\D+/g, '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3')) || '-') : editLine('보호자 연락처', (
                 <input className="w-full rounded border px-2 py-1" value={form.guardianPhNum} onChange={e => setForm(v => ({ ...v, guardianPhNum: formatPhoneInput(e.target.value) }))} />
@@ -1172,7 +1225,7 @@ export default function RegistrationDetailDrawer({
               ))}
               {line('신청일시', formatDateTime(item.registrationDate))}
               {line('금액', formatAmount(item.amount))}
-              {!isEditing ? line('입금여부', <PaymentBadgeApplicants payStatus={paymentStatusLabel as '미결제' | '결제완료' | '확인필요' | '차액환불요청' | '전액환불요청' | '전액환불완료'} />) : editLine('입금여부', (
+              {!isEditing ? line('입금여부', <PaymentBadgeApplicants appearance="tag" payStatus={paymentStatusLabel as '미결제' | '결제완료' | '확인필요' | '차액환불요청' | '전액환불요청' | '전액환불완료'} />) : editLine('입금여부', (
                 <SearchableSelect
                   value={form.paymentStatus}
                   options={[
@@ -1266,10 +1319,10 @@ export default function RegistrationDetailDrawer({
                     </svg>
                     <span className="text-sm text-orange-800">환불 계좌 정보</span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex py-2 text-sm items-center">
+                  <div className="divide-y divide-orange-200">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-orange-700">환불 은행명</div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <SearchableSelect
                             value={form.paymenterBank}
@@ -1286,9 +1339,9 @@ export default function RegistrationDetailDrawer({
                         )}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2 items-center">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-orange-700">환불 계좌번호</div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <input
                             className="w-full rounded border px-2 py-1 font-mono"
@@ -1303,9 +1356,9 @@ export default function RegistrationDetailDrawer({
                         )}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2 items-center">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-orange-700">예금주명</div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <input
                             className="w-full rounded border px-2 py-1"
@@ -1320,14 +1373,14 @@ export default function RegistrationDetailDrawer({
                         )}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-orange-700">환불요청시각</div>
-                      <div className="flex-1 text-gray-900">{item.refundRequestedAt ? formatDateTime(item.refundRequestedAt) : '-'}</div>
+                      <div className="flex-1 min-w-0 text-gray-900">{item.refundRequestedAt ? formatDateTime(item.refundRequestedAt) : '-'}</div>
                     </div>
                     {item.refundDate && (
-                      <div className="flex py-2 text-sm border-t border-orange-200 pt-2">
+                      <div className="flex min-h-10 items-center py-2.5 text-sm">
                         <div className="w-28 shrink-0 text-orange-700">환불완료시각</div>
-                        <div className="flex-1 text-gray-900">{formatDateTime(item.refundDate)}</div>
+                        <div className="flex-1 min-w-0 text-gray-900">{formatDateTime(item.refundDate)}</div>
                       </div>
                     )}
                   </div>
@@ -1337,7 +1390,17 @@ export default function RegistrationDetailDrawer({
               {displayCashReceipt && (
                 <div className="mt-4 mb-2 p-4 bg-sky-50 border-2 border-sky-200 rounded-lg">
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-sm font-medium text-sky-900">현금영수증 신청</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <svg className="w-5 h-5 shrink-0 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      <span className="text-sm text-sky-800">현금영수증 신청</span>
+                    </div>
                     <a
                       href={cashReceiptManageHref}
                       className="text-xs text-sky-700 hover:underline shrink-0"
@@ -1345,32 +1408,32 @@ export default function RegistrationDetailDrawer({
                       현금영수증 관리 →
                     </a>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex py-2 text-sm">
+                  <div className="divide-y divide-sky-200">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-sky-800">발급 유형</div>
-                      <div className="flex-1 text-gray-900">
+                      <div className="flex-1 min-w-0 text-gray-900">
                         {CASH_RECEIPT_PURPOSE_LABEL[displayCashReceipt.purpose] ?? displayCashReceipt.purpose}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-sky-800">신청자 유형</div>
-                      <div className="flex-1 text-gray-900">
+                      <div className="flex-1 min-w-0 text-gray-900">
                         {CASH_RECEIPT_REQUESTER_TYPE_LABEL[displayCashReceipt.requesterType] ?? displayCashReceipt.requesterType}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-sky-800">인증 유형</div>
-                      <div className="flex-1 text-gray-900">
+                      <div className="flex-1 min-w-0 text-gray-900">
                         {CASH_RECEIPT_IDENTIFIER_TYPE_LABEL[displayCashReceipt.type] ?? displayCashReceipt.type}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 text-sky-800">인증 번호</div>
-                      <div className="flex-1 text-gray-900 font-mono">{displayCashReceipt.value || '-'}</div>
+                      <div className="flex-1 min-w-0 text-gray-900 font-mono">{displayCashReceipt.value || '-'}</div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2 items-center">
-                      <div className="w-28 shrink-0 text-sky-800">처리 상태</div>
-                      <div className="flex-1">
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
+                      <div className="w-28 shrink-0 self-center text-sky-800">처리 상태</div>
+                      <div className="flex flex-1 min-w-0 items-center">
                         {isEditing ? (
                           <SearchableSelect
                             value={cashReceiptStatus}
@@ -1385,7 +1448,7 @@ export default function RegistrationDetailDrawer({
                         ) : (
                           <span
                             className={clsx(
-                              'inline-block px-2 py-0.5 rounded border text-xs font-semibold',
+                              'inline-flex items-center px-2.5 py-1 rounded border text-xs font-medium leading-none',
                               CASH_RECEIPT_STATUS_CLASS[displayCashReceipt.status]
                             )}
                           >
@@ -1394,9 +1457,14 @@ export default function RegistrationDetailDrawer({
                         )}
                       </div>
                     </div>
-                    <div className="flex py-2 text-sm border-t border-sky-200 pt-2">
-                      <div className="w-28 shrink-0 text-sky-800">관리자 답변</div>
-                      <div className="flex-1">
+                    <div
+                      className={clsx(
+                        'flex min-h-10 py-2.5 text-sm',
+                        isEditing ? 'items-start' : 'items-center'
+                      )}
+                    >
+                      <div className={clsx('w-28 shrink-0 text-sky-800', isEditing && 'pt-1.5')}>관리자 답변</div>
+                      <div className="flex-1 min-w-0">
                         {isEditing ? (
                           <textarea
                             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -1490,6 +1558,14 @@ export default function RegistrationDetailDrawer({
           </div>
         </div>
       )}
+
+      <AdminCashReceiptRequestModal
+        open={showCashReceiptModal}
+        registrationId={item.id}
+        defaultPhone={item.phNum || form.phNum}
+        onClose={() => setShowCashReceiptModal(false)}
+        onSuccess={handleCashReceiptRequestSuccess}
+      />
 
       {/* 비밀번호 초기화 모달 */}
       {showPwdModal && (
