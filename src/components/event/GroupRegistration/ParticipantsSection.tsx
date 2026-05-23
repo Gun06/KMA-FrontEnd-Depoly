@@ -16,7 +16,8 @@ import {
   calculateParticipantFee,
   formatPaymentStatusText,
   getPaymentStatusColorClass,
-  getCategoryDisplayText
+  getCategoryDisplayText,
+  getParticipantRowState,
 } from './utils/participantHelpers';
 import {
   getSouvenirDisplayText
@@ -99,7 +100,6 @@ const ParticipantsSection = memo(function ParticipantsSection({
   const [pendingParticipantCount, setPendingParticipantCount] = useState(() => participants.length);
   const [errorModalState, setErrorModalState] = useState({ isOpen: false, message: '' });
   const phone3Refs = useRef<(HTMLInputElement | null)[]>([]);
-
   const {
     handleParticipantChange,
     handleParticipantCountChange,
@@ -295,8 +295,8 @@ const ParticipantsSection = memo(function ParticipantsSection({
       
       {/* 참가인원 입력 섹션 */}
       <div className="mb-8">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-          <span className="text-lg sm:text-xl font-bold text-black text-center">참가인원 입력 후 확인버튼을 클릭해 주세요!</span>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6">
+          <span className="text-sm sm:text-xl font-bold text-black text-center leading-snug px-1">참가인원 입력 후 확인버튼을 클릭해 주세요!</span>
           <div className="flex items-center gap-2">
             <input 
               type="number" 
@@ -434,64 +434,33 @@ const ParticipantsSection = memo(function ParticipantsSection({
       )}
       
       {/* 참가자 테이블 */}
-      <div className="overflow-x-scroll overflow-y-visible border-l border-r border-gray-400 bg-white p-2 always-scrollbar" style={{ overflowY: 'visible' }}>
-        <table className="w-full border-collapse min-w-[2132px]">
+      <div className="-mx-1 sm:mx-0 overflow-x-auto overflow-y-visible border-l border-r border-gray-400 bg-white p-1 md:p-2 always-scrollbar" style={{ overflowY: 'visible' }}>
+        <table className="w-full border-collapse min-w-[1280px] md:min-w-[2132px]">
           <thead>
             <tr className="bg-gray-50">
-              <th className="px-3 py-3 text-sm font-bold text-center w-20 border-r border-gray-300">번호</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-32 border-r border-gray-300">이름</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">생년월일</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-48 border-r border-gray-300">연락처</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-32 border-r border-gray-300">성별</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">참가종목</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">기념품</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-72 border-r border-gray-300">총금액</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-32 border-r border-gray-300">결제상태</th>
-              <th className="px-3 py-3 text-sm font-bold text-center w-16">삭제</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center w-10 md:w-20 border-r border-gray-300">번호</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[4.5rem] w-20 md:min-w-0 md:w-32 border-r border-gray-300">이름</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[10.5rem] w-44 md:min-w-0 md:w-72 border-r border-gray-300">생년월일</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[11.5rem] w-48 md:min-w-0 md:w-48 border-r border-gray-300">연락처</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[5.5rem] w-24 md:min-w-0 md:w-32 border-r border-gray-300">성별</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[15rem] w-52 md:min-w-0 md:w-72 border-r border-gray-300">참가종목</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[17rem] w-60 md:min-w-0 md:w-72 border-r border-gray-300">기념품</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center w-20 md:w-72 border-r border-gray-300">총금액</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center min-w-[6.5rem] w-28 md:min-w-0 md:w-32 border-r border-gray-300">결제상태</th>
+              <th className="px-1 py-1.5 md:px-3 md:py-3 text-[11px] md:text-sm font-bold text-center w-10 md:w-16">삭제</th>
             </tr>
           </thead>
           <tbody>
             {participants.map((participant, index) => {
-              const isExistingParticipant = isEditMode && Boolean(participant.registrationId);
-              const isNewParticipant = isEditMode && !participant.registrationId;
-              const paymentStatus = participant.paymentStatus?.toUpperCase();
-              
-              // 소유 신청 여부 확인
-              const isOwned = participant.checkOwned === true;
-              
-              // 전체 행 블락 상태: 확인필요, 환불요청(전액/차액), 환불완료 상태, 소유 신청
-              // 이 상태에서는 모든 필드 수정 불가, 입력 클릭 차단, 행 전체 비활성화
-              const isRowBlocked = (
-                paymentStatus === 'MUST_CHECK' ||
-                paymentStatus === 'NEED_REFUND' ||
-                paymentStatus === 'NEED_PARTITIAL_REFUND' ||
-                paymentStatus === 'REFUNDED' ||
-                isOwned // 소유 신청인 경우 수정 불가
-              );
-              
-              // 미결제 상태: 모든 필드 수정 가능
-              // paymentStatus가 없거나 undefined인 경우(새로 추가된 참가자)도 미결제로 간주
-              const isUnpaid = !paymentStatus || paymentStatus === 'UNPAID';
-              
-              // 결제완료 상태: 번호, 이름, 생년월일, 연락처, 성별 수정 가능
-              // 동일 금액 내에서만 종목/기념품 수정 가능
-              const isCompleted = (
-                paymentStatus === 'COMPLETED' ||
-                paymentStatus === 'PAID'
-              );
-              
-              // 참가자 기본 정보 수정 가능 여부: 미결제, 결제완료 상태에서만 수정 가능
-              const canEditParticipantInfo = isUnpaid || isCompleted;
-              
-              // 종목/기념품 변경 가능 여부
-              // - 미결제: 모두 수정 가능
-              // - 결제완료: 동일 금액 내에서만 수정 가능 (추후 구현)
-              // - 그 외: 수정 불가
-              const canEditCategorySouvenir = isUnpaid || isCompleted;
-              const isCategorySouvenirChangeDisabled = !canEditCategorySouvenir;
-              
-              // isDisabled는 행 블락 상태와 동일 (기존 코드 호환성)
-              const isDisabled = isRowBlocked;
+              const rowState = getParticipantRowState(participant, isEditMode);
+              const {
+                isExistingParticipant,
+                isNewParticipant,
+                isOwned,
+                isDisabled,
+                isCategorySouvenirChangeDisabled,
+                canDelete,
+              } = rowState;
               
               return (
               <React.Fragment key={index}>
@@ -538,7 +507,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     <span style={isOwned ? { marginLeft: '20px' } : {}}>{index + 1}.</span>
                   </div>
                 </td>
-                <td className="px-3 py-3 w-32 border-r border-gray-200">
+                <td className="px-1 py-3 md:px-3 min-w-[4.5rem] w-20 md:w-32 border-r border-gray-200 whitespace-nowrap">
                   <input
                     key={`name-${index}`}
                     type="text"
@@ -549,10 +518,10 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       if (isDisabled) return;
                       handleParticipantChange(index, 'name', e.target.value);
                     }}
-                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full min-w-[3rem] px-1 md:px-2 py-2 border-0 text-sm focus:ring-0 text-center placeholder:whitespace-nowrap ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   />
                 </td>
-                <td className="px-3 py-3 w-80 border-r border-gray-200">
+                <td className="px-1 py-3 md:px-3 min-w-[10.5rem] w-44 md:w-80 border-r border-gray-200 whitespace-nowrap">
                   <input
                     type="text"
                     placeholder="YYYY-MM-DD 형식"
@@ -616,11 +585,11 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       }
                     }}
                     maxLength={10}
-                    className={`w-full px-2 py-2 border-0 text-sm focus:ring-0 text-center ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    className={`w-full min-w-[9.5rem] px-1 md:px-2 py-2 border-0 text-sm focus:ring-0 text-center placeholder:whitespace-nowrap ${isDisabled ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                   />
                 </td>
-                <td className="px-3 py-3 w-48 border-r border-gray-200">
-                  <div className="flex items-center justify-center gap-1">
+                <td className="px-1 py-3 md:px-3 min-w-[11.5rem] w-48 md:w-48 border-r border-gray-200 whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-0.5 md:gap-1 flex-nowrap shrink-0">
                     <span className="text-sm text-gray-600">010</span>
                     <span className="text-sm text-gray-400">-</span>
                     <input
@@ -655,7 +624,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     />
                   </div>
                 </td>
-                <td className="px-3 py-3 w-32 border-r border-gray-200">
+                <td className="px-1 py-3 md:px-3 min-w-[5.5rem] w-24 md:w-32 border-r border-gray-200 whitespace-nowrap">
                   <select
                     value={participant.gender}
                     disabled={isDisabled}
@@ -663,17 +632,16 @@ const ParticipantsSection = memo(function ParticipantsSection({
                       if (isDisabled) return;
                       handleParticipantChange(index, 'gender', e.target.value);
                     }}
-                    className={`w-full px-2 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none text-center ${
+                    className={`w-full min-w-[4.5rem] pl-1 pr-6 md:px-2 md:pr-8 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors appearance-none text-center whitespace-nowrap ${
                       isDisabled 
                         ? 'bg-gray-50 cursor-not-allowed' 
                         : 'bg-white hover:bg-gray-50 cursor-pointer'
                     }`}
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.5rem center',
+                      backgroundPosition: 'right 0.25rem center',
                       backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2rem'
+                      backgroundSize: '1.25em 1.25em',
                     }}
                   >
                     <option value="성별">성별</option>
@@ -681,7 +649,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     <option value="female">여성</option>
                   </select>
                 </td>
-                <td className="px-3 py-3 w-80 border-r border-gray-200">
+                <td className="px-3 py-3 min-w-[15rem] w-80 border-r border-gray-200 whitespace-nowrap">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -700,15 +668,15 @@ const ParticipantsSection = memo(function ParticipantsSection({
                         : 'cursor-pointer hover:border-blue-400'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span>{getCategoryDisplayText(participant, eventInfo)}</span>
-                      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <span className="flex-1 min-w-0 truncate whitespace-nowrap text-left">{getCategoryDisplayText(participant, eventInfo)}</span>
+                      <svg className="w-4 h-4 flex-shrink-0 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </button>
                 </td>
-                <td className="px-3 py-3 w-80 border-r border-gray-200">
+                <td className="px-3 py-3 min-w-[17rem] w-80 border-r border-gray-200 whitespace-nowrap">
                   {(() => {
                     const souvenirText = getSouvenirDisplayText(participant, eventInfo);
                     const isSouvenirSelected = souvenirText !== '기념품 선택' && souvenirText !== '참가종목을 먼저 선택해주세요';
@@ -736,10 +704,10 @@ const ParticipantsSection = memo(function ParticipantsSection({
                             : 'bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                          <span className={isSouvenirSelected ? 'text-blue-700' : 'text-gray-600'}>{souvenirText}</span>
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                          <span className={`flex-1 min-w-0 truncate whitespace-nowrap text-left ${isSouvenirSelected ? 'text-blue-700' : 'text-gray-600'}`}>{souvenirText}</span>
                           <svg 
-                            className={`w-3 h-3 ${isSouvenirSelected ? 'text-blue-500' : 'text-gray-400'}`} 
+                            className={`w-3 h-3 flex-shrink-0 ${isSouvenirSelected ? 'text-blue-500' : 'text-gray-400'}`} 
                             fill="none" 
                             stroke="currentColor" 
                             viewBox="0 0 24 24"
@@ -754,17 +722,13 @@ const ParticipantsSection = memo(function ParticipantsSection({
                 <td className="px-3 py-3 text-center text-sm w-80 border-r border-gray-200">
                   {calculateParticipantFee(participant.category, eventInfo).toLocaleString()}원
                 </td>
-                <td className="px-3 py-3 text-center text-sm w-32 border-r border-gray-200">
-                  <span className={`text-sm font-semibold ${getPaymentStatusColorClass(participant.paymentStatus)}`}>
+                <td className="px-1 py-3 md:px-3 min-w-[6.5rem] w-28 md:w-32 border-r border-gray-200 whitespace-nowrap text-center text-sm">
+                  <span className={`text-sm font-semibold whitespace-nowrap ${getPaymentStatusColorClass(participant.paymentStatus)}`}>
                     {formatPaymentStatusText(participant.paymentStatus)}
                       </span>
                 </td>
                 <td className="px-3 py-3 text-center text-sm w-16">
-                  {(() => {
-                    // 수정 모드에서는 기존 참가자(registrationId가 있는 참가자)는 삭제 불가
-                    const canDelete = !isDisabled && (!isEditMode || !isExistingParticipant);
-                    
-                    return (
+                  {(() => (
                   <button
                     type="button"
                     onClick={() => {
@@ -790,8 +754,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                   >
                     -
                   </button>
-                    );
-                  })()}
+                  ))()}
                 </td>
               </tr>
               </React.Fragment>

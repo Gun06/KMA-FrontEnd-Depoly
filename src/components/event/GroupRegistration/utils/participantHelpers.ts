@@ -132,3 +132,42 @@ export const getCategoryDisplayText = (
   return participant.category;
 };
 
+export interface ParticipantRowState {
+  isExistingParticipant: boolean;
+  isNewParticipant: boolean;
+  isOwned: boolean;
+  isDisabled: boolean;
+  isCategorySouvenirChangeDisabled: boolean;
+  canDelete: boolean;
+}
+
+export function getParticipantRowState(
+  participant: ParticipantData,
+  isEditMode: boolean
+): ParticipantRowState {
+  const isExistingParticipant = isEditMode && Boolean(participant.registrationId);
+  const isNewParticipant = isEditMode && !participant.registrationId;
+  const paymentStatus = participant.paymentStatus?.toUpperCase();
+  const isOwned = participant.checkOwned === true;
+
+  const isRowBlocked =
+    paymentStatus === 'MUST_CHECK' ||
+    paymentStatus === 'NEED_REFUND' ||
+    paymentStatus === 'NEED_PARTITIAL_REFUND' ||
+    paymentStatus === 'REFUNDED' ||
+    isOwned;
+
+  const isUnpaid = !paymentStatus || paymentStatus === 'UNPAID';
+  const isCompleted = paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
+  const canEditCategorySouvenir = isUnpaid || isCompleted;
+
+  return {
+    isExistingParticipant,
+    isNewParticipant,
+    isOwned,
+    isDisabled: isRowBlocked,
+    isCategorySouvenirChangeDisabled: !canEditCategorySouvenir,
+    canDelete: !isRowBlocked && (!isEditMode || !isExistingParticipant),
+  };
+}
+
