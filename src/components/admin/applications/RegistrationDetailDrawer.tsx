@@ -13,7 +13,13 @@ import {
   getCashReceiptForRegistration,
   updateCashReceipt,
 } from '@/app/admin/applications/cash-receipt/services/cashReceiptAdmin';
-import { updateRegistrationDetail, resetRegistrationPassword, resetOrganizationPassword, deleteRegistration } from '@/services/registration';
+import {
+  updateRegistrationDetail,
+  toRegistrationCashReceiptRequestBody,
+  resetRegistrationPassword,
+  resetOrganizationPassword,
+  deleteRegistration,
+} from '@/services/registration';
 import { formatBirthInput, formatPhoneInput, genderToApiEnum, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import { toast } from 'react-toastify';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
@@ -766,30 +772,28 @@ export default function RegistrationDetailDrawer({
                             amount: selectedCategory?.amount,
                             memo: memo ?? '',
                             detailMemo: detailMemo ?? '',
-                            ...(item.paymenterBank ||
+                            ...((item.paymenterBank ||
                               item.accountNumber ||
                               item.accountHolderName ||
                               item.refundRequestedAt ||
-                              item.refundDate ||
-                              form.paymenterBank.trim() ||
-                              form.accountNumber.trim() ||
-                              form.accountHolderName.trim()) && {
-                              paymenterBank: form.paymenterBank.trim(),
-                              accountNumber: form.accountNumber.trim(),
-                              accountHolderName: form.accountHolderName.trim(),
-                            },
-                            ...(displayCashReceipt && !effectiveCashReceiptId && {
-                              cashReceiptRequest: {
-                                purpose: displayCashReceipt.purpose,
-                                requesterType: displayCashReceipt.requesterType,
-                                type: displayCashReceipt.type,
-                                value: displayCashReceipt.value,
-                                adminAnswer: cashReceiptAdminAnswer,
-                                status: cashReceiptStatus,
+                              item.refundDate) && {
+                              refundRequest: {
+                                paymenterBank: form.paymenterBank.trim(),
+                                accountNumber: form.accountNumber.trim(),
+                                accountHolderName: form.accountHolderName.trim(),
                               },
                             }),
+                            ...(displayCashReceipt &&
+                              !effectiveCashReceiptId && {
+                                cashReceiptRequest: toRegistrationCashReceiptRequestBody({
+                                  ...displayCashReceipt,
+                                  adminAnswer: cashReceiptAdminAnswer,
+                                  status: cashReceiptStatus,
+                                }),
+                              }),
                           };
                           await updateRegistrationDetail(registrationId, payload);
+
                           if (effectiveCashReceiptId && displayCashReceipt) {
                             await updateCashReceipt(effectiveCashReceiptId, {
                               adminAnswer: cashReceiptAdminAnswer,
@@ -1290,10 +1294,7 @@ export default function RegistrationDetailDrawer({
                             className="w-full rounded border px-2 py-1 font-mono"
                             value={form.accountNumber}
                             onChange={(e) =>
-                              setForm((prev) => ({
-                                ...prev,
-                                accountNumber: e.target.value.replace(/\D/g, ''),
-                              }))
+                              setForm((prev) => ({ ...prev, accountNumber: e.target.value }))
                             }
                             placeholder="숫자만 입력"
                           />

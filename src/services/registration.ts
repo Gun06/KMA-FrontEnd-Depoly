@@ -445,10 +445,38 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
   };
 }
 
-// 신청 개별 수정 (상세 편집 저장)
+// 신청 개별 수정 (상세 편집 저장) — PATCH /api/v1/registration/{registrationId}
+export type RegistrationRefundRequestPayload = {
+  paymenterBank: string;
+  accountNumber: string;
+  accountHolderName: string;
+};
+
+export type RegistrationCashReceiptRequestBody = {
+  purpose: 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
+  requesterType: 'INDIVIDUAL' | 'BUSINESS';
+  identifierType: 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';
+  cashReceiptRequestValue: string;
+  adminAnswer?: string | null;
+  status: 'REQUESTED' | 'COMPLETED' | 'CANCELED';
+};
+
+export function toRegistrationCashReceiptRequestBody(
+  request: RegistrationCashReceiptRequest
+): RegistrationCashReceiptRequestBody {
+  return {
+    purpose: request.purpose,
+    requesterType: request.requesterType,
+    identifierType: request.type,
+    cashReceiptRequestValue: request.value.replace(/\D/g, ''),
+    adminAnswer: request.adminAnswer ?? '',
+    status: request.status,
+  };
+}
+
 export type RegistrationUpdatePayload = {
   eventCategoryId?: string;
-  organizationId?: string | null; // 단체 ID (null 가능)
+  organizationId?: string | null;
   userName?: string;
   paymenterName?: string;
   birth?: string;
@@ -458,22 +486,13 @@ export type RegistrationUpdatePayload = {
   guardianRelationship?: string | null;
   paymentStatus?: 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   address?: string;
-  addressDetail?: string; // 상세주소 추가
+  addressDetail?: string;
   memo?: string;
   detailMemo?: string;
-  souvenirJsonList?: Array<{ souvenirId: string; selectedSize: string }>; // 백엔드 스펙 명칭 기준
+  souvenirJsonList?: Array<{ souvenirId: string; selectedSize: string }>;
   amount?: number;
-  paymenterBank?: string;
-  accountNumber?: string;
-  accountHolderName?: string;
-  cashReceiptRequest?: {
-    purpose: 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
-    requesterType: 'INDIVIDUAL' | 'BUSINESS';
-    type: 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';
-    value: string;
-    adminAnswer?: string | null;
-    status: 'REQUESTED' | 'COMPLETED' | 'CANCELED';
-  };
+  refundRequest?: RegistrationRefundRequestPayload;
+  cashReceiptRequest?: RegistrationCashReceiptRequestBody;
 };
 
 export async function updateRegistrationDetail(
@@ -507,9 +526,7 @@ export async function updateRegistrationDetail(
       ...(payload.detailMemo !== undefined && { detailMemo: payload.detailMemo }),
       ...(payload.souvenirJsonList && { souvenirJsonList: payload.souvenirJsonList }),
       ...(typeof payload.amount === 'number' && { amount: payload.amount }),
-      ...(payload.paymenterBank !== undefined && { paymenterBank: payload.paymenterBank }),
-      ...(payload.accountNumber !== undefined && { accountNumber: payload.accountNumber }),
-      ...(payload.accountHolderName !== undefined && { accountHolderName: payload.accountHolderName }),
+      ...(payload.refundRequest && { refundRequest: payload.refundRequest }),
       ...(payload.cashReceiptRequest && { cashReceiptRequest: payload.cashReceiptRequest }),
     };
 
