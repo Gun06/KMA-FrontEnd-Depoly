@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MainPageAdvertiseItem, SponsorBanner } from '@/types/event';
+import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
 
 /* ─── 공용 상수 ─── */
 const PANEL_W = 200;
@@ -24,12 +25,13 @@ const SP_ASPECT = 9 / 16;
 interface AdHoverInfo { item: MainPageAdvertiseItem; top: number; }
 interface SpHoverInfo { item: SponsorBanner; top: number; }
 
-/** 헤더와 동일한 다크 프로스트 글라스 */
-const GLASS_STYLE: React.CSSProperties = {
-  backgroundColor: 'rgba(15,15,15,0.68)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-};
+/** 헤더 pill과 동일한 다크 프로스트 글라스 */
+const GLASS_STYLE = MAIN_GLASS_STYLE;
+
+/** 글라스 배경 위 제목 강조색 — 대회안내(녹색)과 대비·가독성 맞춤 */
+const PANEL_ACCENT_AD = '#4ade80';
+/** 대회안내(#4ade80)와 같은 밝기·형광감 — cyan-400 */
+const PANEL_ACCENT_SPONSOR = '#22d3ee';
 
 /* ─── 패널 헤더 ─── */
 function PanelHeader({ title, accent, collapsed, onToggle }: {
@@ -369,7 +371,7 @@ export default function FloatingPanels() {
   }, []);
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>('sp');
+  const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>(null);
   const [adPopInfo, setAdPopInfo] = useState<AdHoverInfo | null>(null);
   const [spPopInfo, setSpPopInfo] = useState<SpHoverInfo | null>(null);
   const adLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -401,7 +403,7 @@ export default function FloatingPanels() {
 
       {/* 대회안내 패널 — 제목만 헤더 pill 글라스, 본문은 펼쳤을 때만 글라스 */}
       <div className="pointer-events-auto flex flex-col gap-2">
-        <PanelHeader title="대회안내" accent="#4ade80" collapsed={openPanel !== 'ad'}
+        <PanelHeader title="대회안내" accent={PANEL_ACCENT_AD} collapsed={openPanel !== 'ad'}
           onToggle={() => { setAdPopInfo(null); togglePanel('ad'); }} />
         {openPanel === 'ad' && (
           <div className="overflow-hidden rounded-2xl p-2 ring-1 ring-white/15" style={GLASS_STYLE}>
@@ -420,7 +422,7 @@ export default function FloatingPanels() {
 
       {/* 스폰서 패널 */}
       <div className="pointer-events-auto flex flex-col gap-2">
-        <PanelHeader title="SPONSOR" accent="#60a5fa" collapsed={openPanel !== 'sp'}
+        <PanelHeader title="SPONSOR" accent={PANEL_ACCENT_SPONSOR} collapsed={openPanel !== 'sp'}
           onToggle={() => { setSpPopInfo(null); togglePanel('sp'); }} />
         {openPanel === 'sp' && (
           <div className="overflow-hidden rounded-2xl p-2 ring-1 ring-white/15" style={GLASS_STYLE}>

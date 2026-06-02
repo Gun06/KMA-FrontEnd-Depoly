@@ -990,14 +990,14 @@ function HeroMobileBelowHero({
   return (
     <section
       className="relative z-[11] border-t border-gray-200/80 bg-white lg:hidden"
-      aria-label="주요대회일정"
+      aria-label="주요 대회 일정"
     >
       <div className="mx-auto max-w-[1920px] space-y-8 px-4 py-8 md:space-y-10 md:px-6 md:py-10">
         <div>
           <MobileScheduleSectionHeader
             title={
               <h2 className="font-giants text-[22px] text-gray-900 md:text-[28px]">
-                주요대회일정
+                주요 대회 일정
               </h2>
             }
           />
@@ -1418,8 +1418,8 @@ function FloatingSidePanels({ advertiseItems, advertiseLoading, sponsorItems, sp
   sponsorLoading: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  // 기본: 스폰서 펼침, 대회안내 접힘. 동시에 둘 다 열 수 없음, 둘 다 접는 것은 가능
-  const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>('sp');
+  // 기본: 둘 다 접힘. 동시에 둘 다 열 수 없음
+  const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>(null);
   const [adPopInfo, setAdPopInfo] = useState<AdHoverInfo | null>(null);
   const [spPopInfo, setSpPopInfo] = useState<SpHoverInfo | null>(null);
   const adLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

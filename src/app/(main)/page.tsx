@@ -6,7 +6,7 @@ import EventSection from '@/components/main/EventSection'
 import NoticeMagazineSection from '@/layouts/main/NoticeMagazineSection'
 import FeaturesSection from '@/components/main/FeaturesSection'
 import MainHomeHero from '@/components/main/MainHomeHero'
-import MainSponsorMarqueeStrip from '@/components/main/MainSponsorMarqueeStrip'
+import MainSponsorSection from '@/components/main/MainSponsorSection'
 
 export default function AssociationPage() {
   return (
@@ -15,10 +15,14 @@ export default function AssociationPage() {
         <MainHomeHero />
 
         <div className="border-t border-zinc-100 bg-white">
-          <MainSponsorMarqueeStrip />
           <div className="mx-auto max-w-[1920px] px-4 pt-10 pb-0 md:px-6 lg:px-[6vw]">
-            <div className="flex flex-col gap-10">
-              <EventSection variant="embedded" />
+            <div className="flex flex-col">
+              <div className="mb-10">
+                <EventSection variant="embedded" />
+              </div>
+              <div className="mb-10">
+                <MainSponsorSection variant="embedded" />
+              </div>
               <GallerySection variant="embedded" />
             </div>
           </div>

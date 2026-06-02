@@ -10,7 +10,6 @@ interface GalleryCardProps {
   title: string;
   date: string;
   disableAnimation?: boolean;
-  /** 메인 2열(가로 스크롤): 뷰포트 IO에 안 잡혀 카드가 숨는 문제 방지 + 스트립 높이에 맞춤 */
   variant?: 'default' | 'embedded';
   onClick?: () => void;
 }
@@ -31,131 +30,104 @@ export default function GalleryCard({
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (revealImmediately) {
-      setIsVisible(true);
-      return;
-    }
-
+    if (revealImmediately) { setIsVisible(true); return; }
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px',
-      }
+      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
     );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
+    if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, [revealImmediately]);
 
+  const cardH = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
+  const R = '12px';
+  const R_BR = '16px';
+
   return (
+    /* 단일 overflow-hidden 컨테이너 — EventCard 구조와 동일 */
     <div
       ref={cardRef}
-      className={`w-[235px] md:w-[300px] ${
-        embedded ? 'h-[300px] md:h-[360px]' : 'h-[300px] md:h-[380px]'
-      } bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] overflow-hidden border-2 border-gray-50 transition-opacity duration-500 ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      }`}
+      className={`relative w-[200px] md:w-[295px] ${cardH} overflow-hidden bg-gray-100 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      style={{
+        borderRadius: `${R} ${R} ${R_BR} ${R}`,
+      }}
     >
-      {/* 이미지 영역 */}
-      <div className="relative w-full h-full overflow-hidden border-2 border-gray-50 pointer-events-none select-none">
-        {typeof imageSrc === 'string' ? (
-          imageSrc ? (
-            <Image
-              src={imageSrc}
-              alt={imageAlt}
-              fill
-              className="object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] border-2 border-gray-50 pointer-events-none select-none"
-              draggable={false}
-              unoptimized
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gray-200 flex items-center justify-center pointer-events-none select-none">
-              <span className="text-gray-400 text-sm">이미지 없음</span>
-            </div>
-          )
-        ) : (
+      {/* 이미지 */}
+      {typeof imageSrc === 'string' ? (
+        imageSrc ? (
           <Image
             src={imageSrc}
             alt={imageAlt}
             fill
-            className="object-cover rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] border-2 border-gray-50 pointer-events-none select-none"
-            sizes="(max-width: 768px) 235px, 300px"
+            className="object-cover select-none pointer-events-none"
             draggable={false}
+            unoptimized
           />
-        )}
-        {/* 어두운 투명 배경 오버레이 */}
-        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-[16px] md:rounded-br-[25px] border-2 border-gray-50"></div>
-
-        {/* 오른쪽 상단 태그 */}
-        {subtitle && (
-          <div className="absolute top-0 right-0 w-[120px] md:w-[150px] h-[40px] md:h-[50px] bg-gray-50 rounded-tl-none rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px] rounded-br-none border-gray-50 z-20 overflow-hidden pointer-events-none select-none">
-            <div
-              className="absolute top-0 right-0 w-[110px] md:w-[140px] h-[32px] md:h-[40px] rounded-[12px] md:rounded-[15px] flex items-center justify-center z-30"
-              style={{ backgroundColor: '#256EF4' }}
-            >
-              <span className="text-[10px] md:text-xs font-bold text-white truncate px-2 select-none">
-                {subtitle}
-              </span>
-            </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+            <span className="text-sm text-gray-400">이미지 없음</span>
           </div>
-        )}
+        )
+      ) : (
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          className="object-cover select-none pointer-events-none"
+          sizes="(max-width: 768px) 200px, 295px"
+          draggable={false}
+        />
+      )}
 
-        {/* 타이틀과 날짜 */}
-        <div className="absolute bottom-6 md:bottom-10 left-0 right-0 pl-3 md:pl-4 pr-8 md:pr-12 text-white pointer-events-none select-none">
-          <h3
-            className="text-lg md:text-2xl font-semibold mb-1 md:mb-2 font-giants text-left"
-            title={title}
+      {/* 어두운 오버레이 */}
+      <div className="pointer-events-none absolute inset-0 bg-black/50" />
+
+      {/* 태그 — EventCard 접수마감 배지와 동일한 패턴 */}
+      {subtitle && (
+        <div
+            className="absolute left-0 top-0 z-10 px-3 py-1 text-[10px] font-bold leading-[1.15] text-white select-none md:px-4 md:py-1.5 md:text-[13px]"
             style={{
-              display: 'block',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              width: '100%',
-              userSelect: 'none',
-              pointerEvents: 'none',
+              backgroundColor: '#256EF4',
+              borderTopLeftRadius: R,
+              borderBottomRightRadius: '8px',
             }}
           >
-            {title}
-          </h3>
-          <p className="text-xs md:text-sm text-gray-200 text-left select-none">{date}</p>
+            <span className="block max-w-[120px] truncate md:max-w-[195px]">{subtitle}</span>
         </div>
+      )}
 
-        {/* 오른쪽 하단 화살표 버튼 - 클릭 가능한 유일한 영역 */}
-        <div className="absolute bottom-0 right-0 w-[56px] md:w-[70px] h-[56px] md:h-[70px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-tr-none rounded-bl-none rounded-br-[16px] md:rounded-br-[15px] border-gray-50 z-30 overflow-visible pointer-events-auto">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClick?.();
-            }}
-            className="absolute bottom-0 right-0 w-[48px] md:w-[60px] h-[48px] md:h-[60px] bg-black rounded-full flex items-center justify-center transition-all duration-300 ease-out cursor-pointer group hover:bg-gray-600 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            aria-label="갤러리 상세 보기"
-          >
-            <svg
-              className="w-5 h-5 md:w-7 md:h-7 text-white pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            <div className="absolute inset-0 bg-black rounded-full opacity-0 group-hover:opacity-15 group-active:opacity-25 transition-opacity duration-300 ease-out blur-sm pointer-events-none"></div>
-          </button>
-        </div>
+      {/* 타이틀 / 날짜 */}
+      <div className="pointer-events-none absolute bottom-3 left-0 right-0 select-none pl-3 pr-10 text-white leading-normal md:bottom-6 md:pl-4">
+        <h3
+          className="mb-0.5 block overflow-hidden text-ellipsis whitespace-nowrap font-giants text-[15px] font-semibold leading-tight md:text-xl"
+          title={title}
+        >
+          {title}
+        </h3>
+        <p className="text-[11px] leading-tight text-gray-200 md:text-xs">{date}</p>
+      </div>
+
+      {/* 우하단 화살표 버튼 */}
+      <div
+        className="absolute bottom-0 right-0 z-10 flex items-end justify-end"
+        style={{
+          width: '44px',
+          height: '44px',
+          backgroundColor: '#f9fafb',
+          borderTopLeftRadius: '12px',
+          borderBottomRightRadius: R_BR,
+        }}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick?.(); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/85 transition-colors hover:bg-black active:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+          aria-label="갤러리 상세 보기"
+        >
+          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   );

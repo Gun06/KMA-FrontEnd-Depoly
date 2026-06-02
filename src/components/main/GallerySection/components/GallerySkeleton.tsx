@@ -8,7 +8,7 @@ interface GallerySkeletonProps {
 }
 
 export default function GallerySkeleton({ count = 9, embedded = false }: GallerySkeletonProps) {
-  const cardH = embedded ? 'h-[300px] md:h-[360px]' : 'h-[300px] md:h-[380px]';
+  const cardH = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
   return (
     <div
       className={`flex h-full w-max min-w-full items-center leading-[0] ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20'}`}
@@ -17,25 +17,24 @@ export default function GallerySkeleton({ count = 9, embedded = false }: Gallery
         {Array.from({ length: count }).map((_, idx) => (
           <li key={`skeleton-${idx}`} className="shrink-0">
             <div
-              className={`w-[235px] md:w-[300px] ${cardH} relative overflow-hidden rounded-tl-[12px] rounded-tr-[12px] rounded-bl-[12px] rounded-br-[16px] border-2 border-gray-50 bg-gray-100 animate-pulse md:rounded-tl-[15px] md:rounded-tr-[15px] md:rounded-bl-[15px] md:rounded-br-[25px]`}
+              className={`w-[200px] md:w-[295px] ${cardH} relative overflow-hidden rounded-tl-[12px] rounded-tr-[12px] rounded-bl-[12px] rounded-br-[16px] bg-gray-100 animate-pulse`}
             >
               {/* 이미지 + 오버레이 영역 */}
               <div className="absolute inset-0 bg-gray-300" />
               <div className="absolute inset-0 bg-black/35" />
 
-              {/* 오른쪽 상단 태그 스켈레톤 */}
-              <div className="absolute top-0 right-0 w-[120px] md:w-[150px] h-[40px] md:h-[50px] bg-gray-50 rounded-tr-[12px] md:rounded-tr-[15px] rounded-bl-[12px] md:rounded-bl-[15px]" />
-              <div className="absolute top-0.5 right-0.5 w-[110px] md:w-[140px] h-[32px] md:h-[40px] bg-blue-500/80 rounded-[12px] md:rounded-[15px]" />
+              {/* 좌상단 태그 스켈레톤 */}
+              <div className="absolute left-0 top-0 h-7 w-[88px] rounded-br-[8px] bg-blue-500/80" />
 
               {/* 하단 텍스트 스켈레톤 */}
-              <div className="absolute bottom-6 md:bottom-10 left-0 right-0 pl-3 md:pl-4 pr-8 md:pr-12 space-y-2">
-                <div className="h-6 md:h-8 w-[72%] bg-white/60 rounded" />
-                <div className="h-3 md:h-4 w-[46%] bg-white/45 rounded" />
+              <div className="absolute bottom-3 left-0 right-0 space-y-2 pl-3 pr-10 md:bottom-10 md:pl-4 md:pr-12">
+                <div className="h-5 w-[72%] rounded bg-white/60 md:h-8" />
+                <div className="h-3 w-[46%] rounded bg-white/45 md:h-4" />
               </div>
 
               {/* 오른쪽 하단 버튼 스켈레톤 */}
-              <div className="absolute bottom-0 right-0 w-[56px] md:w-[70px] h-[56px] md:h-[70px] bg-gray-50 rounded-tl-[12px] md:rounded-tl-[15px] rounded-br-[16px] md:rounded-br-[15px]" />
-              <div className="absolute bottom-0 right-0 w-[48px] md:w-[60px] h-[48px] md:h-[60px] bg-gray-700 rounded-full" />
+              <div className="absolute bottom-0 right-0 h-[44px] w-[44px] rounded-tl-[12px] rounded-br-[16px] bg-gray-50" />
+              <div className="absolute bottom-0 right-0 h-9 w-9 rounded-full bg-gray-700" />
             </div>
           </li>
         ))}

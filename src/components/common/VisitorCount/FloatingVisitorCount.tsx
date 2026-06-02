@@ -3,12 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Users, X } from 'lucide-react';
 import { useMainVisitorCount, useEventVisitorCount } from '@/hooks/useVisitorCount';
-
-const GLASS_STYLE: React.CSSProperties = {
-  backgroundColor: 'rgba(15,15,15,0.78)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-};
+import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
 
 type FloatingVisitorCountProps = {
   variant: 'main' | 'event';
@@ -82,7 +77,7 @@ export default function FloatingVisitorCount({ variant, eventId }: FloatingVisit
       >
         <div
           className={PANEL_CLASS[variant]}
-          style={variant === 'main' ? GLASS_STYLE : undefined}
+          style={variant === 'main' ? MAIN_GLASS_STYLE : undefined}
         >
           <div
             className={`mb-2.5 flex items-center justify-between gap-2 border-b pb-2 ${
@@ -126,7 +121,7 @@ export default function FloatingVisitorCount({ variant, eventId }: FloatingVisit
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={variant === 'main' ? MAIN_BUTTON_CLASS : EVENT_BUTTON_CLASS}
-        style={variant === 'main' ? GLASS_STYLE : undefined}
+        style={variant === 'main' ? MAIN_GLASS_STYLE : undefined}
         aria-expanded={open}
         aria-label="방문자 수 보기"
       >

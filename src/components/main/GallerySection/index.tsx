@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import GallerySkeleton from './components/GallerySkeleton';
 import GalleryList from './components/GalleryList';
-import MoreButton from './components/MoreButton';
 import { useMainPageGallery } from './hooks/useMainPageGallery';
 import type { GalleryItem } from '@/app/(main)/schedule/gallery/types';
 
 const GALLERY_PAGE_PATH = '/schedule/gallery';
 const SKELETON_COUNT = 9;
+const GALLERY_SECONDS_PER_CARD = 3.7;
 
 interface GallerySectionProps {
   className?: string;
@@ -23,6 +23,9 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const isPausedRef = useRef(false);
 
   const { data, isPending, isFetching } = useMainPageGallery();
   const galleryItems = useMemo(() => data ?? [], [data]);
@@ -60,9 +63,71 @@ export default function GallerySection({ className, variant = 'default' }: Galle
     setIsDragging(false);
   };
 
+  const handleMarqueePause = () => {
+    isPausedRef.current = true;
+  };
+  const handleMarqueeResume = () => {
+    if (isDraggingRef.current) return;
+    isPausedRef.current = false;
+  };
+
   const embedded = variant === 'embedded';
   const sectionBg = embedded ? 'bg-white' : 'bg-gray-50';
-  const galleryHeight = embedded ? 'h-[300px] md:h-[360px]' : 'h-[330px] md:h-[405px]';
+  const galleryHeight = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
+  const loopItems = useMemo(() => {
+    if (displayedItems.length === 0) return [];
+    return Array.from({ length: Math.max(12, displayedItems.length * 3) }, (_, i) => displayedItems[i % displayedItems.length]);
+  }, [displayedItems]);
+  useEffect(() => {
+    if (!trackRef.current || !listRef.current || loopItems.length === 0 || showGallerySkeleton) return;
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+    if (isMobile) return;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    let raf = 0;
+    let offset = 0;
+    let listWidth = listRef.current.scrollWidth;
+    let speedPerMs = 0;
+    let lastTs = 0;
+
+    const updateMetrics = () => {
+      if (!listRef.current) return;
+      listWidth = listRef.current.scrollWidth;
+      const firstLi = listRef.current.querySelector('li');
+      const firstWidth = firstLi instanceof HTMLElement ? firstLi.offsetWidth : 0;
+      const gapPx = Number.parseFloat(getComputedStyle(listRef.current).columnGap || '0') || 0;
+      const travelPx = firstWidth + gapPx;
+      speedPerMs = travelPx > 0 ? travelPx / (GALLERY_SECONDS_PER_CARD * 1000) : 0;
+    };
+    updateMetrics();
+    const ro = new ResizeObserver(updateMetrics);
+    ro.observe(listRef.current);
+
+    const tick = (ts: number) => {
+      if (!trackRef.current || listWidth <= 0) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      if (lastTs === 0) lastTs = ts;
+      const delta = ts - lastTs;
+      lastTs = ts;
+
+      if (!isPausedRef.current && !isDraggingRef.current && speedPerMs > 0) {
+        offset -= delta * speedPerMs;
+        if (Math.abs(offset) >= listWidth) offset += listWidth;
+        trackRef.current.style.transform = `translate3d(${offset}px,0,0)`;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [loopItems.length, showGallerySkeleton]);
 
   return (
     <>
@@ -85,8 +150,8 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       <div
         className={
           embedded
-            ? `relative flex h-[300px] w-full min-w-0 items-center justify-center md:h-[360px] ${sectionBg}`
-            : `relative w-screen left-1/2 -translate-x-1/2 h-[330px] md:h-[405px] flex items-center justify-center bg-gray-50`
+            ? `relative mt-4 flex h-[200px] w-full min-w-0 items-center justify-center md:h-[270px] ${sectionBg}`
+            : `relative mt-4 w-screen left-1/2 -translate-x-1/2 h-[200px] md:h-[285px] flex items-center justify-center bg-gray-50`
         }
       >
         <div className={embedded ? 'w-full min-w-0 px-0' : 'w-full max-w-6xl px-4 md:px-6'}>
@@ -116,7 +181,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
             ref={scrollRef}
             role="region"
             aria-label="대회사진 갤러리 카드 목록"
-            className={`absolute left-0 right-0 top-0 ${galleryHeight} min-w-0 overflow-x-auto overflow-y-hidden scrollbar-hide z-10 transition-opacity duration-300 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'} ${!showGallerySkeleton && displayedItems.length === 0 ? 'pointer-events-none' : ''}`}
+            className={`absolute left-0 right-0 top-0 ${galleryHeight} min-w-0 z-10 transition-opacity duration-300 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'} ${!showGallerySkeleton && displayedItems.length === 0 ? 'pointer-events-none' : ''}`}
             style={{
               touchAction: 'none',
               opacity: showGallerySkeleton || displayedItems.length === 0 ? 0 : 1,
@@ -129,26 +194,45 @@ export default function GallerySection({ className, variant = 'default' }: Galle
             onTouchMove={handlePointerMove}
             onTouchEnd={handlePointerUp}
           >
-            <div className="flex h-full min-h-0 w-max min-w-full items-center leading-[0]">
-              <ul
-                className={`flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
+            <div className="flex h-full min-h-0 items-center">
+              <div
+                className="relative min-w-0 flex-1 overflow-hidden"
+                onMouseEnter={handleMarqueePause}
+                onMouseLeave={handleMarqueeResume}
+                onFocusCapture={handleMarqueePause}
+                onBlurCapture={handleMarqueeResume}
               >
-                <GalleryList
-                  items={displayedItems}
-                  variant={embedded ? 'embedded' : 'default'}
-                  onItemClick={handleGalleryClick}
-                />
-              </ul>
-              {displayedItems.length > 0 ? <MoreButton embedded={embedded} /> : null}
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
+                <div ref={trackRef} className="flex h-full w-max items-center will-change-transform">
+                  <ul
+                    ref={listRef}
+                    className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
+                  >
+                    <GalleryList
+                      items={loopItems}
+                      variant={embedded ? 'embedded' : 'default'}
+                      onItemClick={handleGalleryClick}
+                    />
+                  </ul>
+                  <ul
+                    className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
+                    aria-hidden
+                  >
+                    <GalleryList
+                      items={loopItems}
+                      variant={embedded ? 'embedded' : 'default'}
+                      onItemClick={handleGalleryClick}
+                    />
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 기본 레이아웃만 하단 패딩 — embedded(메인 2열)는 공지/문의와 간격 중복 방지로 생략 */}
-      {!embedded && (
-        <div className={`relative pb-8 ${sectionBg} w-screen left-1/2 -translate-x-1/2`} />
-      )}
+      {/* 갤러리 하단 패딩 제거 */}
     </>
   );
 }

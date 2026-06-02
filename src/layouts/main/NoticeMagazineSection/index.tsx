@@ -4,7 +4,7 @@ import NoticeSection from '@/components/main/NoticeSection';
 
 export default function NoticeMagazineSection() {
   return (
-    <section className="bg-white pt-6 pb-6 md:pt-8 md:pb-8 lg:pt-10 lg:pb-6">
+    <section className="bg-white pt-10 pb-6 md:pt-10 md:pb-8 lg:pt-10 lg:pb-6">
       <div className="mx-auto max-w-[1920px] px-3 sm:px-4 md:px-5 lg:px-[6vw]">
         {/*
         ─── 기존: 공지 + 문의 2열 ───

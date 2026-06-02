@@ -23,6 +23,7 @@ import { tokenService } from '@/utils/tokenService';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
 import { NotificationDropdown } from '@/app/(main)/mypage/notifications/components/NotificationDropdown';
+import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -103,11 +104,11 @@ const dropdownVariants = {
 };
 
 /** 메가 패널: transform 레이어가 부모 backdrop 합성을 깨지 않도록 opacity만 */
-/** 세 pill 공통 — 밝은/어두운 배경 모두에서 잘 보이는 다크 프로스트 글라스 */
-const GLASS_PILL_STYLE: React.CSSProperties = {
-  backgroundColor: 'rgba(15,15,15,0.68)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+/** 세 pill 공통 — MAIN_GLASS_STYLE과 동일 (플로팅 패널과 통일) */
+const GLASS_PILL_STYLE = MAIN_GLASS_STYLE;
+const SUBMENU_GLASS_STYLE = {
+  ...MAIN_GLASS_STYLE,
+  backgroundColor: 'rgba(15, 15, 15, 0.56)',
 };
 const APP_INSTALL_BANNER_STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 
@@ -421,11 +422,12 @@ export default function Header() {
                             <Link
                               href={item.href}
                               onClick={() => updateState({ subMenuOpen: null })}
-                              className={`flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${pathname === item.href
-                                  ? 'bg-white text-gray-900 shadow-md ring-white/30'
-                                  : 'ring-white/15 text-white/90 hover:brightness-125'
-                                }`}
-                              style={pathname === item.href ? undefined : GLASS_PILL_STYLE}
+                              className={`relative flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
+                                pathname === item.href
+                                  ? 'bg-white text-gray-900 shadow-md ring-black/15'
+                                  : 'ring-black/15 shadow-[0_2px_10px_rgba(0,0,0,0.18)] text-white/95 hover:-translate-y-[1px] hover:bg-white/20 hover:text-white hover:ring-white/35 hover:shadow-[0_6px_14px_rgba(0,0,0,0.2)] focus-visible:-translate-y-[1px] focus-visible:bg-white/20 focus-visible:text-white focus-visible:ring-white/35 focus-visible:shadow-[0_6px_14px_rgba(0,0,0,0.2)]'
+                              } focus-visible:outline-none focus-visible:ring-2`}
+                              style={pathname === item.href ? undefined : SUBMENU_GLASS_STYLE}
                             >
                               {item.label}
                             </Link>
