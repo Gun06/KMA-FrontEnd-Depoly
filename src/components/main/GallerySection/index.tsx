@@ -189,7 +189,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
             aria-label="대회사진 갤러리 카드 목록"
             className={`absolute left-0 right-0 top-0 ${galleryHeight} min-w-0 z-10 transition-opacity duration-300 ${
               isMobile
-                ? 'overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]'
+                ? 'overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
                 : isDragging
                   ? 'cursor-grabbing select-none'
                   : 'cursor-grab'

@@ -224,7 +224,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
           aria-label="주요 대회 일정 카드 목록"
           className={`flex h-[215px] md:h-[245px] ${
             isMobile
-              ? 'min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]'
+              ? 'min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
               : isDragging
                 ? 'cursor-grabbing select-none'
                 : 'cursor-grab'
