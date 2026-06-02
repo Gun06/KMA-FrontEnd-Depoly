@@ -16,13 +16,9 @@ export default function AssociationPage() {
 
         <div className="border-t border-zinc-100 bg-white">
           <div className="mx-auto max-w-[1920px] px-4 pt-10 pb-0 md:px-6 lg:px-[6vw]">
-            <div className="flex flex-col">
-              <div className="mb-10">
-                <EventSection variant="embedded" />
-              </div>
-              <div className="mb-10">
-                <MainSponsorSection variant="embedded" />
-              </div>
+            <div className="flex flex-col gap-10 bg-white">
+              <EventSection variant="embedded" />
+              <MainSponsorSection variant="embedded" />
               <GallerySection variant="embedded" />
             </div>
           </div>

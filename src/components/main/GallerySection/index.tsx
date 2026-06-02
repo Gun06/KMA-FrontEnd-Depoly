@@ -6,6 +6,7 @@ import GallerySkeleton from './components/GallerySkeleton';
 import GalleryList from './components/GalleryList';
 import { useMainPageGallery } from './hooks/useMainPageGallery';
 import type { GalleryItem } from '@/app/(main)/schedule/gallery/types';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const GALLERY_PAGE_PATH = '/schedule/gallery';
 const SKELETON_COUNT = 9;
@@ -18,6 +19,7 @@ interface GallerySectionProps {
 }
 
 export default function GallerySection({ className, variant = 'default' }: GallerySectionProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
@@ -79,9 +81,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
     return Array.from({ length: Math.max(12, displayedItems.length * 3) }, (_, i) => displayedItems[i % displayedItems.length]);
   }, [displayedItems]);
   useEffect(() => {
-    if (!trackRef.current || !listRef.current || loopItems.length === 0 || showGallerySkeleton) return;
-    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-    if (isMobile) return;
+    if (isMobile || !trackRef.current || !listRef.current || loopItems.length === 0 || showGallerySkeleton) return;
     const prefersReducedMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -127,11 +127,11 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [loopItems.length, showGallerySkeleton]);
+  }, [isMobile, loopItems.length, showGallerySkeleton]);
 
   return (
     <>
-      <div className={`${sectionBg} ${embedded ? 'pt-[10px]' : 'pt-8'} ${className || ''}`}>
+      <div className={`${sectionBg} ${embedded ? 'pt-[10px] pb-5' : 'pt-8'} ${className || ''}`}>
         <div className={embedded ? 'w-full min-w-0' : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10'}>
           <div className="flex items-end justify-between">
             <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
@@ -145,15 +145,14 @@ export default function GallerySection({ className, variant = 'default' }: Galle
             </Link>
           </div>
         </div>
-      </div>
 
-      <div
-        className={
-          embedded
-            ? `relative mt-4 flex h-[200px] w-full min-w-0 items-center justify-center md:h-[270px] ${sectionBg}`
-            : `relative mt-4 w-screen left-1/2 -translate-x-1/2 h-[200px] md:h-[285px] flex items-center justify-center bg-gray-50`
-        }
-      >
+        <div
+          className={
+            embedded
+              ? `relative mt-4 flex h-[200px] w-full min-w-0 items-center justify-center md:h-[270px]`
+              : `relative mt-4 w-screen left-1/2 -translate-x-1/2 h-[200px] md:h-[285px] flex items-center justify-center bg-gray-50`
+          }
+        >
         <div className={embedded ? 'w-full min-w-0 px-0' : 'w-full max-w-6xl px-4 md:px-6'}>
           {showGallerySkeleton && (
             <div
@@ -181,54 +180,77 @@ export default function GallerySection({ className, variant = 'default' }: Galle
             ref={scrollRef}
             role="region"
             aria-label="대회사진 갤러리 카드 목록"
-            className={`absolute left-0 right-0 top-0 ${galleryHeight} min-w-0 z-10 transition-opacity duration-300 ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'} ${!showGallerySkeleton && displayedItems.length === 0 ? 'pointer-events-none' : ''}`}
+            className={`absolute left-0 right-0 top-0 ${galleryHeight} min-w-0 z-10 transition-opacity duration-300 ${
+              isMobile
+                ? 'overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]'
+                : isDragging
+                  ? 'cursor-grabbing select-none'
+                  : 'cursor-grab'
+            } ${!showGallerySkeleton && displayedItems.length === 0 ? 'pointer-events-none' : ''}`}
             style={{
-              touchAction: 'none',
+              ...(isMobile ? {} : { touchAction: 'none' }),
               opacity: showGallerySkeleton || displayedItems.length === 0 ? 0 : 1,
             }}
-            onMouseDown={handlePointerDown}
-            onMouseMove={handlePointerMove}
-            onMouseUp={handlePointerUp}
-            onMouseLeave={handlePointerUp}
-            onTouchStart={handlePointerDown}
-            onTouchMove={handlePointerMove}
-            onTouchEnd={handlePointerUp}
+            {...(isMobile
+              ? {}
+              : {
+                  onMouseDown: handlePointerDown,
+                  onMouseMove: handlePointerMove,
+                  onMouseUp: handlePointerUp,
+                  onMouseLeave: handlePointerUp,
+                  onTouchStart: handlePointerDown,
+                  onTouchMove: handlePointerMove,
+                  onTouchEnd: handlePointerUp,
+                })}
           >
-            <div className="flex h-full min-h-0 items-center">
-              <div
-                className="relative min-w-0 flex-1 overflow-hidden"
-                onMouseEnter={handleMarqueePause}
-                onMouseLeave={handleMarqueeResume}
-                onFocusCapture={handleMarqueePause}
-                onBlurCapture={handleMarqueeResume}
+            {isMobile ? (
+              <ul
+                className={`m-0 flex h-full w-max list-none items-center gap-3 px-0 ${embedded ? 'pl-0 pr-4' : 'pl-4 pr-4'}`}
               >
-                <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
-                <div ref={trackRef} className="flex h-full w-max items-center will-change-transform">
-                  <ul
-                    ref={listRef}
-                    className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
-                  >
-                    <GalleryList
-                      items={loopItems}
-                      variant={embedded ? 'embedded' : 'default'}
-                      onItemClick={handleGalleryClick}
-                    />
-                  </ul>
-                  <ul
-                    className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
-                    aria-hidden
-                  >
-                    <GalleryList
-                      items={loopItems}
-                      variant={embedded ? 'embedded' : 'default'}
-                      onItemClick={handleGalleryClick}
-                    />
-                  </ul>
+                <GalleryList
+                  items={displayedItems}
+                  variant={embedded ? 'embedded' : 'default'}
+                  onItemClick={handleGalleryClick}
+                />
+              </ul>
+            ) : (
+              <div className="flex h-full min-h-0 items-center">
+                <div
+                  className="relative min-w-0 flex-1 overflow-hidden"
+                  onMouseEnter={handleMarqueePause}
+                  onMouseLeave={handleMarqueeResume}
+                  onFocusCapture={handleMarqueePause}
+                  onBlurCapture={handleMarqueeResume}
+                >
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
+                  <div ref={trackRef} className="flex h-full w-max items-center will-change-transform">
+                    <ul
+                      ref={listRef}
+                      className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
+                    >
+                      <GalleryList
+                        items={loopItems}
+                        variant={embedded ? 'embedded' : 'default'}
+                        onItemClick={handleGalleryClick}
+                      />
+                    </ul>
+                    <ul
+                      className={`m-0 flex h-full list-none items-center gap-3 md:gap-6 px-0 ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20 pr-0'}`}
+                      aria-hidden
+                    >
+                      <GalleryList
+                        items={loopItems}
+                        variant={embedded ? 'embedded' : 'default'}
+                        onItemClick={handleGalleryClick}
+                      />
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
+        </div>
         </div>
       </div>
 

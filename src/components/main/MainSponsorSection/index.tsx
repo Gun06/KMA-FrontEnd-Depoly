@@ -9,8 +9,8 @@ interface MainSponsorSectionProps {
 }
 
 const SPONSOR_SECONDS_PER_LOGO = 2.0;
-const SPONSOR_TRAVEL_PX_PER_LOGO = 220;
-const LOGO_ROW_H_CLASS = 'h-[52px] md:h-[60px]';
+const SPONSOR_TRAVEL_PX_PER_LOGO = 200;
+const LOGO_ROW_H_CLASS = 'h-[52px] max-h-[52px] md:h-[60px] md:max-h-[60px]';
 const ITEM_SIDE_PAD_CLASS = '';
 
 /** 주요 대회 일정 `ul` px와 동일 — 고정 칸(회전해도 왼쪽 여백 유지) */
@@ -132,7 +132,7 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
   }
 
   return (
-    <section className={`bg-white ${isEmbedded ? 'pt-0 pb-0' : 'pt-8 pb-8'}`} aria-labelledby="main-sponsor-heading">
+    <section className={`bg-white ${isEmbedded ? 'pt-0 pb-5' : 'pt-8 pb-8'}`} aria-labelledby="main-sponsor-heading">
       <div className={isEmbedded ? 'w-full' : 'mx-auto max-w-[1920px] px-8 md:px-9 lg:px-10'}>
         <div className="flex items-end justify-between">
           <h2 id="main-sponsor-heading" className="font-giants text-[22px] md:text-[28px] text-gray-900">
@@ -148,12 +148,12 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
         <div className="flex" role="region" aria-label="스폰서 배너 목록">
           <div className={gutterClass} aria-hidden />
           <div
-            className="relative min-w-0 flex-1 overflow-hidden pb-5"
+            className={`relative min-w-0 flex-1 overflow-hidden ${LOGO_ROW_H_CLASS}`}
           >
             <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
             <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
             {loading ? (
-              <ul className={`flex h-full w-max list-none items-start gap-3 ${LOGO_ROW_H_CLASS}`}>
+              <ul className={`flex w-max list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <li key={`sp-sk-${i}`} className={`shrink-0 list-none ${ITEM_SIDE_PAD_CLASS}`}>
                     <div className="h-full w-24 animate-pulse rounded bg-gray-200 md:w-28" />
@@ -161,13 +161,13 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
                 ))}
               </ul>
             ) : (
-              <div ref={marqueeRef} className={`flex h-full w-max will-change-transform ${LOGO_ROW_H_CLASS}`}>
-                <ul ref={listRef} className="m-0 flex h-full list-none items-start gap-3">
+              <div ref={marqueeRef} className={`flex w-max will-change-transform ${LOGO_ROW_H_CLASS}`}>
+                <ul ref={listRef} className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
                   {loop.map((banner, idx) => (
                     <SponsorBannerItem key={`a-${banner.orderNo}-${idx}`} banner={banner} />
                   ))}
                 </ul>
-                <ul className="m-0 flex h-full list-none items-start gap-3" aria-hidden>
+                <ul className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`} aria-hidden>
                   {loop.map((banner, idx) => (
                     <SponsorBannerItem key={`b-${banner.orderNo}-${idx}`} banner={banner} />
                   ))}
@@ -183,19 +183,19 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
 
 function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
   const inner = (
-    <div className={`flex h-full items-center justify-center ${ITEM_SIDE_PAD_CLASS}`}>
+    <div className={`flex h-full items-center ${ITEM_SIDE_PAD_CLASS}`}>
       <SponsorLogo imageUrl={banner.imageUrl} />
     </div>
   );
 
   return (
-    <li className="m-0 h-full shrink-0 list-none p-0">
+    <li className={`m-0 shrink-0 list-none p-0 pr-1 md:pr-3 ${LOGO_ROW_H_CLASS}`}>
       {banner.url?.trim() ? (
         <a
           href={banner.url.trim()}
           target="_blank"
           rel="noopener noreferrer"
-          className="block h-full transition-opacity hover:opacity-90"
+          className="block transition-opacity hover:opacity-90"
         >
           {inner}
         </a>
@@ -208,15 +208,17 @@ function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
 
 function SponsorLogo({ imageUrl }: { imageUrl: string }) {
   return (
-    <Image
-      src={imageUrl}
-      alt="스폰서"
-      width={220}
-      height={60}
-      sizes="220px"
-      className="h-full w-auto max-w-none object-contain select-none"
-      draggable={false}
-      onDragStart={(e) => e.preventDefault()}
-    />
+    <div className="flex h-[52px] max-h-[52px] items-center overflow-hidden md:h-[60px] md:max-h-[60px]">
+      <Image
+        src={imageUrl}
+        alt="스폰서"
+        width={200}
+        height={52}
+        sizes="(max-width: 1023px) 28vw, 140px"
+        className="block h-full max-h-full w-auto max-w-none object-contain object-center select-none"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+      />
+    </div>
   );
 }
