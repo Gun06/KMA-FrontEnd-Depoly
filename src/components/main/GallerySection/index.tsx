@@ -28,6 +28,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const trackRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const isPausedRef = useRef(false);
+  const offsetRef = useRef(0); // 애니메이션 offset을 ref로 관리
 
   const { data, isPending, isFetching } = useMainPageGallery();
   const galleryItems = useMemo(() => data ?? [], [data]);
@@ -44,33 +45,40 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('button, a, [role="button"]')) return;
-    if (!scrollRef.current) return;
+    if (!trackRef.current) return;
+    
+    // 애니메이션 일시정지
+    isPausedRef.current = true;
     isDraggingRef.current = true;
     setIsDragging(true);
+    
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     startXRef.current = clientX;
-    scrollLeftRef.current = scrollRef.current.scrollLeft;
+    
+    // 현재 offset을 드래그 시작 위치로 설정
+    scrollLeftRef.current = -offsetRef.current; // offset은 음수이므로 -를 붙여서 양수로
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDraggingRef.current || !scrollRef.current) return;
+    if (!isDraggingRef.current || !trackRef.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const diff = startXRef.current - clientX;
-    scrollRef.current.scrollLeft = scrollLeftRef.current + diff;
+    const newX = -(scrollLeftRef.current + diff);
+    trackRef.current.style.transform = `translateX(${newX}px)`;
     if ('touches' in e) e.preventDefault();
   };
 
   const handlePointerUp = () => {
+    if (!isDraggingRef.current || !trackRef.current) return;
+    
+    // 현재 위치를 offsetRef에 저장하여 애니메이션이 이어지도록
+    const transform = window.getComputedStyle(trackRef.current).transform;
+    const matrix = new DOMMatrix(transform);
+    offsetRef.current = matrix.m41; // translateX 값
+    
     isDraggingRef.current = false;
     setIsDragging(false);
-  };
-
-  const handleMarqueePause = () => {
-    isPausedRef.current = true;
-  };
-  const handleMarqueeResume = () => {
-    if (isDraggingRef.current) return;
-    isPausedRef.current = false;
+    isPausedRef.current = false; // 드래그 종료 시 애니메이션 재개
   };
 
   const embedded = variant === 'embedded';
@@ -87,7 +95,6 @@ export default function GallerySection({ className, variant = 'default' }: Galle
     if (prefersReducedMotion) return;
 
     let raf = 0;
-    let offset = 0;
     let listWidth = listRef.current.scrollWidth;
     let speedPerMs = 0;
     let lastTs = 0;
@@ -115,9 +122,9 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       lastTs = ts;
 
       if (!isPausedRef.current && !isDraggingRef.current && speedPerMs > 0) {
-        offset -= delta * speedPerMs;
-        if (Math.abs(offset) >= listWidth) offset += listWidth;
-        trackRef.current.style.transform = `translate3d(${offset}px,0,0)`;
+        offsetRef.current -= delta * speedPerMs;
+        if (Math.abs(offsetRef.current) >= listWidth) offsetRef.current += listWidth;
+        trackRef.current.style.transform = `translate3d(${offsetRef.current}px,0,0)`;
       }
       raf = requestAnimationFrame(tick);
     };
@@ -217,10 +224,6 @@ export default function GallerySection({ className, variant = 'default' }: Galle
               <div className="flex h-full min-h-0 items-center">
                 <div
                   className="relative min-w-0 flex-1 overflow-hidden"
-                  onMouseEnter={handleMarqueePause}
-                  onMouseLeave={handleMarqueeResume}
-                  onFocusCapture={handleMarqueePause}
-                  onBlurCapture={handleMarqueeResume}
                 >
                   <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
                   <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />

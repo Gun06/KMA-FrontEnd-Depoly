@@ -85,7 +85,7 @@ export default function GalleryCard({
       {/* 태그 — EventCard 접수마감 배지와 동일한 패턴 */}
       {subtitle && (
         <div
-            className="absolute left-0 top-0 z-10 px-3 py-1 text-[10px] font-bold leading-[1.15] text-white select-none md:px-4 md:py-1.5 md:text-[13px]"
+            className="absolute left-0 top-0 z-10 px-3 py-2 text-sm font-bold leading-[1.15] text-white select-none md:px-4 md:py-1.5 md:text-base"
             style={{
               backgroundColor: '#256EF4',
               borderTopLeftRadius: R,
