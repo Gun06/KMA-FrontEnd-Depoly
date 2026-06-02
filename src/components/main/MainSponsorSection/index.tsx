@@ -9,8 +9,9 @@ interface MainSponsorSectionProps {
 }
 
 const SPONSOR_SECONDS_PER_LOGO = 2.0;
+const SPONSOR_SECONDS_PER_LOGO_MOBILE = 4.0;
 const SPONSOR_TRAVEL_PX_PER_LOGO = 200;
-const LOGO_ROW_H_CLASS = 'h-[52px] max-h-[52px] md:h-[60px] md:max-h-[60px]';
+const LOGO_ROW_H_CLASS = 'h-[60px] max-h-[60px] md:h-[70px] md:max-h-[70px]';
 const ITEM_SIDE_PAD_CLASS = '';
 
 /** 주요 대회 일정 `ul` px와 동일 — 고정 칸(회전해도 왼쪽 여백 유지) */
@@ -92,8 +93,10 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
        * 로고 실제 렌더폭은 배너별 비율 차이가 커서 첫 아이템 기준 계산 시 체감 속도가 흔들림.
        * 스폰서는 "로고 1개 슬롯(220px)" 기준으로 고정해 섹션 속도를 안정화한다.
        */
+      const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+      const secondsPerLogo = isMobile ? SPONSOR_SECONDS_PER_LOGO_MOBILE : SPONSOR_SECONDS_PER_LOGO;
       const travelPx = SPONSOR_TRAVEL_PX_PER_LOGO + gapPx;
-      speedPerMs = travelPx > 0 ? travelPx / (SPONSOR_SECONDS_PER_LOGO * 1000) : 0;
+      speedPerMs = travelPx > 0 ? travelPx / (secondsPerLogo * 1000) : 0;
     };
     updateMetrics();
 
@@ -208,12 +211,12 @@ function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
 
 function SponsorLogo({ imageUrl }: { imageUrl: string }) {
   return (
-    <div className="flex h-[52px] max-h-[52px] items-center overflow-hidden md:h-[60px] md:max-h-[60px]">
+    <div className="flex h-[60px] max-h-[60px] items-center overflow-hidden md:h-[70px] md:max-h-[70px]">
       <Image
         src={imageUrl}
         alt="스폰서"
         width={200}
-        height={52}
+        height={60}
         sizes="(max-width: 1023px) 28vw, 140px"
         className="block h-full max-h-full w-auto max-w-none object-contain object-center select-none"
         draggable={false}

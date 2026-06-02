@@ -8,7 +8,7 @@ interface GallerySkeletonProps {
 }
 
 export default function GallerySkeleton({ count = 9, embedded = false }: GallerySkeletonProps) {
-  const cardH = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
+  const cardH = embedded ? 'h-[220px] md:h-[270px]' : 'h-[220px] md:h-[285px]';
   return (
     <div
       className={`flex h-full w-max min-w-full items-center leading-[0] ${embedded ? 'pl-0 pr-4 md:pr-6' : 'pl-4 md:pl-20'}`}
@@ -17,7 +17,7 @@ export default function GallerySkeleton({ count = 9, embedded = false }: Gallery
         {Array.from({ length: count }).map((_, idx) => (
           <li key={`skeleton-${idx}`} className="shrink-0">
             <div
-              className={`w-[200px] md:w-[295px] ${cardH} relative overflow-hidden rounded-tl-[12px] rounded-tr-[12px] rounded-bl-[12px] rounded-br-[16px] bg-gray-100 animate-pulse`}
+              className={`w-[220px] md:w-[295px] ${cardH} relative overflow-hidden rounded-tl-[12px] rounded-tr-[12px] rounded-bl-[12px] rounded-br-[16px] bg-gray-100 animate-pulse`}
             >
               {/* 이미지 + 오버레이 영역 */}
               <div className="absolute inset-0 bg-gray-300" />

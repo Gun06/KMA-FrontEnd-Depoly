@@ -75,7 +75,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
 
   const embedded = variant === 'embedded';
   const sectionBg = embedded ? 'bg-white' : 'bg-gray-50';
-  const galleryHeight = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
+  const galleryHeight = embedded ? 'h-[220px] md:h-[270px]' : 'h-[220px] md:h-[285px]';
   const loopItems = useMemo(() => {
     if (displayedItems.length === 0) return [];
     return Array.from({ length: Math.max(12, displayedItems.length * 3) }, (_, i) => displayedItems[i % displayedItems.length]);
@@ -149,8 +149,8 @@ export default function GallerySection({ className, variant = 'default' }: Galle
         <div
           className={
             embedded
-              ? `relative mt-4 flex h-[200px] w-full min-w-0 items-center justify-center md:h-[270px]`
-              : `relative mt-4 w-screen left-1/2 -translate-x-1/2 h-[200px] md:h-[285px] flex items-center justify-center bg-gray-50`
+              ? `relative mt-4 flex h-[220px] w-full min-w-0 items-center justify-center md:h-[270px]`
+              : `relative mt-4 w-screen left-1/2 -translate-x-1/2 h-[220px] md:h-[285px] flex items-center justify-center bg-gray-50`
           }
         >
         <div className={embedded ? 'w-full min-w-0 px-0' : 'w-full max-w-6xl px-4 md:px-6'}>

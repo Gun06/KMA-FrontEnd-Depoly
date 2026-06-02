@@ -39,7 +39,7 @@ export default function GalleryCard({
     return () => observer.disconnect();
   }, [revealImmediately]);
 
-  const cardH = embedded ? 'h-[200px] md:h-[270px]' : 'h-[200px] md:h-[285px]';
+  const cardH = embedded ? 'h-[220px] md:h-[270px]' : 'h-[220px] md:h-[285px]';
   const R = '12px';
   const R_BR = '16px';
 
@@ -47,7 +47,7 @@ export default function GalleryCard({
     /* 단일 overflow-hidden 컨테이너 — EventCard 구조와 동일 */
     <div
       ref={cardRef}
-      className={`relative w-[200px] md:w-[295px] ${cardH} overflow-hidden bg-gray-100 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      className={`relative w-[220px] md:w-[295px] ${cardH} overflow-hidden bg-gray-100 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       style={{
         borderRadius: `${R} ${R} ${R_BR} ${R}`,
       }}
@@ -74,7 +74,7 @@ export default function GalleryCard({
           alt={imageAlt}
           fill
           className="object-cover select-none pointer-events-none"
-          sizes="(max-width: 768px) 200px, 295px"
+          sizes="(max-width: 768px) 220px, 295px"
           draggable={false}
         />
       )}
