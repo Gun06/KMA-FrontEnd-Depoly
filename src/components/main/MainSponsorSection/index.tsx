@@ -192,7 +192,7 @@ function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
   );
 
   return (
-    <li className={`m-0 shrink-0 list-none p-0 pr-1 md:pr-3 ${LOGO_ROW_H_CLASS}`}>
+    <li className={`m-0 shrink-0 list-none p-0 pr-2 md:pr-3 ${LOGO_ROW_H_CLASS}`}>
       {banner.url?.trim() ? (
         <a
           href={banner.url.trim()}

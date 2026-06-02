@@ -242,7 +242,6 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
                 onTouchEnd: handlePointerUp,
               })}
         >
-          <div className={isEmbedded ? 'shrink-0 w-4 md:w-6 lg:w-[6vw]' : 'shrink-0 w-[18px] md:w-[82px]'} aria-hidden />
           {isMobile ? (
             <>
               {isLoading || error ? (
@@ -275,7 +274,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
               <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
               <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
               {isLoading || error ? (
-                <ul className="flex w-max min-w-full list-none gap-3 pb-2">
+                <ul className="flex w-max min-w-full list-none gap-3 pb-2 pl-0 pr-4 md:pr-6">
                   {Array.from({ length: 9 }).map((_, i) => (
                     <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
                       <div className="aspect-[332/166] w-full rounded-xl bg-gray-200 animate-pulse" />
