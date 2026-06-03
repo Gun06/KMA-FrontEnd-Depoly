@@ -16,7 +16,7 @@ interface FeatureCard {
   description: string;
   link: string;
   linkColor: string;
-  hasPlusButton?: boolean;
+  bgColor: string;
 }
 
 const features: FeatureCard[] = [
@@ -27,7 +27,7 @@ const features: FeatureCard[] = [
     description: '마라톤 관련 상품을 만나보세요.',
     link: '/shop/merchandise',
     linkColor: '#8F6F55',
-    hasPlusButton: true
+    bgColor: '#F8F6F2',
   },
   {
     id: '2',
@@ -36,7 +36,7 @@ const features: FeatureCard[] = [
     description: '대회 현장의 생생한 감동을 느껴보세요.',
     link: '/schedule/gallery',
     linkColor: '#256EF4',
-    hasPlusButton: true
+    bgColor: '#F6F8FA',
   },
   {
     id: '3',
@@ -45,7 +45,7 @@ const features: FeatureCard[] = [
     description: '달력으로 마라톤 대회일정을 확인하시고 신청하세요.',
     link: '/schedule',
     linkColor: '#2093A4',
-    hasPlusButton: true
+    bgColor: '#F7F7F7',
   },
   {
     id: '4',
@@ -54,8 +54,8 @@ const features: FeatureCard[] = [
     description: '안내사항을 확인하세요.',
     link: '/registration/guide',
     linkColor: '#EA753C',
-    hasPlusButton: true
-  }
+    bgColor: '#F4F2F3',
+  },
 ];
 
 export default function FeaturesSection() {
@@ -68,71 +68,60 @@ export default function FeaturesSection() {
   };
 
   return (
-    <section className="bg-white py-8 md:py-10">
-      <div className="max-w-[1920px] mx-auto px-4 lg:px-[6vw]">
-        {/* 메인 타이틀 */}
-        <div className="text-center mb-12">
-          <h2 className="font-giants text-2xl md:text-3xl lg:text-4xl text-gray-900 mb-4">
+    <section className="bg-white pb-6 pt-10 sm:py-8 md:py-10">
+      <div className="mx-auto max-w-[1920px] px-4 sm:px-5 lg:px-[6vw]">
+        <div className="mb-6 pt-3 text-center sm:mb-8 sm:pt-2 md:mb-12 md:pt-0">
+          <h2 className="font-giants mb-3 text-xl leading-snug text-gray-900 sm:mb-4 sm:text-2xl md:text-3xl lg:text-4xl">
             전국마라톤 협회에서 지원하는 더 많은 기능
           </h2>
-          <div className="w-32 md:w-48 lg:w-60 h-1 bg-slate-200 mx-auto"></div>
+          <div className="mx-auto h-1 w-24 bg-slate-200 sm:w-32 md:w-48 lg:w-60" />
         </div>
 
-        {/* 기능 카드 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <Link 
-              key={feature.id} 
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-4">
+          {features.map((feature) => (
+            <Link
+              key={feature.id}
               href={feature.link}
-              className="block rounded-lg p-6 relative hover:shadow-md transition-shadow duration-300 cursor-pointer"
-              style={{ 
-                backgroundColor: index === 0 ? '#F8F6F2' : 
-                              index === 1 ? '#F6F8FA' : 
-                              index === 2 ? '#F7F7F7' : '#F4F2F3'
-              }}
+              className="relative block cursor-pointer rounded-xl p-4 transition-shadow duration-300 hover:shadow-md active:scale-[0.99] sm:rounded-lg sm:p-5 md:p-6"
+              style={{ backgroundColor: feature.bgColor }}
             >
-              {/* 아이콘 */}
-              <div className="mb-4">
-                <Image
-                  src={feature.icon}
-                  alt={feature.title}
-                  width={48}
-                  height={48}
-                  className="w-12 h-12"
-                />
+              {/* 모바일: 아이콘+텍스트 가로 / md+: 세로 */}
+              <div className="flex gap-3 sm:gap-4 md:block">
+                <div className="shrink-0 md:mb-4">
+                  <Image
+                    src={feature.icon}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="h-10 w-10 sm:h-12 sm:w-12"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1 pr-11 pt-2 sm:pt-1 md:pr-0 md:pt-0">
+                  <h3 className="font-giants mb-1.5 text-lg leading-tight text-gray-900 sm:mb-2 sm:text-xl md:mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="mb-2 text-[13px] leading-snug text-[#7A7A7A] sm:mb-3 sm:text-sm sm:leading-relaxed md:mb-4">
+                    {feature.description}
+                  </p>
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs font-medium sm:gap-2 sm:text-sm"
+                    style={{ color: feature.linkColor }}
+                  >
+                    바로가기
+                    <span aria-hidden>↗</span>
+                  </span>
+                </div>
               </div>
 
-              {/* 제목 */}
-              <h3 className="font-giants text-xl text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-
-              {/* 설명 */}
-              <p className="text-sm leading-relaxed mb-4" style={{ color: '#7A7A7A' }}>
-                {feature.description}
-              </p>
-
-              {/* 바로가기 링크 */}
-              <div>
-                <span 
-                  className="inline-flex items-center gap-2 font-medium hover:opacity-80 transition-opacity text-sm"
-                  style={{ color: feature.linkColor }}
-                >
-                  바로가기
-                  <span className="text-sm">↗</span>
-                </span>
-              </div>
-
-              {/* 플러스 버튼 */}
-              {feature.hasPlusButton && (
-                <button
-                  onClick={(e) => handlePlusButtonClick(e, feature.link)}
-                  className="absolute bottom-4 right-4 w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-colors duration-200 cursor-pointer z-10"
-                  aria-label={`${feature.title} 바로가기`}
-                >
-                  <span className="text-lg">+</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={(e) => handlePlusButtonClick(e, feature.link)}
+                className="absolute bottom-3 right-3 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-gray-800 active:bg-gray-900 sm:bottom-4 sm:right-4 sm:h-8 sm:w-8"
+                aria-label={`${feature.title} 바로가기`}
+              >
+                <span className="text-xl leading-none sm:text-lg">+</span>
+              </button>
             </Link>
           ))}
         </div>
