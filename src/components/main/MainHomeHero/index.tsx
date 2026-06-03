@@ -944,10 +944,6 @@ function HeroMobileDeadlineInBanner({
       aria-label="마감임박 대회"
       aria-busy={popularLoading}
     >
-      <div className="pointer-events-auto bg-gradient-to-b from-black/70 via-black/35 to-transparent px-4 pb-10 pt-[calc(var(--kma-main-header-offset,64px)+0.8rem)] md:px-6 md:pb-12 md:pt-[calc(var(--kma-main-header-offset,64px)+1rem)]">
-        <div className="flex items-end justify-end gap-2" />
-      </div>
-
       <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-5 sm:pb-6 sm:pt-12 md:px-6 md:pb-7 md:pt-14">
         <div className="w-full max-w-[min(86vw,17.5rem)] sm:max-w-[min(90vw,19rem)]">
           <PopularDeadlineBanner
@@ -1640,7 +1636,7 @@ export default function MainHomeHero() {
   }, []);
 
   return (
-    <section className="relative w-full -mt-[var(--kma-main-header-offset,64px)]">
+    <section className="relative w-full">
       <div className="relative w-full">
         <MarathonHeroCarousel fillViewport={false} />
         <HeroMobileDeadlineInBanner

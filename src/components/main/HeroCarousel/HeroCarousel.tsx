@@ -6,6 +6,7 @@ import { Autoplay } from 'swiper/modules';
 import { useState, useEffect, useRef } from 'react';
 import { MainBannerItem } from '@/types/event';
 import ApiBannerSlide from './ApiBannerSlide';
+import { HERO_OVERLAY_POSITION_CLASS } from './heroOverlayLayout';
 import 'swiper/css';
 
 const RESIZE_DEBOUNCE_MS = 180;
@@ -17,7 +18,7 @@ function HeroBannerSkeleton() {
       <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-400 via-zinc-500 to-zinc-600" />
       <div className="pointer-events-none absolute inset-0 bg-black/45" aria-hidden />
       <div
-        className="absolute left-3 right-4 top-[calc(var(--kma-main-header-offset,64px)+0.75rem)] z-10 flex max-w-[min(100%,1000px)] flex-col items-start gap-2.5 pb-[clamp(5.25rem,22vw,8.25rem)] text-left sm:left-4 sm:right-6 sm:top-[calc(var(--kma-main-header-offset,64px)+0.9rem)] sm:gap-3 sm:pb-[clamp(6.75rem,28vw,10rem)] md:left-5 md:right-8 md:top-[calc(var(--kma-main-header-offset,64px)+1.05rem)] lg:right-auto lg:left-[6%] lg:top-[max(24%,calc(var(--kma-main-header-offset,64px)+1rem))] lg:max-w-[min(1000px,64vw)] lg:px-0 lg:pb-0 xl:top-[max(26%,calc(var(--kma-main-header-offset,64px)+1.25rem))]"
+        className={`${HERO_OVERLAY_POSITION_CLASS} gap-2.5 sm:gap-3`}
       >
         <div className="mb-1 flex flex-col gap-2 sm:mb-0 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
           <div className="h-7 w-14 shrink-0 animate-pulse rounded-md bg-white/35 sm:h-9 sm:w-16" />
