@@ -6,6 +6,7 @@ import GalleryList from './components/GalleryList';
 import { EMBEDDED_GALLERY_CARD_WIDTH } from './GalleryCard';
 import { useMainPageGallery } from './hooks/useMainPageGallery';
 import type { GalleryItem } from '@/app/(main)/schedule/gallery/types';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const GALLERY_PAGE_PATH = '/schedule/gallery';
 const SKELETON_COUNT = 9;
@@ -18,11 +19,16 @@ interface GallerySectionProps {
 }
 
 export default function GallerySection({ className, variant = 'default' }: GallerySectionProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const isPausedRef = useRef(false);
+  const offsetRef = useRef(0); // 애니메이션 offset을 ref로 관리
 
   const { data, isPending, isFetching } = useMainPageGallery();
   const galleryItems = useMemo(() => data ?? [], [data]);
@@ -53,25 +59,40 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('button, a, [role="button"]')) return;
-    if (!scrollRef.current) return;
+    if (!trackRef.current) return;
+    
+    // 애니메이션 일시정지
+    isPausedRef.current = true;
     isDraggingRef.current = true;
     setIsDragging(true);
+    
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     startXRef.current = clientX;
-    scrollLeftRef.current = scrollRef.current.scrollLeft;
+    
+    // 현재 offset을 드래그 시작 위치로 설정
+    scrollLeftRef.current = -offsetRef.current; // offset은 음수이므로 -를 붙여서 양수로
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDraggingRef.current || !scrollRef.current) return;
+    if (!isDraggingRef.current || !trackRef.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const diff = startXRef.current - clientX;
-    scrollRef.current.scrollLeft = scrollLeftRef.current + diff;
+    const newX = -(scrollLeftRef.current + diff);
+    trackRef.current.style.transform = `translateX(${newX}px)`;
     if ('touches' in e) e.preventDefault();
   };
 
   const handlePointerUp = () => {
+    if (!isDraggingRef.current || !trackRef.current) return;
+    
+    // 현재 위치를 offsetRef에 저장하여 애니메이션이 이어지도록
+    const transform = window.getComputedStyle(trackRef.current).transform;
+    const matrix = new DOMMatrix(transform);
+    offsetRef.current = matrix.m41; // translateX 값
+    
     isDraggingRef.current = false;
     setIsDragging(false);
+    isPausedRef.current = false; // 드래그 종료 시 애니메이션 재개
   };
 
   const embedded = variant === 'embedded';

@@ -153,6 +153,7 @@ export default function GalleryCard({
   const R_BR = '16px';
 
   return (
+    /* 단일 overflow-hidden 컨테이너 — EventCard 구조와 동일 */
     <div
       ref={cardRef}
       className={`relative w-[220px] md:w-[295px] ${cardH} overflow-hidden bg-gray-100 transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}

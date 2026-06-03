@@ -13,7 +13,7 @@ type FloatingVisitorCountProps = {
 /** 메인: 우측 플로팅 패널(FloatingPanels)과 동일한 right-[6vw] 기준 */
 const ROOT_CLASS: Record<FloatingVisitorCountProps['variant'], string> = {
   main:
-    'pointer-events-auto fixed z-[148] flex flex-col gap-3 ' +
+    'pointer-events-auto fixed z-[151] flex flex-col gap-3 ' +
     'bottom-5 right-4 sm:bottom-6 sm:right-5 md:bottom-7 md:right-6 lg:bottom-8 lg:right-[6vw] ' +
     'items-end',
   event:

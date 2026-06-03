@@ -12,7 +12,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-white">
       <Header />
       <main
         className="flex-1"
@@ -20,7 +20,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       >
         {children}
       </main>
-      <Footer />
+      <div data-kma-footer-zone className="relative shrink-0">
+        <Footer />
+      </div>
       {/* 팝업 컴포넌트 */}
       <PopupManager />
       {/* 우측 플로팅 패널 — 대회안내 + 스폰서 (모든 페이지 공통) */}

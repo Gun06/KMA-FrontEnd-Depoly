@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 메인: 끝까지 스크롤 시 바운스로 뒤 고정 레이어가 비치지 않게 */
+html {
+  overscroll-behavior-y: none;
+  background-color: #fff;
+}
+
 /* Hide scrollbar visually while keeping scroll functionality */
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
@@ -263,17 +269,3 @@ img {
   }
 }
 
-/* 메인 홈: 스티키 히어로 — 뷰포트 높이 채움 (스크롤 덮개) */
-.main-hero-sticky-layer .hero-section {
-  height: 100% !important;
-  max-height: none !important;
-  min-height: 0 !important;
-  aspect-ratio: auto !important;
-}
-
-.main-hero-sticky-layer .hero-section > div,
-.main-hero-sticky-layer .hero-section .swiper,
-.main-hero-sticky-layer .hero-section .swiper-wrapper,
-.main-hero-sticky-layer .hero-section .swiper-slide {
-  height: 100% !important;
-}

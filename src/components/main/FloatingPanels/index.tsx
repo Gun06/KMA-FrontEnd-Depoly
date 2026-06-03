@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MainPageAdvertiseItem, SponsorBanner } from '@/types/event';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
+import { useFloatingFooterClamp } from '@/hooks/useFloatingFooterClamp';
 
 /* ─── 공용 상수 ─── */
 const PANEL_W = 200;
@@ -371,6 +372,7 @@ export default function FloatingPanels() {
   }, []);
 
   const panelRef = useRef<HTMLDivElement>(null);
+  useFloatingFooterClamp(panelRef, { edge: 'top', topExtraPx: 6 });
   const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>(null);
   const [adPopInfo, setAdPopInfo] = useState<AdHoverInfo | null>(null);
   const [spPopInfo, setSpPopInfo] = useState<SpHoverInfo | null>(null);

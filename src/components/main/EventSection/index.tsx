@@ -5,6 +5,7 @@ import EventCard, { EMBEDDED_OLIVE_WIDE_CARD_WIDTH } from './EventCard';
 import { BlockEventItem } from '@/types/event';
 import { blockListDisplayImageSrc } from '@/services/schedule';
 import Link from 'next/link';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface EventSectionProps {
   /** 메인 홈: KMA-Mobile과 동일한 흰 배경·좌우 여백 */
@@ -15,6 +16,7 @@ const EMBEDDED_HEADER = 'mx-auto w-full max-w-[1920px] px-4 md:px-6 lg:px-[6vw]'
 const EMBEDDED_SCROLL_PADDING = 'pl-4 md:pl-6 lg:pl-[6vw] pr-4 md:pr-6 lg:pr-[6vw]';
 
 export default function EventSection({ variant = 'default' }: EventSectionProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [eventData, setEventData] = useState<BlockEventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +25,10 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const isPausedRef = useRef(false);
+  const offsetRef = useRef(0); // 애니메이션 offset을 ref로 관리
 
   useEffect(() => {
     const fetchEventData = async () => {

@@ -75,7 +75,7 @@ function OfficeRow({ label, address, phone, fax }: OfficeRowProps) {
 
 export default function Footer() {
   return (
-    <footer className="bg-white text-gray-800 border-t border-gray-200">
+    <footer className="relative z-[150] bg-white text-gray-800 border-t border-gray-200">
       {/* 상단 본문 컨테이너 */}
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 py-6 md:py-7">
         <div className="w-full md:mx-auto md:w-fit pl-2 md:pl-0">

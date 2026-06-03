@@ -5,6 +5,8 @@ import MainHomeHero from '@/components/main/MainHomeHero';
 
 const HEADER_OFFSET_VAR = 'var(--kma-main-header-offset, 64px)';
 const HERO_HEIGHT_FALLBACK = 'min(62vh, 398px)';
+const HERO_MAX_HEIGHT_PC = 800;
+const LG_MEDIA = '(min-width: 1024px)';
 /** 히어로·스폰서 사이 회색 구분 (MainSectionDivider와 동일) */
 const HERO_SPONSOR_DIVIDER_PX = 8;
 
@@ -31,8 +33,29 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
   const measureHero = useCallback(() => {
     const carousel = heroMeasureRef.current?.querySelector('.hero-section') as HTMLElement | null;
     if (!carousel) return;
-    const bottom = Math.round(carousel.getBoundingClientRect().bottom);
+    const rect = carousel.getBoundingClientRect();
+    let bottom = Math.round(rect.bottom);
+    if (typeof window !== 'undefined' && window.matchMedia(LG_MEDIA).matches) {
+      bottom = Math.min(bottom, HERO_MAX_HEIGHT_PC);
+    }
     if (bottom > 0) setHeroBottom(bottom);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    history.scrollRestoration = 'manual';
+    const scrollTop = () => window.scrollTo(0, 0);
+    scrollTop();
+    requestAnimationFrame(scrollTop);
+    const t = window.setTimeout(scrollTop, 0);
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) scrollTop();
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('pageshow', onPageShow);
+    };
   }, []);
 
   useEffect(() => {
@@ -102,6 +125,39 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
         ? heroBottom
         : HERO_HEIGHT_FALLBACK;
 
+  /** 푸터가 보이기 시작하면 고정 히어로·스폰서 숨김 — 맨 아래에서 뒤 콘텐츠 비침 방지 */
+  const [pinHeroLayers, setPinHeroLayers] = useState(true);
+
+  useEffect(() => {
+    const update = () => {
+      const zone = document.querySelector('[data-kma-footer-zone]');
+      if (!zone) {
+        setPinHeroLayers(window.scrollY < stackH);
+        return;
+      }
+      const { top } = zone.getBoundingClientRect();
+      setPinHeroLayers(top > window.innerHeight - 48);
+    };
+
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+
+    const zone = document.querySelector('[data-kma-footer-zone]');
+    const ro = zone ? new ResizeObserver(update) : null;
+    ro?.observe(zone as Element);
+
+    return () => {
+      window.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+      ro?.disconnect();
+    };
+  }, [stackH]);
+
+  const pinnedLayerClass = pinHeroLayers
+    ? 'opacity-100'
+    : 'pointer-events-none invisible opacity-0';
+
   return (
     <div
       className="relative w-full"
@@ -109,7 +165,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
     >
       {/* 고정 히어로 — 배너 하단까지만 (wrapper offsetHeight 여백 제거) */}
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-0 overflow-hidden"
+        className={`pointer-events-none fixed inset-x-0 top-0 z-0 overflow-hidden transition-opacity duration-200 ${pinnedLayerClass}`}
         style={heroReady ? { height: heroBottom } : { height: HERO_HEIGHT_FALLBACK }}
       >
         <div ref={heroMeasureRef} className="pointer-events-auto w-full">
@@ -120,7 +176,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
       {/* 히어로·스폰서 사이 회색 구분선만 */}
       {belowHero && heroReady ? (
         <div
-          className="fixed inset-x-0 z-[5] h-2 shrink-0 bg-[#F2F4F6]"
+          className={`fixed inset-x-0 z-[5] h-2 shrink-0 bg-[#F2F4F6] transition-opacity duration-200 ${pinnedLayerClass}`}
           style={{ top: dividerTop }}
           aria-hidden
         />
@@ -130,7 +186,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
       {belowHero ? (
         <div
           ref={sponsorMeasureRef}
-          className="fixed inset-x-0 z-[5] m-0 bg-white p-0"
+          className={`fixed inset-x-0 z-[5] m-0 bg-white p-0 transition-opacity duration-200 ${pinnedLayerClass}`}
           style={heroReady ? { top: sponsorTop } : undefined}
         >
           {belowHero}

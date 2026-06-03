@@ -105,7 +105,7 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
 
   return (
     <div
-      className={`relative w-full hero-section ${fillViewport ? 'hero-section--fill-viewport h-full min-h-0 max-h-none' : 'max-h-[920px]'}`}
+      className={`relative w-full hero-section ${fillViewport ? 'hero-section--fill-viewport h-full min-h-0 max-h-none' : 'max-h-[800px] lg:h-[800px] lg:max-h-[800px]'}`}
     >
       {/* 스켈레톤: 첫 페인트부터 보이도록 전환 지연 없음. 데이터 로드 전까지 Swiper는 마운트하지 않음(빈 슬라이드 플래시 방지). */}
       {showSkeleton ? (
@@ -162,7 +162,7 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
       <style jsx global>{`
         .hero-section {
           width: 100%;
-          max-height: 920px;
+          max-height: 800px;
           contain: layout;
         }
         .hero-section--fill-viewport {
@@ -173,22 +173,23 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
         }
         @media (max-width: 639px) {
           .hero-section:not(.hero-section--fill-viewport) {
-            /* 기존 3/4 대비 높이 약 2/3 (세로 약 1/3 축소) */
-            aspect-ratio: 9 / 8;
-            min-height: min(50vw, 268px);
-            max-height: min(62vh, 398px);
+            aspect-ratio: 16 / 9;
+            min-height: min(42vw, 220px);
+            max-height: min(50vh, 320px);
           }
         }
         @media (min-width: 640px) and (max-width: 1023px) {
           .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: 16 / 10;
-            min-height: 340px;
+            aspect-ratio: 16 / 9;
+            min-height: 280px;
           }
         }
         @media (min-width: 1024px) {
           .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: 16 / 10;
-            min-height: 428px;
+            aspect-ratio: auto;
+            height: 800px;
+            min-height: 800px;
+            max-height: 800px;
           }
         }
         .hero-section > div,
