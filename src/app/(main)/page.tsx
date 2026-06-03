@@ -5,41 +5,36 @@ import GallerySection from '@/components/main/GallerySection'
 import EventSection from '@/components/main/EventSection'
 import NoticeMagazineSection from '@/layouts/main/NoticeMagazineSection'
 import FeaturesSection from '@/components/main/FeaturesSection'
-import MainHomeHero from '@/components/main/MainHomeHero'
+import MainHomeScrollLayout from '@/components/main/MainHomeScrollLayout'
 import MainSponsorSection from '@/components/main/MainSponsorSection'
+import MainSectionDivider from '@/components/main/MainSectionDivider'
 
 export default function AssociationPage() {
   return (
-    <>
-      <div>
-        <MainHomeHero />
+    <MainHomeScrollLayout
+      belowHero={<MainSponsorSection variant="embedded" />}
+    >
+      <MainSectionDivider />
+      <EventSection variant="embedded" />
 
-        <div className="border-t border-zinc-100 bg-white">
-          <div className="mx-auto max-w-[1920px] px-4 pt-10 pb-0 md:px-6 lg:px-[6vw]">
-            <div className="flex flex-col gap-10 bg-white">
-              <EventSection variant="embedded" />
-              <MainSponsorSection variant="embedded" />
-              <GallerySection variant="embedded" />
-            </div>
-          </div>
-        </div>
+      <MainSectionDivider />
+      <GallerySection variant="embedded" />
 
-        <NoticeMagazineSection />
+      <NoticeMagazineSection />
 
-        <div className="bg-white">
-          <CtaCards presets={['ios', 'android']} />
-        </div>
-
-        <FeaturesSection />
-
-        <div className="mt-[10px]">
-          <FaqSection allowMultipleOpen />
-        </div>
-
-        <div className="mt-[10px]">
-          <ContactSection />
-        </div>
+      <div className="bg-white">
+        <CtaCards presets={['ios', 'android']} />
       </div>
-    </>
+
+      <FeaturesSection />
+
+      <div className="mt-[10px]">
+        <FaqSection allowMultipleOpen />
+      </div>
+
+      <div className="mt-[10px]">
+        <ContactSection />
+      </div>
+    </MainHomeScrollLayout>
   )
 }

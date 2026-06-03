@@ -39,7 +39,12 @@ function HeroBannerSkeleton() {
   );
 }
 
-export default function MarathonHeroCarousel() {
+interface MarathonHeroCarouselProps {
+  /** 메인 스크롤 덮개 레이아웃: 뷰포트 높이에 맞춤 */
+  fillViewport?: boolean;
+}
+
+export default function MarathonHeroCarousel({ fillViewport = false }: MarathonHeroCarouselProps) {
   const [bannerData, setBannerData] = useState<MainBannerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +103,9 @@ export default function MarathonHeroCarousel() {
   }, []);
 
   return (
-    <div className="relative w-full max-h-[880px] hero-section">
+    <div
+      className={`relative w-full hero-section ${fillViewport ? 'hero-section--fill-viewport h-full min-h-0 max-h-none' : 'max-h-[920px]'}`}
+    >
       {/* 스켈레톤: 첫 페인트부터 보이도록 전환 지연 없음. 데이터 로드 전까지 Swiper는 마운트하지 않음(빈 슬라이드 플래시 방지). */}
       {showSkeleton ? (
         <div
@@ -154,27 +161,33 @@ export default function MarathonHeroCarousel() {
       <style jsx global>{`
         .hero-section {
           width: 100%;
-          max-height: 880px;
+          max-height: 920px;
           contain: layout;
         }
+        .hero-section--fill-viewport {
+          aspect-ratio: unset !important;
+          min-height: 0 !important;
+          max-height: none !important;
+          height: 100% !important;
+        }
         @media (max-width: 639px) {
-          .hero-section {
+          .hero-section:not(.hero-section--fill-viewport) {
             /* 기존 3/4 대비 높이 약 2/3 (세로 약 1/3 축소) */
             aspect-ratio: 9 / 8;
-            min-height: min(48vw, 254px);
-            max-height: min(59vh, 374px);
+            min-height: min(50vw, 268px);
+            max-height: min(62vh, 398px);
           }
         }
         @media (min-width: 640px) and (max-width: 1023px) {
-          .hero-section {
+          .hero-section:not(.hero-section--fill-viewport) {
             aspect-ratio: 16 / 10;
-            min-height: 320px;
+            min-height: 340px;
           }
         }
         @media (min-width: 1024px) {
-          .hero-section {
+          .hero-section:not(.hero-section--fill-viewport) {
             aspect-ratio: 16 / 10;
-            min-height: 400px;
+            min-height: 428px;
           }
         }
         .hero-section > div,

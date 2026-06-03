@@ -108,7 +108,7 @@ const dropdownVariants = {
 const GLASS_PILL_STYLE = MAIN_GLASS_STYLE;
 const SUBMENU_GLASS_STYLE = {
   ...MAIN_GLASS_STYLE,
-  backgroundColor: 'rgba(15, 15, 15, 0.56)',
+  backgroundColor: 'rgba(15, 15, 15, 0.64)',
 };
 const APP_INSTALL_BANNER_STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 

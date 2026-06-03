@@ -8,15 +8,10 @@ interface MainSponsorSectionProps {
   variant?: 'default' | 'embedded';
 }
 
-const SPONSOR_SECONDS_PER_LOGO = 2.0;
-const SPONSOR_SECONDS_PER_LOGO_MOBILE = 4.0;
+const SPONSOR_SECONDS_PER_LOGO = 2.6;
+const SPONSOR_SECONDS_PER_LOGO_MOBILE = 5.0;
 const SPONSOR_TRAVEL_PX_PER_LOGO = 200;
-const LOGO_ROW_H_CLASS = 'h-[60px] max-h-[60px] md:h-[70px] md:max-h-[70px]';
-const ITEM_SIDE_PAD_CLASS = '';
-
-/** 주요 대회 일정 `ul` px와 동일 — 고정 칸(회전해도 왼쪽 여백 유지) */
-const EMBEDDED_GUTTER = 'shrink-0 w-4 md:w-6 lg:w-[6vw]';
-const DEFAULT_GUTTER = 'shrink-0 w-[18px] md:w-[82px]';
+const LOGO_ROW_H_CLASS = 'h-[68px] max-h-[68px] md:h-[78px] md:max-h-[78px]';
 
 export default function MainSponsorSection({ variant = 'default' }: MainSponsorSectionProps) {
   const [items, setItems] = useState<SponsorBanner[]>([]);
@@ -89,10 +84,6 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
       if (!listRef.current) return;
       listWidth = listRef.current.scrollWidth;
       const gapPx = Number.parseFloat(getComputedStyle(listRef.current).columnGap || '0') || 0;
-      /**
-       * 로고 실제 렌더폭은 배너별 비율 차이가 커서 첫 아이템 기준 계산 시 체감 속도가 흔들림.
-       * 스폰서는 "로고 1개 슬롯(220px)" 기준으로 고정해 섹션 속도를 안정화한다.
-       */
       const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
       const secondsPerLogo = isMobile ? SPONSOR_SECONDS_PER_LOGO_MOBILE : SPONSOR_SECONDS_PER_LOGO;
       const travelPx = SPONSOR_TRAVEL_PX_PER_LOGO + gapPx;
@@ -128,57 +119,63 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
   }, [loop.length]);
 
   const isEmbedded = variant === 'embedded';
-  const gutterClass = isEmbedded ? EMBEDDED_GUTTER : DEFAULT_GUTTER;
 
   if (!loading && sponsors.length === 0) {
     return null;
   }
 
-  return (
-    <section className={`bg-white ${isEmbedded ? 'pt-0 pb-5' : 'pt-8 pb-8'}`} aria-labelledby="main-sponsor-heading">
-      <div className={isEmbedded ? 'w-full' : 'mx-auto max-w-[1920px] px-8 md:px-9 lg:px-10'}>
-        <div className="flex items-end justify-between">
-          <h2 id="main-sponsor-heading" className="font-giants text-[22px] md:text-[28px] text-gray-900">
-            SPONSOR
-          </h2>
-          <span className="invisible text-xs font-medium" aria-hidden>
-            더보기 &gt;
-          </span>
+  const logoStrip = (
+    <div
+      className={`relative w-full overflow-hidden border-b-2 border-gray-200 bg-white ${LOGO_ROW_H_CLASS}`}
+      role="region"
+      aria-label="스폰서 배너 목록"
+    >
+      {!isEmbedded && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
+        </>
+      )}
+      {loading ? (
+        <ul className={`flex w-max list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li key={`sp-sk-${i}`} className="shrink-0 list-none">
+              <div className="h-full w-24 animate-pulse rounded bg-gray-200 md:w-28" />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div ref={marqueeRef} className={`flex w-max will-change-transform ${LOGO_ROW_H_CLASS}`}>
+          <ul ref={listRef} className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
+            {loop.map((banner, idx) => (
+              <SponsorBannerItem key={`a-${banner.orderNo}-${idx}`} banner={banner} />
+            ))}
+          </ul>
+          <ul className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`} aria-hidden>
+            {loop.map((banner, idx) => (
+              <SponsorBannerItem key={`b-${banner.orderNo}-${idx}`} banner={banner} />
+            ))}
+          </ul>
         </div>
-      </div>
+      )}
+    </div>
+  );
 
-      <div className={isEmbedded ? 'mt-4 -mx-4 md:-mx-6 lg:-mx-[6vw]' : 'mt-4'}>
-        <div className="flex" role="region" aria-label="스폰서 배너 목록">
-          <div className={gutterClass} aria-hidden />
-          <div
-            className={`relative min-w-0 flex-1 overflow-hidden ${LOGO_ROW_H_CLASS}`}
-          >
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
-            {loading ? (
-              <ul className={`flex w-max list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <li key={`sp-sk-${i}`} className={`shrink-0 list-none ${ITEM_SIDE_PAD_CLASS}`}>
-                    <div className="h-full w-24 animate-pulse rounded bg-gray-200 md:w-28" />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div ref={marqueeRef} className={`flex w-max will-change-transform ${LOGO_ROW_H_CLASS}`}>
-                <ul ref={listRef} className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
-                  {loop.map((banner, idx) => (
-                    <SponsorBannerItem key={`a-${banner.orderNo}-${idx}`} banner={banner} />
-                  ))}
-                </ul>
-                <ul className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`} aria-hidden>
-                  {loop.map((banner, idx) => (
-                    <SponsorBannerItem key={`b-${banner.orderNo}-${idx}`} banner={banner} />
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+  if (isEmbedded) {
+    return (
+      <section className="m-0 w-full bg-white p-0" aria-label="스폰서">
+        {logoStrip}
+      </section>
+    );
+  }
+
+  return (
+    <section className="bg-white pt-8 pb-8" aria-label="스폰서">
+      <div className="mx-auto max-w-[1920px] px-8 md:px-9 lg:px-10">
+        <div className="flex items-end justify-between">
+          <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">SPONSOR</h2>
         </div>
+        <div className="mt-4">{logoStrip}</div>
       </div>
     </section>
   );
@@ -186,7 +183,7 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
 
 function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
   const inner = (
-    <div className={`flex h-full items-center ${ITEM_SIDE_PAD_CLASS}`}>
+    <div className="flex h-full items-center">
       <SponsorLogo imageUrl={banner.imageUrl} />
     </div>
   );
@@ -211,12 +208,12 @@ function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
 
 function SponsorLogo({ imageUrl }: { imageUrl: string }) {
   return (
-    <div className="flex h-[60px] max-h-[60px] items-center overflow-hidden md:h-[70px] md:max-h-[70px]">
+    <div className="flex h-[68px] max-h-[68px] items-center overflow-hidden md:h-[78px] md:max-h-[78px]">
       <Image
         src={imageUrl}
         alt="스폰서"
         width={200}
-        height={60}
+        height={68}
         sizes="(max-width: 1023px) 28vw, 140px"
         className="block h-full max-h-full w-auto max-w-none object-contain object-center select-none"
         draggable={false}

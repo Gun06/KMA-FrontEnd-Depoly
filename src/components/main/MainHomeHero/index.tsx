@@ -1640,11 +1640,9 @@ export default function MainHomeHero() {
   }, []);
 
   return (
-    <section className="relative -mt-[var(--kma-main-header-offset,64px)] w-full">
-
-      {/* 히어로 높이만 포함: absolute(bottom) 칩·PC 오버레이 기준이 하단 섹션과 섞이지 않도록 */}
+    <section className="relative w-full -mt-[var(--kma-main-header-offset,64px)]">
       <div className="relative w-full">
-        <MarathonHeroCarousel />
+        <MarathonHeroCarousel fillViewport={false} />
         <HeroMobileDeadlineInBanner
           popularItems={popularItems}
           popularLoading={popularLoading}

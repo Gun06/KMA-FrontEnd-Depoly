@@ -5,14 +5,16 @@ import CategoryTag from '@/components/common/Badge/CategoryTag';
 
 interface NoticeItemProps {
   item: NoticeItemType;
+  embedded?: boolean;
 }
 
-export default function NoticeItem({ item }: NoticeItemProps) {
+export default function NoticeItem({ item, embedded = false }: NoticeItemProps) {
   return (
     <Link href={item.link || '#'} className="block">
       <div
-        className="py-3 transition-colors duration-200 hover:bg-gray-50"
-        style={{ borderBottom: '1px solid #E5E7EB' }}
+        className={`transition-colors duration-200 hover:bg-gray-50 ${
+          embedded ? 'py-4 sm:py-5 md:py-6' : 'py-3'
+        }`}
       >
         <div className="flex items-start gap-3">
           <div className="min-w-[80px] shrink-0 whitespace-nowrap text-sm text-gray-500">

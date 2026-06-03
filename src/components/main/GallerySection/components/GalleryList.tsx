@@ -28,8 +28,12 @@ export default function GalleryList({ items, onItemClick, variant = 'default' }:
             imageAlt={item.eventName}
             subtitle={item.tagName || ''}
             title={item.eventName}
-            date={formatDate(item.eventStartDate)}
-            disableAnimation={false}
+            date={
+              variant === 'embedded'
+                ? item.eventStartDate
+                : formatDate(item.eventStartDate)
+            }
+            disableAnimation={variant === 'embedded'}
             variant={variant}
             onClick={() => onItemClick?.(item)}
           />

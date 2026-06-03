@@ -1,23 +1,29 @@
-import React from 'react';
+import Link from 'next/link';
 import NoticeSection from '@/components/main/NoticeSection';
-// import InquirySection from '@/components/main/MagazineSection'; // 2열(공지+문의) 복귀 시 주석 해제
+
+/** FAQ·CTA와 동일한 메인 가로 여백 */
+const FRAME_X = 'px-3 sm:px-4 md:px-5 lg:px-[6vw]';
 
 export default function NoticeMagazineSection() {
   return (
-    <section className="bg-white pt-10 pb-6 md:pt-10 md:pb-8 lg:pt-10 lg:pb-6">
-      <div className="mx-auto max-w-[1920px] px-3 sm:px-4 md:px-5 lg:px-[6vw]">
-        {/*
-        ─── 기존: 공지 + 문의 2열 ───
-        <div className="grid grid-cols-1 md:gap-6 lg:grid-cols-2 lg:gap-8 xl:gap-10">
-          <NoticeSection />
-          <InquirySection />
+    <section className="bg-white" aria-labelledby="notice-title">
+      <div className={`mx-auto w-full max-w-[1920px] ${FRAME_X}`}>
+        <div className="flex h-16 items-center justify-between md:h-20">
+          <h2
+            id="notice-title"
+            className="font-giants text-[22px] text-gray-900 md:text-[28px]"
+          >
+            공지사항
+          </h2>
+          <Link
+            href="/notice/notice"
+            className="text-sm font-medium text-blue-600 transition-colors duration-200 hover:text-blue-700"
+          >
+            더보기 &gt;
+          </Link>
         </div>
-        */}
 
-        {/* 공지사항 단일 컬럼 (가독·균형용 최대 너비) */}
-        <div className="mx-auto w-full max-w-6xl xl:max-w-7xl">
-          <NoticeSection />
-        </div>
+        <NoticeSection variant="embedded" />
       </div>
     </section>
   );

@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import NoticeItem from './NoticeItem';
 import { NoticeResponse, ApiNoticeItem } from './types';
 
-export default function NoticeSection() {
+const FRAME_X = 'px-3 sm:px-4 md:px-5 lg:px-[6vw]';
+
+interface NoticeSectionProps {
+  /** 메인 홈: FAQ와 동일 여백·리스트 스타일 (제목은 NoticeMagazineSection) */
+  variant?: 'default' | 'embedded';
+}
+
+export default function NoticeSection({ variant = 'default' }: NoticeSectionProps) {
+  const isEmbedded = variant === 'embedded';
   const router = useRouter();
   const [noticeData, setNoticeData] = useState<ApiNoticeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,61 +78,60 @@ export default function NoticeSection() {
     link: `/notice/notice/${item.id}`
   }));
 
-  return (
-    <div className="bg-white rounded-lg shadow-none border border-white pt-4 pb-4 md:pt-5 md:pb-5">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-giants text-[22px] md:text-[28px] text-gray-900">
-          공지사항
-        </h3>
-        <Link 
-          href="/notice/notice" 
-          className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
-        >
-          더보기 &gt;
-        </Link>
-      </div>
-      
-      {/* 공지사항 리스트 */}
-      <div className="space-y-0">
-        {isLoading ? (
-          // 스켈레톤 UI
-          Array.from({ length: 5 }).map((_, idx) => (
-            <div key={`skeleton-${idx}`} className="py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
-              <div className="flex items-start gap-3">
-                {/* 날짜 스켈레톤 */}
-                <div className="min-w-[80px] shrink-0 whitespace-nowrap text-sm">
-                  <div className="h-[14px] w-16 animate-pulse rounded bg-gray-200" />
-                </div>
-                {/* 카테고리 및 제목 스켈레톤 */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-nowrap items-center gap-2">
-                    <div
-                      className="h-[14px] flex-1 animate-pulse rounded bg-gray-200"
-                      style={{ lineHeight: '1.625' }}
-                    />
-                    <div className="h-5 w-16 shrink-0 animate-pulse rounded bg-gray-200" />
-                  </div>
-                </div>
+  const listContent = isLoading ? (
+    <div className="divide-y divide-gray-200 rounded-md bg-white">
+      {Array.from({ length: 5 }).map((_, idx) => (
+        <div key={`skeleton-${idx}`} className="py-4 sm:py-5 md:py-6">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="min-w-[80px] shrink-0">
+              <div className="h-[14px] w-16 animate-pulse rounded bg-gray-200 md:h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-nowrap items-center gap-2">
+                <div className="h-[14px] flex-1 animate-pulse rounded bg-gray-200 md:h-4" />
+                <div className="h-5 w-16 shrink-0 animate-pulse rounded bg-gray-200" />
               </div>
             </div>
-          ))
-        ) : displayData.length > 0 ? (
-          displayData.slice(0, 5).map((item) => (
-            <NoticeItem key={item.id} item={item} />
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-            <p className="text-sm text-gray-500">아직 글이 없습니다</p>
-            <button
-              type="button"
-              onClick={() => router.push('/notice/notice')}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              공지사항 보러가기
-            </button>
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  ) : displayData.length > 0 ? (
+    <div className="divide-y divide-gray-200 rounded-md bg-white">
+      {displayData.slice(0, 5).map((item) => (
+        <NoticeItem key={item.id} item={item} embedded={isEmbedded} />
+      ))}
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+      <p className="text-sm text-gray-500">아직 글이 없습니다</p>
+      <button
+        type="button"
+        onClick={() => router.push('/notice/notice')}
+        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+      >
+        공지사항 보러가기
+      </button>
+    </div>
+  );
+
+  if (isEmbedded) {
+    return <div>{listContent}</div>;
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-white pt-4 pb-4 shadow-none md:pt-5 md:pb-5">
+      <div className={`mx-auto w-full max-w-[1920px] ${FRAME_X}`}>
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="font-giants text-[22px] text-gray-900 md:text-[28px]">공지사항</h3>
+          <Link
+            href="/notice/notice"
+            className="text-sm font-medium text-blue-600 transition-colors duration-200 hover:text-blue-700"
+          >
+            더보기 &gt;
+          </Link>
+        </div>
+        {listContent}
       </div>
     </div>
   );

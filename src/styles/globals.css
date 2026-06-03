@@ -224,3 +224,56 @@ img {
     animation: none !important;
   }
 }
+
+/* 메인 홈: 주요대회일정 이하 섹션 스크롤 리빌 (WIP data-wip-reveal 참고) */
+[data-kma-reveal] {
+  opacity: 0;
+  transform: translateY(36px);
+  filter: blur(10px);
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-kma-reveal][data-visible='true'] {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+[data-kma-reveal][data-kma-delay='1'] {
+  transition-delay: 0.1s;
+}
+
+[data-kma-reveal][data-kma-delay='2'] {
+  transition-delay: 0.18s;
+}
+
+[data-kma-reveal][data-kma-delay='3'] {
+  transition-delay: 0.26s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-kma-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+/* 메인 홈: 스티키 히어로 — 뷰포트 높이 채움 (스크롤 덮개) */
+.main-hero-sticky-layer .hero-section {
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+}
+
+.main-hero-sticky-layer .hero-section > div,
+.main-hero-sticky-layer .hero-section .swiper,
+.main-hero-sticky-layer .hero-section .swiper-wrapper,
+.main-hero-sticky-layer .hero-section .swiper-slide {
+  height: 100% !important;
+}

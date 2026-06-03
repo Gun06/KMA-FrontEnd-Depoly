@@ -1,21 +1,20 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import EventCard from './EventCard';
+import React, { useState, useEffect, useRef } from 'react';
+import EventCard, { EMBEDDED_OLIVE_WIDE_CARD_WIDTH } from './EventCard';
 import { BlockEventItem } from '@/types/event';
 import { blockListDisplayImageSrc } from '@/services/schedule';
 import Link from 'next/link';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface EventSectionProps {
-  /** 메인 2열 레이아웃: 좌측 컬럼에 맞게 패딩·그리드 적용 */
+  /** 메인 홈: KMA-Mobile과 동일한 흰 배경·좌우 여백 */
   variant?: 'default' | 'embedded';
 }
 
-const EVENT_SECONDS_PER_CARD = 3.2;
+const EMBEDDED_HEADER = 'mx-auto w-full max-w-[1920px] px-4 md:px-6 lg:px-[6vw]';
+const EMBEDDED_SCROLL_PADDING = 'pl-4 md:pl-6 lg:pl-[6vw] pr-4 md:pr-6 lg:pr-[6vw]';
 
 export default function EventSection({ variant = 'default' }: EventSectionProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)');
   const [eventData, setEventData] = useState<BlockEventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,49 +23,6 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-  const isPausedRef = useRef(false);
-  const offsetRef = useRef(0); // 애니메이션 offset을 ref로 관리
-
-  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('a')) return;
-    if (!trackRef.current) return;
-    
-    // 애니메이션 일시정지
-    isPausedRef.current = true;
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    startXRef.current = clientX;
-    
-    // 현재 offset을 드래그 시작 위치로 설정
-    scrollLeftRef.current = -offsetRef.current; // offset은 음수이므로 -를 붙여서 양수로
-  };
-
-  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDraggingRef.current || !trackRef.current) return;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const diff = startXRef.current - clientX;
-    const newX = -(scrollLeftRef.current + diff);
-    trackRef.current.style.transform = `translateX(${newX}px)`;
-    if ('touches' in e) e.preventDefault();
-  };
-
-  const handlePointerUp = () => {
-    if (!isDraggingRef.current || !trackRef.current) return;
-    
-    // 현재 위치를 offsetRef에 저장하여 애니메이션이 이어지도록
-    const transform = window.getComputedStyle(trackRef.current).transform;
-    const matrix = new DOMMatrix(transform);
-    offsetRef.current = matrix.m41; // translateX 값
-    
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    isPausedRef.current = false; // 드래그 종료 시 애니메이션 재개
-  };
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -116,58 +72,49 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
     fetchEventData();
   }, []);
 
-  const isEmbedded = variant === 'embedded';
-  const loopEvents = useMemo(() => {
-    if (eventData.length === 0) return [];
-    return Array.from({ length: Math.max(12, eventData.length * 3) }, (_, i) => eventData[i % eventData.length]);
-  }, [eventData]);
   useEffect(() => {
-    if (isMobile || !trackRef.current || !listRef.current || loopEvents.length === 0) return;
-    const prefersReducedMotion =
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    const el = scrollRef.current;
+    if (!el) return;
 
-    let raf = 0;
-    let listWidth = listRef.current.scrollWidth;
-    let speedPerMs = 0;
-    let lastTs = 0;
-
-    const updateMetrics = () => {
-      if (!listRef.current) return;
-      listWidth = listRef.current.scrollWidth;
-      const firstLi = listRef.current.querySelector('li');
-      const firstWidth = firstLi instanceof HTMLElement ? firstLi.offsetWidth : 0;
-      const gapPx = Number.parseFloat(getComputedStyle(listRef.current).columnGap || '0') || 0;
-      const travelPx = firstWidth + gapPx;
-      speedPerMs = travelPx > 0 ? travelPx / (EVENT_SECONDS_PER_CARD * 1000) : 0;
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      if (el.scrollWidth <= el.clientWidth) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
     };
-    updateMetrics();
-    const ro = new ResizeObserver(updateMetrics);
-    ro.observe(listRef.current);
 
-    const tick = (ts: number) => {
-      if (!trackRef.current || listWidth <= 0) {
-        raf = requestAnimationFrame(tick);
-        return;
-      }
-      if (lastTs === 0) lastTs = ts;
-      const delta = ts - lastTs;
-      lastTs = ts;
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [isLoading, eventData.length]);
 
-      if (!isPausedRef.current && !isDraggingRef.current && speedPerMs > 0) {
-        offsetRef.current -= delta * speedPerMs;
-        if (Math.abs(offsetRef.current) >= listWidth) offsetRef.current += listWidth;
-        trackRef.current.style.transform = `translate3d(${offsetRef.current}px,0,0)`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('a')) return;
+    if (!scrollRef.current) return;
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    startXRef.current = clientX;
+    scrollLeftRef.current = scrollRef.current.scrollLeft;
+  };
 
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [isMobile, loopEvents.length]);
+  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDraggingRef.current || !scrollRef.current) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const diff = startXRef.current - clientX;
+    scrollRef.current.scrollLeft = scrollLeftRef.current + diff;
+    if ('touches' in e) e.preventDefault();
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+    setIsDragging(false);
+  };
+
+  const isEmbedded = variant === 'embedded';
+  const containerClass = isEmbedded
+    ? EMBEDDED_HEADER
+    : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10';
 
   const renderEventCard = (event: BlockEventItem, key: string) => (
     <EventCard
@@ -192,118 +139,81 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
       eventId={event.eventId}
       eventUrl={event.eventUrl}
       size="olive"
+      className={isEmbedded ? 'main-embedded' : undefined}
     />
   );
 
+  const listGapClass = isEmbedded ? 'gap-3 md:gap-4 lg:gap-5' : 'gap-3';
+  const listPaddingClass = isEmbedded ? EMBEDDED_SCROLL_PADDING : '';
+  const scrollHeightClass = isEmbedded
+    ? 'min-h-[168px] sm:min-h-[188px] md:min-h-[215px] lg:min-h-[228px]'
+    : 'h-[215px] md:h-[245px]';
+
+  const cardList = isLoading || error ? (
+    <ul className={`m-0 flex w-max list-none ${listGapClass} pb-2 ${listPaddingClass}`}>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <li
+          key={`skeleton-${i}`}
+          className={isEmbedded ? `shrink-0 ${EMBEDDED_OLIVE_WIDE_CARD_WIDTH}` : 'shrink-0 w-[240px] md:w-[267px]'}
+        >
+          <div className="aspect-[332/166] w-full animate-pulse rounded-xl bg-gray-200" />
+          <div className="mt-2 space-y-1.5 md:mt-2.5">
+            <div className="h-3 w-8 animate-pulse rounded bg-gray-200" />
+            <div className="h-3.5 w-20 animate-pulse rounded bg-gray-200 md:h-4" />
+            <div className="h-3 w-14 animate-pulse rounded bg-gray-200" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  ) : eventData.length > 0 ? (
+    <ul className={`m-0 flex w-max list-none ${listGapClass} pb-2 ${listPaddingClass}`}>
+      {eventData.map((event, idx) =>
+        renderEventCard(event, `${event.eventId ?? idx}-${idx}`)
+      )}
+    </ul>
+  ) : (
+    <div className="flex min-w-0 flex-1 items-center justify-center py-8 text-sm text-gray-400">
+      등록된 대회 일정이 없습니다.
+    </div>
+  );
+
+  const scrollRegion = (
+    <div
+      ref={scrollRef}
+      role="region"
+      aria-label="주요 대회 일정 카드 목록"
+      className={`flex ${scrollHeightClass} min-w-0 items-start overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+        }`}
+      style={{ touchAction: 'pan-x' }}
+      onMouseDown={handlePointerDown}
+      onMouseMove={handlePointerMove}
+      onMouseUp={handlePointerUp}
+      onMouseLeave={handlePointerUp}
+      onTouchStart={handlePointerDown}
+      onTouchMove={handlePointerMove}
+      onTouchEnd={handlePointerUp}
+    >
+      {cardList}
+    </div>
+  );
+
   return (
-    <section className={`bg-white ${isEmbedded ? 'pt-0 pb-0' : 'pt-8 pb-8'}`}>
-      <div
-        className={
-          isEmbedded
-            ? 'w-full'
-            : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10'
-        }
-      >
+    <section className={`bg-white ${isEmbedded ? 'py-8 md:py-10' : 'pt-8 pb-8'}`}>
+      <div className={containerClass}>
         <div className="flex items-end justify-between">
           <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
             주요 대회 일정
           </h2>
           <Link
             href="/schedule"
-            className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
           >
             더보기 &gt;
           </Link>
         </div>
+        {!isEmbedded && <div className="mt-4">{scrollRegion}</div>}
       </div>
-
-      <div className={isEmbedded ? 'mt-4 -mx-4 md:-mx-6 lg:-mx-[6vw]' : 'mt-4'}>
-        <div
-          ref={scrollRef}
-          role="region"
-          aria-label="주요 대회 일정 카드 목록"
-          className={`flex h-[215px] md:h-[245px] ${
-            isMobile
-              ? 'min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-              : isDragging
-                ? 'cursor-grabbing select-none'
-                : 'cursor-grab'
-          }`}
-          style={isMobile ? undefined : { touchAction: 'none' }}
-          {...(isMobile
-            ? {}
-            : {
-                onMouseDown: handlePointerDown,
-                onMouseMove: handlePointerMove,
-                onMouseUp: handlePointerUp,
-                onMouseLeave: handlePointerUp,
-                onTouchStart: handlePointerDown,
-                onTouchMove: handlePointerMove,
-                onTouchEnd: handlePointerUp,
-              })}
-        >
-          {isMobile ? (
-            <>
-              {isLoading || error ? (
-                <ul className="m-0 flex w-max list-none gap-3 pb-2 pr-4">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <li key={`skeleton-${i}`} className="shrink-0 w-[240px]">
-                      <div className="aspect-[332/166] w-full rounded-xl bg-gray-200 animate-pulse" />
-                      <div className="mt-2.5 space-y-1.5">
-                        <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
-                        <div className="h-3.5 w-20 rounded bg-gray-200 animate-pulse" />
-                        <div className="h-3 w-14 rounded bg-gray-200 animate-pulse" />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : eventData.length > 0 ? (
-                <ul className="m-0 flex w-max list-none gap-3 pb-2 pr-4">
-                  {eventData.map((event, idx) => renderEventCard(event, `m-${event.eventId ?? idx}-${idx}`))}
-                </ul>
-              ) : (
-                <div className="flex min-w-0 flex-1 items-center justify-center py-8 text-sm text-gray-400">
-                  등록된 대회 일정이 없습니다.
-                </div>
-              )}
-            </>
-          ) : (
-            <div
-              className="relative min-w-0 flex-1 overflow-hidden"
-            >
-              <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-5 bg-gradient-to-r from-white/36 via-white/14 to-transparent md:w-7" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-5 bg-gradient-to-l from-white/36 via-white/14 to-transparent md:w-7" />
-              {isLoading || error ? (
-                <ul className="flex w-max min-w-full list-none gap-3 pb-2 pl-0 pr-4 md:pr-6">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <li key={`skeleton-${i}`} className="shrink-0 w-[240px] md:w-[267px]">
-                      <div className="aspect-[332/166] w-full rounded-xl bg-gray-200 animate-pulse" />
-                      <div className="mt-2.5 space-y-1.5">
-                        <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
-                        <div className="h-3.5 w-20 rounded bg-gray-200 animate-pulse" />
-                        <div className="h-3 w-14 rounded bg-gray-200 animate-pulse" />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : loopEvents.length > 0 ? (
-                <div ref={trackRef} className="flex w-max will-change-transform">
-                  <ul ref={listRef} className="m-0 flex list-none gap-3 pb-2">
-                    {loopEvents.map((event, idx) => renderEventCard(event, `a-${event.eventId ?? idx}-${idx}`))}
-                  </ul>
-                  <ul className="m-0 flex list-none gap-3 pb-2" aria-hidden>
-                    {loopEvents.map((event, idx) => renderEventCard(event, `b-${event.eventId ?? idx}-${idx}`))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center py-8 text-sm text-gray-400">
-                  등록된 대회 일정이 없습니다.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      {isEmbedded && <div className="mt-4 w-full">{scrollRegion}</div>}
     </section>
   );
 }

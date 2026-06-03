@@ -19,7 +19,7 @@ interface EventCardProps {
   eventId?: string; // API에서 받은 이벤트 ID
   eventUrl?: string; // 로컬대회의 경우 외부 URL (eventUrl이 있으면 이걸 우선 사용)
   className?: string;
-  size?: 'small' | 'medium' | 'large' | 'test' | 'olive'; // olive: KMA-Mobile/올리브영 스타일
+  size?: 'small' | 'medium' | 'large' | 'test' | 'olive' | 'olive-home'; // olive-home: 메인 홈 반응형
   isDragging?: boolean;
   dragDistance?: number;
 }
@@ -37,6 +37,25 @@ function calculateDDayFromDeadline(deadline: string | undefined): string | null 
   if (diffDays === 0) return 'D-Day';
   return `D-${diffDays}`;
 }
+
+/** 메인 홈 olive-home(정사각) — 모바일 140px 기준 */
+export const EMBEDDED_EVENT_CARD_WIDTH =
+  'w-[140px] sm:w-[160px] md:w-[200px] lg:w-[240px]';
+
+/** 메인 홈 olive(가로형) — 모바일 축소, lg에서 기존 267px */
+export const EMBEDDED_OLIVE_WIDE_CARD_WIDTH =
+  'w-[200px] sm:w-[220px] md:w-[240px] lg:w-[267px]';
+
+const OLIVE_STATUS_MAP: Record<string, { text: string; bg: string }> = {
+  PENDING: { text: '접수예정', bg: '#FF6B00' },
+  ONGOING: { text: '접수중', bg: '#00C73C' },
+  OPEN: { text: '접수중', bg: '#00C73C' },
+  UPLOAD_APPLYING: { text: '심사중', bg: '#FF6B00' },
+  COMPLETED: { text: '접수마감', bg: '#999999' },
+  CANCELLED: { text: '접수마감', bg: '#999999' },
+  CLOSED: { text: '접수마감', bg: '#999999' },
+  FINAL_CLOSED: { text: '접수마감', bg: '#999999' },
+};
 
 /** 날짜 포맷 YYYY.MM.DD (KMA-Mobile 동일) */
 function formatEventDate(dateStr: string): string {
@@ -192,30 +211,19 @@ export default function EventCard({
 
   const statusColors = getStatusColors();
 
-  // KMA-Mobile / 올리브영 스타일 카드 (size === 'olive')
-  if (size === 'olive') {
-    const statusMap: Record<string, { text: string; bg: string }> = {
-      PENDING: { text: '접수예정', bg: '#FF6B00' },
-      ONGOING: { text: '접수중', bg: '#00C73C' },
-      OPEN: { text: '접수중', bg: '#00C73C' },
-      UPLOAD_APPLYING: { text: '심사중', bg: '#FF6B00' },
-      COMPLETED: { text: '접수마감', bg: '#999999' },
-      CANCELLED: { text: '접수마감', bg: '#999999' },
-      CLOSED: { text: '접수마감', bg: '#999999' },
-      FINAL_CLOSED: { text: '접수마감', bg: '#999999' },
-    };
-    const statusInfo = statusMap[status] || { text: status || '접수중', bg: '#00C73C' };
+  // 메인 홈 — KMA-Mobile 140 정사각 카드, 뷰포트별 확대
+  if (size === 'olive-home') {
+    const statusInfo = OLIVE_STATUS_MAP[status] || { text: status || '접수중', bg: '#00C73C' };
     const dDay = calculateDDayFromDeadline(eventDeadLine);
     const href = eventUrl
       ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
       : (eventId ? `/event/${eventId}/guide/overview` : '#');
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
-    const isGridCell = className?.includes('w-full');
 
-    const oliveCard = (
-      <div className={clsx(isGridCell ? 'w-full' : 'w-[240px] md:w-[267px]', 'flex flex-col select-none')}>
+    const oliveHomeCard = (
+      <div className={clsx(EMBEDDED_EVENT_CARD_WIDTH, 'flex flex-col select-none')}>
         <div
-          className="relative w-full aspect-[332/166] rounded-xl border border-gray-100 bg-gray-100 overflow-hidden"
+          className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-100 bg-gray-100 md:rounded-xl"
           onDragStart={(e) => e.preventDefault()}
           draggable={false}
         >
@@ -225,17 +233,18 @@ export default function EventCard({
               alt={imageAlt}
               fill
               className="object-cover pointer-events-none"
-              sizes="267px"
+              sizes="(max-width: 640px) 140px, (max-width: 1024px) 200px, 240px"
               draggable={false}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-              <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
+              <svg className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+              </svg>
             </div>
           )}
-          {/* 상태 뱃지: 좌상단 (KMA-Mobile) */}
           <div
-            className="absolute top-0 left-0 px-2.5 py-1.5 text-[13px] font-bold text-white"
+            className="absolute left-0 top-0 px-2 py-1 text-[10px] font-bold text-white md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]"
             style={{
               backgroundColor: statusInfo.bg,
               borderTopLeftRadius: '12px',
@@ -244,38 +253,213 @@ export default function EventCard({
           >
             {statusInfo.text}
           </div>
-          {/* 화살표 원형 버튼: 우하단 (링크는 버튼에만, 이미지에는 링크 없음) */}
           {href && href !== '#' ? (
             <Link
               href={href}
-              className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300"
+              className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300 md:bottom-2 md:right-2 md:h-8 md:w-8"
               {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               aria-label="대회 상세 보기"
             >
-              <svg className="w-4 h-4 text-black/87 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden><path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" /></svg>
+              <svg className="h-3.5 w-3.5 flex-shrink-0 text-black/87 md:h-4 md:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
+              </svg>
             </Link>
           ) : (
-            <div className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/95 shadow flex items-center justify-center" aria-hidden>
-              <svg className="w-4 h-4 text-black/87 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" /></svg>
+            <div className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow md:bottom-2 md:right-2 md:h-8 md:w-8" aria-hidden>
+              <svg className="h-3.5 w-3.5 flex-shrink-0 text-black/87 md:h-4 md:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
+              </svg>
             </div>
           )}
         </div>
-        <div className="mt-2.5 flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {dDay && <span className="text-sm font-black shrink-0" style={{ color: '#FF4081' }}>{dDay}</span>}
-            <span className="text-sm text-gray-500 truncate">{formatEventDate(eventDate)}</span>
+        <div className="mt-2.5 flex min-w-0 flex-col md:mt-3">
+          <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
+            {dDay && (
+              <span className="shrink-0 text-xs font-black md:text-sm" style={{ color: '#FF4081' }}>
+                {dDay}
+              </span>
+            )}
+            <span className="truncate text-[11px] text-gray-500 md:text-xs">{formatEventDate(eventDate)}</span>
           </div>
-          <p className="mt-1 text-base font-semibold text-black leading-tight truncate" style={{ letterSpacing: '-0.3px' }} title={title}>
+          <p
+            className="mt-1 truncate text-[13px] font-semibold leading-tight text-black md:text-sm lg:text-base"
+            style={{ letterSpacing: '-0.3px' }}
+            title={title}
+          >
             {title}
           </p>
           {categoryNames && (
-            <p className="mt-1 text-sm text-gray-500 truncate">{formatCategoryNames(categoryNames)}</p>
+            <p className="mt-1 truncate text-[11px] text-gray-500 md:text-xs">{formatCategoryNames(categoryNames)}</p>
           )}
         </div>
       </div>
     );
 
-    return <li className={clsx('shrink-0 list-none', className)}>{oliveCard}</li>;
+    return <li className={clsx('shrink-0 list-none', className)}>{oliveHomeCard}</li>;
+  }
+
+  // KMA-Mobile / 올리브영 스타일 카드 (size === 'olive')
+  if (size === 'olive') {
+    const statusInfo = OLIVE_STATUS_MAP[status] || { text: status || '접수중', bg: '#00C73C' };
+    const dDay = calculateDDayFromDeadline(eventDeadLine);
+    const href = eventUrl
+      ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
+      : (eventId ? `/event/${eventId}/guide/overview` : '#');
+    const isExternal = !!eventUrl && !eventUrl.startsWith('/');
+    const isGridCell = className?.includes('w-full');
+    const isMainEmbedded = className?.includes('main-embedded');
+
+    const cardWidth = isGridCell
+      ? 'w-full'
+      : isMainEmbedded
+        ? EMBEDDED_OLIVE_WIDE_CARD_WIDTH
+        : 'w-[240px] md:w-[267px]';
+
+    const oliveCard = (
+      <div className={clsx(cardWidth, 'flex flex-col select-none')}>
+        <div
+          className="relative w-full aspect-[332/166] overflow-hidden rounded-xl border border-gray-100 bg-gray-100"
+          onDragStart={(e) => e.preventDefault()}
+          draggable={false}
+        >
+          {imageSrc ? (
+            <Image
+              src={imageSrc}
+              alt={imageAlt}
+              fill
+              className="object-cover pointer-events-none"
+              sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 267px"
+              draggable={false}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
+              <svg
+                className="h-8 w-8 md:h-10 md:w-10"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+              </svg>
+            </div>
+          )}
+          <div
+            className={clsx(
+              'absolute left-0 top-0 font-bold text-white',
+              isMainEmbedded
+                ? 'px-2 py-1 text-[10px] md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]'
+                : 'px-2.5 py-1.5 text-[13px]'
+            )}
+            style={{
+              backgroundColor: statusInfo.bg,
+              borderTopLeftRadius: '12px',
+              borderBottomRightRadius: '8px',
+            }}
+          >
+            {statusInfo.text}
+          </div>
+          {href && href !== '#' ? (
+            <Link
+              href={href}
+              className={clsx(
+                'absolute flex items-center justify-center rounded-full bg-white/95 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300',
+                isMainEmbedded
+                  ? 'bottom-1.5 right-1.5 h-7 w-7 md:bottom-2 md:right-2 md:h-8 md:w-8'
+                  : 'bottom-2 right-2 h-8 w-8'
+              )}
+              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              aria-label="대회 상세 보기"
+            >
+              <svg
+                className={clsx(
+                  'flex-shrink-0 text-black/87',
+                  isMainEmbedded ? 'h-3.5 w-3.5 md:h-4 md:w-4' : 'h-4 w-4'
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
+              </svg>
+            </Link>
+          ) : (
+            <div
+              className={clsx(
+                'absolute flex items-center justify-center rounded-full bg-white/95 shadow',
+                isMainEmbedded
+                  ? 'bottom-1.5 right-1.5 h-7 w-7 md:bottom-2 md:right-2 md:h-8 md:w-8'
+                  : 'bottom-2 right-2 h-8 w-8'
+              )}
+              aria-hidden
+            >
+              <svg
+                className={clsx(
+                  'flex-shrink-0 text-black/87',
+                  isMainEmbedded ? 'h-3.5 w-3.5 md:h-4 md:w-4' : 'h-4 w-4'
+                )}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
+              </svg>
+            </div>
+          )}
+        </div>
+        <div className={clsx('flex min-w-0 flex-col', isMainEmbedded ? 'mt-2 md:mt-2.5' : 'mt-2.5')}>
+          <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
+            {dDay && (
+              <span
+                className={clsx(
+                  'shrink-0 font-black',
+                  isMainEmbedded ? 'text-xs md:text-sm' : 'text-sm'
+                )}
+                style={{ color: '#FF4081' }}
+              >
+                {dDay}
+              </span>
+            )}
+            <span
+              className={clsx(
+                'truncate text-gray-500',
+                isMainEmbedded ? 'text-[11px] md:text-xs lg:text-sm' : 'text-sm'
+              )}
+            >
+              {formatEventDate(eventDate)}
+            </span>
+          </div>
+          <p
+            className={clsx(
+              'mt-1 truncate font-semibold leading-tight text-black',
+              isMainEmbedded ? 'text-[13px] md:text-sm lg:text-base' : 'text-base'
+            )}
+            style={{ letterSpacing: '-0.3px' }}
+            title={title}
+          >
+            {title}
+          </p>
+          {categoryNames && (
+            <p
+              className={clsx(
+                'mt-1 truncate text-gray-500',
+                isMainEmbedded ? 'text-[11px] md:text-xs lg:text-sm' : 'text-sm'
+              )}
+            >
+              {formatCategoryNames(categoryNames)}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+
+    return (
+      <li className={clsx('shrink-0 list-none', isMainEmbedded ? undefined : className)}>
+        {oliveCard}
+      </li>
+    );
   }
 
   const cardContent = (
