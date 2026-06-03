@@ -118,12 +118,12 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
   const dividerTop = heroBottom;
   const sponsorTop = heroBottom + HERO_SPONSOR_DIVIDER_PX;
 
-  const stackH =
-    heroReady && sponsorHeight > 0
+  const stackHeightPx = heroReady
+    ? sponsorHeight > 0
       ? heroBottom + HERO_SPONSOR_DIVIDER_PX + sponsorHeight
-      : heroReady
-        ? heroBottom
-        : HERO_HEIGHT_FALLBACK;
+      : heroBottom
+    : 0;
+  const stackH = stackHeightPx > 0 ? stackHeightPx : HERO_HEIGHT_FALLBACK;
 
   /** 푸터가 보이기 시작하면 고정 히어로·스폰서 숨김 — 맨 아래에서 뒤 콘텐츠 비침 방지 */
   const [pinHeroLayers, setPinHeroLayers] = useState(true);
@@ -132,7 +132,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
     const update = () => {
       const zone = document.querySelector('[data-kma-footer-zone]');
       if (!zone) {
-        setPinHeroLayers(window.scrollY < stackH);
+        setPinHeroLayers(stackHeightPx === 0 || window.scrollY < stackHeightPx);
         return;
       }
       const { top } = zone.getBoundingClientRect();
@@ -152,7 +152,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
       window.removeEventListener('resize', update);
       ro?.disconnect();
     };
-  }, [stackH]);
+  }, [stackHeightPx]);
 
   const pinnedLayerClass = pinHeroLayers
     ? 'opacity-100'
