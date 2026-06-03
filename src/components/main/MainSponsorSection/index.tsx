@@ -12,6 +12,9 @@ const SPONSOR_SECONDS_PER_LOGO = 2.6;
 const SPONSOR_SECONDS_PER_LOGO_MOBILE = 5.0;
 const SPONSOR_TRAVEL_PX_PER_LOGO = 200;
 const LOGO_ROW_H_CLASS = 'h-[68px] max-h-[68px] md:h-[78px] md:max-h-[78px]';
+/** 메인 홈 embedded — 모바일에서 로고 행 축소 */
+const EMBEDDED_LOGO_ROW_H_CLASS =
+  'h-[44px] max-h-[44px] sm:h-[48px] sm:max-h-[48px] md:h-[68px] md:max-h-[68px] lg:h-[78px] lg:max-h-[78px]';
 
 export default function MainSponsorSection({ variant = 'default' }: MainSponsorSectionProps) {
   const [items, setItems] = useState<SponsorBanner[]>([]);
@@ -119,6 +122,7 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
   }, [loop.length]);
 
   const isEmbedded = variant === 'embedded';
+  const rowHClass = isEmbedded ? EMBEDDED_LOGO_ROW_H_CLASS : LOGO_ROW_H_CLASS;
 
   if (!loading && sponsors.length === 0) {
     return null;
@@ -126,7 +130,7 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
 
   const logoStrip = (
     <div
-      className={`relative w-full overflow-hidden border-b-2 border-gray-200 bg-white ${LOGO_ROW_H_CLASS}`}
+      className={`relative w-full overflow-hidden border-b-2 border-gray-200 bg-white ${rowHClass}`}
       role="region"
       aria-label="스폰서 배너 목록"
     >
@@ -137,7 +141,7 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
         </>
       )}
       {loading ? (
-        <ul className={`flex w-max list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
+        <ul className={`flex w-max list-none items-center gap-0 ${rowHClass}`}>
           {Array.from({ length: 8 }).map((_, i) => (
             <li key={`sp-sk-${i}`} className="shrink-0 list-none">
               <div className="h-full w-24 animate-pulse rounded bg-gray-200 md:w-28" />
@@ -145,15 +149,15 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
           ))}
         </ul>
       ) : (
-        <div ref={marqueeRef} className={`flex w-max will-change-transform ${LOGO_ROW_H_CLASS}`}>
-          <ul ref={listRef} className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`}>
+        <div ref={marqueeRef} className={`flex w-max will-change-transform ${rowHClass}`}>
+          <ul ref={listRef} className={`m-0 flex list-none items-center gap-0 ${rowHClass}`}>
             {loop.map((banner, idx) => (
-              <SponsorBannerItem key={`a-${banner.orderNo}-${idx}`} banner={banner} />
+              <SponsorBannerItem key={`a-${banner.orderNo}-${idx}`} banner={banner} rowHClass={rowHClass} />
             ))}
           </ul>
-          <ul className={`m-0 flex list-none items-center gap-0 ${LOGO_ROW_H_CLASS}`} aria-hidden>
+          <ul className={`m-0 flex list-none items-center gap-0 ${rowHClass}`} aria-hidden>
             {loop.map((banner, idx) => (
-              <SponsorBannerItem key={`b-${banner.orderNo}-${idx}`} banner={banner} />
+              <SponsorBannerItem key={`b-${banner.orderNo}-${idx}`} banner={banner} rowHClass={rowHClass} />
             ))}
           </ul>
         </div>
@@ -181,15 +185,21 @@ export default function MainSponsorSection({ variant = 'default' }: MainSponsorS
   );
 }
 
-function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
+function SponsorBannerItem({
+  banner,
+  rowHClass,
+}: {
+  banner: SponsorBanner;
+  rowHClass: string;
+}) {
   const inner = (
     <div className="flex h-full items-center">
-      <SponsorLogo imageUrl={banner.imageUrl} />
+      <SponsorLogo imageUrl={banner.imageUrl} rowHClass={rowHClass} />
     </div>
   );
 
   return (
-    <li className={`m-0 shrink-0 list-none p-0 pr-2 md:pr-3 ${LOGO_ROW_H_CLASS}`}>
+    <li className={`m-0 shrink-0 list-none p-0 pr-2 md:pr-3 ${rowHClass}`}>
       {banner.url?.trim() ? (
         <a
           href={banner.url.trim()}
@@ -206,15 +216,15 @@ function SponsorBannerItem({ banner }: { banner: SponsorBanner }) {
   );
 }
 
-function SponsorLogo({ imageUrl }: { imageUrl: string }) {
+function SponsorLogo({ imageUrl, rowHClass }: { imageUrl: string; rowHClass: string }) {
   return (
-    <div className="flex h-[68px] max-h-[68px] items-center overflow-hidden md:h-[78px] md:max-h-[78px]">
+    <div className={`flex items-center overflow-hidden ${rowHClass}`}>
       <Image
         src={imageUrl}
         alt="스폰서"
         width={200}
-        height={68}
-        sizes="(max-width: 1023px) 28vw, 140px"
+        height={78}
+        sizes="(max-width: 639px) 80px, (max-width: 1023px) 120px, 140px"
         className="block h-full max-h-full w-auto max-w-none object-contain object-center select-none"
         draggable={false}
         onDragStart={(e) => e.preventDefault()}

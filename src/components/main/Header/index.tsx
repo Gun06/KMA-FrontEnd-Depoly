@@ -257,40 +257,52 @@ export default function Header() {
     if (typeof window === 'undefined') return;
 
     const updateMainOffset = () => {
-      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-      /* 앱 배너(h-11·md:h-12) + 모바일 헤더줄(pt-1·py-2·콘텐츠) / 데스크톱은 h-20 */
-      const offset = isBannerVisible
-        ? isDesktop
-          ? '128px'
-          : '112px'
-        : '80px';
-      document.documentElement.style.setProperty('--kma-main-header-offset', offset);
-      const bannerH = isBannerVisible ? (isDesktop ? '48px' : '52px') : '0px';
-      document.documentElement.style.setProperty('--kma-banner-height', bannerH);
+      const headerEl = document.querySelector('header');
+      const bannerEl = headerEl?.querySelector<HTMLElement>('[data-app-install-banner]');
+      const headerPx = headerEl ? Math.round(headerEl.getBoundingClientRect().height) : 80;
+      const bannerPx =
+        isBannerVisible && bannerEl
+          ? Math.round(bannerEl.getBoundingClientRect().height)
+          : 0;
+
+      document.documentElement.style.setProperty('--kma-main-header-offset', `${headerPx}px`);
+      document.documentElement.style.setProperty(
+        '--kma-banner-height',
+        bannerPx > 0 ? `${bannerPx}px` : '0px'
+      );
     };
 
     updateMainOffset();
+
+    const headerEl = document.querySelector('header');
+    const headerRo = headerEl ? new ResizeObserver(updateMainOffset) : null;
+    headerRo?.observe(headerEl as Element);
+
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedResize = () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(updateMainOffset, 100);
     };
     window.addEventListener('resize', debouncedResize);
+
+    const t = window.setTimeout(updateMainOffset, 50);
+
     return () => {
+      headerRo?.disconnect();
       window.removeEventListener('resize', debouncedResize);
       if (resizeTimer) clearTimeout(resizeTimer);
+      window.clearTimeout(t);
     };
   }, [isBannerVisible]);
 
-  const hasTopBanner = isBannerVisible;
-  const panelTopClass = hasTopBanner ? 'top-[112px] md:top-[128px]' : 'top-20';
+  const panelTopClass = 'top-[var(--kma-main-header-offset,80px)]';
 
   return (
-    <header className="fixed top-0 left-0 z-[150] w-full overflow-visible">
+    <header className="fixed top-0 left-0 z-[150] flex w-full flex-col overflow-visible">
       <AppInstallBanner onVisibilityChange={setIsBannerVisible} />
 
-      {/* 모바일·태블릿: 한 줄 풀폭 바 — 메뉴 열릴 때 풀스크린 블러보다 위(z-120) */}
-      <div className="custom:hidden relative z-[120] w-full px-0 pt-0.5 pb-0 sm:pt-0.5">
+      {/* 모바일·태블릿: 앱 배너 바로 아래 — 겹침 방지 */}
+      <div className="custom:hidden relative z-[125] w-full shrink-0 px-0 pb-0">
         <div
           className="relative z-[125] mx-auto flex w-full max-w-[1920px] items-center justify-between gap-2 border-b border-white/10 px-3 py-1 sm:gap-2.5 sm:px-3.5 sm:py-1.5"
           style={GLASS_PILL_STYLE}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import MainHomeHero from '@/components/main/MainHomeHero';
 
 const HEADER_OFFSET_VAR = 'var(--kma-main-header-offset, 64px)';
+const BANNER_HEIGHT_VAR = 'var(--kma-banner-height, 0px)';
 const HERO_HEIGHT_FALLBACK = 'min(62vh, 398px)';
 /** 히어로·스폰서 사이 회색 구분 (MainSectionDivider와 동일) */
 const HERO_SPONSOR_DIVIDER_PX = 8;
@@ -55,8 +56,13 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
     const t1 = window.setTimeout(measureHero, 100);
     const t2 = window.setTimeout(measureHero, 500);
 
+    const headerEl = document.querySelector('header');
+    const headerRo = headerEl ? new ResizeObserver(measureHero) : null;
+    headerRo?.observe(headerEl as Element);
+
     return () => {
       ro.disconnect();
+      headerRo?.disconnect();
       window.removeEventListener('resize', measureHero);
       imgs.forEach((img) => img.removeEventListener('load', measureHero));
       window.clearTimeout(t1);
@@ -105,7 +111,15 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
       {/* 고정 히어로 — 배너 하단까지만 (wrapper offsetHeight 여백 제거) */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-0 overflow-hidden"
-        style={heroReady ? { height: heroBottom } : { height: HERO_HEIGHT_FALLBACK }}
+        style={
+          heroReady
+            ? {
+                height: heroBottom,
+                clipPath: `inset(${BANNER_HEIGHT_VAR} 0 0 0)`,
+                WebkitClipPath: `inset(${BANNER_HEIGHT_VAR} 0 0 0)`,
+              }
+            : { height: HERO_HEIGHT_FALLBACK }
+        }
       >
         <div ref={heroMeasureRef} className="pointer-events-auto w-full">
           <MainHomeHero />

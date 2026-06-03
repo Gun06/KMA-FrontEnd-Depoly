@@ -38,7 +38,10 @@ export default function AppInstallBanner({ onVisibilityChange }: AppInstallBanne
   if (!ready || hidden) return null;
 
   return (
-    <div className="relative z-[120] w-full bg-black text-white">
+    <div
+      data-app-install-banner
+      className="relative z-[130] w-full shrink-0 bg-black text-white pt-[env(safe-area-inset-top,0px)]"
+    >
       <div className="mx-auto flex min-h-11 w-full max-w-[1920px] items-center gap-2 px-2.5 py-1 sm:gap-2.5 sm:px-3 md:min-h-12 md:py-1.5 md:px-3.5">
         <button
           type="button"
