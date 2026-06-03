@@ -4,9 +4,12 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import MainHomeHero from '@/components/main/MainHomeHero';
 
 const HEADER_OFFSET_VAR = 'var(--kma-main-header-offset, 64px)';
-const HERO_HEIGHT_FALLBACK = 'min(62vh, 398px)';
+const HERO_HEIGHT_FALLBACK = 'var(--kma-main-hero-height-mobile, min(56vh, 400px))';
 const HERO_MAX_HEIGHT_PC = 800;
+const HERO_MAX_HEIGHT_MOBILE = 400;
+const MOBILE_HERO_VH = 0.56;
 const LG_MEDIA = '(min-width: 1024px)';
+const MOBILE_MEDIA = '(max-width: 639px)';
 /** 히어로·스폰서 사이 회색 구분 (MainSectionDivider와 동일) */
 const HERO_SPONSOR_DIVIDER_PX = 8;
 
@@ -33,12 +36,25 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
   const measureHero = useCallback(() => {
     const carousel = heroMeasureRef.current?.querySelector('.hero-section') as HTMLElement | null;
     if (!carousel) return;
-    const rect = carousel.getBoundingClientRect();
-    let bottom = Math.round(rect.bottom);
-    if (typeof window !== 'undefined' && window.matchMedia(LG_MEDIA).matches) {
-      bottom = Math.min(bottom, HERO_MAX_HEIGHT_PC);
+
+    const isPc = typeof window !== 'undefined' && window.matchMedia(LG_MEDIA).matches;
+    const isMobile =
+      typeof window !== 'undefined' && window.matchMedia(MOBILE_MEDIA).matches;
+
+    let heightPx = Math.round(carousel.getBoundingClientRect().height);
+    const offsetH = carousel.offsetHeight;
+    if (offsetH > heightPx) heightPx = offsetH;
+
+    if (isMobile) {
+      heightPx = Math.max(
+        heightPx,
+        Math.min(Math.round(window.innerHeight * MOBILE_HERO_VH), HERO_MAX_HEIGHT_MOBILE)
+      );
+    } else if (isPc) {
+      heightPx = Math.min(heightPx, HERO_MAX_HEIGHT_PC);
     }
-    if (bottom > 0) setHeroBottom(bottom);
+
+    if (heightPx > 0) setHeroBottom(heightPx);
   }, []);
 
   useEffect(() => {
@@ -166,7 +182,11 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
       {/* 고정 히어로 — 배너 하단까지만 (wrapper offsetHeight 여백 제거) */}
       <div
         className={`pointer-events-none fixed inset-x-0 top-0 z-0 overflow-hidden transition-opacity duration-200 ${pinnedLayerClass}`}
-        style={heroReady ? { height: heroBottom } : { height: HERO_HEIGHT_FALLBACK }}
+        style={
+          heroReady
+            ? { height: heroBottom }
+            : { height: 'auto', minHeight: HERO_HEIGHT_FALLBACK }
+        }
       >
         <div ref={heroMeasureRef} className="pointer-events-auto w-full">
           <MainHomeHero />

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --kma-main-hero-height-mobile: min(56vh, 400px);
+}
+
 /* 메인: 끝까지 스크롤 시 바운스로 뒤 고정 레이어가 비치지 않게 */
 html {
   overscroll-behavior-y: none;
