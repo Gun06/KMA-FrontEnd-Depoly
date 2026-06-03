@@ -46,7 +46,7 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
     ro.observe(carousel);
     window.addEventListener('resize', measureHero);
 
-    const imgs = root?.querySelectorAll('.hero-section img') ?? [];
+    const imgs = root?.querySelectorAll<HTMLImageElement>('.hero-section img') ?? [];
     imgs.forEach((img) => {
       if (img.complete) return;
       img.addEventListener('load', measureHero);

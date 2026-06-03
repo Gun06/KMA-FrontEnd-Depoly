@@ -117,20 +117,7 @@ export default function GalleryCard({
   onClick,
 }: GalleryCardProps) {
   const embedded = variant === 'embedded';
-
-  if (embedded) {
-    return (
-      <MobileStyleGalleryCard
-        imageSrc={imageSrc}
-        imageAlt={imageAlt}
-        title={title}
-        date={date}
-        onClick={onClick}
-      />
-    );
-  }
-
-  const revealImmediately = disableAnimation;
+  const revealImmediately = disableAnimation || embedded;
   const [isVisible, setIsVisible] = useState(revealImmediately);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +135,18 @@ export default function GalleryCard({
     if (cardRef.current) observer.observe(cardRef.current);
     return () => observer.disconnect();
   }, [revealImmediately]);
+
+  if (embedded) {
+    return (
+      <MobileStyleGalleryCard
+        imageSrc={imageSrc}
+        imageAlt={imageAlt}
+        title={title}
+        date={date}
+        onClick={onClick}
+      />
+    );
+  }
 
   const cardH = 'h-[220px] md:h-[285px]';
   const R = '12px';
