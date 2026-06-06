@@ -9,27 +9,42 @@ import {
   type CashReceiptIdentifierType,
 } from '@/app/(main)/mypage/applications/cash-receipt/types/cashReceipt';
 import {
-  updateRegistrationDetail,
+  createRegistrationCashReceipt,
+  updateRegistrationCashReceipt,
   toRegistrationCashReceiptRequestBody,
 } from '@/services/registration';
 import type { RegistrationCashReceiptRequest } from '@/types/registration';
 import { toast } from 'react-toastify';
 
+type ModalMode = 'create' | 'edit';
+
 type Props = {
   open: boolean;
+  mode?: ModalMode;
   registrationId: string;
   defaultPhone?: string;
+  initialRequest?: RegistrationCashReceiptRequest | null;
   onClose: () => void;
   onSuccess?: (request: RegistrationCashReceiptRequest) => void | Promise<void>;
 };
 
+function resolvePreset(request: RegistrationCashReceiptRequest): CashReceiptPreset {
+  if (request.purpose === 'EXPENSE_PROOF' && request.requesterType === 'BUSINESS') {
+    return 'business_expense';
+  }
+  return 'individual_income';
+}
+
 export default function AdminCashReceiptRequestModal({
   open,
+  mode = 'create',
   registrationId,
   defaultPhone = '',
+  initialRequest,
   onClose,
   onSuccess,
 }: Props) {
+  const isEdit = mode === 'edit';
   const [preset, setPreset] = React.useState<CashReceiptPreset>('individual_income');
   const [identifierType, setIdentifierType] = React.useState<CashReceiptIdentifierType>('PHONE_NUMBER');
   const [value, setValue] = React.useState('');
@@ -41,13 +56,23 @@ export default function AdminCashReceiptRequestModal({
 
   React.useEffect(() => {
     if (!open) return;
+
+    if (isEdit && initialRequest) {
+      const nextPreset = resolvePreset(initialRequest);
+      setPreset(nextPreset);
+      setIdentifierType(initialRequest.type);
+      setValue(initialRequest.value.replace(/\D/g, ''));
+      setAdminAnswer(initialRequest.adminAnswer ?? '');
+      setValueError(null);
+      return;
+    }
+
     setPreset('individual_income');
     setIdentifierType('PHONE_NUMBER');
-    const digits = defaultPhone.replace(/\D/g, '');
-    setValue(digits);
+    setValue(defaultPhone.replace(/\D/g, ''));
     setAdminAnswer('');
     setValueError(null);
-  }, [open, defaultPhone]);
+  }, [open, isEdit, initialRequest, defaultPhone]);
 
   const handlePresetChange = (newPreset: CashReceiptPreset) => {
     setPreset(newPreset);
@@ -84,18 +109,32 @@ export default function AdminCashReceiptRequestModal({
       type: identifierType,
       value,
       adminAnswer: adminAnswer.trim() || null,
-      status: 'REQUESTED',
+      status: isEdit && initialRequest ? initialRequest.status : 'REQUESTED',
     };
+
+    const id = registrationId.trim();
+    if (!id) {
+      toast.error('신청 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+
+    const body = toRegistrationCashReceiptRequestBody(request);
 
     try {
       setSubmitting(true);
-      await updateRegistrationDetail(registrationId, {
-        cashReceiptRequest: toRegistrationCashReceiptRequestBody(request),
-      });
+      if (isEdit) {
+        await updateRegistrationCashReceipt(id, body);
+      } else {
+        await createRegistrationCashReceipt(id, body);
+      }
       await onSuccess?.(request);
       onClose();
     } catch {
-      toast.error('현금영수증 신청에 실패했습니다. 다시 시도해주세요.');
+      toast.error(
+        isEdit
+          ? '현금영수증 수정에 실패했습니다. 다시 시도해주세요.'
+          : '현금영수증 신청에 실패했습니다. 다시 시도해주세요.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -107,8 +146,12 @@ export default function AdminCashReceiptRequestModal({
     <div className="absolute inset-0 z-[75] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={() => !submitting && onClose()} />
       <div className="relative bg-white rounded-md shadow-lg w-[400px] max-h-[90vh] overflow-y-auto p-5">
-        <h4 className="font-semibold text-gray-900 mb-1">현금영수증 신청</h4>
-        <p className="text-xs text-gray-500 mb-4">관리자가 대신 신청합니다.</p>
+        <h4 className="font-semibold text-gray-900 mb-1">
+          {isEdit ? '현금영수증 수정' : '현금영수증 신청'}
+        </h4>
+        <p className="text-xs text-gray-500 mb-4">
+          {isEdit ? '잘못 입력한 현금영수증 정보를 수정합니다.' : '관리자가 대신 신청합니다.'}
+        </p>
 
         <div className="space-y-4">
           <div className="relative border-b border-gray-200">
@@ -210,7 +253,9 @@ export default function AdminCashReceiptRequestModal({
             onClick={handleSubmit}
             disabled={submitting || !value}
           >
-            {submitting ? '신청 중...' : '신청하기'}
+            {submitting
+              ? isEdit ? '저장 중...' : '신청 중...'
+              : isEdit ? '저장' : '신청하기'}
           </button>
         </div>
       </div>

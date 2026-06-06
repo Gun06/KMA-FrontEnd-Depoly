@@ -746,7 +746,6 @@ export default function Client({
             await queryClient.invalidateQueries({ queryKey: ['registrationList'], exact: false });
             await queryClient.invalidateQueries({ queryKey: ['registrationSearch'], exact: false });
             await queryClient.invalidateQueries({ queryKey: ['registrationDetail', selectedId] });
-            toast.success('신청 정보가 수정되었습니다.');
           } catch (_e) {
             toast.error('데이터 새로고침에 실패했습니다.');
           }

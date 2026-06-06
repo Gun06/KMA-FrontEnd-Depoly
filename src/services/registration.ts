@@ -474,6 +474,36 @@ export function toRegistrationCashReceiptRequestBody(
   };
 }
 
+export function resolveRegistrationId(item: Pick<RegistrationItem, 'registrationId' | 'id'>): string {
+  return (item.registrationId ?? item.id).trim();
+}
+
+/** POST /api/v1/registration/{registrationId}/cashReceipt */
+export async function createRegistrationCashReceipt(
+  registrationId: string,
+  body: RegistrationCashReceiptRequestBody
+): Promise<string> {
+  const id = registrationId.trim();
+  if (!id) {
+    throw new Error('Registration ID is required');
+  }
+  const url = `/api/v1/registration/${id}/cashReceipt`;
+  return request('admin', url, 'POST', body, true) as Promise<string>;
+}
+
+/** PATCH /api/v1/registration/{registrationId}/cashReceipt */
+export async function updateRegistrationCashReceipt(
+  registrationId: string,
+  body: RegistrationCashReceiptRequestBody
+): Promise<string> {
+  const id = registrationId.trim();
+  if (!id) {
+    throw new Error('Registration ID is required');
+  }
+  const url = `/api/v1/registration/${id}/cashReceipt`;
+  return request('admin', url, 'PATCH', body, true) as Promise<string>;
+}
+
 export type RegistrationUpdatePayload = {
   eventCategoryId?: string;
   organizationId?: string | null;

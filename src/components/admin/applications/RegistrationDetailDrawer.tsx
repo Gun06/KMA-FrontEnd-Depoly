@@ -9,13 +9,12 @@ import type {
   CashReceiptRequesterType,
   CashReceiptIdentifierType,
 } from '@/app/admin/applications/cash-receipt/types/cashReceiptAdmin';
-import {
-  getCashReceiptForRegistration,
-  updateCashReceipt,
-} from '@/app/admin/applications/cash-receipt/services/cashReceiptAdmin';
+import { getCashReceiptForRegistration } from '@/app/admin/applications/cash-receipt/services/cashReceiptAdmin';
 import {
   updateRegistrationDetail,
   toRegistrationCashReceiptRequestBody,
+  updateRegistrationCashReceipt,
+  resolveRegistrationId,
   resetRegistrationPassword,
   resetOrganizationPassword,
   deleteRegistration,
@@ -164,7 +163,7 @@ export default function RegistrationDetailDrawer({
   const [pwdSaving, setPwdSaving] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [showCashReceiptModal, setShowCashReceiptModal] = React.useState(false);
+  const [cashReceiptModalMode, setCashReceiptModalMode] = React.useState<'create' | 'edit' | null>(null);
   const [showAddressModal, setShowAddressModal] = React.useState(false);
   const postcodeContainerRef = React.useRef<HTMLDivElement | null>(null);
   const handleAddressSelect = React.useCallback((postalCode: string, address: string) => {
@@ -601,6 +600,12 @@ export default function RegistrationDetailDrawer({
     return extractZipCode(item?.address);
   }, [item?.address]);
 
+  React.useEffect(() => {
+    if (isEditing) {
+      setCashReceiptModalMode(null);
+    }
+  }, [isEditing]);
+
   if (!open || !item) return null;
 
   // 모든 결제 상태에서 수정 가능하도록 변경
@@ -659,29 +664,46 @@ export default function RegistrationDetailDrawer({
     return ph?.trim() || '-';
   };
 
-  const handleCashReceiptRequestSuccess = async (request: RegistrationCashReceiptRequest) => {
+  const handleCashReceiptModalSuccess = async (request: RegistrationCashReceiptRequest) => {
     setLinkedCashReceipt(request);
-    setLinkedCashReceiptId(null);
+    setLinkedCashReceiptId(item?.cashReceiptId ?? linkedCashReceiptId);
     setCashReceiptStatus(request.status);
     setCashReceiptAdminAnswer(request.adminAnswer ?? '');
-    toast.success('현금영수증 신청이 완료되었습니다.');
+    toast.success(
+      cashReceiptModalMode === 'edit'
+        ? '현금영수증 정보가 수정되었습니다.'
+        : '현금영수증 신청이 완료되었습니다.'
+    );
     if (onSave) {
       await onSave();
     }
   };
 
   const cashReceiptContactAction = displayCashReceipt ? (
-    <span className="shrink-0 px-2.5 py-1 rounded border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium whitespace-nowrap">
-      현금영수증 신청완료
-    </span>
+    <div className="flex items-center gap-1.5 shrink-0">
+      <span className="px-2.5 py-1 rounded border border-sky-200 bg-sky-50 text-sky-800 text-xs font-medium whitespace-nowrap">
+        현금영수증 신청완료
+      </span>
+      {!isEditing && (
+        <button
+          type="button"
+          className="px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
+          onClick={() => setCashReceiptModalMode('edit')}
+        >
+          수정
+        </button>
+      )}
+    </div>
   ) : (
-    <button
-      type="button"
-      className="shrink-0 px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
-      onClick={() => setShowCashReceiptModal(true)}
-    >
-      현금영수증 신청
-    </button>
+    !isEditing && (
+      <button
+        type="button"
+        className="shrink-0 px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
+        onClick={() => setCashReceiptModalMode('create')}
+      >
+        현금영수증 신청
+      </button>
+    )
   );
 
   const line = (label: string, value?: React.ReactNode) => (
@@ -780,8 +802,8 @@ export default function RegistrationDetailDrawer({
                           return;
                         }
                         
-                        const registrationId = item.id;
-                        if (!registrationId || registrationId.trim() === '') {
+                        const registrationId = resolveRegistrationId(item);
+                        if (!registrationId) {
                           toast.error('신청 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
                           return;
                         }
@@ -821,26 +843,21 @@ export default function RegistrationDetailDrawer({
                                 accountHolderName: form.accountHolderName.trim(),
                               },
                             }),
-                            ...(displayCashReceipt &&
-                              !effectiveCashReceiptId && {
-                                cashReceiptRequest: toRegistrationCashReceiptRequestBody({
-                                  ...displayCashReceipt,
-                                  adminAnswer: cashReceiptAdminAnswer,
-                                  status: cashReceiptStatus,
-                                }),
-                              }),
                           };
                           await updateRegistrationDetail(registrationId, payload);
 
-                          if (effectiveCashReceiptId && displayCashReceipt) {
-                            await updateCashReceipt(effectiveCashReceiptId, {
+                          if (displayCashReceipt) {
+                            const cashReceiptBody = toRegistrationCashReceiptRequestBody({
+                              ...displayCashReceipt,
                               adminAnswer: cashReceiptAdminAnswer,
-                              updateStatus: cashReceiptStatus,
+                              status: cashReceiptStatus,
                             });
+                            await updateRegistrationCashReceipt(registrationId, cashReceiptBody);
                           }
                           initialMemoRef.current = memo ?? '';
                           initialDetailMemoRef.current = detailMemo ?? '';
                           setIsEditing(false);
+                          toast.success('신청 정보가 수정되었습니다.');
                           // 저장 후 데이터 새로고침
                           if (onSave) {
                             await onSave();
@@ -1559,13 +1576,17 @@ export default function RegistrationDetailDrawer({
         </div>
       )}
 
-      <AdminCashReceiptRequestModal
-        open={showCashReceiptModal}
-        registrationId={item.id}
-        defaultPhone={item.phNum || form.phNum}
-        onClose={() => setShowCashReceiptModal(false)}
-        onSuccess={handleCashReceiptRequestSuccess}
-      />
+      {item && (
+        <AdminCashReceiptRequestModal
+          open={cashReceiptModalMode !== null}
+          mode={cashReceiptModalMode ?? 'create'}
+          registrationId={resolveRegistrationId(item)}
+          defaultPhone={item.phNum || form.phNum}
+          initialRequest={cashReceiptModalMode === 'edit' ? displayCashReceipt : null}
+          onClose={() => setCashReceiptModalMode(null)}
+          onSuccess={handleCashReceiptModalSuccess}
+        />
+      )}
 
       {/* 비밀번호 초기화 모달 */}
       {showPwdModal && (

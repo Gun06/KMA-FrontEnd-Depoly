@@ -8,9 +8,8 @@ import type { Column } from '@/components/common/Table/BaseTable';
 import RegistrationStatusBadge, { type RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
-import { useEventList, useEventSearch } from '@/hooks/useNotices';
-import type { EventListItem, EventListResponse } from '@/types/eventList';
-import { mapEventStatusToRegStatus } from '@/services/admin';
+import { useAdminEventList, mapEventStatusToRegStatus } from '@/services/admin';
+import type { AdminEventItem } from '@/types/Admin';
 
 type BoardEventRow = {
   no: number;
@@ -124,12 +123,9 @@ export const BoardEventList = ({
     syncURL();
   }, [status, pub, year, q, page, syncURL]);
 
-  // 검색 조건이 있는지 확인
-  const hasSearchConditions = q || status || pub || year;
-
   const mapRow = React.useCallback(
-    (e: EventListItem): BoardEventRow => ({
-      no: e.no,
+    (e: AdminEventItem): BoardEventRow => ({
+      no: e.no ?? 0,
       id: e.id,
       date: e.startDate.split('T')[0], // ISO 날짜에서 YYYY-MM-DD만 추출
       title: e.nameKr,
@@ -139,7 +135,6 @@ export const BoardEventList = ({
     }),
     []
   );
-
 
   // 상태값을 API 파라미터로 변환
   const eventStatus = React.useMemo((): 'OPEN' | 'CLOSED' | 'PENDING' | 'FINAL_CLOSED' | undefined => {
@@ -163,24 +158,18 @@ export const BoardEventList = ({
     return year ? parseInt(year, 10) : undefined;
   }, [year]);
 
-  // 검색 API 또는 일반 API 선택 - 조건에 따라 하나의 훅만 호출
-  const eventSearchParams: Parameters<typeof useEventSearch>[0] = {
+  const {
+    data: eventListData,
+    isLoading,
+    error,
+  } = useAdminEventList({
     page,
     size: pageSize,
     keyword: q || undefined,
     year: yearNumber,
     visibleStatus,
     eventStatus,
-  };
-
-  // 조건에 따라 하나의 훅만 호출하여 중복 요청 방지
-  const searchResult = useEventSearch(eventSearchParams, Boolean(hasSearchConditions));
-  const listResult = useEventList(page, pageSize, Boolean(!hasSearchConditions));
-
-  // 조건에 따라 결과 선택
-  const { data: eventListData, isLoading, error } = hasSearchConditions
-    ? searchResult as { data: EventListResponse | undefined; isLoading: boolean; error: Error | null; }
-    : listResult as { data: EventListResponse | undefined; isLoading: boolean; error: Error | null; };
+  });
 
   const { rows, totalCount } = React.useMemo(() => {
     if (!eventListData || !eventListData.content) {
@@ -285,14 +274,16 @@ export const BoardEventList = ({
   ];
 
   // 대회 데이터에서 실제 있는 년도만 추출
-  const allEventsQuery = useEventList(1, 1000, true);
-  const allEventsData = allEventsQuery.data as EventListResponse | undefined;
+  const { data: allEventsData } = useAdminEventList({
+    page: 1,
+    size: 1000,
+  });
 
   const availableYears = React.useMemo(() => {
     if (!allEventsData?.content) return [];
 
     const years = new Set<number>();
-    allEventsData.content.forEach((event: EventListItem) => {
+    allEventsData.content.forEach((event: AdminEventItem) => {
       if (event.startDate) {
         const year = new Date(event.startDate).getFullYear();
         years.add(year);
