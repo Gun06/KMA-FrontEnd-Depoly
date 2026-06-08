@@ -10,7 +10,7 @@ interface UseParticipantMemoizedValuesProps {
 
 export const useParticipantMemoizedValues = ({
   participants,
-  eventInfo
+  eventInfo,
 }: UseParticipantMemoizedValuesProps) => {
   const participantDisabledStates = useMemo(() => {
     return calculateParticipantDisabledStates(participants, eventInfo);

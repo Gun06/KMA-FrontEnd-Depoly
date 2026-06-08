@@ -1,6 +1,10 @@
 import { ParticipantData } from "@/app/event/[eventId]/registration/apply/shared/types/group";
 import { EventRegistrationInfo } from "@/app/event/[eventId]/registration/apply/shared/types/common";
-import { parseCategoryWithDistance } from "./participantHelpers";
+import {
+  findCategoryInEventInfo,
+  getParticipantCategoryClosure,
+  stripClosureSuffix,
+} from "./participantHelpers";
 
 /**
  * 참가자의 기념품 선택 가능 여부 확인
@@ -30,15 +34,11 @@ export const isSizeDisabled = (
 
   // 기념품 없음 판단 (이름 기반) - 이벤트 정보에서 확인
   if (eventInfo && participant.category) {
-    const { distance, categoryName } = parseCategoryWithDistance(participant.category);
-    
-    // distance 비교 시 대소문자 무시 (Half vs half 등)
-    const selectedCategory = eventInfo.categorySouvenirList.find(c => {
-      if (distance) {
-        return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
-      }
-      return c.categoryName === categoryName;
-    });
+    const selectedCategory = findCategoryInEventInfo(
+      participant.category,
+      eventInfo,
+      participant.eventCategoryId
+    );
 
     if (selectedCategory) {
       const selectedSouvenir = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === participant.souvenir);
@@ -60,7 +60,7 @@ export const calculateParticipantDisabledStates = (
 ) => {
   return participants.map((participant) => ({
     isSouvenirDisabled: isSouvenirDisabled(participant, eventInfo),
-    isSizeDisabled: isSizeDisabled(participant, eventInfo)
+    isSizeDisabled: isSizeDisabled(participant, eventInfo),
   }));
 };
 
@@ -75,12 +75,20 @@ export const getSouvenirDisplayText = (
     return '참가종목을 먼저 선택해주세요';
   }
 
+  const { isCategoryClosed, isSelectedSouvenirClosed } = getParticipantCategoryClosure(
+    participant,
+    eventInfo
+  );
+  const closedSuffix =
+    !isCategoryClosed && isSelectedSouvenirClosed ? ' (마감)' : '';
+
   // 여러 기념품이 선택된 경우
   if (participant.selectedSouvenirs && participant.selectedSouvenirs.length > 0) {
     if (participant.selectedSouvenirs.length === 1) {
       // 하나만 선택된 경우: "기념품명 (사이즈)"
       const souvenir = participant.selectedSouvenirs[0];
-      return `${souvenir.souvenirName}${souvenir.size ? ` (${souvenir.size})` : ''}`;
+      const sizePart = souvenir.size ? ` (${souvenir.size})` : '';
+      return `${stripClosureSuffix(souvenir.souvenirName)}${sizePart}${closedSuffix}`;
     } else {
       // 여러 개 선택된 경우: "X개 기념품 선택됨"
       return `${participant.selectedSouvenirs.length}개 기념품 선택됨`;
@@ -89,20 +97,16 @@ export const getSouvenirDisplayText = (
 
   // 기존 방식 (호환성)
   if (participant.souvenir && participant.souvenir !== '') {
-    const { distance, categoryName } = parseCategoryWithDistance(participant.category);
-    
-    // distance 비교 시 대소문자 무시 (Half vs half 등)
-    const selectedCategory = eventInfo.categorySouvenirList.find(c => {
-      if (distance) {
-        return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
-      }
-      return c.categoryName === categoryName;
-    });
+    const selectedCategory = findCategoryInEventInfo(
+      participant.category,
+      eventInfo,
+      participant.eventCategoryId
+    );
 
     if (selectedCategory) {
       const selectedSouvenirObj = selectedCategory.categorySouvenirPair.find(s => s.souvenirId === participant.souvenir);
       if (selectedSouvenirObj) {
-        return selectedSouvenirObj.souvenirName;
+        return `${stripClosureSuffix(selectedSouvenirObj.souvenirName)}${closedSuffix}`;
       }
     }
   }

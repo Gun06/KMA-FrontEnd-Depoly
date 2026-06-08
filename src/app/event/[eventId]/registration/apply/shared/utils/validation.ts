@@ -38,10 +38,11 @@ export const isEmailValid = (email1: string, emailDomain: string): boolean => {
 const DETAILED_ADDRESS_HINT =
   '• 상세주소를 입력해 주세요. 동·호수 등이 없으면 아래 「상세주소 없음」을 체크해 주세요.';
 
-/** 상세: 값이 있어야 함. 「상세주소 없음」 문구만 있을 때는 체크된 경우만 허용(직접 입력만으로는 불가) */
+/** 상세: 값이 있어야 함. 「상세주소 없음」 체크 시 빈 상세주소도 허용 */
 export function isRegistrationDetailedAddressValid(
   formData: Pick<IndividualFormData, 'detailedAddress' | 'noDetailedAddress'>
 ): boolean {
+  if (formData.noDetailedAddress) return true;
   const d = formData.detailedAddress.trim();
   if (d === '') return false;
   if (d === ADDRESS_DETAIL_NONE_LABEL) return formData.noDetailedAddress;

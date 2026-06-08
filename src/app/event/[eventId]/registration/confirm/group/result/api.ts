@@ -1,4 +1,5 @@
 // 단체신청 확인 API 함수들
+import { stripClosureSuffix } from '@/components/event/GroupRegistration/utils/participantHelpers';
 import { GroupRegistrationConfirmData } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
@@ -76,7 +77,8 @@ export const createEditData = (data: GroupRegistrationConfirmData) => {
         birthMonth: participant.birth.split('-')[1],
         birthDay: participant.birth.split('-')[2],
         gender: participant.gender === 'M' ? 'male' : 'female',
-        category: participant.eventCategoryName || '',
+        category: stripClosureSuffix(participant.eventCategoryName || ''),
+        eventCategoryId: participant.eventCategoryId || '',
         souvenir: firstSouvenir?.souvenirId || '',
         size: firstSouvenir?.souvenirSize || '',
         selectedSouvenirs: souvenirList.map((s: any) => ({

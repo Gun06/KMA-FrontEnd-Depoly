@@ -5,8 +5,67 @@ import { GroupFormData, GroupApiRequestData } from "../types/group";
 import { EventRegistrationInfo } from "../types/common";
 import type { EventTermsAgreeRequestItem } from "../types/common";
 import { formatBirthDate, formatPhoneNumber, formatEmail } from "./formatters";
-import { parseCategoryWithDistance } from "@/components/event/GroupRegistration/utils/participantHelpers";
+import { findCategoryInEventInfo, parseCategoryWithDistance } from "@/components/event/GroupRegistration/utils/participantHelpers";
+import type { ParticipantData } from "../types/group";
+import type { CategorySouvenir } from "../types/common";
 import { buildRegistrationAddressPayload } from "../constants/addressField";
+
+function buildSouvenirPayloadForParticipant(
+  participant: ParticipantData,
+  selectedCategory?: CategorySouvenir
+): Array<{ souvenirId: string; selectedSize: string }> {
+  const source =
+    participant.selectedSouvenirs && participant.selectedSouvenirs.length > 0
+      ? participant.selectedSouvenirs
+      : participant.souvenir
+        ? [{ souvenirId: participant.souvenir, souvenirName: '', size: participant.size }]
+        : [];
+
+  if (source.length === 0) {
+    throw new Error('기념품을 선택해주세요.');
+  }
+
+  return source.map((sel) => {
+    const matched = selectedCategory?.categorySouvenirPair?.find(
+      (s) => String(s.souvenirId) === String(sel.souvenirId)
+    );
+    const isNoSouvenir =
+      matched?.souvenirName === '기념품 없음' ||
+      matched?.souvenirId === '0' ||
+      matched?.souvenirId === '1' ||
+      matched?.souvenirId === '2' ||
+      sel.souvenirName === '없음' ||
+      sel.souvenirName === '기념품 없음';
+
+    let size = sel.size || '사이즈 없음';
+    if (matched && !isNoSouvenir) {
+      const exactSize = matched.souvenirSize?.find((sz) => sz.trim() === sel.size.trim());
+      if (exactSize) size = exactSize.trim();
+    }
+
+    return {
+      souvenirId: String(matched?.souvenirId ?? sel.souvenirId),
+      selectedSize: isNoSouvenir ? '사이즈 없음' : String(size).trim(),
+    };
+  });
+}
+
+function resolveEventCategoryId(
+  participant: ParticipantData,
+  selectedCategory: CategorySouvenir | undefined,
+  originalData?: { innerUserRegistrationList?: Array<{ registrationId?: string; eventCategoryId?: string }> }
+): string | undefined {
+  // 폼에 저장된 ID 우선 (모달 선택·API 로드)
+  if (participant.eventCategoryId) return participant.eventCategoryId;
+  if (selectedCategory?.categoryId) return selectedCategory.categoryId;
+  if (participant.registrationId && originalData?.innerUserRegistrationList) {
+    const original = originalData.innerUserRegistrationList.find(
+      (p) => p.registrationId === participant.registrationId
+    );
+    return original?.eventCategoryId;
+  }
+  return undefined;
+}
 
 // 개인신청 데이터 변환
 export const transformFormDataToApi = (
@@ -405,74 +464,65 @@ export const transformGroupFormDataToUpdateApi = (
       return true; // 일반 참가자는 포함
     })
     .map((participant, index) => {
-    // category가 "3km | 매니아" 또는 "half | 하프마라톤" 형식일 수 있으므로 거리와 세부종목 추출
-    const { distance, categoryName } = parseCategoryWithDistance(participant.category);
-    
-    // 거리와 세부종목 이름을 함께 고려해서 찾기
-    // distance 비교 시 대소문자 무시 (Half vs half 등)
-    const selectedCategory = eventInfo.categorySouvenirList.find(
-      c => {
-        if (distance) {
-          return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
-        }
-        return c.categoryName === categoryName;
-      }
+    const { categoryName } = parseCategoryWithDistance(participant.category);
+    const isExistingParticipant = Boolean(participant.registrationId);
+
+    const selectedCategory = findCategoryInEventInfo(
+      participant.category,
+      eventInfo,
+      participant.eventCategoryId
     );
 
-    if (!selectedCategory) {
+    const eventCategoryId = resolveEventCategoryId(participant, selectedCategory, originalData);
+
+    if (!eventCategoryId) {
       throw new Error(`선택된 카테고리 "${categoryName}"를 찾을 수 없습니다.`);
     }
 
-    // 수정 모드에서 기념품 찾기 (CREATE 함수와 동일한 로직 적용)
-    let selectedSouvenir;
-    if (participant.souvenir.length > 10) {
-      // UUID 형태라면 souvenirId로 찾기
-      selectedSouvenir = selectedCategory.categorySouvenirPair.find(
-        s => s.souvenirId === participant.souvenir
-      );
-    } else {
-      // 짧은 ID나 이름이라면 souvenirId로 먼저 찾기
-      selectedSouvenir = selectedCategory.categorySouvenirPair.find(
-        s => String(s.souvenirId) === String(participant.souvenir)
-      );
-      
-      // ID로 찾지 못했다면 souvenirName으로 찾기
-      if (!selectedSouvenir) {
-        selectedSouvenir = selectedCategory.categorySouvenirPair.find(
-          s => s.souvenirName === participant.souvenir
+    const originalCategoryId =
+      participant.registrationId && originalData?.innerUserRegistrationList
+        ? originalData.innerUserRegistrationList.find(
+            (p: { registrationId?: string; eventCategoryId?: string }) =>
+              p.registrationId === participant.registrationId
+          )?.eventCategoryId
+        : undefined;
+    const categoryChanged =
+      isExistingParticipant &&
+      Boolean(originalCategoryId) &&
+      eventCategoryId !== originalCategoryId;
+    const requiresActiveCategoryValidation = !isExistingParticipant || categoryChanged;
+
+    if (requiresActiveCategoryValidation) {
+      if (!selectedCategory) {
+        throw new Error(`참가자 ${index + 1}: 선택된 카테고리 "${categoryName}"를 찾을 수 없습니다.`);
+      }
+      if (selectedCategory.isActive === false) {
+        throw new Error(`참가자 ${index + 1}: 마감된 종목은 선택할 수 없습니다.`);
+      }
+      const souvenirSources = participant.selectedSouvenirs?.length
+        ? participant.selectedSouvenirs
+        : participant.souvenir && participant.souvenir !== '선택'
+          ? [{ souvenirId: participant.souvenir, souvenirName: '', size: participant.size }]
+          : [];
+      if (souvenirSources.length === 0) {
+        throw new Error(`참가자 ${index + 1}: 기념품을 선택해주세요.`);
+      }
+      for (const sel of souvenirSources) {
+        const matched = selectedCategory.categorySouvenirPair.find(
+          (s) => String(s.souvenirId) === String(sel.souvenirId)
         );
+        if (!matched) {
+          throw new Error(`참가자 ${index + 1}: 선택된 기념품을 찾을 수 없습니다.`);
+        }
+        if (matched.isActive === false) {
+          throw new Error(`참가자 ${index + 1}: 마감된 기념품은 선택할 수 없습니다.`);
+        }
       }
     }
 
-    if (!selectedSouvenir) {
-      throw new Error(`참가자 ${index + 1}: 선택된 기념품 "${participant.souvenir}"를 찾을 수 없습니다.`);
-    }
-
-    // 서버에서 받은 정확한 사이즈 값 찾기 (단일 모드용)
-    const exactSize = selectedSouvenir.souvenirSize?.find((size: any) => size.trim() === participant.size.trim()) || '사이즈 없음';
-
     const registrationInfo: any = {
-      eventCategoryId: selectedCategory.categoryId,
-      souvenir: (() => {
-        // 1) 다중 선택 우선 사용
-        if (participant.selectedSouvenirs && participant.selectedSouvenirs.length > 0) {
-          return participant.selectedSouvenirs.map(sel => {
-            const matched = selectedCategory.categorySouvenirPair.find((s: any) => String(s.souvenirId) === String(sel.souvenirId));
-            const size = matched?.souvenirSize?.find((sz: any) => sz.trim() === sel.size.trim()) || sel.size || '사이즈 없음';
-            const isNoSouvenir = matched?.souvenirName === '기념품 없음' || matched?.souvenirId === '0' || matched?.souvenirId === '1' || matched?.souvenirId === '2';
-            return {
-              souvenirId: `${matched ? matched.souvenirId : sel.souvenirId}`,
-              selectedSize: isNoSouvenir ? '사이즈 없음' : String(size).trim()
-            };
-          });
-        }
-        // 2) 하위호환: 단일 선택
-        const isNoSouvenir = selectedSouvenir.souvenirName === '기념품 없음' || selectedSouvenir.souvenirId === '0' || selectedSouvenir.souvenirId === '1' || selectedSouvenir.souvenirId === '2';
-        return [{
-          souvenirId: `${selectedSouvenir.souvenirId}`,
-          selectedSize: isNoSouvenir ? '사이즈 없음' : String(exactSize).trim()
-        }];
-      })()
+      eventCategoryId,
+      souvenir: buildSouvenirPayloadForParticipant(participant, selectedCategory),
     };
     
     // note가 있을 때만 추가 (UI에서 사용하는 필드)

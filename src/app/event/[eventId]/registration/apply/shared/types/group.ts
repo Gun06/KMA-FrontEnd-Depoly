@@ -9,6 +9,8 @@ export interface ParticipantData {
   birthDay: string;
   gender: string;
   category: string;
+  /** 수정 모드: API eventCategoryId (마감·비활성 종목 매칭용) */
+  eventCategoryId?: string;
   souvenir: string; // 기존 호환성을 위해 유지
   size: string; // 기존 호환성을 위해 유지
   selectedSouvenirs: Array<{souvenirId: string, souvenirName: string, size: string}>; // 여러 기념품 선택 지원

@@ -1,6 +1,17 @@
 import { ParticipantData } from "@/app/event/[eventId]/registration/apply/shared/types/group";
-import { EventRegistrationInfo } from "@/app/event/[eventId]/registration/apply/shared/types/common";
+import { CategorySouvenir, EventRegistrationInfo } from "@/app/event/[eventId]/registration/apply/shared/types/common";
 import { convertPaymentStatusToKorean } from "@/types/registration";
+
+const CLOSURE_SUFFIX_PATTERN = /\s*\((마감|기념품 마감)\)\s*$/;
+
+/** 표시·저장용 — (마감)/(기념품 마감) 접미사 제거 (중복 방지) */
+export function stripClosureSuffix(name: string): string {
+  let result = name.trim();
+  while (CLOSURE_SUFFIX_PATTERN.test(result)) {
+    result = result.replace(CLOSURE_SUFFIX_PATTERN, '').trim();
+  }
+  return result;
+}
 
 /**
  * 카테고리 문자열에서 거리와 세부종목 이름을 추출
@@ -25,29 +36,129 @@ export const parseCategoryWithDistance = (category: string): { distance: string;
 };
 
 /**
+ * eventInfo에서 종목 찾기 (eventCategoryId 우선, 이름·거리 fallback)
+ */
+function categoryMatchesSelection(
+  c: CategorySouvenir,
+  distance: string,
+  categoryName: string
+): boolean {
+  if (distance) {
+    return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
+  }
+  if (categoryName) {
+    return (
+      c.categoryName === categoryName ||
+      c.distance?.toLowerCase() === categoryName.toLowerCase()
+    );
+  }
+  return false;
+}
+
+export function getParticipantCategoryClosure(
+  participant: ParticipantData,
+  eventInfo: EventRegistrationInfo | null
+): {
+  category: CategorySouvenir | undefined;
+  isCategoryClosed: boolean;
+  hasInactiveSouvenir: boolean;
+  isSelectedSouvenirClosed: boolean;
+} {
+  const category = findCategoryInEventInfo(
+    participant.category,
+    eventInfo,
+    participant.eventCategoryId
+  );
+
+  if (!category) {
+    return {
+      category: undefined,
+      isCategoryClosed: false,
+      hasInactiveSouvenir: false,
+      isSelectedSouvenirClosed: false,
+    };
+  }
+
+  const isCategoryClosed = category.isActive === false;
+  const hasInactiveSouvenir =
+    category.categorySouvenirPair?.some((s) => s.isActive === false) ?? false;
+
+  const selectedSouvenirIds =
+    participant.selectedSouvenirs && participant.selectedSouvenirs.length > 0
+      ? participant.selectedSouvenirs.map((s) => s.souvenirId)
+      : participant.souvenir && participant.souvenir !== '선택'
+        ? [participant.souvenir]
+        : [];
+
+  const isSelectedSouvenirClosed = selectedSouvenirIds.some((id) => {
+    const matched = category.categorySouvenirPair?.find(
+      (s) => String(s.souvenirId) === String(id)
+    );
+    return matched != null && matched.isActive === false;
+  });
+
+  return {
+    category,
+    isCategoryClosed,
+    hasInactiveSouvenir,
+    isSelectedSouvenirClosed,
+  };
+}
+
+export function findCategoryInEventInfo(
+  category: string,
+  eventInfo: EventRegistrationInfo | null,
+  eventCategoryId?: string
+): CategorySouvenir | undefined {
+  if (!eventInfo) return undefined;
+
+  const { distance, categoryName } = parseCategoryWithDistance(category);
+
+  // 1. ID 우선 — 단, 현재 category 문자열과 일치할 때만 (stale ID 방어)
+  if (eventCategoryId) {
+    const byId = eventInfo.categorySouvenirList.find((c) => c.categoryId === eventCategoryId);
+    if (byId && categoryMatchesSelection(byId, distance, categoryName)) {
+      return byId;
+    }
+  }
+
+  // 2. 이름+거리 매칭 (ID 없음·불일치 시)
+  const byNameAndDistance = eventInfo.categorySouvenirList.find((c) =>
+    categoryMatchesSelection(c, distance, categoryName)
+  );
+  if (byNameAndDistance) return byNameAndDistance;
+
+  // 3. ID만으로 fallback (마감·구버전 종목 — API eventCategoryName 형식이 다른 경우)
+  if (eventCategoryId) {
+    const byId = eventInfo.categorySouvenirList.find((c) => c.categoryId === eventCategoryId);
+    if (byId) return byId;
+  }
+
+  return undefined;
+}
+
+/**
  * 거리와 세부종목 이름을 조합하여 카테고리 문자열 생성
  */
 export const formatCategoryWithDistance = (distance: string, categoryName: string): string => {
-  return distance ? `${distance} | ${categoryName}` : categoryName;
+  const cleanDistance = stripClosureSuffix(distance);
+  const cleanName = stripClosureSuffix(categoryName);
+  return cleanDistance ? `${cleanDistance} | ${cleanName}` : cleanName;
 };
 
 /**
  * 참가비 계산
  */
-export const calculateParticipantFee = (category: string, eventInfo: EventRegistrationInfo | null): number => {
-  if (!category || !eventInfo) return 0;
+export const calculateParticipantFee = (
+  category: string,
+  eventInfo: EventRegistrationInfo | null,
+  fallbackAmount?: number,
+  eventCategoryId?: string
+): number => {
+  if (!category || !eventInfo) return fallbackAmount ?? 0;
 
-  const { distance, categoryName } = parseCategoryWithDistance(category);
-  
-  const selectedCategory = eventInfo.categorySouvenirList.find(c => {
-    if (distance) {
-      // distance 비교 시 대소문자 무시 (Half vs half 등)
-      return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
-    }
-    return c.categoryName === categoryName;
-  });
-
-  return selectedCategory?.amount || 0;
+  const selectedCategory = findCategoryInEventInfo(category, eventInfo, eventCategoryId);
+  return selectedCategory?.amount ?? fallbackAmount ?? 0;
 };
 
 /**
@@ -114,22 +225,28 @@ export const getCategoryDisplayText = (
     return "참가종목을 선택해주세요";
   }
 
-  const { distance, categoryName } = parseCategoryWithDistance(participant.category);
-  
-  // categorySouvenirList에서 거리 정보 확인
-  // distance 비교 시 대소문자 무시 (Half vs half 등)
-  const selectedCategory = eventInfo.categorySouvenirList.find(c => {
-    if (distance) {
-      return c.categoryName === categoryName && c.distance?.toLowerCase() === distance.toLowerCase();
-    }
-    return c.categoryName === categoryName;
-  });
+  const selectedCategory = findCategoryInEventInfo(
+    participant.category,
+    eventInfo,
+    participant.eventCategoryId
+  );
 
-  if (selectedCategory && selectedCategory.distance) {
-    return `${selectedCategory.distance} | ${categoryName}`;
+  if (selectedCategory) {
+    const base = formatCategoryWithDistance(
+      selectedCategory.distance,
+      selectedCategory.categoryName
+    );
+    const { isCategoryClosed, hasInactiveSouvenir } = getParticipantCategoryClosure(
+      participant,
+      eventInfo
+    );
+
+    if (isCategoryClosed) return `${base} (마감)`;
+    if (hasInactiveSouvenir) return `${base} (기념품 마감)`;
+    return base;
   }
 
-  return participant.category;
+  return stripClosureSuffix(participant.category);
 };
 
 export interface ParticipantRowState {

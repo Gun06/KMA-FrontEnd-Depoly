@@ -8,6 +8,7 @@ import { transformGroupFormDataToApi, transformGroupFormDataToUpdateApi } from '
 import { submitGroupRegistration, updateGroupRegistration } from '../api/group';
 import { formatError } from '../utils/errorHandler';
 import { mapLoadedAddressDetail } from '../constants/addressField';
+import { stripClosureSuffix } from '@/components/event/GroupRegistration/utils/participantHelpers';
 import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
 import { useRouter } from 'next/navigation';
 
@@ -146,7 +147,8 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
                 phone1: participantPhoneParts[0] || '010',
                 phone2: participantPhoneParts[1] || '',
                 phone3: participantPhoneParts[2] || '',
-                category: participant.eventCategoryName || '',
+                category: stripClosureSuffix(participant.eventCategoryName || ''),
+                eventCategoryId: participant.eventCategoryId || '',
                 souvenir: firstSouvenir?.souvenirId || '',
                 size: firstSouvenir?.souvenirSize || '',
                 selectedSouvenirs: souvenirList.map((s: any) => ({

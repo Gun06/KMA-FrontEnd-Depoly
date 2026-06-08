@@ -1,16 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { EventRegistrationInfo } from '@/app/event/[eventId]/registration/apply/shared/types/common';
+import { stripClosureSuffix } from '../utils/participantHelpers';
+
+export type CategorySelectionResult = {
+  distance: string;
+  categoryName: string;
+  categoryId: string;
+};
 
 interface CategorySelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (distance: string, categoryName: string) => void;
+  onConfirm: (selection: CategorySelectionResult) => void;
   eventInfo: EventRegistrationInfo | null;
   currentDistance?: string;
   currentCategory?: string;
+  currentCategoryId?: string;
 }
 
 export default function CategorySelectionModal({
@@ -19,38 +27,51 @@ export default function CategorySelectionModal({
   onConfirm,
   eventInfo,
   currentDistance = '',
-  currentCategory = ''
+  currentCategory = '',
+  currentCategoryId = ''
 }: CategorySelectionModalProps) {
   const [selectedDistance, setSelectedDistance] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [mounted, setMounted] = useState(false);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // 모달이 열릴 때 현재 선택값으로 초기화
+  const normalizeDistance = (a: string, b: string) =>
+    a.trim().toLowerCase() === b.trim().toLowerCase();
+
+  // 모달이 열릴 때만 현재 선택값으로 초기화 (열린 상태에서 클릭한 거리 선택 유지)
   useEffect(() => {
-    if (isOpen) {
-      // 모달이 열릴 때마다 currentDistance와 currentCategory로 강제 초기화
-      const distance = String(currentDistance || '').trim();
-      const category = String(currentCategory || '').trim();
-      // 상태 업데이트를 강제로 실행
-      setSelectedDistance(prev => {
-        if (prev !== distance) return distance;
-        return prev;
-      });
-      setSelectedCategory(prev => {
-        if (prev !== category) return category;
-        return prev;
-      });
-    } else {
-      // 모달이 닫히면 초기화
+    if (isOpen && !wasOpenRef.current) {
+      let distance = stripClosureSuffix(String(currentDistance || '').trim());
+      let category = stripClosureSuffix(String(currentCategory || '').trim());
+      let categoryId = String(currentCategoryId || '').trim();
+
+      if (eventInfo && categoryId && (!distance || !category)) {
+        const matched = eventInfo.categorySouvenirList.find((c) => c.categoryId === categoryId);
+        if (matched) {
+          distance = distance || stripClosureSuffix(matched.distance);
+          category = category || stripClosureSuffix(matched.categoryName);
+        }
+      }
+
+      setSelectedDistance(distance);
+      setSelectedCategory(category);
+      setSelectedCategoryId(categoryId);
+    }
+
+    if (!isOpen) {
       setSelectedDistance('');
       setSelectedCategory('');
+      setSelectedCategoryId('');
     }
-  }, [isOpen, currentDistance, currentCategory]);
+
+    wasOpenRef.current = isOpen;
+  }, [isOpen, currentDistance, currentCategory, currentCategoryId, eventInfo]);
 
   // 거리 목록 추출
   const distances = useMemo(() => {
@@ -73,8 +94,8 @@ export default function CategorySelectionModal({
   const categoriesByDistance = useMemo(() => {
     if (!selectedDistance || !eventInfo) return [];
 
-    return eventInfo.categorySouvenirList.filter(
-      category => category.distance === selectedDistance
+    return eventInfo.categorySouvenirList.filter((category) =>
+      normalizeDistance(category.distance, selectedDistance)
     );
   }, [selectedDistance, eventInfo]);
 
@@ -83,24 +104,33 @@ export default function CategorySelectionModal({
     setSelectedDistance(distance);
     // 거리 변경 시 세부종목 초기화 (사용자가 직접 클릭한 경우)
     // 단, 현재 선택된 세부종목이 새로운 거리에도 존재하면 유지
-    const newCategories = eventInfo?.categorySouvenirList.filter(
-      c => c.distance === distance
-    ) || [];
-    const categoryExists = newCategories.some(c => c.categoryName === selectedCategory);
-    if (!categoryExists) {
+    const newCategories =
+      eventInfo?.categorySouvenirList.filter((c) => normalizeDistance(c.distance, distance)) || [];
+    const matched = newCategories.find(
+      (c) => stripClosureSuffix(c.categoryName) === stripClosureSuffix(selectedCategory)
+    );
+    if (!matched) {
       setSelectedCategory('');
+      setSelectedCategoryId('');
+    } else {
+      setSelectedCategoryId(matched.categoryId);
     }
   };
 
   // 세부종목 선택 핸들러
-  const handleCategorySelect = (categoryName: string) => {
+  const handleCategorySelect = (categoryName: string, categoryId: string) => {
     setSelectedCategory(categoryName);
+    setSelectedCategoryId(categoryId);
   };
 
   // 확인 버튼 핸들러
   const handleConfirm = () => {
-    if (selectedDistance && selectedCategory) {
-      onConfirm(selectedDistance, selectedCategory);
+    if (selectedDistance && selectedCategory && selectedCategoryId) {
+      onConfirm({
+        distance: selectedDistance,
+        categoryName: selectedCategory,
+        categoryId: selectedCategoryId,
+      });
       onClose();
     }
   };
@@ -150,7 +180,7 @@ export default function CategorySelectionModal({
                         key={distance}
                         type="button"
                         onClick={() => handleDistanceSelect(distance)}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${selectedDistance === distance
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${normalizeDistance(selectedDistance, distance)
                           ? 'bg-blue-500 text-white font-medium'
                           : 'bg-white text-gray-900 hover:bg-gray-50'
                           }`}
@@ -190,21 +220,24 @@ export default function CategorySelectionModal({
                         souvenir => souvenir.isActive === false
                       ) || false;
                       const isActive = isCategoryActive && !hasInactiveSouvenir;
+                      const displayName = stripClosureSuffix(category.categoryName);
                       return (
                         <button
                           key={category.categoryId}
                           type="button"
-                          onClick={() => isActive && handleCategorySelect(category.categoryName)}
+                          onClick={() => isActive && handleCategorySelect(displayName, category.categoryId)}
                           disabled={!isActive}
                           className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
                             !isActive
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                              : selectedCategory === category.categoryName
+                              : selectedCategory === displayName
                               ? 'bg-blue-500 text-white font-medium'
                               : 'bg-white text-gray-900 hover:bg-gray-50'
                           }`}
                         >
-                          {category.categoryName}{hasInactiveSouvenir && ' (기념품 마감)'}
+                          {displayName}
+                          {!isCategoryActive && ' (마감)'}
+                          {isCategoryActive && hasInactiveSouvenir && ' (기념품 마감)'}
                         </button>
                       );
                     })}
@@ -225,8 +258,8 @@ export default function CategorySelectionModal({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={!selectedDistance || !selectedCategory}
-            className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors ${selectedDistance && selectedCategory
+            disabled={!selectedDistance || !selectedCategory || !selectedCategoryId}
+            className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors ${selectedDistance && selectedCategory && selectedCategoryId
               ? 'bg-blue-500 hover:bg-blue-600'
               : 'bg-gray-300 cursor-not-allowed'
               }`}

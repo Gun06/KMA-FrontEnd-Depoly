@@ -21,8 +21,9 @@ export const useParticipantHandlers = ({
           return {
             ...participant,
             [field]: value as string,
+            eventCategoryId: undefined,
             souvenir: '선택',
-            size: '사이즈',
+            size: '',
             selectedSouvenirs: []
           };
         }

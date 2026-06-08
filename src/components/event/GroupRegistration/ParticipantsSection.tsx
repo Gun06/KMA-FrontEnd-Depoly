@@ -13,6 +13,8 @@ import { useParticipantMemoizedValues } from './hooks/useParticipantMemoizedValu
 import {
   parseCategoryWithDistance,
   formatCategoryWithDistance,
+  findCategoryInEventInfo,
+  stripClosureSuffix,
   calculateParticipantFee,
   formatPaymentStatusText,
   getPaymentStatusColorClass,
@@ -125,7 +127,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
 
   const { participantDisabledStates } = useParticipantMemoizedValues({
     participants,
-    eventInfo
+    eventInfo,
   });
 
   const existingParticipantsCount = useMemo(() => {
@@ -164,12 +166,19 @@ const ParticipantsSection = memo(function ParticipantsSection({
   }, [participants, openCategoryModal, isCategorySouvenirDisabled]);
 
   // 참가종목 선택 확인
-  const handleConfirmCategorySelection = useCallback((distance: string, categoryName: string) => {
+  const handleConfirmCategorySelection = useCallback((selection: {
+    distance: string;
+    categoryName: string;
+    categoryId: string;
+  }) => {
     const index = categoryModalState.participantIndex;
     if (index === -1) return;
     
     const participant = participants[index];
     const paymentStatus = participant.paymentStatus?.toUpperCase();
+    const distance = stripClosureSuffix(selection.distance);
+    const categoryName = stripClosureSuffix(selection.categoryName);
+    const categoryId = selection.categoryId;
     
     // 확인필요, 환불요청 상태인 경우 변경 불가
     if (isCategorySouvenirDisabled(participant.paymentStatus)) {
@@ -181,7 +190,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
     const isCompleted = paymentStatus === 'COMPLETED' || paymentStatus === 'PAID';
     if (isCompleted && participant.originalAmount !== undefined) {
       const newCategory = formatCategoryWithDistance(distance, categoryName);
-      const newAmount = calculateParticipantFee(newCategory, eventInfo);
+      const newAmount = calculateParticipantFee(newCategory, eventInfo, undefined, categoryId);
       
       // 동일 금액이 아니면 변경 불가
       if (newAmount !== participant.originalAmount) {
@@ -195,9 +204,20 @@ const ParticipantsSection = memo(function ParticipantsSection({
     }
     
     const categoryWithDistance = formatCategoryWithDistance(distance, categoryName);
-    handleParticipantChange(index, 'category', categoryWithDistance);
+    const newParticipants = participants.map((p, i) => {
+      if (i !== index) return p;
+      return {
+        ...p,
+        category: categoryWithDistance,
+        eventCategoryId: categoryId,
+        souvenir: '선택',
+        size: '',
+        selectedSouvenirs: [],
+      };
+    });
+    onParticipantsChange(newParticipants);
     closeCategoryModal();
-  }, [categoryModalState.participantIndex, handleParticipantChange, closeCategoryModal, participants, isCategorySouvenirDisabled, eventInfo]);
+  }, [categoryModalState.participantIndex, closeCategoryModal, participants, isCategorySouvenirDisabled, eventInfo, onParticipantsChange]);
 
   // 기념품 선택 모달 열기
   const handleOpenSouvenirModal = useCallback((index: number) => {
@@ -278,13 +298,35 @@ const ParticipantsSection = memo(function ParticipantsSection({
     if (!participant || !participant.category) {
       return { distance: '', categoryName: '' };
     }
-    // category가 "거리|세부종목" 형식인지 확인
-    const categoryStr = String(participant.category || '').trim();
-    if (!categoryStr || !categoryStr.includes('|')) {
-      return { distance: '', categoryName: categoryStr };
+
+    const categoryStr = stripClosureSuffix(String(participant.category).trim());
+    if (!categoryStr) {
+      return { distance: '', categoryName: '' };
     }
-    return parseCategoryWithDistance(categoryStr);
-  }, []);
+
+    if (categoryStr.includes('|')) {
+      const parsed = parseCategoryWithDistance(categoryStr);
+      return {
+        distance: stripClosureSuffix(parsed.distance),
+        categoryName: stripClosureSuffix(parsed.categoryName),
+      };
+    }
+
+    // API가 "10KM"처럼 거리만 내려주는 경우 eventCategoryId로 거리·세부종목 복원
+    const matched = findCategoryInEventInfo(
+      categoryStr,
+      eventInfo,
+      participant.eventCategoryId
+    );
+    if (matched) {
+      return {
+        distance: stripClosureSuffix(matched.distance),
+        categoryName: stripClosureSuffix(matched.categoryName),
+      };
+    }
+
+    return { distance: '', categoryName: categoryStr };
+  }, [eventInfo]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -681,7 +723,10 @@ const ParticipantsSection = memo(function ParticipantsSection({
                     const souvenirText = getSouvenirDisplayText(participant, eventInfo);
                     const isSouvenirSelected = souvenirText !== '기념품 선택' && souvenirText !== '참가종목을 먼저 선택해주세요';
                     // 종목/기념품 변경 불가 상태 또는 기념품 선택 불가 상태
-                    const isDisabledField = isCategorySouvenirChangeDisabled || participantDisabledStates[index]?.isSouvenirDisabled || false;
+                    const isDisabledField =
+                      isCategorySouvenirChangeDisabled ||
+                      participantDisabledStates[index]?.isSouvenirDisabled ||
+                      false;
                     
                     return (
                   <button
@@ -720,7 +765,7 @@ const ParticipantsSection = memo(function ParticipantsSection({
                   })()}
                 </td>
                 <td className="px-3 py-3 text-center text-sm w-80 border-r border-gray-200">
-                  {calculateParticipantFee(participant.category, eventInfo).toLocaleString()}원
+                  {calculateParticipantFee(participant.category, eventInfo, participant.originalAmount, participant.eventCategoryId).toLocaleString()}원
                 </td>
                 <td className="px-1 py-3 md:px-3 min-w-[6.5rem] w-28 md:w-32 border-r border-gray-200 whitespace-nowrap text-center text-sm">
                   <span className={`text-sm font-semibold whitespace-nowrap ${getPaymentStatusColorClass(participant.paymentStatus)}`}>
@@ -785,6 +830,12 @@ const ParticipantsSection = memo(function ParticipantsSection({
             const info = getCurrentCategoryInfo(participant);
             // "TEST|테스트1 마라톤" -> categoryName: "테스트1 마라톤"
             return String(info.categoryName || '').trim();
+          }
+          return '';
+        })()}
+        currentCategoryId={(() => {
+          if (categoryModalState.participantIndex >= 0 && participants[categoryModalState.participantIndex]) {
+            return String(participants[categoryModalState.participantIndex].eventCategoryId || '').trim();
           }
           return '';
         })()}
