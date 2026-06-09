@@ -868,6 +868,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     eventTheme: finalEventTheme,
     agreeAllLabel: agreeAllLabel.trim(),
     termsInfo: termsInfo.map((item, index) => ({
+      ...(item.id ? { id: item.id } : {}),
       content: item.content,
       required: item.required === true,
       termsLabel: item.termsLabel ?? '',
@@ -1081,6 +1082,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       autoMaxRegist,
       youtubeUrl: youtubeUrl.trim(),
       termsInfo: termsInfo.map((item, index) => ({
+        ...(item.id ? { id: item.id } : {}),
         content: item.content.trim(),
         required: item.required === true,
         termsLabel: (item.termsLabel ?? '').trim(),

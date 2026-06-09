@@ -44,9 +44,9 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
   const email = 'jeonmahyeop@naver.com'
   const telDisplay = '042) 638 - 1080'
   const telHref = '042-638-1080'
-  const addressLine1 = '서울 송파구 방이동 백제고분로 501'
-  const addressLine2 = '청호빌딩 302호'
-  const mapQuery = encodeURIComponent('서울 송파구 방이동 백제고분로 501 청호빌딩 302호')
+  const addressLine1 = '대전광역시 대덕구 비래서로 8'
+  const addressLine2 = '대동필딩 2층 전국마라톤협회'
+  const mapQuery = encodeURIComponent('대전광역시 대덕구 비래서로 8 대동필딩 2층 전국마라톤협회')
   const youtubeUrl = 'https://www.youtube.com/@jeonmahyeop'
   const instagramUrl = 'https://www.instagram.com/jeonmahyeop/'
 

@@ -171,6 +171,9 @@ export class EventDataTransformer {
   private static createTermsInfo(data: EventCreatePayload): EventTermsInfoRequest[] {
     return (data.termsInfo ?? [])
       .map((item, index) => ({
+        ...(typeof item.id === 'string' && item.id.trim()
+          ? { id: item.id.trim() }
+          : {}),
         content: (item.content ?? '').trim(),
         required: item.required === true,
         termsLabel: (item.termsLabel ?? '').trim(),

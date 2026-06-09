@@ -71,6 +71,7 @@ export interface EventBannerInfo {
 }
 
 export interface EventTermsInfoRequest {
+  id?: string;
   content: string;
   sortOrder: number;
   required: boolean;
