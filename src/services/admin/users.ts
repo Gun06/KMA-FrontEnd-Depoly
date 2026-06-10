@@ -1,5 +1,11 @@
 import { useGetQuery, useApiMutation } from '@/hooks/useFetch';
+import { adminApi } from '@/hooks/api.presets';
 import type { UserListResponse, UserRegistrationListResponse, OrganizationListResponse, OrganizationMemberListResponse, OrganizationDetailResponse, UpdateOrganizationRequest } from '@/types/user';
+
+/** 관리자용 회원탈퇴 - DELETE /api/v1/user/{userId} */
+export async function deleteIndividualUser(userId: string): Promise<void> {
+  await adminApi.authDelete(`/api/v1/user/${encodeURIComponent(userId)}`);
+}
 
 // 개인 회원 목록 조회 API (검색 API 사용)
 export function useIndividualUsersList(params: {

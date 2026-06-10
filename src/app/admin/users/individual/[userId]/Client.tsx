@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useUserRegistrationsList } from '@/services/admin/users';
+import { useUserRegistrationsList, deleteIndividualUser } from '@/services/admin/users';
 import type { UserApiData, UserListResponse } from '@/types/user';
 import { useQueryClient } from '@tanstack/react-query';
 import { resetRegistrationPassword, getRegistrationDetail } from '@/services/registration';
@@ -12,6 +12,7 @@ import RegistrationDetailDrawer from '@/components/admin/applications/Registrati
 import type { RegistrationItem } from '@/types/registration';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import { getRegistrationList } from '@/services/registration';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
 
 export default function Client() {
   const params = useParams<{ userId: string }>();
@@ -107,6 +108,8 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailItem, setDetailItem] = useState<RegistrationItem | null>(null);
   const [detailEventIdFallback, setDetailEventIdFallback] = useState<string | undefined>(undefined);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const stripPhone = useCallback((phone?: string) => phone?.replace(/\D+/g, '').trim(), []);
   const stripBirth = useCallback((birth?: string) => birth?.replace(/\D+/g, '').trim(), []);
@@ -293,6 +296,26 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!userId) return;
+    setWithdrawing(true);
+    try {
+      await deleteIndividualUser(userId);
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users', 'individual'] });
+      toast.success('회원탈퇴가 완료되었습니다.');
+      setShowWithdrawModal(false);
+      router.push('/admin/users/individual');
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : '회원탈퇴에 실패했습니다.';
+      toast.error(message);
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   if (loadingRegs) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -322,12 +345,28 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-white shadow border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-sm text-gray-500">개인 회원</p>
             <h1 className="font-pretendard-extrabold text-[20px] md:text-[24px] text-gray-900">사용자 상세</h1>
           </div>
-          <button className="text-primary hover:underline text-sm" onClick={() => router.back()}>목록으로</button>
+          <div className="flex items-center gap-2">
+            <button
+              className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              onClick={() => router.back()}
+            >
+              목록으로
+            </button>
+            {detailAuth === 'USER' && (
+              <button
+                className="px-4 py-2 text-sm rounded border border-red-600 bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setShowWithdrawModal(true)}
+                disabled={withdrawing}
+              >
+                회원탈퇴
+              </button>
+            )}
+          </div>
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {infoSections.map((section) => (
@@ -446,6 +485,18 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={showWithdrawModal}
+        onClose={() => !withdrawing && setShowWithdrawModal(false)}
+        onConfirm={() => void handleWithdraw()}
+        title="회원탈퇴"
+        message={`${detailName}(${detailAccount}) 회원을 탈퇴 처리하시겠습니까?`}
+        smallMessage="개인정보는 삭제되며, 탈퇴 후 회원 목록에서 제외됩니다. 대회 신청 내역은 삭제되지 않고 유지됩니다."
+        confirmText="탈퇴하기"
+        cancelText="취소"
+        variant="danger"
+        isLoading={withdrawing}
+      />
       <RegistrationDetailDrawer
         open={detailOpen}
         item={detailItem}

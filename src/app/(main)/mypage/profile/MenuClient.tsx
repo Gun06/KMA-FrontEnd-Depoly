@@ -48,6 +48,22 @@ export default function MenuClient() {
           </Link>
         ))}
       </div>
+
+      <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-5 py-4">
+        <Link
+          href="/mypage/profile/withdraw"
+          className="flex items-center justify-between group"
+        >
+          <div>
+            <p className="text-sm font-semibold text-red-600 group-hover:text-red-700">회원탈퇴</p>
+            <p className="text-xs text-gray-500 mt-1">
+              탈퇴 시 개인정보가 삭제되며, 계정은 복구할 수 없습니다.
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-red-400" />
+        </Link>
+      </div>
+
       <div className="mt-4">
         <button
           type="button"
