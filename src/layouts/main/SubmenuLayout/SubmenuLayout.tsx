@@ -11,11 +11,14 @@ interface SubmenuLayoutProps {
     mainMenu: string;
     subMenu: string;
   }
+  /** 정책·약관 등 넓은 본문이 필요한 페이지 */
+  wide?: boolean
 }
 
 export default function SubmenuLayout({ 
   children, 
-  breadcrumb
+  breadcrumb,
+  wide = false,
 }: SubmenuLayoutProps) {
   return (
     <div className="min-h-[50vh] sm:min-h-screen flex flex-col">
@@ -78,7 +81,13 @@ export default function SubmenuLayout({
         </div>
         
         {/* 페이지 콘텐츠 */}
-        <div className="container mx-auto px-2 py-4 sm:py-6 lg:px-6 lg:py-8">
+        <div
+          className={
+            wide
+              ? 'mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 xl:max-w-[1536px] xl:px-12'
+              : 'container mx-auto px-2 py-4 sm:py-6 lg:px-6 lg:py-8'
+          }
+        >
           {children}
         </div>
       </main>

@@ -24,6 +24,7 @@ import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
 import { NotificationDropdown } from '@/app/(main)/mypage/notifications/components/NotificationDropdown';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
+import { MAIN_CONTENT_SHELL_CLASS, MAIN_DESKTOP_UI_CLASS, MAIN_HEADER_Z_CLASS } from '@/components/main/mainLayoutTokens';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -110,6 +111,13 @@ const SUBMENU_GLASS_STYLE = {
   ...MAIN_GLASS_STYLE,
   backgroundColor: 'rgba(15, 15, 15, 0.64)',
 };
+/** 데스크탑 헤더 pill — 로고·메뉴·액션 높이 통일 */
+const DESKTOP_HEADER_PILL_RING_CLASS =
+  'flex shrink-0 items-center rounded-full ring-1 ring-white/15';
+const DESKTOP_HEADER_PILL_SHELL_CLASS = `${DESKTOP_HEADER_PILL_RING_CLASS} px-2 py-2`;
+const DESKTOP_HEADER_LOGO_CLASS = `${DESKTOP_HEADER_PILL_RING_CLASS} gap-3 px-5 py-2.5 xl:px-6`;
+const DESKTOP_HEADER_PILL_ITEM_CLASS =
+  'rounded-full py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200';
 const APP_INSTALL_BANNER_STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 
 
@@ -298,7 +306,7 @@ export default function Header() {
   const panelTopClass = 'top-[var(--kma-main-header-offset,80px)]';
 
   return (
-    <header className="fixed top-0 left-0 z-[150] flex w-full flex-col overflow-visible">
+    <header className={`fixed top-0 left-0 ${MAIN_HEADER_Z_CLASS} flex w-full flex-col overflow-visible`}>
       <AppInstallBanner onVisibilityChange={setIsBannerVisible} />
 
       {/* 모바일·태블릿: 앱 배너 바로 아래 — 겹침 방지 */}
@@ -374,14 +382,14 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 데스크탑: 로고(좌) — 필 네비(중앙) — 액션(우) */}
-      <div className="relative mx-auto hidden max-w-[1920px] overflow-visible px-[6vw] custom:block">
-        <div className="relative z-[110] flex h-20 items-center gap-6">
+      {/* 데스크탑: 로고 · 메뉴(콘텐츠 너비) · 액션 — justify-between으로 사이 배치 */}
+      <div className={`${MAIN_CONTENT_SHELL_CLASS} ${MAIN_DESKTOP_UI_CLASS} relative overflow-visible`}>
+        <div className="relative z-[110] flex h-20 w-full items-center justify-between gap-3 xl:gap-4">
 
-          {/* 좌: 로고 + 브랜드명 — 글라스 필 */}
+          {/* 좌: 로고 */}
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-3 rounded-full px-6 py-2.5 ring-1 ring-white/15 transition-all hover:brightness-125"
+            className={`${DESKTOP_HEADER_LOGO_CLASS} transition-all hover:brightness-125`}
             style={GLASS_PILL_STYLE}
           >
             <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-green-600">
@@ -398,70 +406,68 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* 중앙: 필 스타일 네비게이션 — 글라스 */}
-          <div className="flex flex-1 justify-center">
-            <nav
-              className="flex items-center gap-2 rounded-full px-3 py-2.5 ring-1 ring-white/15"
-              style={GLASS_PILL_STYLE}
-              role="navigation"
-              aria-label="메인 메뉴"
-            >
-              {navItemsLeft.map(({ label, key }) => (
-                <div
-                  key={key}
-                  className="relative"
-                  onMouseEnter={() => key && updateState({ subMenuOpen: key })}
-                  onMouseLeave={() => updateState({ subMenuOpen: null })}
+          {/* 중: 콘텐츠 너비만 — 좌우 pill 사이에 자연 배치 */}
+          <nav
+            className={`${DESKTOP_HEADER_PILL_SHELL_CLASS} gap-2 xl:gap-2.5`}
+            style={GLASS_PILL_STYLE}
+            role="navigation"
+            aria-label="메인 메뉴"
+          >
+            {navItemsLeft.map(({ label, key }) => (
+              <div
+                key={key}
+                className="relative shrink-0"
+                onMouseEnter={() => key && updateState({ subMenuOpen: key })}
+                onMouseLeave={() => updateState({ subMenuOpen: null })}
+              >
+                <button
+                  type="button"
+                  className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} px-8 xl:px-10 2xl:px-12 ${state.subMenuOpen === key
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-white/90 hover:bg-white/15 hover:text-white'
+                    }`}
+                  aria-haspopup="true"
+                  aria-expanded={state.subMenuOpen === key}
                 >
-                  <button
-                    type="button"
-                    className={`rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap transition-all duration-200 ${state.subMenuOpen === key
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-white/90 hover:bg-white/15 hover:text-white'
-                      }`}
-                    aria-haspopup="true"
-                    aria-expanded={state.subMenuOpen === key}
-                  >
-                    {label}
-                  </button>
+                  {label}
+                </button>
 
-                  {/* 드롭다운 — 세부메뉴 각각 독립 카드 */}
-                  {state.subMenuOpen === key && subMenus[key] && (
-                    <div className="absolute left-0 top-full z-[75] w-full pt-[18px]">
-                      <ul className="flex w-full flex-col gap-1.5">
-                        {subMenus[key].items.map(item => (
-                          <li key={item.href} className="w-full">
-                            <Link
-                              href={item.href}
-                              onClick={() => updateState({ subMenuOpen: null })}
-                              className={`relative flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
-                                pathname === item.href
-                                  ? 'bg-white text-gray-900 shadow-md ring-black/15'
-                                  : 'ring-black/15 shadow-[0_2px_10px_rgba(0,0,0,0.18)] text-white/95 hover:-translate-y-[1px] hover:bg-white/20 hover:text-white hover:ring-white/35 hover:shadow-[0_6px_14px_rgba(0,0,0,0.2)] focus-visible:-translate-y-[1px] focus-visible:bg-white/20 focus-visible:text-white focus-visible:ring-white/35 focus-visible:shadow-[0_6px_14px_rgba(0,0,0,0.2)]'
-                              } focus-visible:outline-none focus-visible:ring-2`}
-                              style={pathname === item.href ? undefined : SUBMENU_GLASS_STYLE}
-                            >
-                              {item.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
+                {/* 드롭다운 — 세부메뉴 각각 독립 카드 */}
+                {state.subMenuOpen === key && subMenus[key] && (
+                  <div className="absolute left-0 top-full z-[75] w-full pt-[18px]">
+                    <ul className="flex w-full flex-col gap-1.5">
+                      {subMenus[key].items.map(item => (
+                        <li key={item.href} className="w-full">
+                          <Link
+                            href={item.href}
+                            onClick={() => updateState({ subMenuOpen: null })}
+                            className={`relative flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
+                              pathname === item.href
+                                ? 'bg-white text-gray-900 shadow-md ring-black/15'
+                                : 'ring-black/15 shadow-[0_2px_10px_rgba(0,0,0,0.18)] text-white/95 hover:-translate-y-[1px] hover:bg-white/20 hover:text-white hover:ring-white/35 hover:shadow-[0_6px_14px_rgba(0,0,0,0.2)] focus-visible:-translate-y-[1px] focus-visible:bg-white/20 focus-visible:text-white focus-visible:ring-white/35 focus-visible:shadow-[0_6px_14px_rgba(0,0,0,0.2)]'
+                            } focus-visible:outline-none focus-visible:ring-2`}
+                            style={pathname === item.href ? undefined : SUBMENU_GLASS_STYLE}
+                          >
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
 
-          {/* 우: 액션 — 글라스 필 */}
+          {/* 우: 액션 — SPONSOR 플로팅과 동일 우측 열 */}
           <div
-            className="flex shrink-0 items-center gap-1 rounded-full px-2 py-2 ring-1 ring-white/15"
+            className={`${DESKTOP_HEADER_PILL_SHELL_CLASS} gap-1`}
             style={GLASS_PILL_STYLE}
           >
             {navItemMypage && (
               <Link
                 href={navItemMypage.href}
-                className={`rounded-full px-5 py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200 ${pathname.startsWith('/mypage')
+                className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} px-5 ${pathname.startsWith('/mypage')
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-white/90 hover:bg-white/15 hover:text-white'
                   }`}
@@ -473,7 +479,7 @@ export default function Header() {
               href="http://www.run1080.com/new/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+              className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} flex items-center gap-1 px-5 text-white/90 hover:bg-white/15 hover:text-white`}
             >
               (구)전마협
               <svg className="h-3 w-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -504,7 +510,7 @@ export default function Header() {
                       navigationGuard.endNavigation();
                     }
                   }}
-                  className="rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+                  className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} px-5 text-white/90 hover:bg-white/15 hover:text-white`}
                 >
                   로그아웃
                 </button>
@@ -512,7 +518,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 rounded-full px-5 py-2 text-sm font-semibold text-white/90 transition-all hover:bg-white/15 hover:text-white"
+                className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} flex items-center gap-1.5 px-5 text-white/90 hover:bg-white/15 hover:text-white`}
                 onClick={e => {
                   const returnUrl =
                     typeof window !== 'undefined' ? window.location.pathname : '/';

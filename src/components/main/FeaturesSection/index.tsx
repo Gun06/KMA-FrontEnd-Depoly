@@ -68,7 +68,7 @@ export default function FeaturesSection() {
   };
 
   return (
-    <section className="bg-white pb-6 pt-10 sm:py-8 md:py-10">
+    <section className="bg-white pb-6 pt-10 sm:py-8 md:pb-10 md:pt-12 lg:pb-10 lg:pt-14">
       <div className="mx-auto max-w-[1920px] px-4 sm:px-5 lg:px-[6vw]">
         <div className="mb-6 pt-3 text-center sm:mb-8 sm:pt-2 md:mb-12 md:pt-0">
           <h2 className="font-giants mb-3 text-xl leading-snug text-gray-900 sm:mb-4 sm:text-2xl md:text-3xl lg:text-4xl">

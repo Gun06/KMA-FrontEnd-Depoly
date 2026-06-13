@@ -4,7 +4,10 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MainPageAdvertiseItem, SponsorBanner } from '@/types/event';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
-import { useFloatingFooterClamp } from '@/hooks/useFloatingFooterClamp';
+import {
+  MAIN_FLOATING_DESKTOP_CLASS,
+  MAIN_FLOATING_ROOT_CLASS,
+} from '@/components/main/mainLayoutTokens';
 
 /* ─── 공용 상수 ─── */
 const PANEL_W = 200;
@@ -372,7 +375,6 @@ export default function FloatingPanels() {
   }, []);
 
   const panelRef = useRef<HTMLDivElement>(null);
-  useFloatingFooterClamp(panelRef, { edge: 'top', topExtraPx: 6 });
   const [openPanel, setOpenPanel] = useState<'ad' | 'sp' | null>(null);
   const [adPopInfo, setAdPopInfo] = useState<AdHoverInfo | null>(null);
   const [spPopInfo, setSpPopInfo] = useState<SpHoverInfo | null>(null);
@@ -383,11 +385,12 @@ export default function FloatingPanels() {
     setOpenPanel(cur => (cur === panel ? null : panel));
 
   return (
-    <div
-      ref={panelRef}
-      className="pointer-events-none fixed right-[6vw] z-[145] hidden lg:flex lg:flex-col lg:gap-4 lg:pb-4"
-      style={{ top: 'calc(var(--kma-main-header-offset, 80px) + 0.35rem)', width: PANEL_W }}
-    >
+    <>
+      <div
+        ref={panelRef}
+        className={`pointer-events-none ${MAIN_FLOATING_ROOT_CLASS} ${MAIN_FLOATING_DESKTOP_CLASS} top-[calc(var(--kma-main-header-offset,80px)+0.35rem)] flex-col gap-4 pb-4`}
+        style={{ width: PANEL_W }}
+      >
       {adPopInfo && (
         <AdPopCard
           info={adPopInfo}
@@ -440,6 +443,7 @@ export default function FloatingPanels() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

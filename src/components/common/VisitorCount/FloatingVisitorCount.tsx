@@ -4,18 +4,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Users, X } from 'lucide-react';
 import { useMainVisitorCount, useEventVisitorCount } from '@/hooks/useVisitorCount';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
+import {
+  MAIN_FLOATING_ROOT_CLASS,
+} from '@/components/main/mainLayoutTokens';
 
 type FloatingVisitorCountProps = {
   variant: 'main' | 'event';
   eventId?: string;
 };
 
-/** 메인: 우측 플로팅 패널(FloatingPanels)과 동일한 right-[6vw] 기준 */
+/** 메인: 우측 플로팅 패널(FloatingPanels)과 동일한 fixed·z-index·right 기준 */
 const ROOT_CLASS: Record<FloatingVisitorCountProps['variant'], string> = {
   main:
-    'pointer-events-auto fixed z-[151] flex flex-col gap-3 ' +
-    'bottom-5 right-4 sm:bottom-6 sm:right-5 md:bottom-7 md:right-6 lg:bottom-8 lg:right-[6vw] ' +
-    'items-end',
+    `pointer-events-auto ${MAIN_FLOATING_ROOT_CLASS} flex flex-col gap-3 ` +
+    'bottom-5 sm:bottom-6 md:bottom-7 custom:bottom-8 items-end',
   event:
     'pointer-events-auto fixed z-50 flex flex-col gap-3 ' +
     'bottom-8 left-8 sm:bottom-16 sm:left-16 md:bottom-16 md:left-16 ' +

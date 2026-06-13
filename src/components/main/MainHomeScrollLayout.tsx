@@ -145,14 +145,35 @@ export default function MainHomeScrollLayout({ belowHero, children }: MainHomeSc
   const [pinHeroLayers, setPinHeroLayers] = useState(true);
 
   useEffect(() => {
+    const PIN_HIDE_AT = 48;
+    const PIN_SHOW_AT = 112;
+    let pinned = true;
+
     const update = () => {
       const zone = document.querySelector('[data-kma-footer-zone]');
       if (!zone) {
-        setPinHeroLayers(stackHeightPx === 0 || window.scrollY < stackHeightPx);
+        const next = stackHeightPx === 0 || window.scrollY < stackHeightPx;
+        if (next !== pinned) {
+          pinned = next;
+          setPinHeroLayers(next);
+        }
         return;
       }
+
       const { top } = zone.getBoundingClientRect();
-      setPinHeroLayers(top > window.innerHeight - 48);
+      const vh = window.innerHeight;
+      let next = pinned;
+
+      if (pinned) {
+        if (top <= vh - PIN_HIDE_AT) next = false;
+      } else if (top > vh - PIN_SHOW_AT) {
+        next = true;
+      }
+
+      if (next !== pinned) {
+        pinned = next;
+        setPinHeroLayers(next);
+      }
     };
 
     update();

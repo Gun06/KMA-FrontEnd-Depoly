@@ -184,10 +184,10 @@ function ClientContent() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 px-2 sm:px-3 py-2 border-y border-gray-200 mb-1 text-[11px] tracking-[0.12em] text-gray-400">
+            <div className="grid grid-cols-[36px_minmax(0,1fr)_68px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_92px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 px-2 sm:px-3 py-2 border-y border-gray-200 mb-1 text-[11px] tracking-[0.12em] text-gray-400">
               <span className="text-center">NO</span>
               <span className="text-center">TITLE / MESSAGE</span>
-              <span className="text-center">DATE</span>
+              <span className="text-right">DATE</span>
             </div>
 
             {/* 알림 리스트 */}
@@ -199,7 +199,7 @@ function ClientContent() {
                       key={`notification-skeleton-${index}`}
                       className="px-2 sm:px-3 py-4 sm:py-5 border-b border-gray-200"
                     >
-                      <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
+                      <div className="grid grid-cols-[36px_minmax(0,1fr)_68px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_92px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
                         <div className="pt-0.5 flex items-center justify-center">
                           <div className="h-4 w-6 rounded bg-gray-200" />
                         </div>
@@ -227,7 +227,7 @@ function ClientContent() {
                         }`}
                         onClick={() => handleNotificationClick(n)}
                       >
-                        <div className="grid grid-cols-[36px_minmax(0,1fr)_58px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_86px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
+                        <div className="grid grid-cols-[36px_minmax(0,1fr)_68px] min-[500px]:grid-cols-[40px_minmax(0,1fr)_92px] sm:grid-cols-[56px_minmax(0,1fr)_120px] gap-3 items-start">
                           <div className="pt-0.5 text-xs sm:text-sm text-gray-500 tabular-nums flex items-center justify-center gap-1">
                             <span>{displayNo}</span>
                             {isUnread && (
@@ -245,7 +245,7 @@ function ClientContent() {
                               </p>
                             </div>
                           </div>
-                          <p className="pt-0.5 text-[11px] sm:text-xs text-gray-400 tabular-nums whitespace-nowrap text-center">
+                          <p className="pt-0.5 text-[11px] sm:text-xs text-gray-400 tabular-nums whitespace-nowrap text-right">
                             {formatted === '-' ? '-' : formatted.datePart}
                           </p>
                         </div>

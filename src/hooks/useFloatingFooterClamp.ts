@@ -12,6 +12,10 @@ type Options = {
   topExtraPx?: number;
   /** lg breakpoint — matches Tailwind lg */
   minWidth?: number;
+  /** clamp 대상이 아닌 실제 콘텐츠 높이 (maxHeight 피드백 루프 방지) */
+  measureRef?: RefObject<HTMLElement | null>;
+  /** 클램프 해제 시 여유(px) — 경계에서 깜빡임 방지 */
+  releaseHysteresisPx?: number;
 };
 
 function getHeaderOffsetPx(): number {
@@ -20,6 +24,13 @@ function getHeaderOffsetPx(): number {
     .trim();
   const px = parseFloat(raw.replace(/px$/, ''));
   return Number.isFinite(px) ? px : 64;
+}
+
+function clearClampStyles(el: HTMLElement) {
+  el.style.removeProperty('top');
+  el.style.removeProperty('bottom');
+  el.style.removeProperty('max-height');
+  el.style.removeProperty('overflow-y');
 }
 
 /**
@@ -36,6 +47,8 @@ export function useFloatingFooterClamp(
     gap = 16,
     topExtraPx = 6,
     minWidth = 1024,
+    measureRef,
+    releaseHysteresisPx = 24,
   } = options;
 
   useEffect(() => {
@@ -46,14 +59,19 @@ export function useFloatingFooterClamp(
     let latchedBottom: number | null = null;
     let prevPanelH = 0;
     let raf = 0;
+    let lastTop: number | null = null;
+
+    const getPanelHeight = () => {
+      const measureEl = measureRef?.current ?? el;
+      return measureEl.offsetHeight;
+    };
 
     const apply = () => {
       if (window.innerWidth < minWidth) {
-        el.style.removeProperty('top');
-        el.style.removeProperty('bottom');
-        el.style.removeProperty('max-height');
+        clearClampStyles(el);
         latchedTop = null;
         latchedBottom = null;
+        lastTop = null;
         return;
       }
 
@@ -61,7 +79,8 @@ export function useFloatingFooterClamp(
       if (!footer) return;
 
       const footerTop = footer.getBoundingClientRect().top;
-      const panelH = el.offsetHeight;
+      const panelH = getPanelHeight();
+
       if (Math.abs(panelH - prevPanelH) > 4) {
         latchedTop = null;
         latchedBottom = null;
@@ -71,11 +90,19 @@ export function useFloatingFooterClamp(
       if (edge === 'top') {
         const minTop = getHeaderOffsetPx() + topExtraPx;
         const maxBottom = footerTop - gap;
+        const overflow = minTop + panelH - maxBottom;
+        const hasRoom =
+          overflow <= 0 ||
+          (latchedTop !== null && overflow < releaseHysteresisPx);
 
-        if (minTop + panelH <= maxBottom) {
+        if (hasRoom) {
           latchedTop = null;
-          el.style.top = `${minTop}px`;
+          if (lastTop !== minTop) {
+            el.style.top = `${minTop}px`;
+            lastTop = minTop;
+          }
           el.style.removeProperty('max-height');
+          el.style.removeProperty('overflow-y');
           return;
         }
 
@@ -85,12 +112,18 @@ export function useFloatingFooterClamp(
         }
 
         const top = Math.max(minTop, latchedTop);
-        el.style.top = `${top}px`;
+        if (lastTop !== top) {
+          el.style.top = `${top}px`;
+          lastTop = top;
+        }
 
         const available = maxBottom - minTop;
         if (available > 0 && panelH > available) {
-          el.style.maxHeight = `${available}px`;
-          el.style.overflowY = 'auto';
+          const maxHeight = `${available}px`;
+          if (el.style.maxHeight !== maxHeight) {
+            el.style.maxHeight = maxHeight;
+            el.style.overflowY = 'auto';
+          }
         } else {
           el.style.removeProperty('max-height');
           el.style.removeProperty('overflow-y');
@@ -106,6 +139,7 @@ export function useFloatingFooterClamp(
         latchedBottom = null;
         el.style.removeProperty('bottom');
         el.style.removeProperty('max-height');
+        el.style.removeProperty('overflow-y');
         return;
       }
 
@@ -125,8 +159,10 @@ export function useFloatingFooterClamp(
     schedule();
 
     const footer = document.querySelector(footerSelector);
+    const measureEl = measureRef?.current ?? el;
+
     const ro = new ResizeObserver(schedule);
-    ro.observe(el);
+    ro.observe(measureEl);
     if (footer) ro.observe(footer);
 
     window.addEventListener('scroll', schedule, { passive: true });
@@ -137,10 +173,7 @@ export function useFloatingFooterClamp(
       ro.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
-      el.style.removeProperty('top');
-      el.style.removeProperty('bottom');
-      el.style.removeProperty('max-height');
-      el.style.removeProperty('overflow-y');
+      clearClampStyles(el);
     };
-  }, [ref, edge, footerSelector, gap, topExtraPx, minWidth]);
+  }, [ref, measureRef, edge, footerSelector, gap, topExtraPx, minWidth, releaseHysteresisPx]);
 }
