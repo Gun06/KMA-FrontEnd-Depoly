@@ -39,9 +39,18 @@ export interface OwnedRegistrationUpdatePayload {
 }
 
 export interface OwnedRegistrationStagingResponse {
-  stagedToken: string;
-  otpExpireSeconds: number;
-  stagedTtlSeconds: number;
+  flow?: 'STAGED' | 'COMMITED' | 'COMMITTED';
+  committedResult?: { targetId: string } | null;
+  stagedResult?: {
+    stagedToken: string;
+    otpExpireSeconds: number;
+    stagedTtlSeconds: number;
+  } | null;
+  result?: string;
+  /** 레거시 응답 호환 */
+  stagedToken?: string;
+  otpExpireSeconds?: number;
+  stagedTtlSeconds?: number;
 }
 
 /**

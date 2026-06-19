@@ -11,6 +11,7 @@ import { useAdminEventsActions } from '@/components/providers/AdminEventsContext
 import { useEventDetail } from '@/hooks/useEventDetail';
 import { transformApiDataToEventDetail } from '@/utils/eventDataTransform';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api';
+import { usePhoneAuthPolicy } from '@/services/admin/phoneAuth';
 
 export default function DetailClient({
   eventId,
@@ -23,6 +24,7 @@ export default function DetailClient({
 
   // API에서 대회 상세 정보 조회 (refetchOnMount: 'always'로 페이지 진입 시 항상 최신 데이터 가져옴)
   const { data: apiData, isLoading, error, refetch } = useEventDetail(eventId);
+  const { data: phoneAuthPolicyData } = usePhoneAuthPolicy();
 
   // 페이지 진입 시 캐시 무효화하여 항상 최신 데이터 가져오기
   useEffect(() => {
@@ -195,6 +197,7 @@ export default function DetailClient({
   return (
     <EventDetailView
       eventData={eventData as EventDetailData}
+      phoneAuthGlobalPolicy={phoneAuthPolicyData?.policy}
       onEdit={handleEdit}
       onDelete={handleDelete}
       onBack={goList}

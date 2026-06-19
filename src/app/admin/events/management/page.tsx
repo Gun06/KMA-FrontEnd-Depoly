@@ -9,7 +9,7 @@ export default function Page({
   const pageSize = 20; // API 기본값과 맞춤
 
   return (
-    <main className="mx-auto max-w-[1300px] px-4 py-6">
+    <main className="mx-auto max-w-[1300px] px-4 pb-6 pt-0">
       <EventsClient
         initialRows={[]} // API에서 데이터를 가져오므로 빈 배열로 초기화
         initialPage={page}

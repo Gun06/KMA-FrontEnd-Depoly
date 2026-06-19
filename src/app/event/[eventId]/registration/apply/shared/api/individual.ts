@@ -4,11 +4,10 @@ import { tokenService } from '@/utils/tokenService';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
-// 개인신청 제출 — 2step(OTP) 스테이징: …/registration/stage
-// 추후 관리 설정(GET)에 따라 1step(…/registration 무 stage) 분기 예정
+// 개인신청 제출 — 통합본 API (flow: STAGED | COMMITTED)
 export const submitIndividualRegistration = async (eventId: string, data: ApiSubmitData) => {
   try {
-    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration/stage`;
+    const url = `${API_BASE_URL}/api/v1/public/event/${eventId}/registration`;
     
     const response = await fetch(url, {
       method: 'POST',

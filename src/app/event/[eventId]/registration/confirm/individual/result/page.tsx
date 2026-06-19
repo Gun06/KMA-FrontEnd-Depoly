@@ -9,7 +9,7 @@ import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
 import { requestIndividualRefund } from "@/app/event/[eventId]/registration/apply/shared/api/individual";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
-import { fetchIndividualRegistrationConfirm } from "./api";
+import { fetchIndividualRegistrationConfirm, normalizeIndividualRegistrationConfirmResponse } from "./api";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
@@ -113,7 +113,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
               storedPassword = parsed._password || '';
               // 비밀번호 필드 제거하고 나머지 데이터 사용
               delete parsed._password;
-              baseData = parsed as IndividualRegistrationResponse;
+              baseData = normalizeIndividualRegistrationConfirmResponse(parsed);
               // 저장된 데이터가 있으면 먼저 표시 (사용자 경험 개선)
               if (baseData) {
                 setRegistrationData(baseData);
@@ -127,7 +127,9 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         } else if (dataParam) {
           // 기존 방식: data 파라미터에서 파싱 (하위 호환성)
           try {
-            baseData = JSON.parse(decodeURIComponent(dataParam));
+            baseData = normalizeIndividualRegistrationConfirmResponse(
+              JSON.parse(decodeURIComponent(dataParam))
+            );
             // data 파라미터에서 registrationId를 추출하여 사용
             if (!registrationIdParam && baseData?.registrationId) {
               registrationIdParam = baseData.registrationId;
@@ -403,17 +405,22 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   };
 
   // 성별 한글 변환
-  const getGenderText = (gender: string) => {
-    return gender === 'M' ? '남성' : '여성';
+  const getGenderText = (gender?: string) => {
+    if (gender === 'M') return '남성';
+    if (gender === 'F') return '여성';
+    return '-';
   };
 
   // 결제 방식 한글 변환
-  const getPaymentTypeText = (paymentType: string) => {
-    return paymentType === 'CARD' ? '카드' : '계좌이체';
+  const getPaymentTypeText = (paymentType?: string) => {
+    if (paymentType === 'CARD') return '카드';
+    if (paymentType === 'ACCOUNT_TRANSFER') return '계좌이체';
+    return '-';
   };
 
   // 결제 상태 한글 변환 (관리자 쪽과 동일한 로직)
-  const getPaymentStatusText = (paymentStatus: string) => {
+  const getPaymentStatusText = (paymentStatus?: string) => {
+    if (!paymentStatus) return '-';
     // PAID/UNPAID 형식인 경우 백엔드 enum으로 변환
     if (paymentStatus === 'PAID') {
       return '결제완료';
@@ -428,7 +435,8 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   };
 
   // 결제 상태에 따른 색상
-  const getPaymentStatusColor = (paymentStatus: string) => {
+  const getPaymentStatusColor = (paymentStatus?: string) => {
+    if (!paymentStatus) return 'text-gray-600';
     const status = paymentStatus.toUpperCase();
     if (status === 'PAID' || status === 'COMPLETED') {
       return 'text-green-600';
@@ -446,8 +454,8 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
   };
 
   // 날짜 형식 변환 (YYYY-MM-DD -> YYYY.MM.DD)
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -765,7 +773,11 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
                 <div className="flex items-center justify-between pb-4">
                   <label className="font-medium text-gray-500 min-w-[112px] pr-4">비용</label>
-                  <span className="font-medium text-blue-600">{registrationData.amount.toLocaleString()}원</span>
+                  <span className="font-medium text-blue-600">
+                    {typeof registrationData.amount === 'number'
+                      ? `${registrationData.amount.toLocaleString()}원`
+                      : '-'}
+                  </span>
                 </div>
               </div>
             </div>

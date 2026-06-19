@@ -167,6 +167,7 @@ export function transformApiDataToEventDetail(
     bank: eventInfo.bank,
     virtualAccount: eventInfo.virtualAccount,
     accountHolderName: eventInfo.accountHolderName,
+    phoneAuthRequired: eventInfo.phoneAuthRequired ?? true,
     eventCategories: eventCategories.map(c => ({
       id: c.id,
       name: c.name,

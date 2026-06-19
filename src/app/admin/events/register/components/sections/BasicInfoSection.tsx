@@ -10,6 +10,11 @@ import BirthDateInput from '@/components/common/FormField/BirthDateInput';
 import { TimeSelect } from '@/components/common/Dropdown/TimeSelect';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
 import { MiniToggle } from '@/components/admin/Form/PartyRows';
+import PhoneAuthGlobalPolicyBanner from '@/components/admin/events/PhoneAuthGlobalPolicyBanner';
+import {
+  isPhoneAuthGloballyOverridden,
+  type PhoneAuthPolicy,
+} from '@/services/admin/phoneAuth';
 
 // useCompetitionForm의 반환 타입을 정의
 export type CompetitionFormHandle = {
@@ -56,6 +61,8 @@ export type CompetitionFormHandle = {
   setAutoDeadline: (value: boolean) => void;
   autoMaxRegist: boolean;
   setAutoMaxRegist: (value: boolean) => void;
+  phoneAuthRequired: boolean;
+  setPhoneAuthRequired: (value: boolean) => void;
   hours: string[];
   minutes: string[];
   paymentDeadlineDate: string;
@@ -74,15 +81,21 @@ export default function BasicInfoSection({
   fieldCls,
   inputColorCls,
   fieldRefs,
+  phoneAuthGlobalPolicy = 'EVENT_SETTING',
 }: {
   f: CompetitionFormHandle;
   readOnly: boolean;
   fieldCls: string;
   inputColorCls: string;
   fieldRefs?: Map<string, React.RefObject<HTMLElement>>;
+  phoneAuthGlobalPolicy?: PhoneAuthPolicy;
 }) {
   const noop = () => {};
   const dimCls = readOnly ? 'text-[#646464]' : 'text-black';
+  const isGlobalPhoneAuthLocked = isPhoneAuthGloballyOverridden(
+    phoneAuthGlobalPolicy
+  );
+  const isPhoneAuthToggleLocked = readOnly || isGlobalPhoneAuthLocked;
 
   return (
     <>
@@ -133,6 +146,39 @@ export default function BasicInfoSection({
               { value: '접수마감', label: '접수마감' },
               { value: '최종마감', label: '최종마감' },
             ]}
+          />
+        </div>
+      </FormRow>
+
+      {/* 휴대폰 인증 */}
+      <FormRow label="휴대폰 인증" contentClassName="items-center px-3 py-2">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex shrink-0 items-center gap-3">
+            <MiniToggle
+              value={f.phoneAuthRequired}
+              onChange={
+                isPhoneAuthToggleLocked ? undefined : f.setPhoneAuthRequired
+              }
+              disabled={isPhoneAuthToggleLocked}
+              title={
+                isGlobalPhoneAuthLocked
+                  ? '전역 정책에 의해 비활성화됨'
+                  : undefined
+              }
+              className="shrink-0"
+            />
+            <span
+              className={cn(
+                'text-[13px]',
+                isPhoneAuthToggleLocked ? 'text-[#646464]' : 'text-neutral-700'
+              )}
+            >
+              {f.phoneAuthRequired ? 'SMS 인증 사용' : 'SMS 인증 생략'}
+            </span>
+          </div>
+          <PhoneAuthGlobalPolicyBanner
+            policy={phoneAuthGlobalPolicy}
+            className="min-w-0 flex-1"
           />
         </div>
       </FormRow>

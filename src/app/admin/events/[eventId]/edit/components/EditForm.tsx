@@ -30,6 +30,7 @@ import { useFormSubmission } from '@/app/admin/events/register/hooks/useFormSubm
 import type {
   EventCreatePayload,
 } from '@/app/admin/events/register/api/types';
+import type { PhoneAuthPolicy } from '@/services/admin/phoneAuth';
 
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
@@ -53,6 +54,7 @@ type Props = {
   }>;
   initialGifts?: Array<{ name: string; size: string; isActive?: boolean }>;
   initialCourses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
+  phoneAuthGlobalPolicy?: PhoneAuthPolicy;
 };
 
 export default function EditForm({
@@ -68,6 +70,7 @@ export default function EditForm({
   existingEventBanners,
   initialGifts = [],
   initialCourses = [],
+  phoneAuthGlobalPolicy,
 }: Props) {
   const searchParams = useSearchParams();
   const step = searchParams?.get('step');
@@ -332,6 +335,7 @@ export default function EditForm({
             fieldCls={fieldCls}
             inputColorCls={inputColorCls}
             fieldRefs={fieldRefs}
+            phoneAuthGlobalPolicy={phoneAuthGlobalPolicy}
           />
 
           {/* 공개여부 */}

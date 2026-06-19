@@ -41,6 +41,8 @@ export interface EventInfo {
   agreeAllLabel?: string;
   /** 메인 첫 화면 유튜브 임베딩 링크 */
   youtubeUrl?: string;
+  /** SENS 기반 휴대폰 인증 여부 */
+  phoneAuthRequired?: boolean;
 }
 
 // 기념품 정보
@@ -280,6 +282,8 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
   autoDeadline?: boolean;
   /** 최대 정원 마감 자동 전환 트리거 */
   autoMaxRegist?: boolean;
+  /** SENS 기반 휴대폰 인증 여부 */
+  phoneAuthRequired?: boolean;
 };
 
 // 이벤트 상태 (대회등록에서 사용)

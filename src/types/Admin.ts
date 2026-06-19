@@ -221,6 +221,7 @@ export type EventCreatePayload = Omit<EventFormState, 'date' | 'time'> & {
   autoStart?: boolean;
   autoDeadline?: boolean;
   autoMaxRegist?: boolean;
+  phoneAuthRequired?: boolean;
 };
 
 // ===== 관리자 이벤트 목록 조회 API 타입 =====

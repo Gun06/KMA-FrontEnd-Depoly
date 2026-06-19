@@ -18,6 +18,7 @@ import { FormDataBuilder } from '@/app/admin/events/register/api/formDataBuilder
 import { updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi, updateAllPageImages } from '@/app/admin/events/register/api';
 import Button from '@/components/common/Button/Button';
 import InfoModal from '@/app/admin/events/register/components/parts/InfoModal';
+import { usePhoneAuthPolicy } from '@/services/admin/phoneAuth';
 
 export default function EditClient({
   eventId,
@@ -37,6 +38,8 @@ export default function EditClient({
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [infoModalType, setInfoModalType] = useState<'success' | 'error' | 'warning'>('success');
   const [infoModalMessage, setInfoModalMessage] = useState('');
+
+  const { data: phoneAuthPolicyData } = usePhoneAuthPolicy();
 
   // API에서 대회 상세 정보 조회
   const { data: apiData, isLoading, error, refetch } = useEventDetail(String(eventId));
@@ -575,6 +578,7 @@ export default function EditClient({
         }
         initialGifts={initialGifts}
         initialCourses={initialCourses}
+        phoneAuthGlobalPolicy={phoneAuthPolicyData?.policy}
       />
 
       {/* 커스텀 정보 모달 */}

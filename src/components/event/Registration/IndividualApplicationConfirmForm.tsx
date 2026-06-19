@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
+import { normalizeIndividualRegistrationConfirmResponse } from "../../../app/event/[eventId]/registration/confirm/individual/result/api";
 import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import PasswordResetRequestModal from "./PasswordResetRequestModal";
 import PasswordResetOtpModal from "./PasswordResetOtpModal";
@@ -121,7 +122,8 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
       }
 
       if (response.ok) {
-        const result: IndividualRegistrationResponse = await response.json();
+        const raw = await response.json();
+        const result = normalizeIndividualRegistrationConfirmResponse(raw);
         
         // 인증 성공한 데이터와 비밀번호를 sessionStorage에 임시 저장 (결과 페이지에서 사용)
         if (result.registrationId) {

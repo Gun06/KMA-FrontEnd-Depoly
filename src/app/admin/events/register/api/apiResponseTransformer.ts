@@ -409,6 +409,10 @@ export function transformApiResponseToFormPrefill(
     autoStart: eventInfo.autoStart ?? false,
     autoDeadline: eventInfo.autoDeadline ?? false,
     autoMaxRegist: eventInfo.autoMaxRegist ?? false,
+    phoneAuthRequired:
+      typeof eventInfo.phoneAuthRequired === 'boolean'
+        ? eventInfo.phoneAuthRequired
+        : true,
     // 파트너 정보 (이미지 파일 포함)
     partners,
     // 업로드 정보 (이미지 미리보기용)

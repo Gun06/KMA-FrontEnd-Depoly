@@ -55,6 +55,8 @@ export interface EventDetailApiResponse {
     awardInfoImageUrl?: string;
     /** 메인 첫 화면 유튜브 임베딩 링크 */
     youtubeUrl?: string;
+    /** SENS 기반 휴대폰 인증 여부 */
+    phoneAuthRequired?: boolean;
   };
   eventCategories: Array<{
     id: string;

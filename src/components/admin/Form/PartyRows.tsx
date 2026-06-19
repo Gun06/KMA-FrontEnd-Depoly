@@ -9,28 +9,38 @@ import EventUploader from "@/components/common/Upload/EventUploader";
 import type { UploadItem } from "@/components/common/Upload/types";
 
 /** 🔘 미니 세그먼트 토글 (ON/OFF) — 기본정보 등에서 재사용 */
-export function MiniToggle({ value, onChange, disabled, className, onLabel = 'ON', offLabel = 'OFF' }: {
+export function MiniToggle({ value, onChange, disabled, className, onLabel = 'ON', offLabel = 'OFF', title }: {
   value: boolean; onChange?: (v: boolean) => void; disabled?: boolean; className?: string;
-  onLabel?: string; offLabel?: string;
+  onLabel?: string; offLabel?: string; title?: string;
 }) {
   return (
     <div
       className={cn(
         "inline-flex items-center rounded-full bg-neutral-100 p-0.5",
         "ring-1 ring-black/10 shadow-sm",
-        disabled && "opacity-60 cursor-not-allowed",
+        disabled && "cursor-not-allowed bg-neutral-50 opacity-40 ring-neutral-200/80 shadow-none pointer-events-none",
         className
       )}
       role="group"
       aria-label="활성 상태 전환"
+      aria-disabled={disabled}
+      title={title}
     >
       <button
         type="button"
         aria-pressed={value}
+        disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && onChange?.(true)}
         className={cn(
           "h-6 px-2 rounded-full text-[13px] font-medium transition",
-          value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
+          value
+            ? disabled
+              ? "bg-neutral-200 text-neutral-500 ring-0 shadow-none"
+              : "bg-white text-neutral-900 shadow ring-1 ring-black/10"
+            : disabled
+              ? "text-neutral-300"
+              : "text-neutral-400 hover:text-neutral-600"
         )}
       >
         {onLabel}
@@ -38,10 +48,18 @@ export function MiniToggle({ value, onChange, disabled, className, onLabel = 'ON
       <button
         type="button"
         aria-pressed={!value}
+        disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && onChange?.(false)}
         className={cn(
           "h-6 px-2 rounded-full text-[13px] font-medium transition",
-          !value ? "bg-white text-neutral-900 shadow ring-1 ring-black/10" : "text-neutral-400 hover:text-neutral-600"
+          !value
+            ? disabled
+              ? "bg-neutral-200 text-neutral-500 ring-0 shadow-none"
+              : "bg-white text-neutral-900 shadow ring-1 ring-black/10"
+            : disabled
+              ? "text-neutral-300"
+              : "text-neutral-400 hover:text-neutral-600"
         )}
       >
         {offLabel}

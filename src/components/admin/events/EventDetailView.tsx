@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Button from '@/components/common/Button/Button';
 import RegistrationStatusBadge, {
   type RegStatus,
@@ -16,6 +17,11 @@ import { cn } from '@/utils/cn';
 import { PREVIEW_BG } from '@/app/admin/events/register/components/parts/theme';
 import type { EventTheme } from '@/types/event';
 import ConfirmModal from '@/components/common/Modal/ConfirmModal';
+import {
+  getPhoneAuthPolicyOption,
+  isPhoneAuthGloballyOverridden,
+  type PhoneAuthPolicy,
+} from '@/services/admin/phoneAuth';
 
 export type EventDetailData = {
   id: string;
@@ -65,6 +71,8 @@ export type EventDetailData = {
   virtualAccount?: string;
   /** 예금주명 (선택) */
   accountHolderName?: string;
+  /** SENS 기반 휴대폰 인증 여부 (대회별 설정) */
+  phoneAuthRequired?: boolean;
   eventCategories?: Array<{
     id: string;
     name: string;
@@ -99,6 +107,7 @@ export type EventDetailData = {
 
 type Props = {
   eventData: EventDetailData;
+  phoneAuthGlobalPolicy?: PhoneAuthPolicy;
   onEdit?: () => void;
   onDelete?: () => void;
   onBack?: () => void;
@@ -164,6 +173,7 @@ function EventTermBody({
 
 export default function EventDetailView({
   eventData,
+  phoneAuthGlobalPolicy = 'EVENT_SETTING',
   onEdit,
   onDelete,
   onBack,
@@ -182,6 +192,26 @@ export default function EventDetailView({
   const bankName = eventData.bank || '';
   const accountNumber = eventData.virtualAccount || '';
   const accountHolderName = eventData.accountHolderName || '';
+
+  const eventPhoneAuthRequired = eventData.phoneAuthRequired !== false;
+  const isPhoneAuthOverriddenByGlobalPolicy = isPhoneAuthGloballyOverridden(
+    phoneAuthGlobalPolicy
+  );
+  const globalPhoneAuthPolicyOption = getPhoneAuthPolicyOption(
+    phoneAuthGlobalPolicy
+  );
+
+  const renderPhoneAuthStatus = (enabled: boolean) => (
+    <span className="inline-flex items-center gap-2 text-sm text-gray-900 font-pretendard font-medium">
+      <span
+        className={cn(
+          'w-2 h-2 rounded-full shrink-0',
+          enabled ? 'bg-emerald-500' : 'bg-gray-400'
+        )}
+      />
+      {enabled ? 'SMS 인증 사용' : 'SMS 인증 생략'}
+    </span>
+  );
 
   const handleEdit = () => {
     if (onEdit) {
@@ -577,8 +607,42 @@ export default function EventDetailView({
             )}
           </div>
 
-          {/* 6. 메인 색상 */}
+          {/* 6. 휴대폰 인증 | 메인 색상 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
+                휴대폰 인증
+              </span>
+              <div className="pt-1 space-y-2">
+                {isPhoneAuthOverriddenByGlobalPolicy ? (
+                  <p className="text-xs text-amber-700 font-pretendard">
+                    {globalPhoneAuthPolicyOption.label} ·{' '}
+                    {globalPhoneAuthPolicyOption.description}
+                  </p>
+                ) : (
+                  renderPhoneAuthStatus(eventPhoneAuthRequired)
+                )}
+                <p className="text-xs text-gray-500 font-pretendard">
+                  대회별 설정은{' '}
+                  <button
+                    type="button"
+                    onClick={handleEdit}
+                    className="text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                  >
+                    편집
+                  </button>
+                  에서, 전체 적용은{' '}
+                  <Link
+                    href="/admin/settings/phone-auth-policy"
+                    className="text-blue-600 hover:text-blue-800 underline-offset-2 hover:underline"
+                  >
+                    전화번호 인증 정책
+                  </Link>
+                  에서 변경할 수 있습니다.
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 메인 색상
@@ -598,7 +662,7 @@ export default function EventDetailView({
             </div>
           </div>
 
-          {/* 7. 결제 정보 - 맨 아래 */}
+          {/* 결제 정보 - 맨 아래 */}
           {(bankName || accountNumber || eventData.accountHolderName != null) && (
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">

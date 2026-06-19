@@ -44,6 +44,7 @@ const NAV_ITEMS: Item[] = [
     { name: '지역대회 관리', href: '/admin/local-events/management' },
     { name: '지역대회 등록', href: '/admin/local-events/register' },
     { name: '통계확인', href: '/admin/events/statistics' },
+    { name: '전화번호 인증 정책', href: '/admin/settings/phone-auth-policy' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
     { name: '공지사항', href: '/admin/boards/notice' },

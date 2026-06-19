@@ -26,6 +26,7 @@ import { useFormSubmission } from '../hooks/useFormSubmission';
 import type {
   EventCreatePayload,
 } from '../api/types';
+import { usePhoneAuthPolicy } from '@/services/admin/phoneAuth';
 
 type Props = {
   onRegister: (payload: EventCreatePayload) => Promise<void>;
@@ -43,6 +44,8 @@ export default function CreateForm({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const { data: phoneAuthPolicyData } = usePhoneAuthPolicy();
 
   // 필드 ref 생성
   const fieldRefs = useMemo(() => {
@@ -197,6 +200,7 @@ export default function CreateForm({
             fieldCls={fieldCls}
             inputColorCls={inputColorCls}
             fieldRefs={fieldRefs}
+            phoneAuthGlobalPolicy={phoneAuthPolicyData?.policy}
           />
 
           {/* 공개여부 */}

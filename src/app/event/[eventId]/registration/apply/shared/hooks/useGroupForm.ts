@@ -10,6 +10,7 @@ import { formatError } from '../utils/errorHandler';
 import { mapLoadedAddressDetail } from '../constants/addressField';
 import { stripClosureSuffix } from '@/components/event/GroupRegistration/utils/participantHelpers';
 import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
+import { parseRegistrationFlowResponse } from '../utils/registrationFlow';
 import { useRouter } from 'next/navigation';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
@@ -332,16 +333,27 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           );
           response = await submitGroupRegistration(eventId, requestData);
         }
-        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
-        if (response && response.stagedToken) {
-          setStagedToken(response.stagedToken as string);
-          const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
-          setOtpPhoneNumber(phoneNumber);
-          setIsOtpModalOpen(true);
-          setSubmitError('');
-        } else {
-          throw new Error('스테이징 토큰을 받지 못했습니다.');
-        }
+
+        const applySubmitOutcome = (result: unknown) => {
+          const outcome = parseRegistrationFlowResponse(result);
+          if (outcome.type === 'STAGED') {
+            setStagedToken(outcome.stagedToken);
+            const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+            setOtpPhoneNumber(phoneNumber);
+            setIsOtpModalOpen(true);
+            setSubmitError('');
+            return;
+          }
+          const modeParam = isEdit ? '&mode=edit' : '';
+          const successUrl = `/event/${eventId}/registration/apply/group/success?name=${encodeURIComponent(
+            formData.groupName
+          )}&groupName=${encodeURIComponent(
+            formData.groupName
+          )}&participantCount=${formData.participants.length}${modeParam}`;
+          router.push(successUrl);
+        };
+
+        applySubmitOutcome(response);
       } catch (error) {
         const errorMessage = formatError(error);
         setSubmitError(errorMessage);

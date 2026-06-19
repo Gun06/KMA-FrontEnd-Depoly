@@ -78,6 +78,7 @@ export class EventDataTransformer {
       autoStart: data.autoStart ?? false,
       autoDeadline: data.autoDeadline ?? false,
       autoMaxRegist: data.autoMaxRegist ?? false,
+      phoneAuthRequired: data.phoneAuthRequired ?? true,
       agreeAllLabel: data.agreeAllLabel?.trim() || undefined,
       youtubeUrl: data.youtubeUrl?.trim() || undefined,
     };

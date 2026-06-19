@@ -15,6 +15,12 @@ import {
   transformAdminEventToEventRow,
 } from '@/services/admin';
 import type { EventRow } from '@/components/admin/events/EventTable';
+import PhoneAuthBulkModal from './PhoneAuthBulkModal';
+import { bulkUpdateEventPhoneAuth } from '@/services/admin/phoneAuth';
+import { toast } from 'react-toastify';
+import { useQueryClient } from '@tanstack/react-query';
+import Button from '@/components/common/Button/Button';
+import { Smartphone } from 'lucide-react';
 
 type PublicFilter = '' | '공개' | '테스트' | '비공개';
 
@@ -47,6 +53,12 @@ export default function EventsClient({
   pageSize: number;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = React.useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = React.useState(false);
+  const headCbRef = React.useRef<HTMLInputElement>(null);
 
   // ---------- 초기 상태 (BoardEventList와 동일하게 빈 상태로 시작) ----------
   const [q, setQ] = React.useState('');
@@ -162,7 +174,83 @@ export default function EventsClient({
     };
   }, [originalPreset, availableYears]);
 
-  const columns: Column<EventRow>[] = [
+  const pageAllSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r.id));
+  const pageSomeSelected = rows.some((r) => selectedIds.includes(r.id)) && !pageAllSelected;
+
+  React.useEffect(() => {
+    if (headCbRef.current) headCbRef.current.indeterminate = pageSomeSelected;
+  }, [pageSomeSelected]);
+
+  const handleToggleSelectAll = React.useCallback(() => {
+    setSelectedIds((prev) => {
+      if (pageAllSelected) {
+        const pageIdSet = new Set(rows.map((r) => r.id));
+        return prev.filter((id) => !pageIdSet.has(id));
+      }
+      const merged = new Set([...prev, ...rows.map((r) => r.id)]);
+      return Array.from(merged);
+    });
+  }, [pageAllSelected, rows]);
+
+  const handleToggleSelectOne = React.useCallback((id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+    );
+  }, []);
+
+  const handleBulkPhoneAuthSubmit = React.useCallback(
+    async (payload: {
+      scope: 'SELECTED' | 'ALL_ELIGIBLE';
+      phoneAuthRequired: boolean;
+      reason: string;
+    }) => {
+      setIsBulkUpdating(true);
+      try {
+        await bulkUpdateEventPhoneAuth({
+          scope: payload.scope,
+          eventIds: payload.scope === 'SELECTED' ? selectedIds : [],
+          phoneAuthRequired: payload.phoneAuthRequired,
+          reason: payload.reason,
+        });
+        toast.success('휴대폰 인증 설정이 변경되었습니다.');
+        setIsBulkModalOpen(false);
+        setSelectedIds([]);
+        await queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'list'] });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : '일괄 변경에 실패했습니다.');
+      } finally {
+        setIsBulkUpdating(false);
+      }
+    },
+    [queryClient, selectedIds]
+  );
+
+  const columns: Column<EventRow>[] = React.useMemo(
+    () => [
+    {
+      key: 'select',
+      header: (
+        <input
+          ref={headCbRef}
+          type="checkbox"
+          checked={pageAllSelected}
+          onChange={handleToggleSelectAll}
+          data-stop-bubble="true"
+          aria-label="현재 페이지 전체 선택"
+        />
+      ),
+      width: 44,
+      align: 'center',
+      render: (r) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(r.id)}
+          onChange={() => handleToggleSelectOne(r.id)}
+          data-stop-bubble="true"
+          aria-label={`${r.title} 선택`}
+        />
+      ),
+    },
     { key: 'no', header: '번호', width: 80, align: 'center' },
     {
       key: 'date',
@@ -221,45 +309,78 @@ export default function EventsClient({
         }
       },
     },
-  ];
+  ],
+    [
+      handleToggleSelectAll,
+      handleToggleSelectOne,
+      pageAllSelected,
+      router,
+      selectedIds,
+    ]
+  );
+
+  const bulkPhoneAuthButton = (
+    <Button
+      tone="white"
+      size="sm"
+      weight="semibold"
+      iconLeft={<Smartphone className="h-4 w-4" aria-hidden />}
+      onClick={() => setIsBulkModalOpen(true)}
+      className="shrink-0 border border-[#256EF4] text-[#256EF4] shadow-sm transition-colors hover:bg-blue-50 hover:brightness-100"
+    >
+      휴대폰 인증 일괄변경
+    </Button>
+  );
 
   const filterControls = preset && (
-    <div className="flex flex-wrap items-center gap-2">
-      <FilterBar
-        {...preset}
-        className="!gap-3"
-        buttons={[
-          { label: '검색', tone: 'dark' },
-          { label: '대회등록', tone: 'primary', iconRight: true },
-        ]}
-        showReset
-        onFieldChange={(label, value) => {
-          const L = norm(String(label));
-          if (L === '신청여부') {
-            setStatus(mapStatus(String(value)));
-          } else if (L === '공개여부') {
-            const mappedPub = mapPublic(String(value));
-            setPub(mappedPub);
-          } else if (L === '년도') {
-            setYear(mapYear(String(value)));
-          }
-          setPage(1);
-        }}
-        onSearch={(value) => {
-          setQ(value);
-          setPage(1);
-        }}
-        onActionClick={(label) => {
-          if (label === '대회등록') router.push('/admin/events/register');
-        }}
-        onReset={() => {
-          setQ('');
-          setStatus('');
-          setPub('');
-          setYear('');
-          setPage(1);
-        }}
-      />
+    <FilterBar
+      {...preset}
+      className="!gap-3"
+      buttons={[
+        { label: '검색', tone: 'dark' },
+        { label: '대회등록', tone: 'primary', iconRight: true },
+      ]}
+      showReset
+      onFieldChange={(label, value) => {
+        const L = norm(String(label));
+        if (L === '신청여부') {
+          setStatus(mapStatus(String(value)));
+        } else if (L === '공개여부') {
+          const mappedPub = mapPublic(String(value));
+          setPub(mappedPub);
+        } else if (L === '년도') {
+          setYear(mapYear(String(value)));
+        }
+        setPage(1);
+      }}
+      onSearch={(value) => {
+        setQ(value);
+        setPage(1);
+      }}
+      onActionClick={(label) => {
+        if (label === '대회등록') router.push('/admin/events/register');
+      }}
+      onReset={() => {
+        setQ('');
+        setStatus('');
+        setPub('');
+        setYear('');
+        setPage(1);
+      }}
+    />
+  );
+
+  const pageHeader = (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-end gap-2 pb-2">
+        {selectedIds.length > 0 && (
+          <span className="mr-auto shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 font-pretendard">
+            {selectedIds.length}개 대회 선택됨
+          </span>
+        )}
+        {bulkPhoneAuthButton}
+      </div>
+      {filterControls}
     </div>
   );
 
@@ -267,7 +388,7 @@ export default function EventsClient({
   if (isLoading && rows.length === 0) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {filterControls}
+        {pageHeader}
         <div className="flex items-center justify-center py-8">
           <div className="text-gray-500">대회 목록을 불러오는 중...</div>
         </div>
@@ -279,7 +400,7 @@ export default function EventsClient({
   if (error && rows.length === 0) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {filterControls}
+        {pageHeader}
         <div className="flex items-center justify-center py-8">
           <div className="text-red-500">대회 목록을 불러오는데 실패했습니다.</div>
         </div>
@@ -291,7 +412,7 @@ export default function EventsClient({
   if (rows.length === 0 && totalCount === 0 && !isLoading) {
     return (
       <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {filterControls}
+        {pageHeader}
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
           <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
           <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
@@ -302,7 +423,7 @@ export default function EventsClient({
 
   return (
     <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-      {filterControls}
+      {pageHeader}
 
       <AdminTable<EventRow>
         columns={columns}
@@ -314,6 +435,14 @@ export default function EventsClient({
         pagination={{ page, pageSize, total: totalCount, onChange: setPage, align: 'right' }}
         minWidth={1200}
         contentMinHeight={rows.length >= pageSize ? '100vh' : 'auto'}
+      />
+
+      <PhoneAuthBulkModal
+        isOpen={isBulkModalOpen}
+        selectedCount={selectedIds.length}
+        isSubmitting={isBulkUpdating}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSubmit={handleBulkPhoneAuthSubmit}
       />
     </div>
   );

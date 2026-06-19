@@ -19,6 +19,7 @@ import IdPasswordModal from "@/components/event/Registration/IdPasswordModal";
 import RegistrationOtpModal from "@/components/event/Registration/RegistrationOtpModal";
 import { updateOwnedRegistration, OwnedRegistrationUpdatePayload } from "../../shared/api/owned";
 import { commitStagedRegistration, reissueStagedOtp } from "../../shared/api/individual";
+import { parseRegistrationFlowResponse } from "../../shared/utils/registrationFlow";
 import { formatEmail } from "../../shared/utils/formatters";
 import { fetchOwnedRegistrationView } from "../../../confirm/group/api";
 import {
@@ -324,9 +325,18 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
         updatePayload
       );
 
-      setStagedToken(stagingResult.stagedToken);
-      setOtpPhoneNumber(`${formData.phone1}-${formData.phone2}-${formData.phone3}`);
-      setIsOtpModalOpen(true);
+      const outcome = parseRegistrationFlowResponse(stagingResult);
+      if (outcome.type === 'STAGED') {
+        setStagedToken(outcome.stagedToken);
+        setOtpPhoneNumber(`${formData.phone1}-${formData.phone2}-${formData.phone3}`);
+        setIsOtpModalOpen(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push(
+        `/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}&mode=owned-edit`
+      );
       setIsSubmitting(false);
     } catch (_err) {
       setIsSubmitting(false);

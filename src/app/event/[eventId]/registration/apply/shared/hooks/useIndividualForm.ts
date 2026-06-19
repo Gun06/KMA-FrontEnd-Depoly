@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { formatError } from '../utils/errorHandler';
 import { mapLoadedAddressDetail } from '../constants/addressField';
 import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
+import { parseRegistrationFlowResponse } from '../utils/registrationFlow';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
 
@@ -412,18 +413,25 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
           // 신규 신청 모드: POST API 호출
           _result = await submitIndividualRegistration(eventId, apiData);
         }
-        // 스테이징 성공 시 stageToken 저장 및 OTP 모달 오픈
-        if (_result && _result.stagedToken) {
-          setStagedToken(_result.stagedToken as string);
-          // 현재 폼의 전화번호를 그대로 사용 (010-1234-5678 형태)
-          const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
-          setOtpPhoneNumber(phoneNumber);
-          setIsOtpModalOpen(true);
-          // 이전 에러 메시지 초기화
-          setSubmitError('');
-        } else {
-          throw new Error('스테이징 토큰을 받지 못했습니다.');
-        }
+
+        const applySubmitOutcome = (response: unknown) => {
+          const outcome = parseRegistrationFlowResponse(response);
+          if (outcome.type === 'STAGED') {
+            setStagedToken(outcome.stagedToken);
+            const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+            setOtpPhoneNumber(phoneNumber);
+            setIsOtpModalOpen(true);
+            setSubmitError('');
+            return;
+          }
+          const modeParam = isEditMode ? '&mode=edit' : '';
+          router.push(
+            `/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}${modeParam}`
+          );
+          setIsSubmitted(false);
+        };
+
+        applySubmitOutcome(_result);
       } catch (error) {
         // 수정 모드인지 다시 확인 (catch 블록에서 사용)
         const isEditMode = typeof window !== 'undefined' && 
@@ -474,17 +482,42 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
                 }
               }
               
+              let retryResult: unknown;
               if (registrationId) {
-                await updateIndividualRegistration(eventId, registrationId, freshApiData);
+                retryResult = await updateIndividualRegistration(eventId, registrationId, freshApiData);
+              } else {
+                throw new Error('수정할 신청 정보를 찾을 수 없습니다.');
               }
+
+              const retryOutcome = parseRegistrationFlowResponse(retryResult);
+              if (retryOutcome.type === 'STAGED') {
+                setStagedToken(retryOutcome.stagedToken);
+                const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+                setOtpPhoneNumber(phoneNumber);
+                setIsOtpModalOpen(true);
+                setSubmitError('');
+                return;
+              }
+
+              const modeParam = isEditMode ? '&mode=edit' : '';
+              router.push(`/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}${modeParam}`);
+              return;
             } else {
-              await submitIndividualRegistration(eventId, freshApiData);
+              const retryResult = await submitIndividualRegistration(eventId, freshApiData);
+              const retryOutcome = parseRegistrationFlowResponse(retryResult);
+              if (retryOutcome.type === 'STAGED') {
+                setStagedToken(retryOutcome.stagedToken);
+                const phoneNumber = `${formData.phone1}-${formData.phone2}-${formData.phone3}`;
+                setOtpPhoneNumber(phoneNumber);
+                setIsOtpModalOpen(true);
+                setSubmitError('');
+                return;
+              }
+              router.push(
+                `/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}`
+              );
+              return;
             }
-            
-            // 성공 페이지로 이동
-            const modeParam = isEditMode ? '&mode=edit' : '';
-            router.push(`/event/${eventId}/registration/apply/individual/success?name=${encodeURIComponent(formData.name)}${modeParam}`);
-            return;
           } catch (_retryError) {
             alert('선택한 기념품을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
           }

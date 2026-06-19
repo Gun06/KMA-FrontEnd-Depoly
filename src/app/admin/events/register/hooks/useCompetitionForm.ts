@@ -178,6 +178,7 @@ export type UseCompetitionPrefill = Partial<
     autoStart?: boolean;
     autoDeadline?: boolean;
     autoMaxRegist?: boolean;
+    phoneAuthRequired?: boolean;
     /** 개최일시 시각 프리필 */
     hh?: string;
     mm?: string;
@@ -266,6 +267,7 @@ export type HydrateSnapshotInput = {
   autoStart?: boolean;
   autoDeadline?: boolean;
   autoMaxRegist?: boolean;
+  phoneAuthRequired?: boolean;
 };
 
 export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
@@ -317,6 +319,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
   const [autoStart, setAutoStart] = React.useState(false);
   const [autoDeadline, setAutoDeadline] = React.useState(false);
   const [autoMaxRegist, setAutoMaxRegist] = React.useState(false);
+  const [phoneAuthRequired, setPhoneAuthRequired] = React.useState(true);
 
   const [place, setPlace] = React.useState('');
   const [account, setAccount] = React.useState('');
@@ -438,8 +441,11 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       date: prefill.date,
       deadlineDate: prefill.deadlineDate,
       paymentDeadlineDate: prefill.paymentDeadlineDate,
-      visibility: prefill.visibility, // visibility 변경도 감지하도록 추가
-      // 약관은 API 키(termsInfo vs eventTerm) 차이로 나중에 채워질 수 있어 시그니처 포함
+      visibility: prefill.visibility,
+      phoneAuthRequired: prefill.phoneAuthRequired,
+      autoStart: prefill.autoStart,
+      autoDeadline: prefill.autoDeadline,
+      autoMaxRegist: prefill.autoMaxRegist,
       termsSig: (prefill.termsInfo ?? [])
         .map((t, i) => `${i}:${t.termsLabel ?? ''}`)
         .join('|'),
@@ -478,6 +484,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (prefill.autoStart !== undefined) setAutoStart(prefill.autoStart);
     if (prefill.autoDeadline !== undefined) setAutoDeadline(prefill.autoDeadline);
     if (prefill.autoMaxRegist !== undefined) setAutoMaxRegist(prefill.autoMaxRegist);
+    if (prefill.phoneAuthRequired !== undefined) setPhoneAuthRequired(prefill.phoneAuthRequired);
 
     if (prefill.applyStatus) setApplyStatus(prefill.applyStatus);
 
@@ -1080,6 +1087,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
       autoStart,
       autoDeadline,
       autoMaxRegist,
+      phoneAuthRequired,
       youtubeUrl: youtubeUrl.trim(),
       termsInfo: termsInfo.map((item, index) => ({
         ...(item.id ? { id: item.id } : {}),
@@ -1159,6 +1167,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (s.autoStart !== undefined) setAutoStart(s.autoStart);
     if (s.autoDeadline !== undefined) setAutoDeadline(s.autoDeadline);
     if (s.autoMaxRegist !== undefined) setAutoMaxRegist(s.autoMaxRegist);
+    if (s.phoneAuthRequired !== undefined) setPhoneAuthRequired(s.phoneAuthRequired);
 
     // 업로드들
     setBannerHost(s.bannerHost ?? []);
@@ -1258,6 +1267,8 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     setAutoDeadline,
     autoMaxRegist,
     setAutoMaxRegist,
+    phoneAuthRequired,
+    setPhoneAuthRequired,
 
     place,
     setPlace,
