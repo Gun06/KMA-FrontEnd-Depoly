@@ -680,7 +680,7 @@ export const authService = {
       
       // 4. 다른 탭에 로그아웃 브로드캐스트
       try {
-        tokenService.broadcastLogout();
+        tokenService.broadcastLogout('admin');
       } catch {}
     }
   },

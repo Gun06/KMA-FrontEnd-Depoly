@@ -90,7 +90,7 @@ export default function UtilityIcons() {
                   await authService.logout();
 
                   // 브로드캐스트로 다른 탭에 로그아웃 알림
-                  tokenService.broadcastLogout();
+                  tokenService.broadcastLogout('user');
 
                   // 홈으로 리다이렉트
                   await navigationGuard.safeNavigate(() => {

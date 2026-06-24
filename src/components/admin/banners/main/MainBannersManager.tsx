@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import Button from '@/components/common/Button/Button';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import type { UploadItem } from '@/components/common/Upload/types';
@@ -377,6 +378,12 @@ export default function MainBannersManager() {
         </div>
         {mode === 'manage' ? (
           <div className="flex gap-2">
+            <Link
+              href="/admin/banners/closing-marathon"
+              className="inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-3 text-[15px] font-medium leading-[22px] text-gray-700 hover:bg-gray-50"
+            >
+              마감임박 대회 지정
+            </Link>
             <Button size="sm" tone="neutral" widthType="pager" onClick={handleAdd}>
               새 배너 추가
             </Button>

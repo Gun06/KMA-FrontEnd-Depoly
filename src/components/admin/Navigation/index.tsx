@@ -40,11 +40,9 @@ const NAV_ITEMS: Item[] = [
   ]},
   { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
     { name: '대회관리', href: '/admin/events/management' },
-    { name: '대회등록', href: '/admin/events/register' },
-    { name: '지역대회 관리', href: '/admin/local-events/management' },
-    { name: '지역대회 등록', href: '/admin/local-events/register' },
+    { name: '지역대회관리', href: '/admin/local-events/management' },
     { name: '통계확인', href: '/admin/events/statistics' },
-    { name: '전화번호 인증 정책', href: '/admin/settings/phone-auth-policy' },
+    { name: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
     { name: '공지사항', href: '/admin/boards/notice' },
@@ -57,6 +55,7 @@ const NAV_ITEMS: Item[] = [
   ]},
   { name: '콘텐츠관리', base: '/admin/banners', icon: Database, children: [
     { name: '메인 배너등록',    href: '/admin/banners/main' },
+    { name: '마감임박 대회 지정', href: '/admin/banners/closing-marathon' },
     { name: '스폰서 배너등록',  href: '/admin/banners/sponsors' },
     { name: '팝업 등록',  href: '/admin/banners/popups' },
     { name: '갤러리 등록', href: '/admin/galleries' },

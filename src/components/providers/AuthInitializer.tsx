@@ -7,7 +7,7 @@ import {
   bootstrapAdminAuth,
   tokenService,
 } from '@/utils/tokenService';
-import { decodeToken } from '@/utils/jwt';
+import { clearAdminTokens, clearTokens, decodeToken } from '@/utils/jwt';
 import { useAuthStore, useAdminAuthStore } from '@/stores';
 import { navigationGuard } from '@/utils/navigationGuard';
 
@@ -218,35 +218,50 @@ export default function AuthInitializer() {
     initializeAuth();
   }, [hasHydrated, adminHasHydrated, router]);
 
-  // 로그아웃 브로드캐스트 리스너 설정
+  // 로그아웃 브로드캐스트 리스너 (user/admin 키 분리)
   useEffect(() => {
-    const cleanup = tokenService.setupLogoutListener(async () => {
-      // 다른 탭에서 로그아웃 시 현재 탭도 로그아웃 처리
-      useAuthStore.getState().logout();
-      useAdminAuthStore.getState().logout();
-
-      // 현재 경로에 따라 적절한 페이지로 리다이렉트 (현재 탭이 아닌 경우에만)
+    const cleanupUser = tokenService.setupLogoutListener('user', async () => {
       const currentPath = window.location.pathname;
       const isLoginPath =
         currentPath === '/login' || currentPath === '/admin/login';
 
-      // 이미 로그인 페이지에 있지 않은 경우에만 리다이렉트
-      if (!isLoginPath) {
-        if (currentPath.startsWith('/admin')) {
-          await navigationGuard.safeNavigate(() => {
-            router.replace('/admin/login');
-          }, 50); // 브로드캐스트는 약간의 지연 추가
-        } else if (currentPath.startsWith('/mypage')) {
-          await navigationGuard.safeNavigate(() => {
-            router.replace(
-              `/login?returnUrl=${encodeURIComponent(currentPath)}`
-            );
-          }, 50);
-        }
+      clearTokens();
+      tokenService.setAccessToken(null);
+      useAuthStore.getState().logout();
+
+      if (!isLoginPath && currentPath.startsWith('/mypage')) {
+        await navigationGuard.safeNavigate(() => {
+          router.replace(
+            `/login?returnUrl=${encodeURIComponent(currentPath)}`
+          );
+        }, 50);
       }
     });
 
-    return cleanup;
+    const cleanupAdmin = tokenService.setupLogoutListener('admin', async () => {
+      const currentPath = window.location.pathname;
+      const isLoginPath =
+        currentPath === '/login' || currentPath === '/admin/login';
+
+      clearAdminTokens();
+      tokenService.setAdminAccessToken(null);
+      useAdminAuthStore.getState().logout();
+
+      if (
+        !isLoginPath &&
+        currentPath.startsWith('/admin') &&
+        currentPath !== '/admin/login'
+      ) {
+        await navigationGuard.safeNavigate(() => {
+          router.replace('/admin/login');
+        }, 50);
+      }
+    });
+
+    return () => {
+      cleanupUser();
+      cleanupAdmin();
+    };
   }, [router]);
 
   return null; // UI 렌더링 없음

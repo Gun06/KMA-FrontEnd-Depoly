@@ -9,6 +9,7 @@ import {
 import { clearTokens, clearAdminTokens } from '@/utils/jwt';
 import { tokenService } from '@/utils/tokenService';
 import { logError, getUserFriendlyMessage } from '@/utils/errorHandler';
+import { extractCanRefresh } from '@/utils/authErrorResponse';
 import { useAuthStore } from '@/stores/authStore';
 import { useAdminAuthStore } from '@/stores/adminAuthStore';
 
@@ -187,34 +188,28 @@ const parseErrorFields = (data: unknown, fallbackMessage: string) => ({
   meta: extractMeta(data),
 });
 
-/** 공통 에러 처리: 토큰 정리 + HttpError 생성/throw */
+/** 인증 실패 시 토큰·스토어 정리 (user/admin 공통) */
+const performAuthLogout = (server: ServerType): void => {
+  if (server === 'admin') {
+    clearAdminTokens();
+    tokenService.setAdminAccessToken(null);
+    useAdminAuthStore.getState().logout();
+  } else {
+    clearTokens();
+    tokenService.setAccessToken(null);
+    useAuthStore.getState().logout();
+  }
+};
+
+/** 공통 에러 처리: HttpError 생성/throw (인증 분기는 request에서 처리) */
 const handleErrorResponse = async (
   server: ServerType,
   res: Response
 ): Promise<never> => {
   const data = await readErrorPayload(res);
 
-  // 에러 로깅
   logError({ status: res.status, message: res.statusText }, `API ${server}`);
 
-  if (res.status === 401) {
-    // 토큰 만료 시 자동 갱신 시도
-    if (server === 'admin') {
-      // 관리자: 자동 리프레시 시도하지 않음 → 즉시 토큰 정리
-      clearAdminTokens();
-      tokenService.setAdminAccessToken(null);
-      useAdminAuthStore.getState().logout();
-    } else {
-      const refreshed = await tokenService.refreshAccessToken();
-      if (!refreshed) {
-        clearTokens();
-        tokenService.setAccessToken(null);
-        useAuthStore.getState().logout();
-      }
-    }
-  }
-
-  // 백엔드의 message를 항상 우선 사용. 폴백은 HTTP 상태별 안내
   const fallback =
     res.status === 413
       ? '전송 용량이 허용 한도를 초과했습니다. 홍보 배너 이미지를 더 작게 줄이거나 압축한 뒤 다시 시도해 주세요.'
@@ -233,6 +228,54 @@ const handleErrorResponse = async (
     serverHttpStatus,
     meta
   );
+};
+
+/** refresh 후 원 요청 1회 재시도 */
+const retryAuthenticatedRequest = async <T>(
+  server: ServerType,
+  url: string,
+  method: HttpMethod,
+  body: unknown,
+  withAuth: boolean,
+  init: RequestInit | undefined,
+  isFormData: boolean,
+  isRawBody: boolean
+): Promise<T | undefined> => {
+  const retryHeaders = buildHeaders(
+    server,
+    withAuth,
+    isFormData
+      ? undefined
+      : method === 'POST' || method === 'PUT' || method === 'PATCH'
+        ? 'json'
+        : undefined
+  );
+  const retryMergedHeaders = { ...retryHeaders, ...(init?.headers ?? {}) };
+
+  let retryRes: Response;
+  try {
+    retryRes = await fetch(url, {
+      ...init,
+      method,
+      headers: retryMergedHeaders,
+      body: isFormData
+        ? (body as FormData)
+        : isRawBody
+          ? ((body as { __raw: BodyInit }).__raw as BodyInit)
+          : body != null
+            ? JSON.stringify(body)
+            : undefined,
+      signal: init?.signal,
+    });
+  } catch {
+    throw new HttpError(
+      '요청을 완료하지 못했습니다. 연결 상태를 확인하거나, 업로드 파일이 너무 크면 용량을 줄인 뒤 다시 시도해 주세요.',
+      0
+    );
+  }
+
+  if (!retryRes.ok) await handleErrorResponse(server, retryRes);
+  return parseResponse<T>(retryRes);
 };
 
 /** ====== 공통 요청기 ====== */
@@ -304,55 +347,41 @@ export const request = async <T>(
   }
 
   if (!res.ok) {
-    // 401이면 토큰 갱신 후 원 요청 1회 재시도
-    if (res.status === 401 && withAuth) {
-      let refreshed = false;
-      if (server === 'admin') {
-        refreshed = await tokenService.refreshAdminToken();
-      } else {
-        refreshed = await tokenService.refreshAccessToken();
-      }
+    if (withAuth && res.status === 401) {
+      performAuthLogout(server);
+      await handleErrorResponse(server, res);
+    }
 
-      if (refreshed) {
-        // 새로운 토큰으로 헤더 재구성 후 재요청
-        const retryHeaders = buildHeaders(
-          server,
-          withAuth,
-          isFormData
-            ? undefined
-            : method === 'POST' || method === 'PUT' || method === 'PATCH'
-              ? 'json'
-              : undefined
-        );
-        const retryMergedHeaders = {
-          ...retryHeaders,
-          ...(init?.headers ?? {}),
-        };
+    if (withAuth && res.status === 403) {
+      const errorData = await readErrorPayload(res.clone());
+      const canRefresh = extractCanRefresh(errorData);
 
-        let retryRes: Response;
-        try {
-          retryRes = await fetch(url, {
-            ...init,
+      if (canRefresh === true) {
+        const refreshed =
+          server === 'admin'
+            ? await tokenService.refreshAdminToken()
+            : await tokenService.refreshAccessToken();
+
+        if (refreshed) {
+          return retryAuthenticatedRequest<T>(
+            server,
+            url,
             method,
-            headers: retryMergedHeaders,
-            body: isFormData
-              ? (body as FormData)
-              : isRawBody
-                ? ((body as { __raw: BodyInit }).__raw as BodyInit)
-                : body != null
-                  ? JSON.stringify(body)
-                  : undefined,
-            signal: init?.signal,
-          });
-        } catch {
-          throw new HttpError(
-            '요청을 완료하지 못했습니다. 연결 상태를 확인하거나, 업로드 파일이 너무 크면 용량을 줄인 뒤 다시 시도해 주세요.',
-            0
+            body,
+            withAuth,
+            init,
+            isFormData,
+            isRawBody
           );
         }
 
-        if (!retryRes.ok) await handleErrorResponse(server, retryRes);
-        return parseResponse<T>(retryRes);
+        performAuthLogout(server);
+        await handleErrorResponse(server, res);
+      }
+
+      if (canRefresh === false) {
+        performAuthLogout(server);
+        await handleErrorResponse(server, res);
       }
     }
 

@@ -74,6 +74,19 @@ export interface AgreementData {
   organizationName: string;
 }
 
+export interface RefundRequestInfo {
+  paymenterBank?: string;
+  accountNumber?: string;
+  accountHolderName?: string;
+  refundRequestedAt?: string;
+}
+
+export interface GuardianInfo {
+  guardianPhNum?: string | null;
+  guardianRelationship?: string | null;
+  guardianRelationShip?: string | null;
+}
+
 // 개인신청 조회 응답 인터페이스
 export interface IndividualRegistrationResponse {
   registrationId: string;
@@ -87,6 +100,7 @@ export interface IndividualRegistrationResponse {
   guardianPhNum?: string | null;
   guardianRelationship?: string | null;
   guardianRelationShip?: string | null;
+  guardianInfo?: GuardianInfo | null;
   address: string;
   zipCode: string;
   addressDetail: string;
@@ -102,10 +116,15 @@ export interface IndividualRegistrationResponse {
   paymenterName: string;
   paymentStatus: "UNPAID" | "PAID" | "MUST_CHECK" | "NEED_REFUND" | "NEED_PARTITIAL_REFUND" | "COMPLETED" | "REFUNDED";
   note?: string;
+  refundRequestInfo?: RefundRequestInfo | null;
   paymenterBank?: string;         // 환불 은행명
   accountNumber?: string;         // 환불 계좌번호
   accountHolderName?: string;     // 예금주명
   refundRequestedAt?: string;     // 환불요청시각 (ISO 8601 형식)
+}
+
+export interface RegistrationInfoListResponse {
+  registrationList: IndividualRegistrationResponse[];
 }
 
 // 단체신청 조회 응답 인터페이스 (업데이트된 스키마)

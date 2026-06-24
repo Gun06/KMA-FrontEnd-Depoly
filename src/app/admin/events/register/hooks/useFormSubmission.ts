@@ -1,7 +1,7 @@
 // src/app/admin/events/register/hooks/useFormSubmission.ts
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { CompetitionFormHandle } from '../components/sections/BasicInfoSection';
 import type { CourseItem } from '../components/sections/CoursesSection';
 import type { GiftItem } from '../components/sections/GiftsSection';
@@ -29,6 +29,7 @@ export function useFormSubmission({
 }: UseFormSubmissionOptions) {
   const [loading, setLoading] = useState(false);
   const [eventCreated, setEventCreated] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   // eventCreated 상태를 외부에서 설정할 수 있도록 setter 노출
   const setEventCreatedState = (value: boolean) => {
@@ -39,7 +40,7 @@ export function useFormSubmission({
    * 저장 (편집 모드용)
    */
   const saveEdit = async () => {
-    if (loading) return;
+    if (isSubmittingRef.current || loading) return;
 
     // ✅ 유효성 검사
     const v = f.validate?.();
@@ -47,6 +48,7 @@ export function useFormSubmission({
       return { ok: false, errors: v.errors };
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       if (!f.buildApiBody) {
@@ -61,6 +63,7 @@ export function useFormSubmission({
       // 에러 발생 시에도 편집 모드는 유지 (버튼이 사라지지 않도록)
       throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -69,11 +72,12 @@ export function useFormSubmission({
    * 1차 저장: 대회 기본 정보만 저장 (기념품/종목 제외)
    */
   const saveBasicInfo = async () => {
-    if (loading) return { ok: false, errors: [] };
+    if (isSubmittingRef.current || loading) return { ok: false, errors: [] };
 
     // 에러 발생 시에도 버튼이 사라지지 않도록 미리 false로 설정
     setEventCreated(false);
-    
+
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       if (!f.buildApiBody) {
@@ -96,6 +100,7 @@ export function useFormSubmission({
       setEventCreated(false);
       throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -104,11 +109,12 @@ export function useFormSubmission({
    * 최종 등록: 기념품/종목 포함하여 최종 저장
    */
   const finalSubmit = async () => {
-    if (loading) return { ok: false, errors: [] };
+    if (isSubmittingRef.current || loading) return { ok: false, errors: [] };
 
     // 에러 발생 시에도 버튼이 사라지지 않도록 미리 false로 설정
     setEventCreated(false);
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
       if (!f.buildApiBody) {
@@ -142,6 +148,7 @@ export function useFormSubmission({
       setEventCreated(false);
       throw error; // 에러를 다시 throw하여 상위에서 처리할 수 있도록
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

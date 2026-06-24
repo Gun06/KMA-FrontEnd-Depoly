@@ -4,7 +4,21 @@
  * 3단계: 리프레시 토큰 암호화 추가
  */
 
-import { decodeToken, isTokenValid, getRememberLogin } from './jwt';
+import {
+  decodeToken,
+  isTokenValid,
+  getRememberLogin,
+  clearTokens,
+  clearAdminTokens,
+} from './jwt';
+
+export type LogoutBroadcastScope = 'user' | 'admin';
+
+const USER_LOGOUT_BROADCAST_KEY = 'kmaUserLogoutBroadcast';
+const ADMIN_LOGOUT_BROADCAST_KEY = 'kmaAdminLogoutBroadcast';
+
+const getLogoutBroadcastKey = (scope: LogoutBroadcastScope): string =>
+  scope === 'user' ? USER_LOGOUT_BROADCAST_KEY : ADMIN_LOGOUT_BROADCAST_KEY;
 
 // 메모리 기반 액세스 토큰 저장 (메인은 사용 중단; 관리자만 유지)
 let accessToken: string | null = null;
@@ -180,12 +194,8 @@ export const tokenService = {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          try {
-            tokenService.clearAllTokens();
-            tokenService.broadcastLogout();
-          } catch {}
-        }
+        clearTokens();
+        tokenService.setAccessToken(null);
         throw new Error('토큰 갱신 실패');
       }
 
@@ -268,12 +278,8 @@ export const tokenService = {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          try {
-            tokenService.clearAllTokens();
-            tokenService.broadcastLogout();
-          } catch {}
-        }
+        clearAdminTokens();
+        tokenService.setAdminAccessToken(null);
         throw new Error('관리자 토큰 갱신 실패');
       }
 
@@ -334,29 +340,33 @@ export const tokenService = {
   },
 
   /**
-   * 로그아웃 브로드캐스트 (다른 탭에 알림)
+   * 로그아웃 브로드캐스트 (다른 탭에 알림, user/admin 키 분리)
    */
-  broadcastLogout: () => {
+  broadcastLogout: (scope: LogoutBroadcastScope) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('kmaLogoutBroadcast', String(Date.now()));
+      localStorage.setItem(getLogoutBroadcastKey(scope), String(Date.now()));
     }
   },
 
   /**
-   * 로그아웃 브로드캐스트 리스너 설정
+   * scope별 로그아웃 브로드캐스트 리스너 (해당 키만 구독)
    */
-  setupLogoutListener: (onLogout: () => void) => {
+  setupLogoutListener: (
+    scope: LogoutBroadcastScope,
+    onLogout: () => void
+  ) => {
     if (typeof window === 'undefined') return () => {};
 
+    const key = getLogoutBroadcastKey(scope);
+
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kmaLogoutBroadcast') {
+      if (e.key === key && e.newValue != null) {
         onLogout();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
 
-    // 정리 함수 반환
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };

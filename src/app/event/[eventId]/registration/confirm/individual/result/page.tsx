@@ -3,19 +3,21 @@
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronLeft, ChevronRight, History } from "lucide-react";
 
 import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
 import { convertPaymentStatusToKorean } from "@/types/registration";
 import RefundModal from "@/components/event/Registration/RefundModal";
 import { requestIndividualRefund } from "@/app/event/[eventId]/registration/apply/shared/api/individual";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
-import { fetchIndividualRegistrationConfirm, normalizeIndividualRegistrationConfirmResponse } from "./api";
+import { fetchIndividualRegistrationConfirm, normalizeIndividualRegistrationListResponse } from "./api";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [registrationData, setRegistrationData] = useState<IndividualRegistrationResponse | null>(null);
+  const [registrationList, setRegistrationList] = useState<IndividualRegistrationResponse[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bankName, setBankName] = useState('');
@@ -97,7 +99,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         // 하위 호환성을 위해 기존 data 파라미터도 확인
         const dataParam = searchParams.get('data');
 
-        let baseData: IndividualRegistrationResponse | null = null;
+        let baseList: IndividualRegistrationResponse[] = [];
         let storedPassword = '';
 
         if (registrationIdParam) {
@@ -111,15 +113,13 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
             if (storedDataString) {
               const parsed = JSON.parse(storedDataString);
               storedPassword = parsed._password || '';
-              // 비밀번호 필드 제거하고 나머지 데이터 사용
               delete parsed._password;
-              baseData = normalizeIndividualRegistrationConfirmResponse(parsed);
-              // 저장된 데이터가 있으면 먼저 표시 (사용자 경험 개선)
-              if (baseData) {
-                setRegistrationData(baseData);
+              baseList = normalizeIndividualRegistrationListResponse(parsed);
+              if (baseList.length > 0) {
+                setRegistrationList(baseList);
+                setCurrentIndex(0);
                 setIsLoading(false);
               }
-              // 사용 후 즉시 삭제하지 않고 API 호출 성공 후 삭제 (보안)
             }
           } catch (e) {
             // 세션 스토리지 접근 실패 시 무시
@@ -127,16 +127,15 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         } else if (dataParam) {
           // 기존 방식: data 파라미터에서 파싱 (하위 호환성)
           try {
-            baseData = normalizeIndividualRegistrationConfirmResponse(
+            baseList = normalizeIndividualRegistrationListResponse(
               JSON.parse(decodeURIComponent(dataParam))
             );
-            // data 파라미터에서 registrationId를 추출하여 사용
-            if (!registrationIdParam && baseData?.registrationId) {
-              registrationIdParam = baseData.registrationId;
+            if (!registrationIdParam && baseList[0]?.registrationId) {
+              registrationIdParam = baseList[0].registrationId;
             }
-            // data 파라미터로 받은 경우도 먼저 표시
-            if (baseData) {
-              setRegistrationData(baseData);
+            if (baseList.length > 0) {
+              setRegistrationList(baseList);
+              setCurrentIndex(0);
               setIsLoading(false);
             }
           } catch {
@@ -147,22 +146,22 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
         }
 
         // 저장된 데이터가 없으면 에러 표시
-        if (!baseData) {
+        if (baseList.length === 0) {
           setError('신청 정보를 불러올 수 없습니다. 신청 조회 페이지에서 다시 인증해주세요.');
           setIsLoading(false);
           return;
         }
 
+        const baseData = baseList[0];
+
         // API 호출하여 최신 데이터 가져오기 (비밀번호가 있으면 사용)
         try {
-          // baseData에서 API 호출에 필요한 정보 추출
           const name = baseData.name;
           const phNum = baseData.phNum;
           const birth = baseData.birth;
 
           if (name && phNum && birth && storedPassword) {
-            // 최신 데이터 가져오기
-            const latestData = await fetchIndividualRegistrationConfirm(
+            const latestList = await fetchIndividualRegistrationConfirm(
               params.eventId,
               name,
               phNum,
@@ -170,7 +169,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
               storedPassword
             );
 
-            // API 호출 성공 후 sessionStorage 삭제
             if (registrationIdParam) {
               try {
                 const storageKey = `individual_registration_data_${params.eventId}_${registrationIdParam}`;
@@ -180,14 +178,12 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
               }
             }
 
-            // 최신 데이터로 업데이트
-            setRegistrationData(latestData);
+            setRegistrationList(latestList);
+            setCurrentIndex((prev) => Math.min(prev, Math.max(latestList.length - 1, 0)));
             setIsLoading(false);
-            return; // 성공하면 여기서 종료
+            return;
           }
         } catch (apiError) {
-          // API 호출 실패 시 저장된 데이터를 사용 (이미 표시되어 있음)
-          // 추가 업데이트만 시도
           try {
             if (registrationIdParam) {
               const storageKey = `individual_registration_data_${params.eventId}_${registrationIdParam}`;
@@ -196,9 +192,6 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
           } catch (e) {
             // 무시
           }
-
-          // baseData가 이미 표시되어 있으므로 추가 처리만 수행
-          // API 호출 실패는 무시하고 저장된 데이터 사용
         }
       } catch (err) {
         setError('데이터를 불러올 수 없습니다.');
@@ -488,6 +481,9 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
     return cleaned;
   };
 
+  const registrationData = registrationList[currentIndex] ?? null;
+  const isHistoricalView = currentIndex > 0;
+
   if (isLoading) {
     return (
       <SubmenuLayout
@@ -544,9 +540,55 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
 
+          {registrationList.length > 1 && (
+            <div className="mb-5 mx-8">
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-xs font-semibold tracking-wide text-gray-500">
+                  {isHistoricalView ? '이전 내역' : '현재 신청'}
+                </span>
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+                    disabled={currentIndex === 0}
+                    className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="이전 신청 내역"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <span className="text-sm font-medium text-gray-600 tabular-nums">
+                    {currentIndex + 1} / {registrationList.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentIndex((index) => Math.min(registrationList.length - 1, index + 1))}
+                    disabled={currentIndex === registrationList.length - 1}
+                    className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    aria-label="다음 신청 내역"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 안내문구 섹션 */}
           <div className="mb-6 mx-8">
             {(() => {
+              if (isHistoricalView) {
+                return (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <History className="h-4 w-4 text-gray-500 flex-shrink-0" aria-hidden="true" />
+                      <p className="text-sm text-gray-700">
+                        환불 완료된 이전 신청 내역입니다. 조회만 가능합니다.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+
               const isFinalClosed = eventStatus === 'FINAL_CLOSED';
 
               // 내부마감일 때 안내 문구 표시
@@ -787,7 +829,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
               <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">PAYMENT</p>
               <h3 className="text-base font-semibold text-gray-900 mb-4">결제 정보</h3>
 
-              {/* 계좌 안내 문구 */}
+              {!isHistoricalView && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                 <div className="space-y-2 text-sm text-gray-700">
                   <p>※ 아래 계좌번호로 입금해주시기 바랍니다.</p>
@@ -807,6 +849,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                   </p>
                 </div>
               </div>
+              )}
 
               <div className="space-y-5 text-sm">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-200">
@@ -850,6 +893,8 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
 
           {/* 버튼 그룹 */}
           <div className="flex flex-row justify-center gap-2 sm:gap-4 mt-8">
+            {!isHistoricalView && (
+            <>
             {/* 수정 가능 여부 판단: possibleToRequest와 결제 상태 모두 확인 */}
             {(() => {
               const paymentStatus = registrationData.paymentStatus?.toUpperCase();
@@ -965,6 +1010,8 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 </div>
               );
             })()}
+            </>
+            )}
             {/* 확인 버튼 */}
             <button
               onClick={(e) => {

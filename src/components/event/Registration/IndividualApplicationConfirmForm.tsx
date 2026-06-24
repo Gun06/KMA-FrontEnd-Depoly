@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
-import { IndividualRegistrationResponse } from "@/app/event/[eventId]/registration/apply/shared/types/common";
-import { normalizeIndividualRegistrationConfirmResponse } from "../../../app/event/[eventId]/registration/confirm/individual/result/api";
+import { normalizeIndividualRegistrationListResponse } from "../../../app/event/[eventId]/registration/confirm/individual/result/api";
 import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import PasswordResetRequestModal from "./PasswordResetRequestModal";
 import PasswordResetOtpModal from "./PasswordResetOtpModal";
@@ -123,27 +122,28 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
 
       if (response.ok) {
         const raw = await response.json();
-        const result = normalizeIndividualRegistrationConfirmResponse(raw);
-        
+        const registrationList = normalizeIndividualRegistrationListResponse(raw);
+        const rootRegistration = registrationList[0];
+
         // 인증 성공한 데이터와 비밀번호를 sessionStorage에 임시 저장 (결과 페이지에서 사용)
-        if (result.registrationId) {
-          const storageKey = `individual_registration_data_${eventId}_${result.registrationId}`;
+        if (rootRegistration.registrationId) {
+          const storageKey = `individual_registration_data_${eventId}_${rootRegistration.registrationId}`;
           try {
             const dataToStore = {
-              ...result,
-              _password: formData.password // 비밀번호를 별도 필드로 저장
+              registrationList,
+              _password: formData.password,
             };
             sessionStorage.setItem(storageKey, JSON.stringify(dataToStore));
           } catch (_e) {
             // sessionStorage 접근 실패 시 무시
           }
-          
+
           // 성공 시 결과 페이지로 이동 (registrationId만 전달)
-          router.push(`/event/${eventId}/registration/confirm/individual/result?registrationId=${encodeURIComponent(result.registrationId)}`);
+          router.push(`/event/${eventId}/registration/confirm/individual/result?registrationId=${encodeURIComponent(rootRegistration.registrationId)}`);
         } else {
           // registrationId가 없으면 기존 방식으로 fallback
-        const encodedData = encodeURIComponent(JSON.stringify(result));
-        router.push(`/event/${eventId}/registration/confirm/individual/result?data=${encodedData}`);
+          const encodedData = encodeURIComponent(JSON.stringify({ registrationList }));
+          router.push(`/event/${eventId}/registration/confirm/individual/result?data=${encodedData}`);
         }
       } else {
         const errorText = await response.text();

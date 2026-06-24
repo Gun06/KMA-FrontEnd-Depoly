@@ -143,6 +143,8 @@ export default function CreateForm({
 
   // 1차 저장: 대회 기본 정보만 저장 (기념품/종목 제외)
   const saveBasicInfo = async () => {
+    if (loading) return;
+
     const v = validateBasicInfo(f);
     if (!v.ok) {
       setValidationErrors(v.errors);
@@ -151,10 +153,10 @@ export default function CreateForm({
     }
 
     setEventCreated(false);
-    
+
     try {
       await submitSaveBasicInfo();
-    } catch (error) {
+    } catch {
       setEventCreated(false);
     }
   };

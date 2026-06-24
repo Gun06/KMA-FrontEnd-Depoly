@@ -43,10 +43,9 @@ const subMenus: Record<string, SubMenu> = {
   대회관리: {
     items: [
       { label: '대회관리', href: '/admin/events/management' },
-      { label: '대회등록', href: '/admin/events/register' },
-      { label: '지역대회 관리', href: '/admin/local-events/management' },
-      { label: '지역대회 등록', href: '/admin/local-events/register' },
+      { label: '지역대회관리', href: '/admin/local-events/management' },
       { label: '통계확인', href: '/admin/events/statistics' },
+      { label: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
     ],
   },
   게시판관리: {

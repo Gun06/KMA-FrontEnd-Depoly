@@ -273,7 +273,7 @@ export default function SchedulePage() {
   }, [isLoading, viewMode, currentDate, year]);
 
   return (
-    <div className="min-h-[50vh] sm:min-h-screen">
+    <div>
       {/* 메인 콘텐츠 */}
       <main className="flex-1">
         {/* 메뉴 배너 섹션 */}
@@ -580,10 +580,7 @@ export default function SchedulePage() {
                     <p className="text-gray-500">잠시 후 다시 시도해주세요</p>
                   </div>
                 ) : (
-                  <div
-                    ref={listScrollRef}
-                    className="space-y-12 sm:max-h-[calc(100vh-var(--kma-main-header-offset,80px)-18rem)] sm:overflow-y-auto sm:pr-2"
-                  >
+                  <div ref={listScrollRef} className="space-y-12">
                     {(() => {
                       // 전체 빈 상태 확인 (현재 년도만 확인)
                       const currentYear = currentDate.getFullYear();

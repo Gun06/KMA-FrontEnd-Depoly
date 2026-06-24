@@ -3,12 +3,19 @@
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import { HttpError } from '@/hooks/useFetch';
+import { showGlobalQueryErrorToast } from '@/utils/globalQueryErrorToast';
 
 interface QueryProviderProps {
   children: ReactNode;
 }
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof HttpError) return error.message;
+  if (error instanceof Error) return error.message;
+  return '';
+};
 
 export default function QueryProvider({ children }: QueryProviderProps) {
   const [queryClient] = useState(
@@ -27,12 +34,8 @@ export default function QueryProvider({ children }: QueryProviderProps) {
         },
         queryCache: new QueryCache({
           onError: (error: unknown, query) => {
-            const message = (() => {
-              if (error instanceof HttpError) return error.message;
-              if (error instanceof Error) return error.message;
-              return '요청 중 오류가 발생했습니다.';
-            })();
-            
+            const message = getErrorMessage(error);
+
             // 삭제된 이벤트 관련 에러는 무시 (404 또는 "이미 삭제되었거나 존재하지 않는" 메시지)
             const isDeletedEventError =
               (error instanceof HttpError &&
@@ -51,16 +54,16 @@ export default function QueryProvider({ children }: QueryProviderProps) {
                 query.queryKey[2] === 'detail') ||
                 (query.queryKey[0] === 'local-event' &&
                   query.queryKey[1] === 'detail'));
-            
+
             // 비공개 대회 스폰서 배너 조회 실패 에러는 무시 (404는 정상적인 응답)
-            const isEventSponsorBannerError = 
+            const isEventSponsorBannerError =
               Array.isArray(query?.queryKey) &&
               query.queryKey[0] === 'eventSponsorBanners' &&
               ((error instanceof HttpError && error.status === 404) ||
-               message.includes('이벤트 스폰서 배너 조회 실패'));
-            
+                message.includes('이벤트 스폰서 배너 조회 실패'));
+
             if (!isDeletedEventError && !isLocalEventDetailError && !isEventSponsorBannerError) {
-              toast.error(message);
+              showGlobalQueryErrorToast(error);
             }
           },
         }),
@@ -71,11 +74,7 @@ export default function QueryProvider({ children }: QueryProviderProps) {
               | undefined;
             if (meta?.suppressGlobalMutationErrorToast) return;
 
-            const message = (() => {
-              if (error instanceof HttpError) return error.message;
-              if (error instanceof Error) return error.message;
-              return '요청 중 오류가 발생했습니다.';
-            })();
+            const message = getErrorMessage(error);
 
             // 삭제된 이벤트 관련 에러는 무시
             const isDeletedEventError =
@@ -84,7 +83,7 @@ export default function QueryProvider({ children }: QueryProviderProps) {
               message.includes('존재하지 않는 대회');
 
             if (!isDeletedEventError) {
-              toast.error(message);
+              showGlobalQueryErrorToast(error);
             }
           },
         }),

@@ -93,6 +93,6 @@ export function forceLogout(): void {
     tokenService.clearAllTokens();
   } finally {
     useAuthStore.getState().logout();
-    tokenService.broadcastLogout();
+    tokenService.broadcastLogout('user');
   }
 }

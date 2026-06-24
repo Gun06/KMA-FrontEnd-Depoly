@@ -8,6 +8,10 @@ interface ErrorModalProps {
   title?: string;
   message: string | React.ReactNode;
   confirmText?: string;
+  /** 확인 버튼 클릭 시 (미지정 시 onClose) */
+  onConfirm?: () => void;
+  /** 지정 시 보조 버튼 표시 (닫기 등) */
+  cancelText?: string;
 }
 
 export default function ErrorModal({
@@ -16,7 +20,10 @@ export default function ErrorModal({
   title = '알림',
   message = '',
   confirmText = '확인',
+  onConfirm,
+  cancelText,
 }: ErrorModalProps) {
+  const handleConfirm = onConfirm ?? onClose;
   if (!isOpen) return null;
 
   return (
@@ -66,10 +73,18 @@ export default function ErrorModal({
         </div>
 
         {/* 확인 버튼 */}
-        <div className="px-5 pb-5 pt-3 sm:px-8 sm:pb-6 sm:pt-4 flex-shrink-0 flex justify-center">
+        <div className="px-5 pb-5 pt-3 sm:px-8 sm:pb-6 sm:pt-4 flex-shrink-0 flex justify-center gap-2">
+          {cancelText ? (
+            <button
+              onClick={onClose}
+              className="inline-flex w-full sm:w-32 items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2.5 sm:py-2 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+              {cancelText}
+            </button>
+          ) : null}
           <button
-            onClick={onClose}
-            className="inline-flex w-full sm:w-32 items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 sm:py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={handleConfirm}
+            className="inline-flex w-full sm:w-auto sm:min-w-[8rem] items-center justify-center rounded-md bg-blue-600 px-4 py-2.5 sm:py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {confirmText}
           </button>

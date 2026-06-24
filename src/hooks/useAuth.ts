@@ -64,8 +64,8 @@ export function useAuth(): AuthState {
 
     checkAuth();
 
-    // 로그아웃 브로드캐스트 리스너 설정
-    const cleanup = tokenService.setupLogoutListener(() => {
+    // 유저 로그아웃 브로드캐스트만 수신
+    const cleanup = tokenService.setupLogoutListener('user', () => {
       setAuthState({
         isAuthenticated: false,
         user: null,
@@ -116,7 +116,7 @@ export function useAuthActions() {
 
   const logout = () => {
     tokenService.clearAllTokens();
-    tokenService.broadcastLogout();
+    tokenService.broadcastLogout('user');
   };
 
   return { login, logout };

@@ -502,7 +502,7 @@ export default function Header() {
                     if (!canNavigate) return;
                     try {
                       await authService.logout();
-                      tokenService.broadcastLogout();
+                      tokenService.broadcastLogout('user');
                       await navigationGuard.safeNavigate(() => {
                         router.push('/');
                       }, 100);
@@ -719,7 +719,7 @@ export default function Header() {
                         className="rounded px-3 py-1 text-xs text-white transition-colors hover:bg-white/20 bg-white/15"
                         onClick={async () => {
                           await authService.logout();
-                          tokenService.broadcastLogout();
+                          tokenService.broadcastLogout('user');
                           updateState({ mobileOpen: false });
                         }}
                       >
