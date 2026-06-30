@@ -150,7 +150,29 @@ export default function EventHeader({
 
   // 이벤트명 결정 (API 데이터 우선, fallback은 props)
   const displayEventName = eventInfo?.nameEng || eventName || 'EVENT';
-  const displayYear = eventInfo?.startDate ? new Date(eventInfo.startDate).getFullYear().toString() : year || '2025';
+  const displayYear = eventInfo?.startDate
+    ? new Date(eventInfo.startDate).getFullYear().toString()
+    : year || new Date().getFullYear().toString();
+
+  const logoBoxText = useMemo(() => {
+    const LOGO_LABEL_MAX = 8;
+    const words = displayEventName.split(/\s+/).filter(Boolean);
+    const yearWord = words.find(w => /^\d{4}$/.test(w));
+    const labelWord =
+      yearWord && words[0] === yearWord
+        ? words[1]
+        : words.find(w => w !== yearWord) ?? words[0];
+    const rawLabel = labelWord ?? '';
+    const line2 =
+      rawLabel.length > LOGO_LABEL_MAX
+        ? rawLabel.slice(0, LOGO_LABEL_MAX)
+        : rawLabel;
+
+    return {
+      line1: displayYear,
+      line2,
+    };
+  }, [displayEventName, displayYear]);
 
   const menuItems = useMemo(() => [
     { key: 'guide', label: '대회안내' },
@@ -210,10 +232,10 @@ export default function EventHeader({
     }
   }, [isOpen]);
 
-  // Viewport가 데스크탑(>=1000px)으로 바뀌면 모바일 메뉴/오버레이 자동 닫기
+  // Viewport가 데스크탑(>=1180px)으로 바뀌면 모바일 메뉴/오버레이 자동 닫기
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(min-width: 1000px)');
+    const mq = window.matchMedia('(min-width: 1180px)');
     const handleChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
         setIsOpen(false);
@@ -234,41 +256,54 @@ export default function EventHeader({
     };
   }, []);
 
+  const handleLogin = React.useCallback(() => {
+    const returnUrl =
+      typeof window !== 'undefined' ? window.location.pathname : '/';
+    window.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+  }, []);
+
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-40 text-white/90 shadow-sm ${headerBgClass ?? ''}`}
+      className={`fixed top-0 inset-x-0 text-white/90 shadow-sm ${isOpen ? 'z-[100]' : 'z-40'} ${headerBgClass ?? ''}`}
       style={headerBgClass ? undefined : {
         backgroundColor: finalAccentColor || '#1f2937',
       }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="h-16 flex items-center gap-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="h-16 grid grid-cols-[minmax(0,1fr)_auto] min-[1180px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-4 min-[1180px]:gap-x-6 min-w-0">
           {/* Logo / Title */}
-          <Link href={`/event/${eventId}`} className="shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-sm bg-white/10 flex items-center justify-center text-[10px] leading-tight font-extrabold">
-                <span className="text-center">
-                  {displayEventName.split(' ')[0]}
-                  <br />
-                  {displayEventName.split(' ')[1] || ''}
+          <Link
+            href={`/event/${eventId}`}
+            title={displayEventName}
+            className="block min-w-0 w-full max-w-full justify-self-start"
+          >
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 overflow-hidden rounded-sm bg-white/10 flex items-center justify-center text-[10px] leading-tight font-extrabold">
+                <span className="block w-full max-w-full px-0.5 text-center">
+                  <span className="block">{logoBoxText.line1}</span>
+                  {logoBoxText.line2 ? (
+                    <span className="block">{logoBoxText.line2}</span>
+                  ) : null}
                 </span>
               </div>
-              <div className="h-6 w-px bg-white/20" />
-              <div className="text-xs leading-4 text-white/80">
-                <div className="font-semibold">{displayEventName}</div>
+              <div className="h-6 w-px shrink-0 bg-white/20" />
+              <div className="min-w-0 text-xs leading-4 text-white/80">
+                <div className="font-semibold truncate min-[1180px]:line-clamp-2 min-[1180px]:whitespace-normal min-[1180px]:overflow-hidden">
+                  {displayEventName}
+                </div>
                 <div className="text-white/60">{displayYear}</div>
               </div>
             </div>
           </Link>
 
-          {/* Navigation (desktop) with bordered areas per menu */}
-          <div className="ml-2 hidden min-[1000px]:flex flex-1 relative z-50">
-            <nav className="flex-1">
-              <ul className="flex items-center gap-1 text-sm min-[1000px]:text-base">
+          {/* Navigation (desktop) — 항상 헤더 중앙 고정 */}
+          <div className="hidden min-[1180px]:block shrink-0 justify-self-center relative z-50 col-start-2">
+            <nav>
+              <ul className="flex items-center gap-1 text-sm min-[1180px]:text-base">
                 {menuItems.map(m => (
                   <li
                     key={m.key}
-                    className="relative"
+                    className="relative shrink-0"
                     onMouseEnter={() => setDesktopOpenKey(m.key)}
                     onMouseLeave={() => setDesktopOpenKey(null)}
                   >
@@ -340,25 +375,27 @@ export default function EventHeader({
           </div>
 
           {/* External link */}
-          <div className="hidden min-[1000px]:flex items-center gap-4">
+          <div className="hidden min-[1180px]:flex shrink-0 min-w-0 justify-self-end items-center justify-end gap-4 col-start-3">
             <a
               href="http://www.run1080.com/new/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-white/70 hover:text-white flex items-center gap-1 whitespace-nowrap"
             >
-              (구)전마협
+              <span className="min-[1400px]:hidden">구전마협</span>
+              <span className="hidden min-[1400px]:inline">(구)전마협</span>
               <span aria-hidden>↗</span>
             </a>
             <a
               href="/"
               className="text-sm text-white/70 hover:text-white whitespace-nowrap"
             >
-              전국마라톤협회
+              <span className="min-[1400px]:hidden">전마협</span>
+              <span className="hidden min-[1400px]:inline">전국마라톤협회</span>
             </a>
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-white whitespace-nowrap">
+                <span className="hidden min-[1400px]:inline text-sm text-white whitespace-nowrap">
                   {user?.account || '회원'} 님
                 </span>
                 <button
@@ -387,13 +424,7 @@ export default function EventHeader({
               <button
                 type="button"
                 className="text-sm text-white/70 hover:text-white whitespace-nowrap"
-                onClick={() => {
-                  const returnUrl =
-                    typeof window !== 'undefined' ? window.location.pathname : '/';
-                  window.location.href = `/login?returnUrl=${encodeURIComponent(
-                    returnUrl
-                  )}`;
-                }}
+                onClick={handleLogin}
               >
                 로그인
               </button>
@@ -407,7 +438,7 @@ export default function EventHeader({
             aria-controls="mobile-menu"
             aria-expanded={isOpen}
             onClick={() => setIsOpen(v => !v)}
-            className="min-[1000px]:hidden ml-auto inline-flex items-center justify-center rounded-sm p-2 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+            className="min-[1180px]:hidden col-start-2 shrink-0 justify-self-end inline-flex items-center justify-center rounded-sm p-2 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
           >
             {isOpen ? (
               // X icon
@@ -442,10 +473,10 @@ export default function EventHeader({
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 top-16 z-30 bg-black/40 min-[1000px]:hidden"
+            className="fixed inset-0 top-16 z-30 bg-black/40 min-[1180px]:hidden"
             onClick={() => setIsOpen(false)}
           />
-          <div className="min-[1000px]:hidden fixed top-16 inset-x-0 z-40 bg-neutral-900 border-t border-white/10">
+          <div className="min-[1180px]:hidden fixed top-16 inset-x-0 z-40 bg-neutral-900 border-t border-white/10">
             <nav
               id="mobile-menu"
               aria-label="모바일 내비게이션"
@@ -513,10 +544,11 @@ export default function EventHeader({
                   </a>
                   <a
                     href="/"
-                    className="text-sm text-white/70 hover:text-white"
+                    className="text-sm text-white/70 hover:text-white whitespace-nowrap"
                     onClick={() => setIsOpen(false)}
                   >
-                    전국마라톤협회
+                    <span className="min-[341px]:hidden">전마협</span>
+                    <span className="hidden min-[341px]:inline">전국마라톤협회</span>
                   </a>
                   {isLoggedIn ? (
                     <>
@@ -524,6 +556,7 @@ export default function EventHeader({
                         {user?.account || '회원'} 님
                       </span>
                       <button
+                        type="button"
                         className="text-sm text-white px-3 py-1 rounded bg-white/10 hover:bg-white/20"
                         onClick={() => {
                           forceLogout();
@@ -534,10 +567,16 @@ export default function EventHeader({
                       </button>
                     </>
                   ) : (
-                    // 모바일 로그인 버튼 비활성화
-                    <div className="text-sm text-white/50">
+                    <button
+                      type="button"
+                      className="text-sm text-white/70 hover:text-white"
+                      onClick={() => {
+                        setIsOpen(false);
+                        handleLogin();
+                      }}
+                    >
                       로그인
-                    </div>
+                    </button>
                   )}
                 </div>
               </div>

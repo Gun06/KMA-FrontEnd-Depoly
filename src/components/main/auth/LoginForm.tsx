@@ -248,7 +248,7 @@ export default function LoginForm() {
             {/* 푸터 섹션 */}
             <div className="text-center space-y-3 pt-6 border-t border-gray-200">
               <p className="text-xs text-[#AEAEB2] font-medium">
-                © 2025. RUN1080. All Right Reserved.
+                © {new Date().getFullYear()}. RUN1080. All Right Reserved.
               </p>
               <div className="flex items-center justify-center space-x-4 text-xs">
                 <a

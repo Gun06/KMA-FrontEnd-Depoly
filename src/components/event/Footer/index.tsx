@@ -44,7 +44,7 @@ export default function EventFooter({ footerBgClass, accentColor }: EventFooterP
               <span className="mx-2">|</span>
               이메일 : <span>jeonmahyeop@naver.com</span>
             </div>
-            <div className="text-white/50">© 2025 RUN1080 Inc. ALL RIGHT RESERVED.</div>
+            <div className="text-white/50">© {new Date().getFullYear()} RUN1080 Inc. ALL RIGHT RESERVED.</div>
           </div>
         </div>
       </div>

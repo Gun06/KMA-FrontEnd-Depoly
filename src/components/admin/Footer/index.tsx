@@ -141,7 +141,7 @@ export default function AdminFooter() {
       <div className="w-full h-px bg-gray-200 mx-auto" />
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 py-4">
         <div className="flex flex-col items-center space-y-3">
-          <p className="text-[12px] md:text-[13px] text-gray-400">© 2025 RUN1080 Inc. ALL RIGHT RESERVED.</p>
+          <p className="text-[12px] md:text-[13px] text-gray-400">© {new Date().getFullYear()} RUN1080 Inc. ALL RIGHT RESERVED.</p>
           <div className="flex items-center gap-3 md:gap-10 text-[13px] md:text-[14px] whitespace-nowrap">
             {POLICY_LINKS.map((link) => (
               <a key={link.href} href={link.href} className="text-gray-700 hover:text-gray-900 py-1" aria-label={link.label}>
