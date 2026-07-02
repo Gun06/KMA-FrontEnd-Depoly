@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { searchCashReceiptList } from '../services/cashReceiptAdmin';
+import { getCashReceiptBatches, searchCashReceiptList } from '../services/cashReceiptAdmin';
 import type { CashReceiptSearchParams } from '../types/cashReceiptAdmin';
 
 export function useCashReceiptSearch(params: CashReceiptSearchParams) {
@@ -16,5 +16,13 @@ export function useCashReceiptSearch(params: CashReceiptSearchParams) {
     queryFn: () => searchCashReceiptList(params),
     staleTime: 0,
     placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useCashReceiptBatches() {
+  return useQuery({
+    queryKey: ['cashReceiptBatches'],
+    queryFn: () => getCashReceiptBatches(),
+    staleTime: 0,
   });
 }

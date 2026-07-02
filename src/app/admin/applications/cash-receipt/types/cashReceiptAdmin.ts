@@ -60,3 +60,14 @@ export interface CashReceiptUpdateRequest {
   adminAnswer: string;
   updateStatus: CashReceiptAdminStatus;
 }
+
+export type CashReceiptBatchStatus = 'DOWNLOADED';
+
+export interface CashReceiptBatch {
+  batchId: string;
+  createdAt: string;
+  status: CashReceiptBatchStatus;
+  totalCount: number;
+  oldestRequestedAt: string;
+  latestRequestedAt: string;
+}

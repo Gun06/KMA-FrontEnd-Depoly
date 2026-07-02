@@ -174,6 +174,33 @@ export default function EventHeader({
     };
   }, [displayEventName, displayYear]);
 
+  const eventNameRef = React.useRef<HTMLDivElement>(null);
+  const [showYearBelowName, setShowYearBelowName] = React.useState(true);
+
+  React.useEffect(() => {
+    const el = eventNameRef.current;
+    if (!el) return;
+
+    const updateYearVisibility = () => {
+      const style = window.getComputedStyle(el);
+      const lineHeight = parseFloat(style.lineHeight) || 16;
+      const isMultiline = el.scrollHeight > lineHeight * 1.5;
+      const isTruncated = el.scrollWidth > el.clientWidth + 1;
+      setShowYearBelowName(!isMultiline && !isTruncated);
+    };
+
+    updateYearVisibility();
+
+    const observer = new ResizeObserver(updateYearVisibility);
+    observer.observe(el);
+
+    window.addEventListener('resize', updateYearVisibility);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateYearVisibility);
+    };
+  }, [displayEventName]);
+
   const menuItems = useMemo(() => [
     { key: 'guide', label: '대회안내' },
     { key: 'apply', label: '참가신청' },
@@ -288,10 +315,15 @@ export default function EventHeader({
               </div>
               <div className="h-6 w-px shrink-0 bg-white/20" />
               <div className="min-w-0 text-xs leading-4 text-white/80">
-                <div className="font-semibold truncate min-[1180px]:line-clamp-2 min-[1180px]:whitespace-normal min-[1180px]:overflow-hidden">
+                <div
+                  ref={eventNameRef}
+                  className="font-semibold line-clamp-2 whitespace-normal overflow-hidden"
+                >
                   {displayEventName}
                 </div>
-                <div className="text-white/60">{displayYear}</div>
+                {showYearBelowName ? (
+                  <div className="text-white/60">{displayYear}</div>
+                ) : null}
               </div>
             </div>
           </Link>

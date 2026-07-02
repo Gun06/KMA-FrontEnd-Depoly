@@ -6,6 +6,7 @@ import type {
   CashReceiptDetail,
   CashReceiptUpdateRequest,
   CashReceiptBulkStatusRequest,
+  CashReceiptBatch,
 } from '../types/cashReceiptAdmin';
 import type { RegistrationCashReceiptRequest } from '@/types/registration';
 import { parseCashReceiptRequest } from '@/services/registration';
@@ -145,8 +146,49 @@ export async function updateCashReceiptsStatusBulk(
   ) as Promise<string>;
 }
 
-/** POST /api/v1/cash-receipt/download — cashReceiptIds 비어 있으면 전체(대기 등, 서버 정책), 있으면 해당 건만 */
-async function postCashReceiptDownloadExcel(cashReceiptIds: string[]): Promise<void> {
+async function parseFetchErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data: unknown = await response.json();
+    if (typeof data === 'string' && data.trim()) return data;
+    if (typeof data === 'object' && data !== null && 'message' in data) {
+      const message = (data as { message?: unknown }).message;
+      if (typeof message === 'string' && message.trim()) return message;
+    }
+  } catch {
+    // JSON 파싱 실패 시 fallback 사용
+  }
+  return fallback;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(blobUrl);
+}
+
+function extractFilenameFromDisposition(contentDisposition: string | null, fallback: string): string {
+  if (!contentDisposition) return fallback;
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+  if (filenameMatch?.[1]) {
+    return filenameMatch[1].replace(/['"]/g, '');
+  }
+
+  return fallback;
+}
+
+/** POST /api/v1/cash-receipt/download — 대기 중(미다운로드) 건 전체 엑셀 다운로드 + 배치 생성 */
+export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
   const token = tokenService.getAdminAccessToken();
   if (!token) {
     throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
@@ -159,121 +201,56 @@ async function postCashReceiptDownloadExcel(cashReceiptIds: string[]): Promise<v
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
       Accept:
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
     },
-    body: JSON.stringify({ cashReceiptIds }),
   });
 
   if (!response.ok) {
-    throw new Error(`다운로드 실패: ${response.status} ${response.statusText}`);
+    const message = await parseFetchErrorMessage(
+      response,
+      `다운로드 실패: ${response.status} ${response.statusText}`
+    );
+    throw new Error(message);
   }
 
   const blob = await response.blob();
-  const contentDisposition = response.headers.get('content-disposition');
-  let filename: string | undefined;
-
-  if (contentDisposition) {
-    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-    if (utf8Match?.[1]) {
-      filename = decodeURIComponent(utf8Match[1]);
-    } else {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch?.[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-  }
-
-  if (!filename) {
-    filename = 'cash-receipt-pending.xlsx';
-  }
-
-  const blobUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(blobUrl);
+  const filename = extractFilenameFromDisposition(
+    response.headers.get('content-disposition'),
+    'cash-receipt-pending.xlsx'
+  );
+  triggerBlobDownload(blob, filename);
 }
 
-/** 처리 대기 건 전체 엑셀 다운로드 */
-export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
-  return postCashReceiptDownloadExcel([]);
+/** GET /api/v1/cash-receipt/batches — 미완료 배치(다운로드 내역) 목록 */
+export async function getCashReceiptBatches(): Promise<CashReceiptBatch[]> {
+  return request<CashReceiptBatch[]>(
+    'admin',
+    '/api/v1/cash-receipt/batches',
+    'GET',
+    undefined,
+    true
+  ) as Promise<CashReceiptBatch[]>;
 }
 
-/** 선택한 현금영수증 건만 엑셀 다운로드 */
-export async function downloadSelectedCashReceiptsExcel(cashReceiptIds: string[]): Promise<void> {
-  if (cashReceiptIds.length === 0) {
-    throw new Error('다운로드할 항목을 선택해주세요.');
-  }
-  return postCashReceiptDownloadExcel(cashReceiptIds);
-}
-
-/** 현금영수증 기본 양식 다운로드 (GET /api/v1/cash-receipt/template) */
-export async function downloadCashReceiptTemplate(): Promise<void> {
-  const token = tokenService.getAdminAccessToken();
-  if (!token) {
-    throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-  }
-
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
-  const fullUrl = `${baseUrl.replace(/\/+$/, '')}/api/v1/cash-receipt/template`;
-
-  const response = await fetch(fullUrl, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: '*/*',
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`다운로드 실패: ${response.status} ${response.statusText}`);
-  }
-
-  const blob = await response.blob();
-  const contentDisposition = response.headers.get('content-disposition');
-  let filename: string | undefined;
-
-  if (contentDisposition) {
-    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/);
-    if (utf8Match?.[1]) {
-      filename = decodeURIComponent(utf8Match[1]);
-    } else {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch?.[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-  }
-
-  if (!filename) {
-    filename = 'cash-receipt-template.xlsx';
-  }
-
-  const blobUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(blobUrl);
-}
-
-/** 다운로드 양식 그대로 업로드 시 일괄 완료 (POST multipart file) */
-export async function bulkCompleteCashReceiptsFromFile(file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append('file', file);
+/** PATCH /api/v1/cash-receipt/batches/{batchId}/complete — 배치 발급 완료 */
+export async function completeCashReceiptBatch(batchId: string): Promise<string> {
   return request<string>(
     'admin',
-    '/api/v1/cash-receipt/bulk-complete',
-    'POST',
-    fd,
+    `/api/v1/cash-receipt/batches/${batchId}/complete`,
+    'PATCH',
+    undefined,
+    true
+  ) as Promise<string>;
+}
+
+/** DELETE /api/v1/cash-receipt/batches/{batchId} — 배치 취소(되돌리기) */
+export async function cancelCashReceiptBatch(batchId: string): Promise<string> {
+  return request<string>(
+    'admin',
+    `/api/v1/cash-receipt/batches/${batchId}`,
+    'DELETE',
+    undefined,
     true
   ) as Promise<string>;
 }

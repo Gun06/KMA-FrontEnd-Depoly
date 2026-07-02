@@ -9,14 +9,15 @@ import AdminTable from '@/components/admin/Table/AdminTableShell';
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
 import { useEventList } from '@/hooks/useNotices';
-import { useCashReceiptSearch } from './hooks/useCashReceiptAdmin';
+import { useCashReceiptBatches, useCashReceiptSearch } from './hooks/useCashReceiptAdmin';
 import CashReceiptDetailDrawer from './CashReceiptDetailDrawer';
+import CashReceiptBatchList from './CashReceiptBatchList';
+import ConfirmModal from '@/components/common/Modal/ConfirmModal';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import {
-  bulkCompleteCashReceiptsFromFile,
-  downloadCashReceiptTemplate,
+  cancelCashReceiptBatch,
+  completeCashReceiptBatch,
   downloadRequestedCashReceiptsExcel,
-  downloadSelectedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
 import type { EventListResponse } from '@/types/eventList';
@@ -26,6 +27,24 @@ type Props = {
   initialPage: number;
   pageSize: number;
 };
+
+type BatchAction = 'complete' | 'cancel';
+
+type BatchConfirmModal = {
+  type: BatchAction;
+  batchId: string;
+} | null;
+
+function getDownloadErrorMessage(error: unknown, hasPendingBatches: boolean): string {
+  const message = error instanceof Error ? error.message : '';
+  if (message.includes('찾을 수 없습니다')) {
+    if (hasPendingBatches) {
+      return '처리 대기 건이 이미 다운로드 내역에 있습니다. 발급 완료 처리하거나, 되돌리기 후 다시 다운로드해주세요.';
+    }
+    return '다운로드할 처리 대기 건이 없습니다. 새 현금영수증 신청이 들어오면 다시 다운로드할 수 있습니다.';
+  }
+  return message || '다운로드에 실패했습니다.';
+}
 
 const STATUS_LABEL: Record<CashReceiptAdminStatus, string> = {
   REQUESTED: '처리 대기',
@@ -45,12 +64,6 @@ const CASH_RECEIPT_STATUS_SELECT_OPTIONS = [
   { value: 'CANCELED' as const, label: '발급 취소' },
 ];
 
-const CASH_RECEIPT_DOWNLOAD_MENU = [
-  { label: '전체 목록 다운로드', value: 'downloadList' },
-  { label: '선택 목록 다운로드', value: 'downloadSelectedList' },
-  { label: '기본 양식 다운로드', value: 'downloadTemplate' },
-] as const;
-
 export default function Client({ initialPage, pageSize }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -64,14 +77,22 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
   const [keyword, setKeyword] = React.useState<string>(sp.get('q') ?? '');
   const [isCashReceiptDownloading, setIsCashReceiptDownloading] = React.useState(false);
-  const [isCashReceiptTemplateDownloading, setIsCashReceiptTemplateDownloading] = React.useState(false);
-  const [isCashReceiptBulkUploading, setIsCashReceiptBulkUploading] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [bulkTargetStatus, setBulkTargetStatus] = React.useState<CashReceiptAdminStatus>('COMPLETED');
   const [isBulkStatusUpdating, setIsBulkStatusUpdating] = React.useState(false);
-  const bulkCompleteInputRef = React.useRef<HTMLInputElement>(null);
+  const [processingBatchId, setProcessingBatchId] = React.useState<string | null>(null);
+  const [processingAction, setProcessingAction] = React.useState<BatchAction | null>(null);
+  const [batchConfirmModal, setBatchConfirmModal] = React.useState<BatchConfirmModal>(null);
   const headCbRef = React.useRef<HTMLInputElement>(null);
   const autoOpenedFromQueryRef = React.useRef(false);
+
+  const invalidateCashReceiptQueries = React.useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] }),
+      queryClient.invalidateQueries({ queryKey: ['cashReceiptBatches'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin', 'cash-receipt', 'statistics'] }),
+    ]);
+  }, [queryClient]);
 
   React.useEffect(() => {
     const qs = new URLSearchParams();
@@ -105,6 +126,7 @@ export default function Client({ initialPage, pageSize }: Props) {
   );
 
   const { data, isLoading } = useCashReceiptSearch(params);
+  const { data: batches = [], isLoading: isBatchesLoading } = useCashReceiptBatches();
 
   const presetBase = PRESETS['참가신청 / 현금영수증관리']?.props;
   const preset = React.useMemo(() => {
@@ -125,7 +147,6 @@ export default function Client({ initialPage, pageSize }: Props) {
   const deepLinkId = sp.get('id');
   const deepLinkQ = sp.get('q')?.trim() ?? '';
 
-  // 신청자 관리 등에서 넘어온 id/q로 해당 건 상세 자동 오픈
   React.useEffect(() => {
     if (deepLinkId) {
       setSelectedId(deepLinkId);
@@ -245,69 +266,53 @@ export default function Client({ initialPage, pageSize }: Props) {
       try {
         await downloadRequestedCashReceiptsExcel();
         toast.success('다운로드가 완료되었습니다.');
+        await invalidateCashReceiptQueries();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
+        toast.error(getDownloadErrorMessage(e, batches.length > 0));
       } finally {
         setIsCashReceiptDownloading(false);
       }
     })();
-  }, [isCashReceiptDownloading]);
+  }, [isCashReceiptDownloading, invalidateCashReceiptQueries, batches.length]);
 
-  const handleCashReceiptSelectedExcelDownload = React.useCallback(() => {
-    if (selectedIds.length === 0) {
-      toast.warning('다운로드할 항목을 선택해주세요.');
-      return;
+  const handleBatchComplete = React.useCallback((batchId: string) => {
+    setBatchConfirmModal({ type: 'complete', batchId });
+  }, []);
+
+  const handleBatchCancel = React.useCallback((batchId: string) => {
+    setBatchConfirmModal({ type: 'cancel', batchId });
+  }, []);
+
+  const handleBatchConfirm = React.useCallback(async () => {
+    if (!batchConfirmModal) return;
+
+    const { type, batchId } = batchConfirmModal;
+    setProcessingBatchId(batchId);
+    setProcessingAction(type);
+
+    try {
+      if (type === 'complete') {
+        await completeCashReceiptBatch(batchId);
+        toast.success('발급 완료 처리되었습니다.');
+      } else {
+        await cancelCashReceiptBatch(batchId);
+        toast.success('되돌리기가 완료되었습니다.');
+      }
+      setBatchConfirmModal(null);
+      await invalidateCashReceiptQueries();
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : type === 'complete'
+            ? '발급 완료 처리에 실패했습니다.'
+            : '되돌리기에 실패했습니다.'
+      );
+    } finally {
+      setProcessingBatchId(null);
+      setProcessingAction(null);
     }
-    void (async () => {
-      if (isCashReceiptDownloading) return;
-      setIsCashReceiptDownloading(true);
-      try {
-        await downloadSelectedCashReceiptsExcel(selectedIds);
-        toast.success('선택 항목 다운로드가 완료되었습니다.');
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
-      } finally {
-        setIsCashReceiptDownloading(false);
-      }
-    })();
-  }, [isCashReceiptDownloading, selectedIds]);
-
-  const handleCashReceiptTemplateDownload = React.useCallback(() => {
-    void (async () => {
-      if (isCashReceiptTemplateDownloading) return;
-      setIsCashReceiptTemplateDownloading(true);
-      try {
-        await downloadCashReceiptTemplate();
-        toast.success('기본 양식 다운로드가 완료되었습니다.');
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : '다운로드에 실패했습니다.');
-      } finally {
-        setIsCashReceiptTemplateDownloading(false);
-      }
-    })();
-  }, [isCashReceiptTemplateDownloading]);
-
-  const handleCashReceiptBulkFileChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      e.target.value = '';
-      if (!file) return;
-      void (async () => {
-        if (isCashReceiptBulkUploading) return;
-        setIsCashReceiptBulkUploading(true);
-        try {
-          await bulkCompleteCashReceiptsFromFile(file);
-          toast.success('일괄 등록이 완료되었습니다.');
-          await queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] });
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : '일괄 등록에 실패했습니다.');
-        } finally {
-          setIsCashReceiptBulkUploading(false);
-        }
-      })();
-    },
-    [isCashReceiptBulkUploading, queryClient]
-  );
+  }, [batchConfirmModal, invalidateCashReceiptQueries]);
 
   const handleBulkStatusApply = React.useCallback(async () => {
     if (selectedIds.length === 0) {
@@ -319,13 +324,13 @@ export default function Client({ initialPage, pageSize }: Props) {
       await updateCashReceiptsStatusBulk({ ids: selectedIds, targetStatus: bulkTargetStatus });
       toast.success('처리상태가 변경되었습니다.');
       setSelectedIds([]);
-      await queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] });
+      await invalidateCashReceiptQueries();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '상태 변경에 실패했습니다.');
     } finally {
       setIsBulkStatusUpdating(false);
     }
-  }, [selectedIds, bulkTargetStatus, queryClient]);
+  }, [selectedIds, bulkTargetStatus, invalidateCashReceiptQueries]);
 
   const filterBarButtons = React.useMemo(
     () => [
@@ -333,18 +338,12 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         label: '다운로드',
         tone: 'primary' as const,
-        loading: isCashReceiptDownloading,
-        menu: [...CASH_RECEIPT_DOWNLOAD_MENU],
-      },
-      {
-        label: '일괄등록',
-        tone: 'primary' as const,
         iconRight: true as const,
-        onClick: () => bulkCompleteInputRef.current?.click(),
-        disabled: isCashReceiptBulkUploading,
+        loading: isCashReceiptDownloading,
+        onClick: () => handleCashReceiptExcelDownload(),
       },
     ],
-    [isCashReceiptDownloading, isCashReceiptBulkUploading]
+    [isCashReceiptDownloading, handleCashReceiptExcelDownload]
   );
 
   return (
@@ -372,14 +371,6 @@ export default function Client({ initialPage, pageSize }: Props) {
         </div>
       </div>
 
-      <input
-        ref={bulkCompleteInputRef}
-        type="file"
-        className="hidden"
-        accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        onChange={handleCashReceiptBulkFileChange}
-      />
-
       {preset && (
         <div className="w-full min-w-0">
           <FilterBar
@@ -402,13 +393,19 @@ export default function Client({ initialPage, pageSize }: Props) {
               setKeyword('');
               setPage(1);
             }}
-            onActionClick={(value) => {
-              if (value === 'downloadList') handleCashReceiptExcelDownload();
-              if (value === 'downloadSelectedList') handleCashReceiptSelectedExcelDownload();
-              if (value === 'downloadTemplate') handleCashReceiptTemplateDownload();
-            }}
           />
         </div>
+      )}
+
+      {batches.length > 0 && (
+        <CashReceiptBatchList
+          batches={batches}
+          isLoading={isBatchesLoading}
+          processingBatchId={processingBatchId}
+          processingAction={processingAction}
+          onComplete={handleBatchComplete}
+          onCancel={handleBatchCancel}
+        />
       )}
 
       <AdminTable<CashReceiptSearchItem>
@@ -419,8 +416,8 @@ export default function Client({ initialPage, pageSize }: Props) {
         minWidth={1256}
         loadingMessage={isLoading ? '현금영수증 목록을 불러오는 중입니다.' : undefined}
         emptyMessage={
-          !isLoading && rows.length === 0 
-            ? '검색 결과가 없습니다\n다른 조건으로 다시 검색해보세요' 
+          !isLoading && rows.length === 0
+            ? '검색 결과가 없습니다\n다른 조건으로 다시 검색해보세요'
             : undefined
         }
         onRowClick={(row) => {
@@ -440,7 +437,34 @@ export default function Client({ initialPage, pageSize }: Props) {
           qs.delete('id');
           router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname);
         }}
-        onUpdated={() => { queryClient.invalidateQueries({ queryKey: ['cashReceiptSearch'] }); }}
+        onUpdated={() => { void invalidateCashReceiptQueries(); }}
+      />
+
+      <ConfirmModal
+        isOpen={batchConfirmModal?.type === 'complete'}
+        onClose={() => setBatchConfirmModal(null)}
+        onConfirm={() => void handleBatchConfirm()}
+        title="발급 완료 처리"
+        message="이 다운로드 내역에 포함된 현금영수증을 모두 발급 완료 처리하시겠습니까?"
+        smallMessage="토스에서 실제 발급이 완료된 후에 처리해주세요."
+        confirmText="발급 완료"
+        cancelText="취소"
+        isLoading={processingAction === 'complete'}
+      />
+
+      <ConfirmModal
+        isOpen={batchConfirmModal?.type === 'cancel'}
+        onClose={() => setBatchConfirmModal(null)}
+        onConfirm={() => void handleBatchConfirm()}
+        title="되돌리기"
+        message={
+          '포함된 현금영수증이 다시 처리 대기 상태로 돌아가며,\n이후 다시 다운로드할 수 있습니다.'
+        }
+        confirmText="되돌리기"
+        cancelText="닫기"
+        variant="danger"
+        multiline
+        isLoading={processingAction === 'cancel'}
       />
     </div>
   );
