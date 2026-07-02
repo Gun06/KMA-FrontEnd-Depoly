@@ -179,7 +179,7 @@ export default function RefundModal({ isOpen, onClose, onSubmit, isLoading = fal
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900">환불 요청이 접수되었습니다</h3>
-              <p className="mt-1 text-sm text-gray-600">관리자 검토 후 진행됩니다.</p>
+              <p className="mt-1 text-sm text-gray-600">관리자 검토 후 3주 이내 처리됩니다.</p>
             </div>
             <div className="pt-2">
               <button
