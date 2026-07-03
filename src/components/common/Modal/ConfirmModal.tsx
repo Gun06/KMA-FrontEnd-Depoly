@@ -1,6 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
 import { X, AlertCircle } from 'lucide-react';
 
 interface ConfirmModalProps {
@@ -8,7 +9,7 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title?: string;
-  message: string;
+  message: ReactNode;
   smallMessage?: string; // 부가 설명 (회색, 작은 글씨 14px)
   confirmText?: string;
   cancelText?: string;

@@ -33,17 +33,40 @@ type BatchAction = 'complete' | 'cancel';
 type BatchConfirmModal = {
   type: BatchAction;
   batchId: string;
+  totalCount: number;
 } | null;
 
 function getDownloadErrorMessage(error: unknown, hasPendingBatches: boolean): string {
   const message = error instanceof Error ? error.message : '';
   if (message.includes('찾을 수 없습니다')) {
     if (hasPendingBatches) {
-      return '처리 대기 건이 이미 다운로드 내역에 있습니다. 발급 완료 처리하거나, 되돌리기 후 다시 다운로드해주세요.';
+      return '이미 모든 현금영수증 신청 대기 내역이 영수증 처리 대기 큐에 포함되어 있습니다. 발급 완료 처리하거나, 되돌리기 후 다시 다운로드해주세요.';
     }
-    return '다운로드할 처리 대기 건이 없습니다. 새 현금영수증 신청이 들어오면 다시 다운로드할 수 있습니다.';
+    return '신규 현금영수증 신청 내역이 없습니다.';
   }
   return message || '다운로드에 실패했습니다.';
+}
+
+function formatBatchCount(totalCount: number) {
+  return <strong className="font-semibold text-gray-900">총 {totalCount.toLocaleString()}건</strong>;
+}
+
+function getBatchCompleteMessage(totalCount: number) {
+  return (
+    <>
+      영수증 처리 대기 큐에 포함된 현금영수증 {formatBatchCount(totalCount)}을 모두 발급 완료 처리하시겠습니까?
+    </>
+  );
+}
+
+function getBatchCancelMessage(totalCount: number) {
+  return (
+    <>
+      영수증 처리 대기 큐에 포함된 현금영수증 {formatBatchCount(totalCount)}이 다시 처리 대기 상태로 돌아갑니다.
+      <br />
+      되돌리시겠습니까?
+    </>
+  );
 }
 
 const STATUS_LABEL: Record<CashReceiptAdminStatus, string> = {
@@ -275,12 +298,12 @@ export default function Client({ initialPage, pageSize }: Props) {
     })();
   }, [isCashReceiptDownloading, invalidateCashReceiptQueries, batches.length]);
 
-  const handleBatchComplete = React.useCallback((batchId: string) => {
-    setBatchConfirmModal({ type: 'complete', batchId });
+  const handleBatchComplete = React.useCallback((batchId: string, totalCount: number) => {
+    setBatchConfirmModal({ type: 'complete', batchId, totalCount });
   }, []);
 
-  const handleBatchCancel = React.useCallback((batchId: string) => {
-    setBatchConfirmModal({ type: 'cancel', batchId });
+  const handleBatchCancel = React.useCallback((batchId: string, totalCount: number) => {
+    setBatchConfirmModal({ type: 'cancel', batchId, totalCount });
   }, []);
 
   const handleBatchConfirm = React.useCallback(async () => {
@@ -445,7 +468,9 @@ export default function Client({ initialPage, pageSize }: Props) {
         onClose={() => setBatchConfirmModal(null)}
         onConfirm={() => void handleBatchConfirm()}
         title="발급 완료 처리"
-        message="이 다운로드 내역에 포함된 현금영수증을 모두 발급 완료 처리하시겠습니까?"
+        message={
+          batchConfirmModal ? getBatchCompleteMessage(batchConfirmModal.totalCount) : ''
+        }
         smallMessage="토스에서 실제 발급이 완료된 후에 처리해주세요."
         confirmText="발급 완료"
         cancelText="취소"
@@ -458,7 +483,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         onConfirm={() => void handleBatchConfirm()}
         title="되돌리기"
         message={
-          '포함된 현금영수증이 다시 처리 대기 상태로 돌아가며,\n이후 다시 다운로드할 수 있습니다.'
+          batchConfirmModal ? getBatchCancelMessage(batchConfirmModal.totalCount) : ''
         }
         confirmText="되돌리기"
         cancelText="닫기"

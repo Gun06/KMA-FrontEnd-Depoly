@@ -222,7 +222,7 @@ export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
   triggerBlobDownload(blob, filename);
 }
 
-/** GET /api/v1/cash-receipt/batches — 미완료 배치(다운로드 내역) 목록 */
+/** GET /api/v1/cash-receipt/batches — 미완료 배치(영수증 처리 대기 큐) 목록 */
 export async function getCashReceiptBatches(): Promise<CashReceiptBatch[]> {
   return request<CashReceiptBatch[]>(
     'admin',

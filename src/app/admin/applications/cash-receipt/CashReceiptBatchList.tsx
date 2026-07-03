@@ -10,8 +10,8 @@ type Props = {
   isLoading: boolean;
   processingBatchId: string | null;
   processingAction: BatchAction | null;
-  onComplete: (batchId: string) => void;
-  onCancel: (batchId: string) => void;
+  onComplete: (batchId: string, totalCount: number) => void;
+  onCancel: (batchId: string, totalCount: number) => void;
 };
 
 function formatDateTime(iso: string): string {
@@ -43,17 +43,17 @@ export default function CashReceiptBatchList({
   return (
     <section className="rounded-lg border border-gray-200 bg-gray-50/60">
       <div className="border-b border-gray-200 px-4 py-3">
-        <h4 className="text-sm font-semibold text-gray-900">다운로드 내역</h4>
+        <h4 className="text-sm font-semibold text-gray-900">영수증 처리 대기 큐</h4>
         <p className="mt-0.5 text-xs text-gray-500">
-          다운로드 버튼을 누르면 처리 대기 건이 엑셀로 내려받아지고, 이곳에 내역이 추가됩니다.
+          다운로드 버튼을 누르면 처리 대기 건이 엑셀로 내려받아지고, 영수증 처리 대기 큐에 추가됩니다.
           토스에서 실제 발급을 마친 뒤 발급 완료 버튼을 눌러주세요. 잘못 다운로드한 경우 되돌리기 버튼을 사용할 수 있습니다.
         </p>
       </div>
 
       {isLoading ? (
-        <div className="px-4 py-6 text-center text-sm text-gray-500">다운로드 내역을 불러오는 중입니다.</div>
+        <div className="px-4 py-6 text-center text-sm text-gray-500">영수증 처리 대기 큐를 불러오는 중입니다.</div>
       ) : batches.length === 0 ? (
-        <div className="px-4 py-6 text-center text-sm text-gray-400">다운로드된 내역이 없습니다.</div>
+        <div className="px-4 py-6 text-center text-sm text-gray-400">영수증 처리 대기 큐가 비어 있습니다.</div>
       ) : (
         <ul className="divide-y divide-gray-200">
           {batches.map((batch) => {
@@ -87,7 +87,7 @@ export default function CashReceiptBatchList({
                     type="button"
                     className="rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
-                    onClick={() => onComplete(batch.batchId)}
+                    onClick={() => onComplete(batch.batchId, batch.totalCount)}
                   >
                     {completing ? '처리 중...' : '발급 완료'}
                   </button>
@@ -95,7 +95,7 @@ export default function CashReceiptBatchList({
                     type="button"
                     className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
-                    onClick={() => onCancel(batch.batchId)}
+                    onClick={() => onCancel(batch.batchId, batch.totalCount)}
                   >
                     {canceling ? '처리 중...' : '되돌리기'}
                   </button>
