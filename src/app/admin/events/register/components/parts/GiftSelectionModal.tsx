@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/utils/cn';
-
-type GiftItem = { name: string; size: string; isActive?: boolean };
+import type { GiftItem } from '../sections/GiftsSection';
 
 type GiftSelectionModalProps = {
   isOpen: boolean;

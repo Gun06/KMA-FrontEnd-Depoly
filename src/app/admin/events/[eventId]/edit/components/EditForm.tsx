@@ -35,9 +35,9 @@ import type { PhoneAuthPolicy } from '@/services/admin/phoneAuth';
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
   // STEP 2: 기념품만 저장 (gifts 배열 직접 전달)
-  onSaveSouvenirs?: (gifts: Array<{ name: string; size: string; isActive?: boolean }>) => Promise<void>;
+  onSaveSouvenirs?: (gifts: Array<{ id?: string; name: string; size: string; isActive?: boolean }>) => Promise<void>;
   // STEP 3: 종목만 저장 (courses와 gifts 배열 직접 전달)
-  onSaveCourses?: (courses: Array<{ name: string; price: string; selectedGifts: number[] }>, gifts: Array<{ name: string; size: string }>) => Promise<void>;
+  onSaveCourses?: (courses: Array<{ name: string; price: string; selectedGifts: number[] }>, gifts: Array<{ id?: string; name: string; size: string }>) => Promise<void>;
   onBack?: () => void;
   onCancel?: () => void;
   onDelete?: () => Promise<void>;
@@ -52,7 +52,7 @@ type Props = {
     bannerType: string;
     static: boolean;
   }>;
-  initialGifts?: Array<{ name: string; size: string; isActive?: boolean }>;
+  initialGifts?: Array<{ id?: string; name: string; size: string; isActive?: boolean }>;
   initialCourses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
   phoneAuthGlobalPolicy?: PhoneAuthPolicy;
 };
@@ -104,17 +104,25 @@ export default function EditForm({
   const { gifts, setGifts } = giftsHandlers;
 
   // 저장된 기념품만 추적하는 상태 (서버에 저장된 기념품만)
-  const [savedGifts, setSavedGifts] = useState<Array<{ name: string; size: string; isActive?: boolean }>>(initialGifts);
+  const [savedGifts, setSavedGifts] = useState<Array<{ id?: string; name: string; size: string; isActive?: boolean }>>(initialGifts);
 
   // 종목 핸들러 (초기값 설정)
   const coursesHandlers = useCoursesHandlers(initialCourses);
   const { courses, setCourses } = coursesHandlers;
 
-  // initialGifts나 initialCourses가 변경되면 업데이트
+  // initialGifts나 initialCourses가 변경되면 업데이트 (편집 중 id·입력값 유지)
   useEffect(() => {
     if (initialGifts.length > 0) {
-      setGifts(initialGifts);
-      setSavedGifts(initialGifts); // 저장된 기념품도 업데이트
+      setGifts(prev => {
+        if (prev.length === 0 || prev.length !== initialGifts.length) {
+          return initialGifts;
+        }
+        return prev.map((gift, index) => ({
+          ...gift,
+          id: gift.id ?? initialGifts[index]?.id,
+        }));
+      });
+      setSavedGifts(initialGifts);
     }
   }, [initialGifts, setGifts]);
 
@@ -275,10 +283,12 @@ export default function EditForm({
     
     setLoadingSouvenirs(true);
     try {
-      // gifts 배열을 직접 전달
-      await onSaveSouvenirs(gifts);
-      // 저장 성공 시 저장된 기념품 상태 업데이트
-      setSavedGifts([...gifts]);
+      const giftsToSave = gifts.map((gift, index) => ({
+        ...gift,
+        id: gift.id ?? savedGifts[index]?.id,
+      }));
+      await onSaveSouvenirs(giftsToSave);
+      setSavedGifts([...giftsToSave]);
     } catch (error) {
       // 에러는 상위에서 처리
     } finally {

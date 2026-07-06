@@ -131,6 +131,7 @@ export function useFormSubmission({
         gifts: course.selectedGifts.map(giftIndex => ({
           label: gifts[giftIndex].name,
           size: gifts[giftIndex].size,
+          ...(gifts[giftIndex].id ? { id: gifts[giftIndex].id } : {}),
         })),
       }));
 

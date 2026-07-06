@@ -3,6 +3,31 @@
 import type { EventCreatePayload } from './types';
 import type { SouvenirUpdateRequest } from './types';
 
+type GiftInput = { id?: string; name: string; size: string; isActive?: boolean };
+
+type ExistingSouvenir = { id: string; name: string; sizes: string };
+
+function resolveExistingSouvenirId(
+  gift: GiftInput,
+  existingSouvenirs?: ExistingSouvenir[]
+): string | undefined {
+  if (gift.id) return gift.id;
+  if (!existingSouvenirs?.length) return undefined;
+
+  const trimmedName = gift.name.trim();
+  const trimmedSize = (gift.size || '').trim();
+
+  const byNameAndSize = existingSouvenirs.find(
+    s => s.name === trimmedName && s.sizes === trimmedSize
+  );
+  if (byNameAndSize) return byNameAndSize.id;
+
+  const byNameOnly = existingSouvenirs.filter(s => s.name === trimmedName);
+  if (byNameOnly.length === 1) return byNameOnly[0].id;
+
+  return undefined;
+}
+
 /**
  * 기념품 데이터를 API 요청 형식으로 변환
  * @param payload 프론트엔드 폼 데이터
@@ -11,35 +36,29 @@ import type { SouvenirUpdateRequest } from './types';
  */
 export function transformSouvenirsToApi(
   payload: EventCreatePayload,
-  existingSouvenirs?: Array<{
-    id: string;
-    name: string;
-    sizes: string;
-  }>,
-  gifts?: Array<{ name: string; size: string; isActive?: boolean }>
+  existingSouvenirs?: ExistingSouvenir[],
+  gifts?: GiftInput[]
 ): SouvenirUpdateRequest[] {
-  // 모든 기념품 수집
-  const allGifts = new Map<string, { name: string; size: string; isActive?: boolean }>();
+  const allGifts = new Map<string, GiftInput>();
 
-  // gifts 배열이 직접 전달된 경우 우선 사용
   if (gifts && gifts.length > 0) {
-    gifts.forEach(gift => {
-      const key = `${gift.name}_${gift.size}`;
-      if (!allGifts.has(key) && gift.name?.trim()) {
-        allGifts.set(key, {
-          name: gift.name.trim(),
-          size: (gift.size || '').trim(),
-          isActive: gift.isActive,
-        });
-      }
+    gifts.forEach((gift, index) => {
+      if (!gift.name?.trim()) return;
+      const key = gift.id ?? `row_${index}_${gift.name.trim()}_${(gift.size || '').trim()}`;
+      allGifts.set(key, {
+        id: gift.id,
+        name: gift.name.trim(),
+        size: (gift.size || '').trim(),
+        isActive: gift.isActive,
+      });
     });
   } else if (payload.groups) {
-    // groups에서 기념품 추출
     payload.groups.forEach(group => {
       if (group.gifts) {
         group.gifts.forEach(gift => {
-          const key = `${gift.label}_${gift.size}`;
-          if (!allGifts.has(key) && gift.label?.trim()) {
+          if (!gift.label?.trim()) return;
+          const key = `${gift.label.trim()}_${(gift.size || '').trim()}`;
+          if (!allGifts.has(key)) {
             allGifts.set(key, {
               name: gift.label.trim(),
               size: (gift.size || '').trim(),
@@ -50,25 +69,14 @@ export function transformSouvenirsToApi(
     });
   }
 
-  // 기존 기념품 ID 매핑 생성 (name + sizes로 매칭)
-  const souvenirIdMap = new Map<string, string>();
-  if (existingSouvenirs) {
-    existingSouvenirs.forEach(souvenir => {
-      const key = `${souvenir.name}_${souvenir.sizes}`;
-      souvenirIdMap.set(key, souvenir.id);
-    });
-  }
-
-  // API 요청 형식으로 변환
   const result: SouvenirUpdateRequest[] = Array.from(allGifts.values()).map(gift => {
-    const key = `${gift.name}_${gift.size}`;
-    const existingId = souvenirIdMap.get(key);
+    const existingId = resolveExistingSouvenirId(gift, existingSouvenirs);
 
     return {
-      id: existingId, // 있으면 수정, 없으면 생성
+      id: existingId,
       name: gift.name,
       sizes: gift.size,
-      isActive: gift.isActive !== false, // isActive가 false가 아니면 true (기본값 true)
+      isActive: gift.isActive !== false,
     };
   });
 

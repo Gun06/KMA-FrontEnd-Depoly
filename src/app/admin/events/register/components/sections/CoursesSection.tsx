@@ -8,6 +8,7 @@ import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import GiftSelectionModal from '../parts/GiftSelectionModal';
 import { Plus, Minus, Trophy } from 'lucide-react';
 import MiniToggle from '@/components/common/Toggle/MiniToggle';
+import type { GiftItem } from './GiftsSection';
 
 export type CourseItem = {
   name: string;
@@ -18,7 +19,7 @@ export type CourseItem = {
 
 type CoursesSectionProps = {
   courses: CourseItem[];
-  availableGifts: Array<{ name: string; size: string; isActive?: boolean }>; // 선택 가능한 기념품 목록
+  availableGifts: GiftItem[]; // 선택 가능한 기념품 목록
   onAddCourse: () => void;
   onRemoveCourse: (index: number) => void;
   onChangeCourseName: (index: number, value: string) => void;

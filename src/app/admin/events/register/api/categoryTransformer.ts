@@ -1,7 +1,29 @@
 // src/app/admin/events/register/api/categoryTransformer.ts
 
 import type { EventCreatePayload } from './types';
-import type { EventCategoryUpdateRequest, SouvenirUpdateRequest } from './types';
+import type { EventCategoryUpdateRequest } from './types';
+
+type GiftInput = { id?: string; name: string; size: string };
+
+function buildSouvenirIdMap(
+  existingSouvenirs?: Array<{ id: string; name: string; sizes: string }>
+) {
+  const souvenirIdByNameSize = new Map<string, string>();
+  if (existingSouvenirs) {
+    existingSouvenirs.forEach(souvenir => {
+      souvenirIdByNameSize.set(`${souvenir.name}_${souvenir.sizes}`, souvenir.id);
+    });
+  }
+  return souvenirIdByNameSize;
+}
+
+function resolveSouvenirId(
+  gift: GiftInput,
+  souvenirIdByNameSize: Map<string, string>
+): string | undefined {
+  if (gift.id) return gift.id;
+  return souvenirIdByNameSize.get(`${gift.name}_${gift.size}`);
+}
 
 /**
  * 종목 데이터를 API 요청 형식으로 변환
@@ -16,7 +38,7 @@ export function transformCategoriesToApi(
   existingCategories?: Array<{
     id: string;
     name: string;
-    amount?: number; // API에서는 amount로 오지만 price로도 사용 가능
+    amount?: number;
     price?: number;
     souvenirs: Array<{
       id: string;
@@ -31,11 +53,9 @@ export function transformCategoriesToApi(
     sizes: string;
   }>,
   courses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
-  gifts?: Array<{ name: string; size: string }>
+  gifts?: GiftInput[]
 ): EventCategoryUpdateRequest[] {
-  // courses 배열이 직접 전달된 경우 우선 사용
   if (courses && courses.length > 0 && gifts) {
-    // 기존 종목 ID 매핑 생성 (name으로 매칭)
     const categoryIdMap = new Map<string, string>();
     if (existingCategories) {
       existingCategories.forEach(category => {
@@ -43,16 +63,8 @@ export function transformCategoriesToApi(
       });
     }
 
-    // 기존 기념품 ID 매핑 생성 (name + sizes로 매칭)
-    const souvenirIdMap = new Map<string, string>();
-    if (existingSouvenirs) {
-      existingSouvenirs.forEach(souvenir => {
-        const key = `${souvenir.name}_${souvenir.sizes}`;
-        souvenirIdMap.set(key, souvenir.id);
-      });
-    }
+    const souvenirIdByNameSize = buildSouvenirIdMap(existingSouvenirs);
 
-    // 종목 데이터 변환
     const result: EventCategoryUpdateRequest[] = courses
       .filter(course => course.name?.trim())
       .map(course => {
@@ -63,24 +75,18 @@ export function transformCategoriesToApi(
           ? course.price
           : 0;
 
-        // 기존 종목 ID 찾기
         const existingCategoryId = categoryIdMap.get(courseName);
 
-        // 기념품 ID 배열 생성 (selectedGifts 인덱스를 사용)
         const souvenirIds: string[] = course.selectedGifts
           .filter(giftIndex => giftIndex >= 0 && giftIndex < gifts.length)
-          .map(giftIndex => {
-            const gift = gifts[giftIndex];
-            const key = `${gift.name}_${gift.size}`;
-            return souvenirIdMap.get(key);
-          })
-          .filter((id): id is string => !!id); // undefined 제거
+          .map(giftIndex => resolveSouvenirId(gifts[giftIndex], souvenirIdByNameSize))
+          .filter((id): id is string => !!id);
 
         return {
-          id: existingCategoryId, // 있으면 수정, 없으면 생성
+          id: existingCategoryId,
           name: courseName,
           price: Number.isFinite(price) ? price : 0,
-          isActive: course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
+          isActive: course.isActive !== false,
           souvenirIds,
         };
       });
@@ -88,12 +94,10 @@ export function transformCategoriesToApi(
     return result;
   }
 
-  // 기존 로직 (payload.groups 사용)
   if (!payload.groups || payload.groups.length === 0) {
     return [];
   }
 
-  // 기존 종목 ID 매핑 생성 (name으로 매칭)
   const categoryIdMap = new Map<string, string>();
   if (existingCategories) {
     existingCategories.forEach(category => {
@@ -101,16 +105,8 @@ export function transformCategoriesToApi(
     });
   }
 
-  // 기존 기념품 ID 매핑 생성 (name + sizes로 매칭)
-  const souvenirIdMap = new Map<string, string>();
-  if (existingSouvenirs) {
-    existingSouvenirs.forEach(souvenir => {
-      const key = `${souvenir.name}_${souvenir.sizes}`;
-      souvenirIdMap.set(key, souvenir.id);
-    });
-  }
+  const souvenirIdByNameSize = buildSouvenirIdMap(existingSouvenirs);
 
-  // 종목 데이터 변환
   const result: EventCategoryUpdateRequest[] = payload.groups
     .filter(group => group.course?.name?.trim())
     .map(group => {
@@ -119,24 +115,21 @@ export function transformCategoriesToApi(
         ? group.course.price
         : Number(group.course.price);
 
-      // 기존 종목 ID 찾기
       const existingCategoryId = categoryIdMap.get(courseName);
 
-      // 기념품 ID 배열 생성
       const souvenirIds: string[] = (group.gifts || [])
         .filter(gift => gift.label?.trim())
         .map(gift => {
           const key = `${gift.label.trim()}_${(gift.size || '').trim()}`;
-          const souvenirId = souvenirIdMap.get(key);
-          return souvenirId;
+          return souvenirIdByNameSize.get(key);
         })
-        .filter((id): id is string => !!id); // undefined 제거
+        .filter((id): id is string => !!id);
 
       return {
-        id: existingCategoryId, // 있으면 수정, 없으면 생성
+        id: existingCategoryId,
         name: courseName,
         price: Number.isFinite(price) ? price : 0,
-        isActive: group.course.isActive !== false, // enabled가 false가 아니면 true (기본값 true)
+        isActive: group.course.isActive !== false,
         souvenirIds,
       };
     });

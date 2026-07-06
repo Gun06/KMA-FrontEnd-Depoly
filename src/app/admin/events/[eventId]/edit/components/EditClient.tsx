@@ -52,61 +52,45 @@ export default function EditClient({
   const initialGifts = useMemo(() => {
     const allSouvenirsMap = new Map<string, { name: string; size: string; id?: string; isActive?: boolean }>();
 
+    const addSouvenir = (souvenir: {
+      id: string;
+      name: string;
+      sizes: string;
+      isActive?: boolean;
+    }) => {
+      if (!souvenir.name?.trim()) return;
+      const key = souvenir.id || `${souvenir.name}_${souvenir.sizes}`;
+      if (!allSouvenirsMap.has(key)) {
+        allSouvenirsMap.set(key, {
+          name: souvenir.name.trim(),
+          size: souvenir.sizes || '',
+          id: souvenir.id,
+          isActive: souvenir.isActive !== false,
+        });
+      }
+    };
+
     // 1. apiData에서 기념품 추출 (종목에 연결되지 않은 기념품도 포함)
     if (apiData?.souvenirs && apiData.souvenirs.length > 0) {
-      apiData.souvenirs.forEach(souvenir => {
-        const key = `${souvenir.name}_${souvenir.sizes}`;
-        if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
-          allSouvenirsMap.set(key, {
-            name: souvenir.name.trim(),
-            size: souvenir.sizes || '',
-            id: souvenir.id,
-            isActive: souvenir.isActive !== false, // 기본값은 true
-          });
-        }
-      });
+      apiData.souvenirs.forEach(addSouvenir);
     }
 
     // 2. apiData의 eventCategories에서 기념품 추출
     if (apiData?.eventCategories && apiData.eventCategories.length > 0) {
       apiData.eventCategories.forEach(cat => {
-        if (cat.souvenirs) {
-          cat.souvenirs.forEach(souvenir => {
-            const key = `${souvenir.name}_${souvenir.sizes}`;
-            if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
-              allSouvenirsMap.set(key, {
-                name: souvenir.name.trim(),
-                size: souvenir.sizes || '',
-                id: souvenir.id,
-                isActive: souvenir.isActive !== false, // 기본값은 true
-              });
-            }
-          });
-        }
+        cat.souvenirs?.forEach(addSouvenir);
       });
     }
 
     // 3. dropdownData에서 기념품 추출 (보강)
     if (dropdownData && dropdownData.length > 0) {
       dropdownData.forEach(cat => {
-        if (cat.souvenirs) {
-          cat.souvenirs.forEach(souvenir => {
-            const key = `${souvenir.name}_${souvenir.sizes}`;
-            if (!allSouvenirsMap.has(key) && souvenir.name?.trim()) {
-              allSouvenirsMap.set(key, {
-                name: souvenir.name.trim(),
-                size: souvenir.sizes || '',
-                id: souvenir.id,
-                isActive: souvenir.isActive !== false, // 기본값은 true
-              });
-            }
-          });
-        }
+        cat.souvenirs?.forEach(addSouvenir);
       });
     }
 
-    // Map에서 배열로 변환
     return Array.from(allSouvenirsMap.values()).map(s => ({
+      id: s.id,
       name: s.name,
       size: s.size,
       isActive: s.isActive,
@@ -124,45 +108,16 @@ export default function EditClient({
     // initialGifts는 apiData와 dropdownData에서 모두 추출한 기념품이므로
     // 이를 기준으로 인덱스를 찾아야 모든 기념품이 표시됨
     const giftIndexMap = new Map<string, number>();
+    const giftIdMap = new Map<string, number>();
     initialGifts.forEach((gift, index) => {
-      // name과 size를 조합하여 고유 키 생성
+      if (gift.id) {
+        giftIdMap.set(gift.id, index);
+      }
       const key = `${gift.name}_${gift.size}`;
       if (!giftIndexMap.has(key)) {
         giftIndexMap.set(key, index);
       }
     });
-
-    // apiData에서 모든 기념품 ID 매핑 생성 (ID로도 찾을 수 있도록)
-    const giftIdMap = new Map<string, number>();
-    if (apiData) {
-      // apiData.souvenirs에서 ID 매핑
-      if (apiData.souvenirs && apiData.souvenirs.length > 0) {
-        apiData.souvenirs.forEach(souvenir => {
-          const giftIndex = initialGifts.findIndex(
-            g => g.name === souvenir.name && g.size === souvenir.sizes
-          );
-          if (giftIndex >= 0 && !giftIdMap.has(souvenir.id)) {
-            giftIdMap.set(souvenir.id, giftIndex);
-          }
-        });
-      }
-      
-      // apiData.eventCategories에서 ID 매핑
-      if (apiData.eventCategories && apiData.eventCategories.length > 0) {
-        apiData.eventCategories.forEach(cat => {
-          if (cat.souvenirs) {
-            cat.souvenirs.forEach(souvenir => {
-              const giftIndex = initialGifts.findIndex(
-                g => g.name === souvenir.name && g.size === souvenir.sizes
-              );
-              if (giftIndex >= 0 && !giftIdMap.has(souvenir.id)) {
-                giftIdMap.set(souvenir.id, giftIndex);
-              }
-            });
-          }
-        });
-      }
-    }
 
     return dropdownData.map(category => {
       // 기념품 인덱스 찾기 (ID 우선, 없으면 name+size로 찾기)
@@ -194,7 +149,7 @@ export default function EditClient({
         isActive: category.isActive !== false, // 기본값은 true
       };
     });
-  }, [dropdownData, initialGifts, apiData]);
+  }, [dropdownData, initialGifts]);
 
   // 결제정보(은행/가상계좌) 별도 API 연동
   const [bankName, setBankName] = React.useState<string>('');
@@ -369,7 +324,7 @@ export default function EditClient({
   };
 
   // STEP 2: 기념품만 저장
-  const handleSaveSouvenirs = async (gifts: Array<{ name: string; size: string; isActive?: boolean }>) => {
+  const handleSaveSouvenirs = async (gifts: Array<{ id?: string; name: string; size: string; isActive?: boolean }>) => {
     if (!apiData) return;
     if (!gifts || gifts.length === 0) {
       setInfoModalType('warning');
@@ -384,7 +339,6 @@ export default function EditClient({
           ? apiData.souvenirs
           : (apiData.eventCategories?.flatMap(cat => cat.souvenirs) || []);
 
-      // 빈 payload로 변환 함수 호출 (gifts 배열 직접 전달)
       const emptyPayload = { groups: [] } as unknown as EventCreatePayload;
       const souvenirRequests = transformSouvenirsToApi(emptyPayload, allSouvenirs, gifts);
       
@@ -410,9 +364,11 @@ export default function EditClient({
         setInfoModalMessage('저장할 기념품이 없습니다.');
         setInfoModalOpen(true);
       }
-    } catch {
+    } catch (error) {
       setInfoModalType('error');
-      setInfoModalMessage('기념품 저장에 실패했습니다. 다시 시도해주세요.');
+      setInfoModalMessage(
+        error instanceof Error ? error.message : '기념품 저장에 실패했습니다. 다시 시도해주세요.'
+      );
       setInfoModalOpen(true);
     }
   };
@@ -420,7 +376,7 @@ export default function EditClient({
   // STEP 3: 종목만 저장
   const handleSaveCategories = async (
     courses: Array<{ name: string; price: string; selectedGifts: number[] }>,
-    gifts: Array<{ name: string; size: string }>
+    gifts: Array<{ id?: string; name: string; size: string }>
   ) => {
     if (!apiData) return;
     if (!courses || courses.length === 0) {

@@ -19,15 +19,21 @@ export function useGiftsHandlers(initialGifts: GiftItem[] = []) {
   };
 
   const handleChangeGiftName = (index: number, value: string) => {
-    setGifts(gifts.map((g, i) => (i === index ? { ...g, name: value } : g)));
+    setGifts(prev =>
+      prev.map((g, i) => (i === index ? { ...g, name: value } : g))
+    );
   };
 
   const handleChangeGiftSize = (index: number, value: string) => {
-    setGifts(gifts.map((g, i) => (i === index ? { ...g, size: value } : g)));
+    setGifts(prev =>
+      prev.map((g, i) => (i === index ? { ...g, size: value } : g))
+    );
   };
 
   const handleToggleGiftEnabled = (index: number, enabled: boolean) => {
-    setGifts(gifts.map((g, i) => (i === index ? { ...g, isActive: enabled } : g)));
+    setGifts(prev =>
+      prev.map((g, i) => (i === index ? { ...g, isActive: enabled } : g))
+    );
   };
 
   return {

@@ -10,7 +10,7 @@ import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import { Plus, Minus, Gift } from 'lucide-react';
 import MiniToggle from '@/components/common/Toggle/MiniToggle';
 
-export type GiftItem = { name: string; size: string; isActive?: boolean };
+export type GiftItem = { id?: string; name: string; size: string; isActive?: boolean };
 
 type GiftsSectionProps = {
   gifts: GiftItem[];
