@@ -4,6 +4,7 @@ import React from "react";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import { RichTextContent } from "@/components/common/RichTextContent";
 import type { NoticeEventRow, NoticeFile } from "@/types/notice";
 
 type Props = {
@@ -65,15 +66,7 @@ export default function NoticeDetailPanel({ detail, onBack, onSave }: Props) {
         <div className="h-px bg-gray-100" />
         <div className="px-6 py-6">
           {detail.content ? (
-            <div 
-              className="text-gray-600 prose max-w-none font-thin [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-inherit [&_b]:text-inherit [&_strong]:tracking-tight [&_b]:tracking-tight"
-              style={{ 
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                fontWeight: 100,
-              }}
-              dangerouslySetInnerHTML={{ __html: detail.content }} 
-            />
+            <RichTextContent html={detail.content} />
           ) : (
             <p className="text-gray-600">내용이 없습니다.</p>
           )}

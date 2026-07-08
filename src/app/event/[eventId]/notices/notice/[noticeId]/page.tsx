@@ -10,6 +10,7 @@ import { BackButton } from './components/BackButton';
 import { LoadingState } from './components/LoadingState';
 import { ErrorState } from './components/ErrorState';
 import { NotFoundState } from './components/NotFoundState';
+import { RichTextContent } from '@/components/common/RichTextContent';
 import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 
 export default function NoticeDetailPage() {
@@ -93,11 +94,7 @@ export default function NoticeDetailPage() {
 
           {/* 본문 내용 */}
           <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
-            <div 
-              className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: displayContent }}
-            />
+            <RichTextContent html={displayContent} variant="responsiveCompact" />
           </div>
 
           <AttachmentList attachmentUrls={noticeDetail.attachmentUrls} />

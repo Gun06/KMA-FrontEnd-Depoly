@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { RichTextContent } from "@/components/common/RichTextContent";
 import { sanitizeHtml } from "@/utils/sanitize";
 import Button from "@/components/common/Button/Button";
 import TextEditor from "@/components/common/TextEditor";
@@ -36,16 +37,13 @@ const QuestionSection = React.memo(({ detail }: { detail: Inquiry }) => {
         </p>
       </header>
       <div className="h-px bg-gray-100" />
-      <div 
-        className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-        style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-      >
+      <RichTextContent variant="default" className="px-6 py-6">
         {detail.content ? (
           <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.content) }} />
         ) : (
           <p className="text-gray-600">내용이 없습니다.</p>
         )}
-      </div>
+      </RichTextContent>
       {detail.files && detail.files.length > 0 && (
         <div className="px-6 pb-6">
           <BoardFileBox variant="view" title="첨부파일" files={detail.files} />
@@ -175,11 +173,7 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
           <p className="text-sm text-gray-500 mb-4">
             작성자 {detail.answer.author} · 작성일 {detail.answer.date}
           </p>
-          <div 
-            className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(detail.answer.content) }} 
-          />
+          <RichTextContent html={sanitizeHtml(detail.answer.content)} />
           {detail.answer.files && detail.answer.files.length > 0 && (
             <div className="mt-4">
               <BoardFileBox variant="view" files={detail.answer.files} />

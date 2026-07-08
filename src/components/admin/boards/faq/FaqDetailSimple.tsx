@@ -3,6 +3,7 @@
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
+import { RichTextContent } from "@/components/common/RichTextContent";
 import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 import type { Faq, FaqFile } from "@/types/faq";
 
@@ -48,11 +49,7 @@ export default function FaqDetailSimple({
         <section className="px-6 pt-6 pb-4">
           <div className="text-sm font-semibold mb-2 text-gray-500">질문</div>
           {detail.question ? (
-            <div 
-              className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: questionHtml }} 
-            />
+            <RichTextContent html={questionHtml} variant="compact" />
           ) : (
             <p className="text-gray-600">질문 내용이 없습니다.</p>
           )}
@@ -62,11 +59,7 @@ export default function FaqDetailSimple({
         <section id="answer" className="px-6 pt-6 pb-4">
           <div className="text-sm font-semibold mb-2 text-gray-500">답변</div>
           {detail.answer ? (
-            <div
-              className="prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-              dangerouslySetInnerHTML={{ __html: answerHtml }}
-            />
+            <RichTextContent html={answerHtml} variant="compact" />
           ) : (
             <p className="text-gray-600">등록된 답변이 없습니다.</p>
           )}

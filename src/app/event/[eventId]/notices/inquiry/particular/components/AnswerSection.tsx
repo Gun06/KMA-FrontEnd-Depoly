@@ -130,7 +130,7 @@ export const AnswerSection = ({
 
           {/* 답변 본문 내용 */}
           <div className="p-4 sm:p-6 md:p-8">
-            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}>
+            <div>
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (
@@ -219,7 +219,7 @@ export const AnswerSection = ({
 
           {/* 답변 본문 내용 */}
           <div className="p-4 sm:p-6 md:p-8">
-            <div className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}>
+            <div>
               {isLoadingAnswer ? (
                 <p className="text-gray-500 italic">답변 내용을 불러오는 중...</p>
               ) : answerDetail ? (

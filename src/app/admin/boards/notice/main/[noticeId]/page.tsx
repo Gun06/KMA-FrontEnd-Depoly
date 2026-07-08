@@ -9,6 +9,7 @@ import type { Category } from "@/components/common/Table/types";
 import { useNoticeDetail, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
 import { useAdminAuthStore } from "@/stores";
+import { RichTextContent } from "@/components/common/RichTextContent";
 import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 
 // 날짜시간 포맷팅 함수 (백엔드에서 한국시간으로 제공)
@@ -125,11 +126,7 @@ export default function Page() {
             </p>
           </header>
           <div className="h-px bg-gray-100" />
-          <div
-            className="px-6 py-6 prose max-w-none font-thin text-gray-600 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:min-h-[1.5em] [&_p]:leading-[1.6] [&_strong]:font-black [&_b]:font-black [&_strong]:text-inherit [&_b]:text-inherit [&_strong]:tracking-tight [&_b]:tracking-tight"
-            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100 }}
-            dangerouslySetInnerHTML={{ __html: displayContent }}
-          />
+          <RichTextContent html={displayContent} variant="compact" className="px-6 py-6" />
           <div className="px-6 pb-6">
             <BoardFileBox variant="view" files={(detail.attachmentUrls || detail.files || [])
               ?.filter((url: string) => !url.startsWith('blob:')) // blob URL 제외

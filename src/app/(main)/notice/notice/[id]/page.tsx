@@ -7,6 +7,7 @@ import { SubmenuLayout } from '@/layouts/main/SubmenuLayout';
 import { ChevronLeft, Download, Eye } from 'lucide-react';
 import { useNoticeDetail } from '../hooks/useNoticeDetail';
 import { sanitizeHtml } from '@/utils/sanitize';
+import { RichTextContent } from '@/components/common/RichTextContent';
 import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 
 export default function NoticeDetailPage() {
@@ -165,16 +166,7 @@ export default function NoticeDetailPage() {
           <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
             <div className="text-sm sm:text-base leading-relaxed">
               {noticeDetail.content ? (
-                <div
-                  className="text-gray-600 prose max-w-none font-thin [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                  style={{ 
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    fontWeight: 100,
-                    color: '#4b5563'
-                  }}
-                  dangerouslySetInnerHTML={{ __html: displayContent }}
-                />
+                <RichTextContent html={displayContent} />
               ) : (
                 <p className="text-gray-500">내용이 없습니다.</p>
               )}

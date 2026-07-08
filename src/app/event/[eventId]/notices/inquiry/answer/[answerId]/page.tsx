@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { fetchAnswerDetail, type AnswerDetail } from '../../api/inquiryApi';
 import { formatInquiryAdminDateTime } from '@/utils/formatDate';
+import { RichTextContent } from '@/components/common/RichTextContent';
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 
 export default function AnswerDetailPage() {
@@ -130,13 +131,9 @@ export default function AnswerDetailPage() {
 
             {/* 답변 본문 내용 */}
             <div className="p-4 sm:p-6 md:p-8 min-h-[300px] sm:min-h-[400px]">
-              <div               className="prose max-w-none text-sm sm:text-base leading-relaxed break-words font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight" style={{ fontWeight: 100, color: '#4b5563' }}>
+              <div>
                 {answerDetail.content ? (
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: answerDetail.content }}
-                    className="prose max-w-none font-thin text-gray-600 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_p]:whitespace-pre-wrap [&_p:has(br)]:min-h-[1.5em] [&_strong]:font-black [&_b]:font-black [&_strong]:text-black [&_b]:text-black [&_strong]:tracking-tight [&_b]:tracking-tight"
-                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontWeight: 100, color: '#4b5563' }}
-                  />
+                  <RichTextContent html={answerDetail.content} variant="responsive" />
                 ) : (
                   <p className="text-gray-500 italic">답변 내용이 없습니다.</p>
                 )}
