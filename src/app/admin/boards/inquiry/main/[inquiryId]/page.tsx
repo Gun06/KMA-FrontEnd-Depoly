@@ -12,6 +12,7 @@ import { inquiryKeys } from "@/hooks/useInquiries";
 import { InquiryDetail } from "@/services/admin/inquiries";
 import type { InquiryFile } from "@/types/inquiry";
 import { formatInquiryAdminDateTime } from "@/utils/formatDate";
+import { buildInquiryListReturnUrl } from "@/utils/inquiryListQuery";
 
 export default function Page() {
   const { inquiryId } = useParams<{ inquiryId: string }>();
@@ -107,9 +108,9 @@ export default function Page() {
   const onBack = () => {
     const returnTo = searchParams.get('returnTo');
     if (returnTo === 'all') {
-      router.replace(`/admin/boards/inquiry/all`);
+      router.replace(buildInquiryListReturnUrl('/admin/boards/inquiry/all', searchParams));
     } else {
-      router.replace(`/admin/boards/inquiry/main`);
+      router.replace(buildInquiryListReturnUrl('/admin/boards/inquiry/main', searchParams));
     }
   };
   

@@ -12,6 +12,7 @@ import { inquiryKeys } from "@/hooks/useInquiries";
 import { InquiryDetail } from "@/services/admin/inquiries";
 import type { InquiryFile } from "@/types/inquiry";
 import { formatInquiryAdminDateTime } from "@/utils/formatDate";
+import { buildInquiryListReturnUrl } from "@/utils/inquiryListQuery";
 
 export default function Page() {
   const { eventId, inquiryId } = useParams<{ eventId: string; inquiryId: string }>();
@@ -107,23 +108,17 @@ export default function Page() {
   const onBack = () => {
     const returnTo = searchParams.get('returnTo');
     const returnEventId = searchParams.get('returnEventId');
-    const pageParam = searchParams.get('page');
 
-    const applyPageParam = (basePath: string) => {
-      if (!pageParam) return basePath;
-      const params = new URLSearchParams();
-      params.set('page', pageParam);
-      return `${basePath}?${params.toString()}`;
-    };
-    
-    // returnTo=all인 경우 전체 문의사항으로, returnEventId가 있으면 해당 대회로
     if (returnTo === 'all') {
-      router.replace(applyPageParam(`/admin/boards/inquiry/all`));
+      router.replace(buildInquiryListReturnUrl('/admin/boards/inquiry/all', searchParams));
     } else if (returnEventId) {
-      router.replace(applyPageParam(`/admin/boards/inquiry/events/${returnEventId}`));
+      router.replace(
+        buildInquiryListReturnUrl(`/admin/boards/inquiry/events/${returnEventId}`, searchParams)
+      );
     } else {
-      // 기본값: 현재 eventId로
-      router.replace(applyPageParam(`/admin/boards/inquiry/events/${eventId}`));
+      router.replace(
+        buildInquiryListReturnUrl(`/admin/boards/inquiry/events/${eventId}`, searchParams)
+      );
     }
   };
   

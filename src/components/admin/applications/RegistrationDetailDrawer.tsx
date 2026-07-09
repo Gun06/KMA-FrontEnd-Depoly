@@ -20,6 +20,7 @@ import {
   deleteRegistration,
 } from '@/services/registration';
 import { formatBirthInput, formatPhoneInput, genderToApiEnum, normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
+import { extractApiErrorMessage } from '@/utils/errorHandler';
 import { toast } from 'react-toastify';
 import { searchOrganizationsByEventAdmin, type OrganizationSearchItem } from '@/services/registration';
 import { useEventCategoryDropdown } from '@/app/admin/events/register/api/dropdownApi';
@@ -862,8 +863,10 @@ export default function RegistrationDetailDrawer({
                           if (onSave) {
                             await onSave();
                           }
-                        } catch (_error) {
-                          toast.error('수정에 실패했습니다. 다시 시도해주세요.');
+                        } catch (error) {
+                          toast.error(
+                            extractApiErrorMessage(error) || '수정에 실패했습니다. 다시 시도해주세요.'
+                          );
                         } finally {
                           setSaving(false);
                         }

@@ -217,7 +217,7 @@ export default function EventCard({
     const dDay = calculateDDayFromDeadline(eventDeadLine);
     const href = eventUrl
       ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
-      : (eventId ? `/event/${eventId}/guide/overview` : '#');
+      : (eventId ? `/event/${eventId}` : '#');
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
 
     const oliveHomeCard = (
@@ -304,7 +304,7 @@ export default function EventCard({
     const dDay = calculateDDayFromDeadline(eventDeadLine);
     const href = eventUrl
       ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
-      : (eventId ? `/event/${eventId}/guide/overview` : '#');
+      : (eventId ? `/event/${eventId}` : '#');
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
     const isGridCell = className?.includes('w-full');
     const isMainEmbedded = className?.includes('main-embedded');

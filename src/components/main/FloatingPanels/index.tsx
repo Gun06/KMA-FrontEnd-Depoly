@@ -149,7 +149,7 @@ function AdMarquee({ items, loading, outerRef, onHoverChange }: {
       </>
     );
     const common = { className: cardShell, style: { height: itemH, flexShrink: 0 as const }, onMouseEnter: handleEnter, onMouseLeave: handleLeave };
-    const href = item.eventId?.trim() ? `/event/${item.eventId.trim()}/guide/overview` : undefined;
+    const href = item.eventId?.trim() ? `/event/${item.eventId.trim()}` : undefined;
     if (href) return <a key={key} href={href} {...common}>{inner}</a>;
     return <div key={key} {...common}>{inner}</div>;
   };
@@ -298,7 +298,7 @@ function AdPopCard({ info, onEnter, onLeave }: { info: AdHoverInfo; onEnter: () 
     onMouseLeave: onLeave,
     className: 'animate-in fade-in slide-in-from-right-2 duration-150',
   };
-  const href = info.item.eventId?.trim() ? `/event/${info.item.eventId.trim()}/guide/overview` : undefined;
+  const href = info.item.eventId?.trim() ? `/event/${info.item.eventId.trim()}` : undefined;
   if (href) return <a href={href} {...common}>{inner}</a>;
   return <div {...common}>{inner}</div>;
 }

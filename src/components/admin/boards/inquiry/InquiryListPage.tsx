@@ -12,12 +12,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { formatDateShort } from "@/utils/formatDate";
+import {
+  buildInquiryListQueryString,
+  parseInquiryListQuery,
+  type InquirySearchMode,
+} from "@/utils/inquiryListQuery";
 import ConfirmModal from "@/components/common/Modal/ConfirmModal";
 import PasswordModal from "@/components/common/Modal/PasswordModal";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 
-type SearchMode = "all" | "name" | "post";
+type SearchMode = InquirySearchMode;
 export type ViewRow = Inquiry & { __replyOf?: string; __answerId?: string; secret?: boolean };
 
 type Props = {
@@ -67,30 +72,26 @@ export default function InquiryListPage({
   const pathname = usePathname();
   const searchParamsHook = useSearchParams();
   const searchParamsString = searchParamsHook?.toString() || '';
-  const pageFromSearchParams = React.useMemo(() => {
-    const value = searchParamsHook?.get?.("page");
-    const next = Number(value);
-    if (!Number.isNaN(next) && next > 0) return next;
-    return undefined;
-  }, [searchParamsHook]);
+  const parsedFromUrl = React.useMemo(
+    () => parseInquiryListQuery(searchParamsHook ?? new URLSearchParams()),
+    [searchParamsHook]
+  );
+  const pageFromSearchParams = parsedFromUrl.page;
   const normalizedCurrentPage = React.useMemo(() => {
     if (typeof currentPage === 'number' && currentPage > 0) return currentPage;
     return undefined;
   }, [currentPage]);
 
-  const [page, setPage] = React.useState<number>(normalizedCurrentPage ?? pageFromSearchParams ?? 1);
-  const [q, setQ] = React.useState("");
-  const [searchMode, setSearchMode] = React.useState<SearchMode>("all");
-  
-  // URL 파라미터에서 isAnswered 초기값 읽기
-  const initialIsAnswered = React.useMemo(() => {
-    const value = searchParamsHook?.get?.("isAnswered");
-    if (value === "true") return true;
-    if (value === "false") return false;
-    return undefined;
-  }, [searchParamsHook]);
-  
-  const [isAnswered, setIsAnswered] = React.useState<boolean | undefined>(initialIsAnswered);
+  const [page, setPage] = React.useState<number>(
+    normalizedCurrentPage ?? pageFromSearchParams ?? 1
+  );
+  const [q, setQ] = React.useState(parsedFromUrl.keyword ?? "");
+  const [searchMode, setSearchMode] = React.useState<SearchMode>(
+    parsedFromUrl.searchKey ?? "all"
+  );
+  const [isAnswered, setIsAnswered] = React.useState<boolean | undefined>(
+    parsedFromUrl.isAnswered
+  );
   const [_rev, setRev] = React.useState(0);
   
   // 비밀번호 초기화 모달 상태
@@ -114,36 +115,35 @@ export default function InquiryListPage({
   const [deleteSuccessMessage, setDeleteSuccessMessage] = React.useState("");
 
   React.useEffect(() => {
-    if (normalizedCurrentPage && normalizedCurrentPage !== page) {
-      setPage(normalizedCurrentPage);
-      return;
-    }
-    if (!normalizedCurrentPage && pageFromSearchParams && pageFromSearchParams !== page) {
-      setPage(pageFromSearchParams);
-    }
-  }, [normalizedCurrentPage, pageFromSearchParams, page]);
+    const parsed = parseInquiryListQuery(searchParamsHook ?? new URLSearchParams());
+    const nextPage = normalizedCurrentPage ?? parsed.page ?? 1;
+    setPage(nextPage);
+    setQ(parsed.keyword ?? "");
+    setSearchMode(parsed.searchKey ?? "all");
+    setIsAnswered(parsed.isAnswered);
+  }, [searchParamsString, normalizedCurrentPage, searchParamsHook]);
 
-  // URL 파라미터 변경 시 isAnswered 상태 업데이트
-  React.useEffect(() => {
-    if (initialIsAnswered !== isAnswered) {
-      setIsAnswered(initialIsAnswered);
-    }
-  }, [initialIsAnswered]);
-
-  const updatePageInUrl = React.useCallback((nextPage: number) => {
+  const pushListQueryToUrl = React.useCallback((query: {
+    page: number;
+    keyword: string;
+    searchKey: SearchMode;
+    isAnswered: boolean | undefined;
+  }) => {
     if (!router || !pathname) return;
-    const params = new URLSearchParams(searchParamsString);
-    if (nextPage > 1) params.set('page', String(nextPage));
-    else params.delete('page');
-    const queryString = params.toString();
-    const target = queryString ? `${pathname}?${queryString}` : pathname;
+    const qs = buildInquiryListQueryString({
+      page: query.page,
+      keyword: query.keyword,
+      searchKey: query.searchKey,
+      isAnswered: query.isAnswered,
+    });
+    const target = qs ? `${pathname}?${qs}` : pathname;
     router.replace(target, { scroll: false });
-  }, [router, pathname, searchParamsString]);
+  }, [router, pathname]);
 
   const handlePageChange = React.useCallback((nextPage: number) => {
     setPage(nextPage);
-    updatePageInUrl(nextPage);
-  }, [updatePageInUrl]);
+    pushListQueryToUrl({ page: nextPage, keyword: q, searchKey: searchMode, isAnswered });
+  }, [pushListQueryToUrl, q, searchMode, isAnswered]);
 
   // API 연동 (검색 기능 포함)
   const searchParams = React.useMemo(() => ({
@@ -260,31 +260,67 @@ export default function InquiryListPage({
   const preset = PRESETS[presetKey]?.props;
   const norm = (s?: string) => (s ?? "").replace(/\s/g, "");
 
-  // FilterBar 초기값 (URL 파라미터 반영 - 한 번만 계산)
+  // FilterBar 초기값 (URL 파라미터 반영)
   const filterInitialValues = React.useMemo(() => {
-    const answeredValue = initialIsAnswered === true ? "true" : initialIsAnswered === false ? "false" : "";
-    return ["all", answeredValue];
-  }, [initialIsAnswered]);
+    const answeredValue =
+      parsedFromUrl.isAnswered === true
+        ? "true"
+        : parsedFromUrl.isAnswered === false
+          ? "false"
+          : "";
+    return [parsedFromUrl.searchKey ?? "all", answeredValue];
+  }, [parsedFromUrl]);
 
   const filterControls = preset && (
     <div className="flex flex-wrap items-center gap-2">
       <FilterBar
-        key={`filter-${initialIsAnswered}`} // URL 파라미터 변경 시 FilterBar 재마운트
+        key={`filter-${searchParamsString}`}
         {...preset}
         className="!gap-3"
         initialValues={filterInitialValues}
+        initialSearchValue={parsedFromUrl.keyword ?? ""}
         onFieldChange={(label, value) => {
           const L = norm(String(label));
-          if (L === "검색키") setSearchMode(value as SearchMode);
+          let nextSearchMode = searchMode;
+          let nextIsAnswered = isAnswered;
+          if (L === "검색키") nextSearchMode = value as SearchMode;
           if (L === "답변상태") {
-            if (value === "true") setIsAnswered(true);
-            else if (value === "false") setIsAnswered(false);
-            else setIsAnswered(undefined);
+            if (value === "true") nextIsAnswered = true;
+            else if (value === "false") nextIsAnswered = false;
+            else nextIsAnswered = undefined;
           }
+          setSearchMode(nextSearchMode);
+          setIsAnswered(nextIsAnswered);
           setPage(1);
+          pushListQueryToUrl({
+            page: 1,
+            keyword: q,
+            searchKey: nextSearchMode,
+            isAnswered: nextIsAnswered,
+          });
         }}
-        onSearch={(value) => { setQ(value); setPage(1); }}
-        onReset={() => { setQ(""); setSearchMode("all"); setIsAnswered(undefined); setPage(1); }}
+        onSearch={(value) => {
+          setQ(value);
+          setPage(1);
+          pushListQueryToUrl({
+            page: 1,
+            keyword: value,
+            searchKey: searchMode,
+            isAnswered,
+          });
+        }}
+        onReset={() => {
+          setQ("");
+          setSearchMode("all");
+          setIsAnswered(undefined);
+          setPage(1);
+          pushListQueryToUrl({
+            page: 1,
+            keyword: "",
+            searchKey: "all",
+            isAnswered: undefined,
+          });
+        }}
       />
     </div>
   );
@@ -315,7 +351,10 @@ export default function InquiryListPage({
       // 페이지 조정
       const newTotal = Math.max(0, finalTotal - 1);
       const lastPage = Math.max(1, Math.ceil(newTotal / pageSize));
-      if (page > lastPage) setPage(lastPage);
+      if (page > lastPage) {
+        setPage(lastPage);
+        pushListQueryToUrl({ page: lastPage, keyword: q, searchKey: searchMode, isAnswered });
+      }
       setRev((v) => v + 1);
       
       // 성공 처리
@@ -438,12 +477,15 @@ export default function InquiryListPage({
     const base = linkForRow(row);
     if (!base) return base;
     const [beforeHash, hash] = base.split('#');
-    const [path, queryString] = beforeHash.split('?');
-    const params = new URLSearchParams(queryString || '');
-    params.set('page', String(page));
-    const newBeforeHash = `${path}?${params.toString()}`;
+    const [path, existingQuery] = beforeHash.split('?');
+    const params = new URLSearchParams(existingQuery || '');
+    const qs = buildInquiryListQueryString(
+      { page, keyword: q, searchKey: searchMode, isAnswered },
+      params
+    );
+    const newBeforeHash = qs ? `${path}?${qs}` : path;
     return hash ? `${newBeforeHash}#${hash}` : newBeforeHash;
-  }, [linkForRow, page]);
+  }, [linkForRow, page, q, searchMode, isAnswered]);
 
   return (
     <div className="mx-auto max-w-[1300px] px-4 py-6 space-y-4">

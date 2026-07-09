@@ -10,7 +10,7 @@ const SPEED = 0.5;
 const FADE_H = 24;
 
 function advertiseHref(item: MainPageAdvertiseItem): string {
-  if (item.eventId?.trim()) return `/event/${item.eventId.trim()}/guide/overview`;
+  if (item.eventId?.trim()) return `/event/${item.eventId.trim()}`;
   return '#';
 }
 

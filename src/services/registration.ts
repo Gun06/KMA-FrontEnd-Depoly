@@ -339,13 +339,8 @@ export async function updatePaymentStatus(updates: Array<{
   paymentStatus: 'UNPAID' | 'MUST_CHECK' | 'NEED_REFUND' | 'NEED_PARTITIAL_REFUND' | 'COMPLETED' | 'REFUNDED';
   memo?: string;
 }>): Promise<string> {
-  
-  try {
-    const response = await request('admin', '/api/v1/registration', 'PATCH', updates, true);
-    return response as string;
-  } catch (error) {
-    throw new Error('입금여부 수정에 실패했습니다.');
-  }
+  const response = await request('admin', '/api/v1/registration', 'PATCH', updates, true);
+  return response as string;
 }
 
 // 신청자 상세 조회
@@ -531,13 +526,12 @@ export async function updateRegistrationDetail(
 ): Promise<string> {
   // 백엔드 스펙: 개별 수정 API(PATCH /api/v1/registration/{registrationId})
   const url = `/api/v1/registration/${registrationId}`;
-  try {
-    if (!registrationId || registrationId.trim() === '') {
-      throw new Error('Registration ID is required');
-    }
-    // 값 정규화: 공통 유틸 함수 사용 (신청하기, 관리자 수정, 신청확인 모두 동일)
+  if (!registrationId || registrationId.trim() === '') {
+    throw new Error('Registration ID is required');
+  }
 
-    const requestBody = {
+  // 값 정규화: 공통 유틸 함수 사용 (신청하기, 관리자 수정, 신청확인 모두 동일)
+  const requestBody = {
       ...(payload.eventCategoryId && { eventCategoryId: payload.eventCategoryId }),
       ...(payload.organizationId !== undefined && { organizationId: payload.organizationId }), // null도 포함하여 전송 가능
       ...(payload.userName && { userName: payload.userName }),
@@ -560,11 +554,8 @@ export async function updateRegistrationDetail(
       ...(payload.cashReceiptRequest && { cashReceiptRequest: payload.cashReceiptRequest }),
     };
 
-    const res = await request('admin', url, 'PATCH', requestBody, true);
-    return res as string;
-  } catch (e) {
-    throw new Error('신청 정보 수정에 실패했습니다.');
-  }
+  const res = await request('admin', url, 'PATCH', requestBody, true);
+  return res as string;
 }
 
 // 신청 비밀번호 초기화

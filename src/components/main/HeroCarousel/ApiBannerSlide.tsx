@@ -75,7 +75,7 @@ export default function ApiBannerSlide({
   currentIndex,
 }: ApiBannerSlideProps) {
   const hasEventId = eventId && eventId.trim() !== '';
-  const overviewHref = hasEventId ? `/event/${eventId.trim()}/guide/overview` : '';
+  const overviewHref = hasEventId ? `/event/${eventId.trim()}` : '';
   const SlideWrapper = hasEventId ? 'a' : 'div';
   const wrapperProps = hasEventId ? { href: overviewHref } : {};
 

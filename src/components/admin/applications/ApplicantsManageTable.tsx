@@ -14,6 +14,7 @@ import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplic
 import { useUpdatePaymentStatus } from '@/hooks/useRegistration';
 import { convertKoreanToPaymentStatus, ApplicantManageRow } from '@/types/registration';
 import { updateRegistrationDetail } from '@/services/registration';
+import { extractApiErrorMessage } from '@/utils/errorHandler';
 import { toast } from 'react-toastify';
 
 type SortKey = 'id' | 'name' | 'org' | 'birth';
@@ -281,8 +282,8 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
       onBulkUpdateRows?.(nexts);
       cancelEdit();
       // 토스트 메시지는 onBulkUpdateRows에서 처리됨
-    } catch (_error) {
-      toast.error('수정에 실패했습니다.');
+    } catch (error) {
+      toast.error(extractApiErrorMessage(error) || '수정에 실패했습니다.');
       return;
     }
   };

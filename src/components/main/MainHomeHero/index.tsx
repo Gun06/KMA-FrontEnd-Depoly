@@ -45,7 +45,7 @@ function eventHref(e: BlockEventItem): string | undefined {
     if (u.startsWith('/')) return u;
     return u;
   }
-  if (e.eventId?.trim()) return `/event/${e.eventId.trim()}/guide/overview`;
+  if (e.eventId?.trim()) return `/event/${e.eventId.trim()}`;
   return undefined;
 }
 
@@ -67,7 +67,7 @@ function parseAdvertiseResponse(json: unknown): MainPageAdvertiseItem[] {
 
 function advertiseHref(item: MainPageAdvertiseItem): string | undefined {
   return item.eventId?.trim() !== ''
-    ? `/event/${item.eventId.trim()}/guide/overview`
+    ? `/event/${item.eventId.trim()}`
     : undefined;
 }
 
