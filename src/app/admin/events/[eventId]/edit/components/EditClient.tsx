@@ -143,6 +143,7 @@ export default function EditClient({
         .filter(idx => idx >= 0);
       
       return {
+        id: category.id,
         name: category.name || '',
         price: String(category.amount || 0),
         selectedGifts,
@@ -375,7 +376,7 @@ export default function EditClient({
 
   // STEP 3: 종목만 저장
   const handleSaveCategories = async (
-    courses: Array<{ name: string; price: string; selectedGifts: number[] }>,
+    courses: Array<{ id?: string; name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
     gifts: Array<{ id?: string; name: string; size: string }>
   ) => {
     if (!apiData) return;

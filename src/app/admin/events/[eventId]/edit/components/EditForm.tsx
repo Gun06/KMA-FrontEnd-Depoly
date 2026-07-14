@@ -37,7 +37,10 @@ type Props = {
   // STEP 2: 기념품만 저장 (gifts 배열 직접 전달)
   onSaveSouvenirs?: (gifts: Array<{ id?: string; name: string; size: string; isActive?: boolean }>) => Promise<void>;
   // STEP 3: 종목만 저장 (courses와 gifts 배열 직접 전달)
-  onSaveCourses?: (courses: Array<{ name: string; price: string; selectedGifts: number[] }>, gifts: Array<{ id?: string; name: string; size: string }>) => Promise<void>;
+  onSaveCourses?: (
+    courses: Array<{ id?: string; name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
+    gifts: Array<{ id?: string; name: string; size: string }>
+  ) => Promise<void>;
   onBack?: () => void;
   onCancel?: () => void;
   onDelete?: () => Promise<void>;
@@ -53,7 +56,7 @@ type Props = {
     static: boolean;
   }>;
   initialGifts?: Array<{ id?: string; name: string; size: string; isActive?: boolean }>;
-  initialCourses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
+  initialCourses?: Array<{ id?: string; name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
   phoneAuthGlobalPolicy?: PhoneAuthPolicy;
 };
 
@@ -128,7 +131,17 @@ export default function EditForm({
 
   useEffect(() => {
     if (initialCourses.length > 0) {
-      setCourses(initialCourses);
+      setCourses(prev => {
+        // 개수가 다르면 서버 기준으로 교체
+        if (prev.length === 0 || prev.length !== initialCourses.length) {
+          return initialCourses;
+        }
+        // 편집 중 이름/가격 입력은 유지하고, 누락된 id만 서버 값으로 채움
+        return prev.map((course, index) => ({
+          ...course,
+          id: course.id ?? initialCourses[index]?.id,
+        }));
+      });
     }
   }, [initialCourses, setCourses]);
 

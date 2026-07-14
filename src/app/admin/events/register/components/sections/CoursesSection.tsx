@@ -11,6 +11,7 @@ import MiniToggle from '@/components/common/Toggle/MiniToggle';
 import type { GiftItem } from './GiftsSection';
 
 export type CourseItem = {
+  id?: string; // 서버 종목 ID (수정 시 유지, 없으면 생성)
   name: string;
   price: string;
   selectedGifts: number[]; // 기념품 인덱스 배열

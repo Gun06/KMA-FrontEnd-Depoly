@@ -52,7 +52,13 @@ export function transformCategoriesToApi(
     name: string;
     sizes: string;
   }>,
-  courses?: Array<{ name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
+  courses?: Array<{
+    id?: string;
+    name: string;
+    price: string;
+    selectedGifts: number[];
+    isActive?: boolean;
+  }>,
   gifts?: GiftInput[]
 ): EventCategoryUpdateRequest[] {
   if (courses && courses.length > 0 && gifts) {
@@ -75,7 +81,8 @@ export function transformCategoriesToApi(
           ? course.price
           : 0;
 
-        const existingCategoryId = categoryIdMap.get(courseName);
+        // 폼에 보존된 id 우선 (이름 변경 시에도 수정으로 처리)
+        const existingCategoryId = course.id || categoryIdMap.get(courseName);
 
         const souvenirIds: string[] = course.selectedGifts
           .filter(giftIndex => giftIndex >= 0 && giftIndex < gifts.length)
