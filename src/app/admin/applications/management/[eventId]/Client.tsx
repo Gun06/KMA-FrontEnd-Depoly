@@ -17,7 +17,7 @@ import { downloadGroupForm, uploadGroupForm } from '@/components/admin/applicati
 import { downloadPersonalForm } from '@/components/admin/applications/api/personalUpload';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast, type Id } from 'react-toastify';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, Search } from 'lucide-react';
 import clsx from 'clsx';
 import type {
   SortKey,
@@ -56,6 +56,7 @@ export default function Client({
 
   const [page, setPage] = React.useState<number>(() => readInit().page);
   const [isEventDropdownOpen, setIsEventDropdownOpen] = React.useState(false);
+  const [eventSearchQuery, setEventSearchQuery] = React.useState('');
   
   // 선택된 대회 IDs (다중 선택 지원)
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([eventId]);
@@ -82,6 +83,7 @@ export default function Client({
     const handleClickOutside = (event: MouseEvent) => {
       if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
         setIsEventDropdownOpen(false);
+        setEventSearchQuery('');
       }
     };
     if (isEventDropdownOpen) {
@@ -122,10 +124,20 @@ export default function Client({
 
   // 대회 정보 조회 (제목용 및 드롭다운용)
   const { data: eventListData } = useEventList(1, 100);
-  const eventList = React.useMemo(() => 
+  const eventList = React.useMemo(() =>
     (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string; startDate?: string; eventStatus?: string }> })?.content || [],
     [eventListData]
   );
+  const filteredEventList = React.useMemo(() => {
+    const q = eventSearchQuery.trim().toLowerCase();
+    if (!q) return eventList;
+    return eventList.filter((event) => {
+      const nameKr = (event.nameKr || '').toLowerCase();
+      const nameEn = (event.nameEn || '').toLowerCase();
+      const id = (event.id || '').toLowerCase();
+      return nameKr.includes(q) || nameEn.includes(q) || id.includes(q);
+    });
+  }, [eventList, eventSearchQuery]);
   const currentEvent = React.useMemo(() => eventList.find((e) => e.id === eventId), [eventList, eventId]);
   const selectedEvents = React.useMemo(() => eventList.filter(e => selectedEventIds.includes(e.id)), [eventList, selectedEventIds]);
   
@@ -559,7 +571,12 @@ export default function Client({
             {/* 드롭다운 버튼 */}
             <button
               type="button"
-              onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
+              onClick={() => {
+                setIsEventDropdownOpen((open) => {
+                  if (open) setEventSearchQuery('');
+                  return !open;
+                });
+              }}
               className={clsx(
                 'flex items-center justify-between w-auto min-w-[400px] max-w-[800px] px-4 py-2.5 text-sm font-medium',
                 'bg-white border border-gray-300 rounded-md shadow-sm',
@@ -614,8 +631,23 @@ export default function Client({
           
           {/* 드롭다운 메뉴 */}
           {isEventDropdownOpen && (
-            <div className="absolute z-50 w-auto min-w-[400px] max-w-[800px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto">
-              <div role="listbox" className="py-2">
+            <div className="absolute z-50 w-auto min-w-[400px] max-w-[800px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-hidden flex flex-col">
+              <div className="px-3 py-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={eventSearchQuery}
+                    onChange={(e) => setEventSearchQuery(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    placeholder="대회명 검색"
+                    className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    aria-label="대회명 검색"
+                  />
+                </div>
+              </div>
+              <div role="listbox" className="py-2 overflow-auto">
                 {/* 전체 선택/해제 */}
                 <div className="px-4 py-2 border-b border-gray-200">
                   <div className="flex items-center justify-between">
@@ -642,8 +674,10 @@ export default function Client({
                 {/* 대회 목록 */}
                 {eventList.length === 0 ? (
                   <div className="px-4 py-2 text-sm text-gray-500">등록된 대회가 없습니다.</div>
+                ) : filteredEventList.length === 0 ? (
+                  <div className="px-4 py-2 text-sm text-gray-500">검색 결과가 없습니다.</div>
                 ) : (
-                  eventList.map((event) => {
+                  filteredEventList.map((event) => {
                     const isSelected = selectedEventIds.includes(event.id);
                     return (
                       <label

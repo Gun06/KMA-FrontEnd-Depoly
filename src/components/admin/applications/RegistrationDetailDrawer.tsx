@@ -28,6 +28,7 @@ import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect'
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import { REFUND_BANK_LIST } from '@/components/event/Registration/RefundModal';
 import AdminCashReceiptRequestModal from '@/components/admin/applications/AdminCashReceiptRequestModal';
+import { AlertTriangle } from 'lucide-react';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -88,6 +89,12 @@ const extractZipCode = (address: string | undefined): { zipCode: string; cleanAd
   
   return { zipCode, cleanAddress };
 };
+
+const parseSouvenirSizes = (sizesString: string): string[] =>
+  (sizesString || '')
+    .split(/[|,]/)
+    .map((s) => s.trim().replace(/^✓\s*/, '').trim())
+    .filter((s) => s.length > 0);
 
 const CASH_RECEIPT_PURPOSE_LABEL: Record<CashReceiptPurpose, string> = {
   INCOME_DEDUCTION: '소득공제',
@@ -357,14 +364,31 @@ export default function RegistrationDetailDrawer({
     }
   }, [item, onClose, onSave]);
 
+  // 드롭다운 API 데이터 사용 (수정 모드에서만 필요하지만, 읽기 모드에서도 코스 정보 표시용으로 사용)
+  const categoriesForDisplay = React.useMemo(() => {
+    return dropdownCategories || [];
+  }, [dropdownCategories]);
+
   // 기념품과 사이즈를 매핑하여 표시 (Hooks는 항상 같은 순서로 호출되어야 함)
   const souvenirDisplay = React.useMemo(() => {
     if (!item) return { names: '-', sizes: '-' };
+
+    const courseSouvenirs =
+      categoriesForDisplay.find((c) => c.id === form.eventCategoryId)?.souvenirs ?? [];
+    const soldOutIds = new Set(
+      courseSouvenirs.filter((s) => s.isActive === false).map((s) => s.id)
+    );
+
+    const withSoldOutLabel = (id: string | undefined, name: string | undefined) => {
+      if (!name) return '';
+      if (id && soldOutIds.has(id)) return `${name} (품절)`;
+      return name;
+    };
     
     // 상세 API 응답 (새 구조)
     if (item.souvenirListDetail && Array.isArray(item.souvenirListDetail) && item.souvenirListDetail.length > 0) {
       const names = item.souvenirListDetail
-        .map(s => s?.name)
+        .map((s) => withSoldOutLabel(s?.id, s?.name))
         .filter(Boolean)
         .join(', ');
       const sizes = item.souvenirListDetail
@@ -382,7 +406,10 @@ export default function RegistrationDetailDrawer({
     if (list.length === 0) return { names: '-', sizes: '-' };
     
     const names = list
-      .map(s => s?.souvenirId)
+      .map((s) => {
+        const courseItem = courseSouvenirs.find((c) => c.id === s?.souvenirId);
+        return withSoldOutLabel(s?.souvenirId, courseItem?.name || s?.souvenirId);
+      })
       .filter(Boolean)
       .join(', ');
     const sizes = list
@@ -394,12 +421,7 @@ export default function RegistrationDetailDrawer({
       names: names || '-',
       sizes: sizes || '-',
     };
-  }, [item]);
-
-  // 드롭다운 API 데이터 사용 (수정 모드에서만 필요하지만, 읽기 모드에서도 코스 정보 표시용으로 사용)
-  const categoriesForDisplay = React.useMemo(() => {
-    return dropdownCategories || [];
-  }, [dropdownCategories]);
+  }, [item, categoriesForDisplay, form.eventCategoryId]);
 
   // 선택된 카테고리 정보
   const selectedCategory = React.useMemo(() => {
@@ -415,6 +437,13 @@ export default function RegistrationDetailDrawer({
     }
     return undefined;
   }, [categoriesForDisplay, form.eventCategoryId, item?.eventCategory, item?.categoryName]);
+
+  // 수정 UI용 현재 코스 기념품 (+ 세트 내 품절 여부)
+  const courseSouvenirsForEdit = React.useMemo(() => {
+    const souvenirs = selectedCategory?.souvenirs ?? [];
+    const hasSoldOutInSet = souvenirs.some((s) => s.isActive === false);
+    return { souvenirs, hasSoldOutInSet };
+  }, [selectedCategory]);
 
   // 현재 코스명 계산
   const courseName = React.useMemo(() => {
@@ -1128,77 +1157,127 @@ export default function RegistrationDetailDrawer({
               ))}
               {!canEditFields ? line('기념품', souvenirDisplay.names) : editLine('기념품', (
                 <div className="space-y-2">
-                  {form.eventCategoryId && categoriesForDisplay?.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
-                    // 수정 모드에서는 모든 기념품을 필수 선택으로 표시 (체크박스 비활성화)
-                    return (
-                      <div key={souvenir.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          disabled={true}
-                          className="rounded border-gray-300 cursor-not-allowed"
-                        />
-                        <label className="text-sm text-gray-700">{souvenir.name}</label>
-                      </div>
-                    );
-                  }) || <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>}
+                  {form.eventCategoryId && courseSouvenirsForEdit.souvenirs.length > 0 ? (
+                    <>
+                      {courseSouvenirsForEdit.hasSoldOutInSet && (
+                        <div
+                          role="alert"
+                          className="flex items-start gap-1.5 rounded-md border border-orange-200 bg-orange-50/80 px-2.5 py-1.5 text-orange-950"
+                        >
+                          <AlertTriangle
+                            className="mt-0.5 h-4 w-4 shrink-0 text-orange-500"
+                            aria-hidden
+                          />
+                          <p className="text-[13px] leading-snug text-orange-800">
+                            품절 기념품이 포함되어 있습니다. 기존 신청 확인용으로, 해당 종목으로의 변경은 피해주세요.
+                          </p>
+                        </div>
+                      )}
+                      {courseSouvenirsForEdit.souvenirs.map((souvenir) => {
+                        const isSoldOut = souvenir.isActive === false;
+                        return (
+                          <div key={souvenir.id} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={true}
+                              disabled={true}
+                              className="rounded border-gray-300 cursor-not-allowed"
+                            />
+                            <label
+                              className={clsx(
+                                'text-sm',
+                                isSoldOut ? 'text-gray-400' : 'text-gray-700'
+                              )}
+                            >
+                              {souvenir.name}
+                              {isSoldOut ? ' (품절)' : ''}
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>
+                  )}
                 </div>
               ))}
               {!canEditFields ? line('사이즈', souvenirDisplay.sizes) : editLine('사이즈', (
                 <div className="space-y-2">
-                  {form.eventCategoryId && categoriesForDisplay?.find(c => c.id === form.eventCategoryId)?.souvenirs?.length ? (
-                    categoriesForDisplay.find(c => c.id === form.eventCategoryId)?.souvenirs?.map((souvenir) => {
-                      // 현재 선택된 기념품에서 사이즈 찾기
-                      const selectedSouvenir = form.souvenirJsonList.find(s => s.souvenirId === souvenir.id);
-                      
-                      // 사이즈 파싱: 파이프(|) 또는 쉼표(,)로 구분된 문자열 처리
-                      const sizesString = souvenir.sizes || '';
-                      const availableSizes = sizesString
-                        .split(/[|,]/) // 파이프 또는 쉼표로 분리
-                        .map(s => s.trim().replace(/^✓\s*/, '').trim()) // ✓ 제거
-                        .filter(s => s.length > 0); // 빈 문자열 제거
-                      
-                      if (availableSizes.length === 0) return null;
-                      
-                      return (
-                        <div key={souvenir.id} className="flex items-center gap-2">
-                          <span className="text-sm text-gray-700 min-w-[100px]">
-                            {souvenir.name}:
-                          </span>
-                          <div className="flex-1">
-                            <SearchableSelect
-                              value={selectedSouvenir?.selectedSize || availableSizes[0]}
-                              options={availableSizes.map(size => ({
-                                value: size,
-                                label: size,
-                              }))}
-                              onChange={(size) => {
-                                setForm(v => {
-                                  const existingIndex = v.souvenirJsonList.findIndex(s => s.souvenirId === souvenir.id);
-                                  if (existingIndex >= 0) {
-                                    // 기존 항목 업데이트
-                                    return {
-                                      ...v,
-                                      souvenirJsonList: v.souvenirJsonList.map((s, i) => 
-                                        i === existingIndex ? { ...s, selectedSize: size } : s
-                                      )
-                                    };
-                                  } else {
-                                    // 새 항목 추가
-                                    return {
-                                      ...v,
-                                      souvenirJsonList: [...v.souvenirJsonList, { souvenirId: souvenir.id, selectedSize: size }]
-                                    };
-                                  }
-                                });
-                              }}
-                              placeholder="사이즈 선택"
-                              showPlaceholderColor={false}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
+                  {form.eventCategoryId && courseSouvenirsForEdit.souvenirs.length > 0 ? (
+                    (() => {
+                      const sizeRows = courseSouvenirsForEdit.souvenirs
+                        .map((souvenir) => {
+                          const isSoldOut = souvenir.isActive === false;
+                          const selectedSouvenir = form.souvenirJsonList.find(
+                            (s) => s.souvenirId === souvenir.id
+                          );
+                          const availableSizes = parseSouvenirSizes(souvenir.sizes || '');
+
+                          // 사이즈 옵션 없으면 행 생략 (기존과 동일). 전부 없으면 아래에서 '-' 표시
+                          if (availableSizes.length === 0) return null;
+
+                          const sizeValue =
+                            selectedSouvenir?.selectedSize || availableSizes[0];
+
+                          if (isSoldOut) {
+                            return (
+                              <div key={souvenir.id} className="flex items-center gap-2">
+                                <span className="text-sm text-gray-400 min-w-[100px]">
+                                  {souvenir.name}:
+                                </span>
+                                <span className="text-sm text-gray-400">{sizeValue}</span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={souvenir.id} className="flex items-center gap-2">
+                              <span className="text-sm text-gray-700 min-w-[100px]">
+                                {souvenir.name}:
+                              </span>
+                              <div className="flex-1">
+                                <SearchableSelect
+                                  value={sizeValue}
+                                  options={availableSizes.map((size) => ({
+                                    value: size,
+                                    label: size,
+                                  }))}
+                                  onChange={(size) => {
+                                    setForm((v) => {
+                                      const existingIndex = v.souvenirJsonList.findIndex(
+                                        (s) => s.souvenirId === souvenir.id
+                                      );
+                                      if (existingIndex >= 0) {
+                                        return {
+                                          ...v,
+                                          souvenirJsonList: v.souvenirJsonList.map((s, i) =>
+                                            i === existingIndex ? { ...s, selectedSize: size } : s
+                                          ),
+                                        };
+                                      }
+                                      return {
+                                        ...v,
+                                        souvenirJsonList: [
+                                          ...v.souvenirJsonList,
+                                          { souvenirId: souvenir.id, selectedSize: size },
+                                        ],
+                                      };
+                                    });
+                                  }}
+                                  placeholder="사이즈 선택"
+                                  showPlaceholderColor={false}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                        .filter(Boolean);
+
+                      if (sizeRows.length === 0) {
+                        return <div className="text-sm text-gray-400">-</div>;
+                      }
+                      return sizeRows;
+                    })()
                   ) : (
                     <div className="text-sm text-gray-500">코스를 먼저 선택해주세요.</div>
                   )}
