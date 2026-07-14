@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronRight } from 'lucide-react'
 import SignupLayout from '@/components/common/SignupLayout'
+import InfoModal from '@/app/admin/events/register/components/parts/InfoModal'
 import PostalCodeSearch from './PostalCodeSearch'
 import { useSignupStore, useSignupActions } from '@/stores'
 import { useSignup } from '@/services/auth'
+import { extractApiErrorMessage } from '@/utils/errorHandler'
 
 export default function SignupStep4Page() {
   const router = useRouter()
@@ -23,6 +25,8 @@ export default function SignupStep4Page() {
   })
 
   const [showPostalCodeSearch, setShowPostalCodeSearch] = useState(false)
+  const [showSignupErrorModal, setShowSignupErrorModal] = useState(false)
+  const [signupErrorMessage, setSignupErrorMessage] = useState('')
 
   // store의 데이터로 초기화
   useEffect(() => {
@@ -144,8 +148,9 @@ export default function SignupStep4Page() {
       resetStore()
       router.push('/signup/success')
       
-    } catch (_err) {
-      setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } catch (err) {
+      setSignupErrorMessage(extractApiErrorMessage(err))
+      setShowSignupErrorModal(true)
     } finally {
       setLoading(false)
     }
@@ -258,6 +263,16 @@ export default function SignupStep4Page() {
           </div>
         </div>
       )}
+
+      <InfoModal
+        isOpen={showSignupErrorModal}
+        onClose={() => setShowSignupErrorModal(false)}
+        type="error"
+        title="회원가입을 진행할 수 없습니다"
+        message={signupErrorMessage}
+        confirmSize="sm"
+        confirmWidthType="compact"
+      />
     </SignupLayout>
   )
 }

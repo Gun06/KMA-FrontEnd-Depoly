@@ -11,6 +11,8 @@ interface InfoModalProps {
   type?: InfoModalType;
   title?: string;
   message: string;
+  confirmSize?: 'lg' | 'md' | 'sm' | 'xs';
+  confirmWidthType?: 'default' | 'phoneAuth' | 'zipcode' | 'idCheck' | 'pager' | 'compact';
 }
 
 export default function InfoModal({
@@ -19,6 +21,8 @@ export default function InfoModal({
   type = 'success',
   title,
   message,
+  confirmSize = 'md',
+  confirmWidthType = 'pager',
 }: InfoModalProps) {
   if (!isOpen) return null;
 
@@ -88,8 +92,8 @@ export default function InfoModal({
         <div className="flex-shrink-0 px-6 pb-6 pt-2 flex justify-center">
           <Button
             tone="primary"
-            widthType="pager"
-            size="md"
+            widthType={confirmWidthType}
+            size={confirmSize}
             onClick={onClose}
           >
             확인
