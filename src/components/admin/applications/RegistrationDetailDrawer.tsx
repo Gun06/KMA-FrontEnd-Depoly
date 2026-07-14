@@ -3,17 +3,14 @@
 
 import React from 'react';
 import clsx from 'clsx';
-import type { RegistrationItem, CashReceiptRequestStatus, RegistrationCashReceiptRequest } from '@/types/registration';
+import type { RegistrationItem, CashReceiptRequestStatus } from '@/types/registration';
 import type {
   CashReceiptPurpose,
   CashReceiptRequesterType,
   CashReceiptIdentifierType,
 } from '@/app/admin/applications/cash-receipt/types/cashReceiptAdmin';
-import { getCashReceiptForRegistration } from '@/app/admin/applications/cash-receipt/services/cashReceiptAdmin';
 import {
   updateRegistrationDetail,
-  toRegistrationCashReceiptRequestBody,
-  updateRegistrationCashReceipt,
   resolveRegistrationId,
   resetRegistrationPassword,
   resetOrganizationPassword,
@@ -157,10 +154,6 @@ export default function RegistrationDetailDrawer({
   } = useEventCategoryDropdown(effectiveEventId);
   const [memo, setMemo] = React.useState('');
   const [detailMemo, setDetailMemo] = React.useState('');
-  const [cashReceiptStatus, setCashReceiptStatus] = React.useState<CashReceiptRequestStatus>('REQUESTED');
-  const [cashReceiptAdminAnswer, setCashReceiptAdminAnswer] = React.useState('');
-  const [linkedCashReceipt, setLinkedCashReceipt] = React.useState<RegistrationCashReceiptRequest | null>(null);
-  const [linkedCashReceiptId, setLinkedCashReceiptId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   // 메모와 상세메모의 초기값을 추적 (저장 버튼 활성화 여부 판단용)
   const initialMemoRef = React.useRef<string>('');
@@ -171,7 +164,7 @@ export default function RegistrationDetailDrawer({
   const [pwdSaving, setPwdSaving] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
-  const [cashReceiptModalMode, setCashReceiptModalMode] = React.useState<'create' | 'edit' | null>(null);
+  const [showCashReceiptCreateModal, setShowCashReceiptCreateModal] = React.useState(false);
   const [showAddressModal, setShowAddressModal] = React.useState(false);
   const postcodeContainerRef = React.useRef<HTMLDivElement | null>(null);
   const handleAddressSelect = React.useCallback((postalCode: string, address: string) => {
@@ -512,8 +505,8 @@ export default function RegistrationDetailDrawer({
     }
   }, [item, open, dropdownCategories]);
 
-  const displayCashReceipt = item?.cashReceiptRequest ?? linkedCashReceipt;
-  const effectiveCashReceiptId = item?.cashReceiptId ?? linkedCashReceiptId;
+  const displayCashReceipt = item?.cashReceiptRequest ?? null;
+  const effectiveCashReceiptId = item?.cashReceiptId ?? null;
 
   const cashReceiptManageHref = React.useMemo(() => {
     const params = new URLSearchParams();
@@ -527,50 +520,6 @@ export default function RegistrationDetailDrawer({
     const qs = params.toString();
     return qs ? `/admin/applications/cash-receipt?${qs}` : '/admin/applications/cash-receipt';
   }, [effectiveCashReceiptId, effectiveEventId, item?.name, item?.userName]);
-
-  React.useEffect(() => {
-    if (!open || !item) {
-      setLinkedCashReceipt(null);
-      setLinkedCashReceiptId(null);
-      return;
-    }
-
-    if (item.cashReceiptRequest) {
-      setLinkedCashReceipt(null);
-      setLinkedCashReceiptId(item.cashReceiptId ?? null);
-      setCashReceiptStatus(item.cashReceiptRequest.status);
-      setCashReceiptAdminAnswer(item.cashReceiptRequest.adminAnswer ?? '');
-      return;
-    }
-
-    let cancelled = false;
-    getCashReceiptForRegistration(item.id, {
-      eventId: effectiveEventId,
-      requesterName: item.name || item.userName,
-    })
-      .then((result) => {
-        if (cancelled) return;
-        if (result) {
-          setLinkedCashReceipt(result.request);
-          setLinkedCashReceiptId(result.cashReceiptId);
-          setCashReceiptStatus(result.request.status);
-          setCashReceiptAdminAnswer(result.request.adminAnswer ?? '');
-        } else {
-          setLinkedCashReceipt(null);
-          setLinkedCashReceiptId(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLinkedCashReceipt(null);
-          setLinkedCashReceiptId(null);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, item?.id, item?.cashReceiptRequest, item?.cashReceiptId, item?.name, item?.userName, effectiveEventId]);
 
   // 이벤트 데이터 로드 후 코스 ID 자동 매핑 (없을 때만)
   React.useEffect(() => {
@@ -632,7 +581,7 @@ export default function RegistrationDetailDrawer({
 
   React.useEffect(() => {
     if (isEditing) {
-      setCashReceiptModalMode(null);
+      setShowCashReceiptCreateModal(false);
     }
   }, [isEditing]);
 
@@ -694,16 +643,8 @@ export default function RegistrationDetailDrawer({
     return ph?.trim() || '-';
   };
 
-  const handleCashReceiptModalSuccess = async (request: RegistrationCashReceiptRequest) => {
-    setLinkedCashReceipt(request);
-    setLinkedCashReceiptId(item?.cashReceiptId ?? linkedCashReceiptId);
-    setCashReceiptStatus(request.status);
-    setCashReceiptAdminAnswer(request.adminAnswer ?? '');
-    toast.success(
-      cashReceiptModalMode === 'edit'
-        ? '현금영수증 정보가 수정되었습니다.'
-        : '현금영수증 신청이 완료되었습니다.'
-    );
+  const handleCashReceiptModalSuccess = async () => {
+    toast.success('현금영수증 신청이 완료되었습니다.');
     if (onSave) {
       await onSave();
     }
@@ -715,13 +656,12 @@ export default function RegistrationDetailDrawer({
         현금영수증 신청완료
       </span>
       {!isEditing && (
-        <button
-          type="button"
+        <a
+          href={cashReceiptManageHref}
           className="px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
-          onClick={() => setCashReceiptModalMode('edit')}
         >
-          수정
-        </button>
+          현금영수증 관리
+        </a>
       )}
     </div>
   ) : (
@@ -729,7 +669,7 @@ export default function RegistrationDetailDrawer({
       <button
         type="button"
         className="shrink-0 px-2.5 py-1 rounded border border-sky-600 text-sky-700 text-xs font-medium hover:bg-sky-50 transition-colors whitespace-nowrap"
-        onClick={() => setCashReceiptModalMode('create')}
+        onClick={() => setShowCashReceiptCreateModal(true)}
       >
         현금영수증 신청
       </button>
@@ -875,15 +815,6 @@ export default function RegistrationDetailDrawer({
                             }),
                           };
                           await updateRegistrationDetail(registrationId, payload);
-
-                          if (displayCashReceipt) {
-                            const cashReceiptBody = toRegistrationCashReceiptRequestBody({
-                              ...displayCashReceipt,
-                              adminAnswer: cashReceiptAdminAnswer,
-                              status: cashReceiptStatus,
-                            });
-                            await updateRegistrationCashReceipt(registrationId, cashReceiptBody);
-                          }
                           initialMemoRef.current = memo ?? '';
                           initialDetailMemoRef.current = detailMemo ?? '';
                           setIsEditing(false);
@@ -947,11 +878,6 @@ export default function RegistrationDetailDrawer({
                         });
                         setMemo(initialMemoRef.current);
                         setDetailMemo(initialDetailMemoRef.current);
-                        const resetReceipt = item.cashReceiptRequest ?? linkedCashReceipt;
-                        if (resetReceipt) {
-                          setCashReceiptStatus(resetReceipt.status);
-                          setCashReceiptAdminAnswer(resetReceipt.adminAnswer ?? '');
-                        }
                       }}
                     >
                       취소
@@ -1533,52 +1459,29 @@ export default function RegistrationDetailDrawer({
                     <div className="flex min-h-10 items-center py-2.5 text-sm">
                       <div className="w-28 shrink-0 self-center text-sky-800">처리 상태</div>
                       <div className="flex flex-1 min-w-0 items-center">
-                        {isEditing ? (
-                          <SearchableSelect
-                            value={cashReceiptStatus}
-                            options={[
-                              { value: 'REQUESTED', label: '처리 대기' },
-                              { value: 'COMPLETED', label: '발급 완료' },
-                              { value: 'CANCELED', label: '발급 취소' },
-                            ]}
-                            onChange={(v) => setCashReceiptStatus(v as CashReceiptRequestStatus)}
-                            className="w-40"
-                          />
-                        ) : (
-                          <span
-                            className={clsx(
-                              'inline-flex items-center px-2.5 py-1 rounded border text-xs font-medium leading-none',
-                              CASH_RECEIPT_STATUS_CLASS[displayCashReceipt.status]
-                            )}
-                          >
-                            {CASH_RECEIPT_STATUS_LABEL[displayCashReceipt.status] ?? displayCashReceipt.status}
-                          </span>
-                        )}
+                        <span
+                          className={clsx(
+                            'inline-flex items-center px-2.5 py-1 rounded border text-xs font-medium leading-none',
+                            CASH_RECEIPT_STATUS_CLASS[displayCashReceipt.status]
+                          )}
+                        >
+                          {CASH_RECEIPT_STATUS_LABEL[displayCashReceipt.status] ?? displayCashReceipt.status}
+                        </span>
                       </div>
                     </div>
-                    <div
-                      className={clsx(
-                        'flex min-h-10 py-2.5 text-sm',
-                        isEditing ? 'items-start' : 'items-center'
-                      )}
-                    >
-                      <div className={clsx('w-28 shrink-0 text-sky-800', isEditing && 'pt-1.5')}>관리자 답변</div>
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
+                      <div className="w-28 shrink-0 text-sky-800">관리자 답변</div>
                       <div className="flex-1 min-w-0">
-                        {isEditing ? (
-                          <textarea
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                            rows={3}
-                            placeholder="관리자 답변을 입력해주세요."
-                            value={cashReceiptAdminAnswer}
-                            onChange={(e) => setCashReceiptAdminAnswer(e.target.value)}
-                          />
-                        ) : (
-                          <span className={displayCashReceipt.adminAnswer ? 'text-gray-900' : 'text-gray-400'}>
-                            {displayCashReceipt.adminAnswer || '-'}
-                          </span>
-                        )}
+                        <span className={displayCashReceipt.adminAnswer ? 'text-gray-900' : 'text-gray-400'}>
+                          {displayCashReceipt.adminAnswer || '-'}
+                        </span>
                       </div>
                     </div>
+                    {isEditing && (
+                      <p className="pt-2 text-xs text-sky-700">
+                        현금영수증 정보는 신청 저장과 별도로 처리됩니다. 변경이 필요하면 상단의 &apos;현금영수증 관리&apos;에서 수정해주세요.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -1660,12 +1563,11 @@ export default function RegistrationDetailDrawer({
 
       {item && (
         <AdminCashReceiptRequestModal
-          open={cashReceiptModalMode !== null}
-          mode={cashReceiptModalMode ?? 'create'}
+          open={showCashReceiptCreateModal}
+          mode="create"
           registrationId={resolveRegistrationId(item)}
           defaultPhone={item.phNum || form.phNum}
-          initialRequest={cashReceiptModalMode === 'edit' ? displayCashReceipt : null}
-          onClose={() => setCashReceiptModalMode(null)}
+          onClose={() => setShowCashReceiptCreateModal(false)}
           onSuccess={handleCashReceiptModalSuccess}
         />
       )}
