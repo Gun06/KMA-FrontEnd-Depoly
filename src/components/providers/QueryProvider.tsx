@@ -29,7 +29,10 @@ export default function QueryProvider({ children }: QueryProviderProps) {
             refetchOnWindowFocus: false,
           },
           mutations: {
-            retry: 1,
+            // POST 등 부수효과 요청은 기본적으로 재시도하지 않음.
+            // (회원가입처럼 멱등하지 않은 API는 재시도 시 중복 가입·토큰 소진 등이 발생할 수 있음)
+            // 네트워크 오류 재시도가 필요한 mutation은 개별 retry 옵션으로 지정.
+            retry: 0,
           },
         },
         queryCache: new QueryCache({

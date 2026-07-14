@@ -6,49 +6,82 @@ import { ArrowRight, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X } from 'luci
 import SignupLayout from '@/components/common/SignupLayout'
 import { useSignupStore, useSignupActions } from '@/stores'
 
+const computeIdConditions = (id: string) => {
+  if (!id) {
+    return {
+      hasLength: false,
+      startsWithLetter: false,
+      allowedChars: false,
+      endsWithAlnum: false,
+      noConsecutiveSeparators: true,
+    }
+  }
+
+  return {
+    hasLength: id.length >= 5 && id.length <= 20,
+    startsWithLetter: /^[a-zA-Z]/.test(id),
+    allowedChars: /^[a-zA-Z0-9._-]+$/.test(id),
+    endsWithAlnum: /[a-zA-Z0-9]$/.test(id),
+    noConsecutiveSeparators: !/[._-]{2}/.test(id),
+  }
+}
+
+const computePasswordConditions = (password: string) => {
+  if (!password) {
+    return {
+      hasLength: false,
+      hasLowerCase: false,
+      hasNumber: false,
+      hasSpecial: false,
+      noSpace: true,
+    }
+  }
+
+  return {
+    hasLength: password.length >= 10 && password.length <= 64,
+    hasLowerCase: /[a-z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[~!@#$%^&*()+\-={}\[\]\\|:;"'<>,.?/]/.test(password),
+    noSpace: !/\s/.test(password),
+  }
+}
+
+const computeConfirmPasswordMessage = (confirmPassword: string, password: string) => {
+  if (!confirmPassword) return ''
+  return confirmPassword === password
+    ? '✓ 비밀번호가 일치합니다.'
+    : '✗ 비밀번호가 일치하지 않습니다.'
+}
+
 export default function SignupStep2Page() {
   const router = useRouter()
   const { formData, validation, accountDuplicateCheck } = useSignupStore()
   const { updateAccount, validateStep, setCurrentStep, checkAccountDuplicate, resetAccountDuplicateCheck } = useSignupActions()
   
-  const [formDataLocal, setFormDataLocal] = useState({
-    id: '',
-    password: '',
-    confirmPassword: ''
-  })
+  const [formDataLocal, setFormDataLocal] = useState(() => ({
+    id: formData.account.account || '',
+    password: formData.account.password || '',
+    confirmPassword: formData.account.passwordConfirm || '',
+  }))
   
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [confirmPasswordMessage, setConfirmPasswordMessage] = useState('')
+  const [confirmPasswordMessage, setConfirmPasswordMessage] = useState(() =>
+    computeConfirmPasswordMessage(
+      formData.account.passwordConfirm || '',
+      formData.account.password || ''
+    )
+  )
 
   // 아이디 조건 상태 (백엔드 정규식 기준)
-  const [idConditions, setIdConditions] = useState({
-    hasLength: false, // 5~20자
-    startsWithLetter: false, // 첫 글자 영문
-    allowedChars: false, // 영문/숫자/._- 만
-    endsWithAlnum: false, // 끝 글자 영문 또는 숫자
-    noConsecutiveSeparators: true, // ._- 연속 사용 금지
-  })
+  const [idConditions, setIdConditions] = useState(() =>
+    computeIdConditions(formData.account.account || '')
+  )
 
   // 비밀번호 조건 상태
-  const [passwordConditions, setPasswordConditions] = useState({
-    hasLength: false,      // 10~64자
-    hasLowerCase: false,   // 소문자 포함
-    hasNumber: false,      // 숫자 포함
-    hasSpecial: false,     // 특수문자 포함
-    noSpace: true          // 공백 없음
-  })
-
-  // store의 데이터로 초기화
-  useEffect(() => {
-    if (formData.account) {
-      setFormDataLocal({
-        id: formData.account.account || '',
-        password: formData.account.password || '',
-        confirmPassword: formData.account.passwordConfirm || ''
-      })
-    }
-  }, [formData.account])
+  const [passwordConditions, setPasswordConditions] = useState(() =>
+    computePasswordConditions(formData.account.password || '')
+  )
 
   const handleInputChange = (field: string, value: string) => {
     const newFormData = { ...formDataLocal, [field]: value }
@@ -74,68 +107,32 @@ export default function SignupStep2Page() {
   }
 
   const validateId = (id: string) => {
-    if (!id) {
-      setIdConditions({
-        hasLength: false,
-        startsWithLetter: false,
-        allowedChars: false,
-        endsWithAlnum: false,
-        noConsecutiveSeparators: true,
-      })
-      return
-    }
-
-    const hasLength = id.length >= 5 && id.length <= 20
-    const startsWithLetter = /^[a-zA-Z]/.test(id)
-    const allowedChars = /^[a-zA-Z0-9._-]+$/.test(id)
-    const endsWithAlnum = /[a-zA-Z0-9]$/.test(id)
-    const noConsecutiveSeparators = !/[._-]{2}/.test(id)
-
-    setIdConditions({
-      hasLength,
-      startsWithLetter,
-      allowedChars,
-      endsWithAlnum,
-      noConsecutiveSeparators,
-    })
+    setIdConditions(computeIdConditions(id))
   }
 
   const validatePassword = (password: string) => {
-    if (!password) {
-      setPasswordConditions({
-        hasLength: false,
-        hasLowerCase: false,
-        hasNumber: false,
-        hasSpecial: false,
-        noSpace: true
-      })
-      return
-    }
-
-    // 백엔드 로직과 동일한 정규식 패턴 (대문자 제외)
-    const conditions = {
-      hasLength: password.length >= 10 && password.length <= 64,
-      hasLowerCase: /[a-z]/.test(password),
-      hasNumber: /\d/.test(password),
-      hasSpecial: /[~!@#$%^&*()+\-={}\[\]\\|:;"'<>,.?/]/.test(password),
-      noSpace: !/\s/.test(password)
-    }
-
-    setPasswordConditions(conditions)
+    setPasswordConditions(computePasswordConditions(password))
   }
 
-  const validateConfirmPassword = (confirmPassword: string) => {
-    if (!confirmPassword) {
-      setConfirmPasswordMessage('')
-      return
-    }
-
-    if (confirmPassword === formDataLocal.password) {
-      setConfirmPasswordMessage('✓ 비밀번호가 일치합니다.')
-    } else {
-      setConfirmPasswordMessage('✗ 비밀번호가 일치하지 않습니다.')
-    }
+  const validateConfirmPassword = (confirmPassword: string, password?: string) => {
+    setConfirmPasswordMessage(
+      computeConfirmPasswordMessage(confirmPassword, password ?? formDataLocal.password)
+    )
   }
+
+  // store의 데이터로 초기화 (step3 등에서 돌아왔을 때 비밀번호·검증 상태 유지)
+  useEffect(() => {
+    if (!formData.account) return
+
+    const id = formData.account.account || ''
+    const password = formData.account.password || ''
+    const confirmPassword = formData.account.passwordConfirm || ''
+
+    setFormDataLocal({ id, password, confirmPassword })
+    setIdConditions(computeIdConditions(id))
+    setPasswordConditions(computePasswordConditions(password))
+    setConfirmPasswordMessage(computeConfirmPasswordMessage(confirmPassword, password))
+  }, [formData.account])
 
   const handleIdCheck = async () => {
     if (!formDataLocal.id) {

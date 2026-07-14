@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
+import { buildLoginHref } from '@/utils/authRedirect';
 import { NotificationDropdown } from '@/app/(main)/mypage/notifications/components/NotificationDropdown';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
 import { MAIN_CONTENT_SHELL_CLASS, MAIN_DESKTOP_UI_CLASS, MAIN_HEADER_Z_CLASS } from '@/components/main/mainLayoutTokens';
@@ -520,9 +521,9 @@ export default function Header() {
                 href="/login"
                 className={`${DESKTOP_HEADER_PILL_ITEM_CLASS} flex items-center gap-1.5 px-5 text-white/90 hover:bg-white/15 hover:text-white`}
                 onClick={e => {
-                  const returnUrl =
+                  const pathname =
                     typeof window !== 'undefined' ? window.location.pathname : '/';
-                  router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                  router.push(buildLoginHref(pathname));
                   e.preventDefault();
                 }}
               >
@@ -731,8 +732,8 @@ export default function Header() {
                       href="/login"
                       className="flex items-center space-x-1 rounded-full p-2 text-white/90 transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                       onClick={(e) => {
-                        const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
-                        router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+                        const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+                        router.push(buildLoginHref(pathname));
                         updateState({ mobileOpen: false });
                         e.preventDefault();
                       }}

@@ -1,7 +1,7 @@
 'use client';
 
 import { LoginFormData, LoginResponse } from '@/types/auth';
-import { api, useApiMutation } from '@/hooks/useFetch';
+import { api, useApiMutation, HttpError } from '@/hooks/useFetch';
 import { useAuthStore, useAdminAuthStore } from '@/stores';
 import { decodeToken, setRememberLogin } from '@/utils/jwt';
 import { tokenService } from '@/utils/tokenService';
@@ -228,6 +228,13 @@ export const useCheckAccountDuplicate = (
    회원가입 훅 (React Query)
 =========================== */
 
+/** 회원가입 mutation 재시도: 네트워크 오류(status 0)만 1회, HTTP 4xx/5xx는 재시도 안 함 */
+const shouldRetrySignupMutation = (failureCount: number, error: unknown) => {
+  if (failureCount >= 1) return false;
+  if (error instanceof HttpError && error.status > 0) return false;
+  return true;
+};
+
 export const useSignup = () => {
   return useApiMutation<SignupResponse, SignupApiRequest>(
     '/api/v1/public/register',
@@ -235,6 +242,8 @@ export const useSignup = () => {
     'POST',
     false,
     {
+      retry: shouldRetrySignupMutation,
+      meta: { suppressGlobalMutationErrorToast: true },
       onSuccess: data => {
         if (data?.token) {
           saveTokens(data.token, undefined);

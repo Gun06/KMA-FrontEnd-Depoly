@@ -75,6 +75,9 @@ interface SignupState {
   
   // 에러 메시지
   errorMessage: string;
+
+  /** 4단계 API가 전화번호 인증 토큰 무효를 반환한 경우에만 true */
+  phoneVerificationNeedsRetry: boolean;
 }
 
 interface SignupActions {
@@ -112,6 +115,10 @@ interface SignupActions {
   setLoading: (loading: boolean) => void;
   setError: (message: string) => void;
   clearError: () => void;
+
+  /** 전화번호 인증 토큰 무효 시에만 호출 — 재인증 필요 상태로 전환 */
+  invalidatePhoneVerification: () => void;
+  clearPhoneVerificationRetry: () => void;
   
   // 초기화
   resetStore: () => void;
@@ -183,6 +190,7 @@ const initialState: SignupState = {
   },
   isLoading: false,
   errorMessage: '',
+  phoneVerificationNeedsRetry: false,
 };
 
 // 유효성 검사 함수들
@@ -573,6 +581,26 @@ export const useSignupStore = create<SignupState & SignupActions>()(
       clearError: () => {
         set({ errorMessage: '' });
       },
+
+      // 전화번호 인증 토큰이 서버에서 무효 판정된 경우에만 사용 —
+      // 3단계로 돌아가 재인증할 수 있도록 인증 상태와 토큰을 초기화
+      invalidatePhoneVerification: () => {
+        set((state) => ({
+          formData: {
+            ...state.formData,
+            personal: {
+              ...state.formData.personal,
+              isPhoneVerified: false,
+              phNumValidateToken: undefined,
+            },
+          },
+          phoneVerificationNeedsRetry: true,
+        }));
+      },
+
+      clearPhoneVerificationRetry: () => {
+        set({ phoneVerificationNeedsRetry: false });
+      },
       
       // 초기화
       resetStore: () => {
@@ -627,6 +655,7 @@ export const useSignupPhoneVerification = () => useSignupStore((state) => state.
 export const useSignupAccountDuplicateCheck = () => useSignupStore((state) => state.accountDuplicateCheck);
 export const useSignupLoading = () => useSignupStore((state) => state.isLoading);
 export const useSignupError = () => useSignupStore((state) => state.errorMessage);
+export const useSignupPhoneVerificationNeedsRetry = () => useSignupStore((state) => state.phoneVerificationNeedsRetry);
 export const useSignupApiData = () => useSignupStore((state) => state.getApiRequestData());
 
 // 액션만 사용하는 hook
@@ -654,6 +683,8 @@ export const useSignupActions = () => {
     setLoading: store.setLoading,
     setError: store.setError,
     clearError: store.clearError,
+    invalidatePhoneVerification: store.invalidatePhoneVerification,
+    clearPhoneVerificationRetry: store.clearPhoneVerificationRetry,
     resetStore: store.resetStore,
     resetStep: store.resetStep,
   }), [store]);

@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { navigationGuard } from '@/utils/navigationGuard';
 import { authService } from '@/services/auth';
+import { buildLoginHref } from '@/utils/authRedirect';
 
 export default function UtilityIcons() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -111,9 +112,8 @@ export default function UtilityIcons() {
             className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
             onClick={(e) => {
               e.preventDefault();
-              // 클라이언트에서만 returnUrl 설정
-              const returnUrl = typeof window !== 'undefined' ? window.location.pathname : '/';
-              window.location.href = `/login?returnUrl=${encodeURIComponent(returnUrl)}`;
+              const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+              window.location.href = buildLoginHref(pathname);
             }}
           >
             <Image

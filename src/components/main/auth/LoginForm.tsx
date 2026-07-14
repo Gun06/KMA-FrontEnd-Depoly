@@ -8,6 +8,7 @@ import Button from '@/components/common/Button/Button';
 import { authService } from '@/services/auth';
 import logoImage from '@/assets/images/main/logo.jpg';
 import { toast } from 'react-toastify';
+import { resolvePostLoginRedirectUrl } from '@/utils/authRedirect';
 // 로그인 후처리는 authService로 일원화됨
 
 // 역할 파싱/스토어 업데이트 로직 제거 (중복 방지)
@@ -74,8 +75,7 @@ export default function LoginForm() {
       if (response.token || response.accessToken) {
         toast.success('로그인되었습니다.');
         
-        // returnUrl이 있으면 해당 페이지로, 없으면 홈으로 이동
-        const redirectUrl = returnUrl && returnUrl !== '/login' ? returnUrl : '/';
+        const redirectUrl = resolvePostLoginRedirectUrl(returnUrl);
         // 로그인 직후 인증 의존 데이터(알림 등)가 즉시 반영되도록 전체 새로 로드
         window.location.href = redirectUrl;
       }

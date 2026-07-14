@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ChevronRight } from 'lucide-react'
 import SignupLayout from '@/components/common/SignupLayout'
@@ -9,11 +9,15 @@ import PostalCodeSearch from './PostalCodeSearch'
 import { useSignupStore, useSignupActions } from '@/stores'
 import { useSignup } from '@/services/auth'
 import { extractApiErrorMessage } from '@/utils/errorHandler'
+import { isDuplicateUserError as checkDuplicateUserError, isInvalidPhoneVerificationTokenError } from '@/utils/signupErrors'
+import { formatSignupValidationErrors } from '@/utils/signupValidation'
+
+const SIGNUP_PROGRESS_MIN_MS = 2000
 
 export default function SignupStep4Page() {
   const router = useRouter()
   const { formData, validation } = useSignupStore()
-  const { updateAddress, validateStep, validateAllSteps, setCurrentStep, setLoading, setError, resetStore } = useSignupActions()
+  const { updateAddress, validateStep, validateAllSteps, setCurrentStep, setLoading, resetStore, invalidatePhoneVerification } = useSignupActions()
   
   // useSignup 훅 사용
   const signupMutation = useSignup()
@@ -27,6 +31,11 @@ export default function SignupStep4Page() {
   const [showPostalCodeSearch, setShowPostalCodeSearch] = useState(false)
   const [showSignupErrorModal, setShowSignupErrorModal] = useState(false)
   const [signupErrorMessage, setSignupErrorMessage] = useState('')
+  const [needsPhoneReVerification, setNeedsPhoneReVerification] = useState(false)
+  const [showDuplicateUserGuide, setShowDuplicateUserGuide] = useState(false)
+  const [showSignupProgressOverlay, setShowSignupProgressOverlay] = useState(false)
+  // isPending 상태 업데이트 전에 클릭이 겹치는 경우(더블클릭 등)를 막기 위한 동기 가드
+  const isSubmittingRef = useRef(false)
 
   // store의 데이터로 초기화
   useEffect(() => {
@@ -79,7 +88,7 @@ export default function SignupStep4Page() {
 
   // 상세주소는 선택 항목이므로, 우편번호와 기본주소만 있어도 진행 가능
   const canProceed = formDataLocal.postalCode && formDataLocal.address
-  const isSubmitting = signupMutation.isPending
+  const isSubmittingSignup = showSignupProgressOverlay
 
   const handlePrev = () => {
     setCurrentStep(3)
@@ -87,20 +96,29 @@ export default function SignupStep4Page() {
   }
 
   const handleSignup = async () => {
-    if (signupMutation.isPending) {
+    // signupMutation.isPending은 리렌더 이후에야 갱신되므로, 그 사이에 들어오는
+    // 두 번째 클릭(더블클릭 등)을 막기 위해 ref로 동기적으로 먼저 잠근다.
+    if (isSubmittingRef.current || showSignupProgressOverlay || signupMutation.isPending) {
       return
     }
     if (!validateStep(4)) {
       return
     }
 
-    // 모든 단계 유효성 검사
+    // 모든 단계 유효성 검사 — 이전 단계 데이터 누락(새로고침 등) 시 step4에서 바로 안내
     if (!validateAllSteps()) {
-      setError('모든 필수 항목을 입력해주세요.')
+      const { validation: latestValidation } = useSignupStore.getState()
+      setNeedsPhoneReVerification(false)
+      setShowDuplicateUserGuide(false)
+      setSignupErrorMessage(formatSignupValidationErrors(latestValidation))
+      setShowSignupErrorModal(true)
       return
     }
 
+    isSubmittingRef.current = true
     setLoading(true)
+    setShowSignupProgressOverlay(true)
+    const progressStartedAt = Date.now()
     
     try {
       // 회원가입 데이터 준비
@@ -142,17 +160,37 @@ export default function SignupStep4Page() {
 
       // useSignup 훅을 사용하여 회원가입 요청
       await signupMutation.mutateAsync(signupData)
-      
+
+      const remainingMs = SIGNUP_PROGRESS_MIN_MS - (Date.now() - progressStartedAt)
+      if (remainingMs > 0) {
+        await new Promise<void>(resolve => setTimeout(resolve, remainingMs))
+      }
 
       // 성공 시 store 초기화하고 success 페이지로 이동
       resetStore()
       router.push('/signup/success')
       
     } catch (err) {
+      setShowSignupProgressOverlay(false)
+      const isPhoneTokenInvalid = isInvalidPhoneVerificationTokenError(err)
+      if (isPhoneTokenInvalid) {
+        invalidatePhoneVerification()
+      }
+      setNeedsPhoneReVerification(isPhoneTokenInvalid)
+      setShowDuplicateUserGuide(checkDuplicateUserError(err))
       setSignupErrorMessage(extractApiErrorMessage(err))
       setShowSignupErrorModal(true)
     } finally {
+      isSubmittingRef.current = false
       setLoading(false)
+    }
+  }
+
+  const handleSignupErrorModalClose = () => {
+    setShowSignupErrorModal(false)
+    if (needsPhoneReVerification) {
+      setCurrentStep(3)
+      router.push('/signup/step3')
     }
   }
 
@@ -234,18 +272,18 @@ export default function SignupStep4Page() {
         </button>
         <button 
           onClick={handleSignup}
-          disabled={!canProceed || isSubmitting}
+          disabled={!canProceed || isSubmittingSignup}
           className={`flex-1 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-            !canProceed || isSubmitting
+            !canProceed || isSubmittingSignup
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
-          {isSubmitting ? '회원가입 중...' : '회원가입'}
+          {isSubmittingSignup ? '회원가입 중...' : '회원가입'}
         </button>
       </div>
       {/* 회원가입 진행 중 오버레이 */}
-      {isSubmitting && (
+      {isSubmittingSignup && (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl px-8 py-6 sm:px-10 sm:py-8 flex flex-col items-center gap-4">
             <div className="relative w-16 h-16 sm:w-20 sm:h-20">
@@ -266,10 +304,16 @@ export default function SignupStep4Page() {
 
       <InfoModal
         isOpen={showSignupErrorModal}
-        onClose={() => setShowSignupErrorModal(false)}
+        onClose={handleSignupErrorModalClose}
         type="error"
         title="회원가입을 진행할 수 없습니다"
-        message={signupErrorMessage}
+        message={
+          needsPhoneReVerification
+            ? `${signupErrorMessage}\n전화번호 인증을 다시 진행해주세요.`
+            : showDuplicateUserGuide
+              ? `${signupErrorMessage}\n아이디·비밀번호를 잊으셨다면 아이디 찾기 또는 비밀번호 찾기를 이용해 주세요.`
+              : signupErrorMessage
+        }
         confirmSize="sm"
         confirmWidthType="compact"
       />

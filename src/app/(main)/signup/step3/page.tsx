@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, ChevronDown } from 'lucide-react'
 import SignupLayout from '@/components/common/SignupLayout'
 import DatePicker from './DatePicker'
-import { useSignupStore, useSignupActions } from '@/stores'
+import { useSignupStore, useSignupActions, useSignupPhoneVerificationNeedsRetry } from '@/stores'
 import PhoneOtpModal from '@/components/signup/PhoneOtpModal'
 import { authService } from '@/services/auth'
 
@@ -15,8 +15,10 @@ export default function SignupStep3Page() {
   const { 
     updatePersonal, 
     validateStep, 
-    setCurrentStep 
+    setCurrentStep,
+    clearPhoneVerificationRetry
   } = useSignupActions()
+  const phoneVerificationNeedsRetry = useSignupPhoneVerificationNeedsRetry()
   
   const [formDataLocal, setFormDataLocal] = useState({
     name: '',
@@ -262,6 +264,7 @@ export default function SignupStep3Page() {
         isPhoneVerified: true
       })
       setPendingPhNumValidateToken(null)
+      clearPhoneVerificationRetry()
     }
     setShowPhoneOtpModal(false)
     setOtpToken(null)
@@ -422,6 +425,11 @@ export default function SignupStep3Page() {
           <label className="block text-sm font-medium text-gray-700">
             전화번호 <span className="text-red-500">*</span>
           </label>
+          {phoneVerificationNeedsRetry && !isPhoneVerified && (
+            <p className="text-xs sm:text-sm text-red-500">
+              전화번호 인증이 만료되었습니다. 다시 인증해 주세요.
+            </p>
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="flex items-center gap-2">
               <input
