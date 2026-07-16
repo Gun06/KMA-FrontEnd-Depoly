@@ -4,7 +4,11 @@
 import React from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useRegistrationList, useRegistrationSearch, useRegistrationDetail } from '@/hooks/useRegistration';
-import { useEventList } from '@/hooks/useNotices';
+import {
+  useApplicantEventDropdownOptions,
+  useApplicantMissingEventDetails,
+  type ApplicantEventDropdownItem,
+} from '@/app/admin/applications/management/hooks/useApplicantEventDropdown';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
@@ -60,6 +64,9 @@ export default function Client({
   
   // 선택된 대회 IDs (다중 선택 지원)
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([eventId]);
+  const [selectedEventDetails, setSelectedEventDetails] = React.useState<
+    Record<string, ApplicantEventDropdownItem>
+  >({});
 
   const [query, setQuery] = React.useState<string>(() => readInit().q);
   const [paidFilter, setPaidFilter] = React.useState<PaidFilter>(() => readInit().paid);
@@ -122,49 +129,81 @@ export default function Client({
   // 항상 검색 API만 사용
   const { data: registrationData, isLoading, error } = useRegistrationSearch(searchParams, searchField as any);
 
-  // 대회 정보 조회 (제목용 및 드롭다운용)
-  const { data: eventListData } = useEventList(1, 100);
-  const eventList = React.useMemo(() =>
-    (eventListData as { content?: Array<{ id: string; nameKr?: string; nameEn?: string; startDate?: string; eventStatus?: string }> })?.content || [],
-    [eventListData]
+  // 대회 정보 조회 (신청자 관리 드롭다운 전용 — 공용 useEventList와 분리)
+  const {
+    allEvents: eventList,
+    displayEvents: filteredEventList,
+    totalElements: eventTotalElements,
+    isSearchMode: isEventSearchMode,
+    isLoading: isEventListLoading,
+    hasNextPage: hasMoreEvents,
+    isFetchingNextPage: isFetchingMoreEvents,
+    fetchNextPage: fetchMoreEvents,
+  } = useApplicantEventDropdownOptions(eventSearchQuery, isEventDropdownOpen);
+  const selectedInDisplayCount = React.useMemo(
+    () => filteredEventList.filter((event) => selectedEventIds.includes(event.id)).length,
+    [filteredEventList, selectedEventIds]
   );
-  const filteredEventList = React.useMemo(() => {
-    const q = eventSearchQuery.trim().toLowerCase();
-    if (!q) return eventList;
-    return eventList.filter((event) => {
-      const nameKr = (event.nameKr || '').toLowerCase();
-      const nameEn = (event.nameEn || '').toLowerCase();
-      const id = (event.id || '').toLowerCase();
-      return nameKr.includes(q) || nameEn.includes(q) || id.includes(q);
-    });
-  }, [eventList, eventSearchQuery]);
-  const currentEvent = React.useMemo(() => eventList.find((e) => e.id === eventId), [eventList, eventId]);
-  const selectedEvents = React.useMemo(() => eventList.filter(e => selectedEventIds.includes(e.id)), [eventList, selectedEventIds]);
-  
-  // URL selection 쿼리에 따라 초기 선택 대회 설정
-  const selection = sp.get('selection');
-  const hasInitializedSelectionRef = React.useRef(false);
-  
-  React.useEffect(() => {
-    if (hasInitializedSelectionRef.current) return;
-    if (!eventList.length) return;
 
-    if (selection === 'all') {
-      setSelectedEventIds(eventList.map(e => e.id));
-      hasInitializedSelectionRef.current = true;
-    } else if (selection === 'open') {
-      const openIds = eventList
-        .filter(e => e.eventStatus === 'OPEN')
-        .map(e => e.id);
-      if (openIds.length > 0) {
-        setSelectedEventIds(openIds);
-        hasInitializedSelectionRef.current = true;
+  const cacheEventDetails = React.useCallback((events: ApplicantEventDropdownItem[]) => {
+    if (!events.length) return;
+    setSelectedEventDetails((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const event of events) {
+        if (!next[event.id] || next[event.id].nameKr !== event.nameKr) {
+          next[event.id] = event;
+          changed = true;
+        }
       }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  React.useEffect(() => {
+    cacheEventDetails(eventList);
+  }, [eventList, cacheEventDetails]);
+
+  React.useEffect(() => {
+    if (isEventSearchMode) {
+      cacheEventDetails(filteredEventList);
     }
-  }, [selection, eventList]);
+  }, [filteredEventList, isEventSearchMode, cacheEventDetails]);
+
+  const missingEventDetails = useApplicantMissingEventDetails(
+    selectedEventIds,
+    selectedEventDetails
+  );
+
+  React.useEffect(() => {
+    cacheEventDetails(missingEventDetails);
+  }, [missingEventDetails, cacheEventDetails]);
+
+  const getEventLabel = React.useCallback((event: ApplicantEventDropdownItem) => {
+    return event.nameKr || event.nameEn || '대회명 불러오는 중...';
+  }, []);
+
+  const currentEvent = React.useMemo(
+    () =>
+      selectedEventDetails[eventId] ??
+      eventList.find((e) => e.id === eventId),
+    [selectedEventDetails, eventList, eventId]
+  );
+  const selectedEvents = React.useMemo(
+    () =>
+      selectedEventIds.map(
+        (id) =>
+          selectedEventDetails[id] ??
+          eventList.find((e) => e.id === id) ?? { id }
+      ),
+    [selectedEventIds, selectedEventDetails, eventList]
+  );
   
   // 대회 토글 핸들러 (다중 선택)
-  const handleEventToggle = (selectedEventId: string) => {
+  const handleEventToggle = (selectedEventId: string, event?: ApplicantEventDropdownItem) => {
+    if (event) {
+      cacheEventDetails([event]);
+    }
     setSelectedEventIds(prev => {
       if (prev.includes(selectedEventId)) {
         // 이미 선택된 경우 제거 (최소 1개는 유지)
@@ -193,8 +232,14 @@ export default function Client({
   
   // 전체 선택/해제
   const handleSelectAll = () => {
-    const allIds = eventList.map(e => e.id);
-    setSelectedEventIds(allIds);
+    cacheEventDetails(filteredEventList);
+    if (isEventSearchMode) {
+      setSelectedEventIds((prev) => [
+        ...new Set([...prev, ...filteredEventList.map((e) => e.id)]),
+      ]);
+    } else {
+      setSelectedEventIds(filteredEventList.map((e) => e.id));
+    }
     setPage(1);
   };
   
@@ -547,7 +592,7 @@ export default function Client({
                   )}
                 >
                   <span className="truncate">
-                    {event.nameKr || event.nameEn || event.id}
+                    {getEventLabel(event)}
                   </span>
                   {selectedEventIds.length > 1 && (
                     <button
@@ -654,7 +699,10 @@ export default function Client({
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={eventList.length > 0 && selectedEventIds.length === eventList.length}
+                        checked={
+                          filteredEventList.length > 0 &&
+                          filteredEventList.every((event) => selectedEventIds.includes(event.id))
+                        }
                         onChange={(e) => {
                           if (e.target.checked) {
                             handleSelectAll();
@@ -665,48 +713,73 @@ export default function Client({
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium text-gray-700">
-                        전체 선택 ({selectedEventIds.length}/{eventList.length})
+                        전체 선택 ({selectedInDisplayCount}/{filteredEventList.length}
+                        {eventTotalElements > filteredEventList.length
+                          ? ` · 전체 ${eventTotalElements}`
+                          : ''}
+                        )
                       </span>
                     </label>
                   </div>
                 </div>
                 
                 {/* 대회 목록 */}
-                {eventList.length === 0 ? (
+                {isEventListLoading ? (
+                  <div className="px-4 py-2 text-sm text-gray-500">대회 목록을 불러오는 중...</div>
+                ) : !isEventSearchMode && eventList.length === 0 ? (
                   <div className="px-4 py-2 text-sm text-gray-500">등록된 대회가 없습니다.</div>
                 ) : filteredEventList.length === 0 ? (
                   <div className="px-4 py-2 text-sm text-gray-500">검색 결과가 없습니다.</div>
                 ) : (
-                  filteredEventList.map((event) => {
-                    const isSelected = selectedEventIds.includes(event.id);
-                    return (
-                      <label
-                        key={event.id}
-                        className={clsx(
-                          'flex items-center gap-3 px-4 py-2 text-sm cursor-pointer transition-colors',
-                          'hover:bg-gray-50',
-                          isSelected && 'bg-blue-50'
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleEventToggle(event.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <span className={clsx(
-                          'flex-1 truncate',
-                          isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
-                        )}>
-                          {event.nameKr || event.nameEn || event.id}
-                        </span>
-                        {isSelected && (
-                          <span className="text-xs text-blue-600 font-medium">선택됨</span>
-                        )}
-                      </label>
-                    );
-                  })
+                  <>
+                    {filteredEventList.map((event) => {
+                      const isSelected = selectedEventIds.includes(event.id);
+                      return (
+                        <label
+                          key={event.id}
+                          className={clsx(
+                            'flex items-center gap-3 px-4 py-2 text-sm cursor-pointer transition-colors',
+                            'hover:bg-gray-50',
+                            isSelected && 'bg-blue-50'
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleEventToggle(event.id, event)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <span className={clsx(
+                            'flex-1 truncate',
+                            isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                          )}>
+                            {getEventLabel(event)}
+                          </span>
+                          {isSelected && (
+                            <span className="text-xs text-blue-600 font-medium">선택됨</span>
+                          )}
+                        </label>
+                      );
+                    })}
+                    {hasMoreEvents && (
+                      <div className="px-4 py-2 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void fetchMoreEvents();
+                          }}
+                          disabled={isFetchingMoreEvents}
+                          className="w-full py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md disabled:text-gray-400 disabled:hover:bg-transparent"
+                        >
+                          {isFetchingMoreEvents
+                            ? '불러오는 중...'
+                            : `더보기 (${filteredEventList.length}/${eventTotalElements})`}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -719,7 +792,7 @@ export default function Client({
         <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
           <p className="text-gray-600 mb-2">신청자가 없습니다.</p>
           <p className="text-sm text-gray-500">
-            선택된 대회({selectedEvents.map(e => e.nameKr || e.nameEn || e.id).join(', ')})에 등록된 신청자가 없습니다.
+            선택된 대회({selectedEvents.map((e) => getEventLabel(e)).join(', ')})에 등록된 신청자가 없습니다.
           </p>
         </div>
       )}
