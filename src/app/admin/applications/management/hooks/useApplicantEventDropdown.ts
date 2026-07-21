@@ -1,5 +1,5 @@
-import { useDeferredValue, useMemo } from 'react';
-import { useInfiniteQuery, useQueries } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useInfiniteQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { request } from '@/hooks/useFetch';
 import type { EventDetailApiResponse } from '@/app/admin/events/[eventId]/api/event';
 import type { AdminEventListResponse } from '@/types/Admin';
@@ -9,16 +9,30 @@ export type ApplicantEventDropdownItem = {
   nameKr?: string;
   nameEn?: string;
   eventStatus?: string;
+  startDate?: string;
 };
 
 /** 목록/검색 한 페이지당 개수 */
 export const APPLICANT_EVENT_PAGE_SIZE = 100;
 
+/** 검색어 디바운스 지연(ms) */
+const SEARCH_DEBOUNCE_MS = 300;
+
+/** 값이 delay 동안 안정될 때까지 갱신을 미루는 디바운스 훅 */
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 const applicantEventKeys = {
   all: ['applicantEventDropdown'] as const,
   list: () => [...applicantEventKeys.all, 'list', APPLICANT_EVENT_PAGE_SIZE] as const,
-  search: (keyword: string) =>
-    [...applicantEventKeys.all, 'search', keyword, APPLICANT_EVENT_PAGE_SIZE] as const,
+  search: (keyword: string, year?: number) =>
+    [...applicantEventKeys.all, 'search', keyword, year ?? null, APPLICANT_EVENT_PAGE_SIZE] as const,
   detail: (eventId: string) => [...applicantEventKeys.all, 'detail', eventId] as const,
 };
 
@@ -27,16 +41,21 @@ function mapEventItems(items: AdminEventListResponse['content']): ApplicantEvent
     id: event.id,
     nameKr: event.nameKr,
     eventStatus: event.eventStatus,
+    startDate: event.startDate,
   }));
 }
 
-async function fetchEventPage(endpoint: string): Promise<AdminEventListResponse> {
+async function fetchEventPage(
+  endpoint: string,
+  signal?: AbortSignal
+): Promise<AdminEventListResponse> {
   const data = await request<AdminEventListResponse>(
     'admin',
     endpoint,
     'GET',
     undefined,
-    true
+    true,
+    signal ? { signal } : undefined
   );
   if (!data) {
     throw new Error('대회 목록을 불러오지 못했습니다.');
@@ -58,8 +77,8 @@ function getNextPageParam(lastPage: AdminEventListResponse) {
 export function useApplicantEventDropdown(enabled: boolean = true) {
   const query = useInfiniteQuery({
     queryKey: applicantEventKeys.list(),
-    queryFn: ({ pageParam }) =>
-      fetchEventPage(`/api/v1/event?page=${pageParam}&size=${APPLICANT_EVENT_PAGE_SIZE}`),
+    queryFn: ({ pageParam, signal }) =>
+      fetchEventPage(`/api/v1/event?page=${pageParam}&size=${APPLICANT_EVENT_PAGE_SIZE}`, signal),
     initialPageParam: 1,
     getNextPageParam,
     enabled,
@@ -81,22 +100,29 @@ export function useApplicantEventDropdown(enabled: boolean = true) {
   };
 }
 
-/** 신청자 관리 드롭다운 검색 (50개씩, 더보기) */
-export function useApplicantEventSearch(keyword: string, enabled: boolean = true) {
+/** 신청자 관리 드롭다운 검색 (키워드/년도, 100개씩 더보기) */
+export function useApplicantEventSearch(
+  keyword: string,
+  year?: number,
+  enabled: boolean = true
+) {
   const trimmed = keyword.trim();
 
   const query = useInfiniteQuery({
-    queryKey: applicantEventKeys.search(trimmed),
-    queryFn: ({ pageParam }) => {
+    queryKey: applicantEventKeys.search(trimmed, year),
+    queryFn: ({ pageParam, signal }) => {
       const queryParams = new URLSearchParams();
       queryParams.append('page', String(pageParam));
       queryParams.append('size', String(APPLICANT_EVENT_PAGE_SIZE));
-      queryParams.append('keyword', trimmed);
-      return fetchEventPage(`/api/v1/event/search?${queryParams.toString()}`);
+      if (trimmed) queryParams.append('keyword', trimmed);
+      if (year !== undefined) queryParams.append('year', String(year));
+      return fetchEventPage(`/api/v1/event/search?${queryParams.toString()}`, signal);
     },
     initialPageParam: 1,
     getNextPageParam,
-    enabled: enabled && trimmed.length > 0,
+    enabled: enabled && (trimmed.length > 0 || year !== undefined),
+    // 검색어가 바뀌어도 새 결과가 올 때까지 이전 결과를 유지 → 로딩/빈결과 깜빡임 방지
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -116,14 +142,19 @@ export function useApplicantEventSearch(keyword: string, enabled: boolean = true
 }
 
 /** 목록 + 검색 API를 합친 드롭다운 옵션 훅 */
-export function useApplicantEventDropdownOptions(searchQuery: string, dropdownOpen: boolean) {
-  const debouncedKeyword = useDeferredValue(searchQuery.trim());
-  const isSearchMode = debouncedKeyword.length > 0;
-  const isDebouncing = isSearchMode && debouncedKeyword !== searchQuery.trim();
+export function useApplicantEventDropdownOptions(
+  searchQuery: string,
+  dropdownOpen: boolean,
+  year?: number
+) {
+  const debouncedKeyword = useDebouncedValue(searchQuery.trim(), SEARCH_DEBOUNCE_MS);
+  // 검색어 또는 년도가 있으면 검색 API 사용
+  const isSearchMode = debouncedKeyword.length > 0 || year !== undefined;
 
   const listQuery = useApplicantEventDropdown();
   const searchQueryResult = useApplicantEventSearch(
     debouncedKeyword,
+    year,
     dropdownOpen && isSearchMode
   );
 
@@ -131,10 +162,8 @@ export function useApplicantEventDropdownOptions(searchQuery: string, dropdownOp
   const totalElements = isSearchMode
     ? searchQueryResult.totalElements
     : listQuery.totalElements;
-  // 더보기(isFetchingNextPage) 중에는 목록을 유지하고, 첫 로딩만 스피너 처리
-  const isLoading = isSearchMode
-    ? (isDebouncing || searchQueryResult.isPending) && searchQueryResult.events.length === 0
-    : listQuery.isPending && listQuery.events.length === 0;
+  // keepPreviousData 덕분에 검색어 변경 시엔 이전 결과 유지 → 최초 로딩(캐시 없음)일 때만 스피너
+  const isLoading = isSearchMode ? searchQueryResult.isLoading : listQuery.isLoading;
   const hasNextPage = isSearchMode
     ? searchQueryResult.hasNextPage
     : listQuery.hasNextPage;

@@ -9,6 +9,7 @@ import {
   useApplicantMissingEventDetails,
   type ApplicantEventDropdownItem,
 } from '@/app/admin/applications/management/hooks/useApplicantEventDropdown';
+import YearSelectDropdown from '@/components/common/Dropdown/YearSelectDropdown';
 import ApplicantsManageTable from '@/components/admin/applications/ApplicantsManageTable';
 import RegistrationDetailDrawer from '@/components/admin/applications/RegistrationDetailDrawer';
 import PaymentUploadModal from '@/components/admin/applications/PaymentUploadModal';
@@ -61,6 +62,8 @@ export default function Client({
   const [page, setPage] = React.useState<number>(() => readInit().page);
   const [isEventDropdownOpen, setIsEventDropdownOpen] = React.useState(false);
   const [eventSearchQuery, setEventSearchQuery] = React.useState('');
+  const [eventYear, setEventYear] = React.useState<number | undefined>(undefined);
+  const [isYearMenuOpen, setIsYearMenuOpen] = React.useState(false);
   
   // 선택된 대회 IDs (다중 선택 지원)
   const [selectedEventIds, setSelectedEventIds] = React.useState<string[]>([eventId]);
@@ -84,13 +87,15 @@ export default function Client({
     }
   }, [eventId]);
 
-  // 드롭다운 외부 클릭 감지
+  // 드롭다운 외부 클릭 감지 (년도 메뉴는 포털 내부에서 mousedown 전파를 막아 여기서 닫히지 않음)
   const eventDropdownRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (eventDropdownRef.current && !eventDropdownRef.current.contains(target)) {
         setIsEventDropdownOpen(false);
         setEventSearchQuery('');
+        setEventYear(undefined);
       }
     };
     if (isEventDropdownOpen) {
@@ -139,11 +144,30 @@ export default function Client({
     hasNextPage: hasMoreEvents,
     isFetchingNextPage: isFetchingMoreEvents,
     fetchNextPage: fetchMoreEvents,
-  } = useApplicantEventDropdownOptions(eventSearchQuery, isEventDropdownOpen);
+  } = useApplicantEventDropdownOptions(eventSearchQuery, isEventDropdownOpen, eventYear);
   const selectedInDisplayCount = React.useMemo(
     () => filteredEventList.filter((event) => selectedEventIds.includes(event.id)).length,
     [filteredEventList, selectedEventIds]
   );
+
+  // 불러온 대회의 startDate에서 실제 존재하는 년도만 추출 (내림차순)
+  const availableEventYears = React.useMemo(() => {
+    const years = new Set<number>();
+    for (const event of eventList) {
+      if (event.startDate) {
+        const y = new Date(event.startDate).getFullYear();
+        if (!Number.isNaN(y)) years.add(y);
+      }
+    }
+    return Array.from(years).sort((a, b) => b - a);
+  }, [eventList]);
+
+  // 년도 메뉴가 열렸을 때 패널이 확보해야 할 최소 높이(년도 개수에 비례, 최대 9개 기준)
+  const yearMenuMinHeight = React.useMemo(() => {
+    const YEAR_ITEM_HEIGHT = 34; // YearSelectDropdown의 항목 높이와 일치
+    const visibleCount = Math.min(availableEventYears.length + 1, 9); // +1 = '전체 년도'
+    return visibleCount * YEAR_ITEM_HEIGHT + 14; // py-1 여백 등 보정
+  }, [availableEventYears.length]);
 
   const cacheEventDetails = React.useCallback((events: ApplicantEventDropdownItem[]) => {
     if (!events.length) return;
@@ -618,7 +642,10 @@ export default function Client({
               type="button"
               onClick={() => {
                 setIsEventDropdownOpen((open) => {
-                  if (open) setEventSearchQuery('');
+                  if (open) {
+                    setEventSearchQuery('');
+                    setEventYear(undefined);
+                  }
                   return !open;
                 });
               }}
@@ -677,8 +704,15 @@ export default function Client({
           {/* 드롭다운 메뉴 */}
           {isEventDropdownOpen && (
             <div className="absolute z-50 w-auto min-w-[400px] max-w-[800px] mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-hidden flex flex-col">
-              <div className="px-3 py-2 border-b border-gray-200 sticky top-0 bg-white z-10">
-                <div className="relative">
+              <div className="px-3 py-2 border-b border-gray-200 sticky top-0 bg-white z-10 flex items-center gap-2">
+                <YearSelectDropdown
+                  value={eventYear}
+                  onChange={(year) => setEventYear(year)}
+                  years={availableEventYears}
+                  visibleCount={9}
+                  onOpenChange={setIsYearMenuOpen}
+                />
+                <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
@@ -692,7 +726,11 @@ export default function Client({
                   />
                 </div>
               </div>
-              <div role="listbox" className="py-2 overflow-auto">
+              <div
+                role="listbox"
+                className="py-2 overflow-auto transition-[min-height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                style={{ minHeight: isYearMenuOpen ? yearMenuMinHeight : 0 }}
+              >
                 {/* 전체 선택/해제 */}
                 <div className="px-4 py-2 border-b border-gray-200">
                   <div className="flex items-center justify-between">
