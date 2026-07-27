@@ -22,6 +22,8 @@ export default function InquiryDetailPage() {
   const inquiryId = searchParams.get('id');
   const answerId = searchParams.get('answerId');
   const urlPassword = searchParams.get('password'); // URL에서 비밀번호 가져오기
+  const [sessionPassword, setSessionPassword] = useState('');
+  const effectivePassword = sessionPassword || urlPassword;
   
   // 수정/삭제 비밀번호 모달 상태
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -56,13 +58,24 @@ export default function InquiryDetailPage() {
     inquiryId, 
     currentUserId, 
     inquiryDetail,
-    urlPassword,
+    urlPassword: effectivePassword,
     answerId
   });
 
   // 핸들러 함수들
   const handleGoBack = () => {
     router.push('/notice/inquiry');
+  };
+
+  const syncPasswordToUrl = (password: string) => {
+    if (!inquiryId) return;
+
+    setSessionPassword(password);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('password', password);
+    router.replace(`/notice/inquiry/particular?${params.toString()}`, {
+      scroll: false,
+    });
   };
 
   // 수정 버튼 클릭
@@ -158,15 +171,18 @@ export default function InquiryDetailPage() {
   };
 
   // 비밀번호 확인 (이벤트와 동일)
-  const handlePasswordSubmit = (password: string) => {
-    fetchInquiryWithPassword(password);
+  const handlePasswordSubmit = async (password: string) => {
+    const success = await fetchInquiryWithPassword(password);
+    if (success) {
+      syncPasswordToUrl(password);
+    }
   };
 
   // 답변 보기 핸들러 (공개글)
   const handleViewAnswer = () => {
     if (inquiryId && answerHeader?.id) {
       // 문의글의 비밀번호를 URL에 포함해서 전달
-      const passwordParam = urlPassword ? `&password=${encodeURIComponent(urlPassword)}` : '';
+      const passwordParam = effectivePassword ? `&password=${encodeURIComponent(effectivePassword)}` : '';
       router.push(`/notice/inquiry/particular?id=${inquiryId}&answerId=${answerHeader.id}${passwordParam}`);
     }
   };
@@ -333,7 +349,7 @@ export default function InquiryDetailPage() {
                     <button
                       onClick={() => {
                         // 비밀글 여부: inquiryDetail.secret이 true이거나 URL에 비밀번호가 있는 경우
-                        const isSecret = inquiryDetail?.secret || !!urlPassword;
+                        const isSecret = inquiryDetail?.secret || !!effectivePassword;
                         
                         if (isSecret) {
                           // 비밀글인 경우 비밀번호 입력 모달 표시
@@ -430,7 +446,7 @@ export default function InquiryDetailPage() {
               )}
 
               {/* 공개글이고 답변이 있으면 바로 표시 (이벤트와 동일) */}
-              {!inquiryDetail.secret && !urlPassword && answerHeader && answerDetail && (
+              {!inquiryDetail.secret && !effectivePassword && answerHeader && answerDetail && (
                 <AnswerSection
                   answerHeader={answerHeader}
                   answerDetail={answerDetail}

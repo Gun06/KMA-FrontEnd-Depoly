@@ -64,7 +64,7 @@ export const useInquiryDetail = ({ eventId, inquiryId, urlPassword }: UseInquiry
           setInquiryDetail(data);
         } else {
           // API 실패 시 상세 로그
-          const errorText = await response.text();
+          await response.text();
           
           // API 실패 시 에러 메시지 설정
           if (response.status === 403) {
@@ -100,8 +100,8 @@ export const useInquiryDetail = ({ eventId, inquiryId, urlPassword }: UseInquiry
   }, [eventId, inquiryId, urlPassword, router]);
 
   // 비밀번호로 문의사항 조회
-  const fetchInquiryWithPassword = async (password: string) => {
-    if (!inquiryId) return;
+  const fetchInquiryWithPassword = async (password: string): Promise<boolean> => {
+    if (!inquiryId) return false;
     
     try {
       setIsPasswordLoading(true);
@@ -130,8 +130,9 @@ export const useInquiryDetail = ({ eventId, inquiryId, urlPassword }: UseInquiry
         setInquiryDetail(data);
         setIsPasswordRequired(false);
         setError(null);
+        return true;
       } else {
-        const errorText = await response.text();
+        await response.text();
         
         if (response.status === 401 || response.status === 403) {
           setError('비밀번호가 올바르지 않습니다.');
@@ -140,6 +141,7 @@ export const useInquiryDetail = ({ eventId, inquiryId, urlPassword }: UseInquiry
         } else {
           setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
         }
+        return false;
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -147,6 +149,7 @@ export const useInquiryDetail = ({ eventId, inquiryId, urlPassword }: UseInquiry
       } else {
         setError('네트워크 오류가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.');
       }
+      return false;
     } finally {
       setIsPasswordLoading(false);
     }

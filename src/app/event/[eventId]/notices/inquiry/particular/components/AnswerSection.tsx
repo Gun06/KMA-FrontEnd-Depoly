@@ -174,7 +174,7 @@ export const AnswerSection = ({
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    * 답변 내용을 보려면 관리자에게 문의해주세요.
+                    목록으로 돌아가 비밀번호를 다시 입력한 뒤 시도해 주세요.
                   </p>
                 </div>
               )}
@@ -263,7 +263,7 @@ export const AnswerSection = ({
                 <div>
                   <p className="text-gray-500 italic">답변 내용을 불러올 수 없습니다.</p>
                   <p className="text-sm text-gray-400 mt-2">
-                    * 답변 내용을 보려면 관리자에게 문의해주세요.
+                    목록으로 돌아가 비밀번호를 다시 입력한 뒤 시도해 주세요.
                   </p>
                 </div>
               )}

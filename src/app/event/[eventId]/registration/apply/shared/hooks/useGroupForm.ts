@@ -355,7 +355,10 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
 
         applySubmitOutcome(response);
       } catch (error) {
-        const errorMessage = formatError(error);
+        // 수정 시 소유 신청자를 제외하고 보내므로, 백엔드 row를 화면 번호로 환산
+        const errorMessage = formatError(error, {
+          participants: isEdit ? formData.participants : undefined,
+        });
         setSubmitError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -429,7 +432,9 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
       )}&participantCount=${formData.participants.length}${modeParam}`;
       router.push(successUrl);
     } catch (error) {
-      const errorMessage = formatError(error);
+      const errorMessage = formatError(error, {
+        participants: isEditMode ? formData.participants : undefined,
+      });
       setSubmitError(errorMessage);
       throw error;
     } finally {

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout';
-import { NoticeBoard } from '@/components/common/Notice';
+import { NoticeBoard, NoticeSkeleton } from '@/components/common/Notice';
 import { useNoticeData } from './hooks/useNoticeData';
 
 export default function NoticePage() {
@@ -34,10 +34,7 @@ export default function NoticePage() {
         }}
       >
         <div className="w-full h-full px-0 py-6 sm:py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-            <span className="ml-4 text-gray-600">공지사항을 불러오는 중...</span>
-          </div>
+          <NoticeSkeleton />
         </div>
       </SubmenuLayout>
     );
@@ -86,6 +83,7 @@ export default function NoticePage() {
           showPinnedBadgeInNo={true}
           pinnedClickable={true}
           showSearch={true}
+          showViews={false}
           currentPage={currentPage}
           totalElements={totalElements}
           totalPages={totalPages}

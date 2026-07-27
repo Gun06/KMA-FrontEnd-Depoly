@@ -100,6 +100,7 @@ export default function EventNoticePage() {
           showPinnedBadgeInNo={true}
           pinnedClickable={true}
           showSearch={false}
+          showViews={false}
           useApi={false}
           currentPage={currentPage}
           totalElements={displayNotices.filter(item => !item.pinned).length}

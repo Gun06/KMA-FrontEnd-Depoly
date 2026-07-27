@@ -15,6 +15,7 @@ type Props = {
   currentPage?: number;
   pageSize?: number;
   totalElements?: number;
+  showViews?: boolean;
 };
 
 type DisplayRow = NoticeItem & { __displayNo: number | '필독' | undefined };
@@ -23,12 +24,13 @@ export default function NoticeTable({
   data,
   onRowClick,
   pinLimit = 3,
-  numberDesc = true,
+  numberDesc: _numberDesc = true,
   showPinnedBadgeInNo = true,
   pinnedClickable = true,
-  currentPage = 1,
-  pageSize = 10,
-  totalElements = 0,
+  currentPage: _currentPage = 1,
+  pageSize: _pageSize = 10,
+  totalElements: _totalElements = 0,
+  showViews = true,
 }: Props) {
 
   const { pinnedRows, regularRows } = useMemo(() => {
@@ -54,10 +56,6 @@ export default function NoticeTable({
     return { pinnedRows, regularRows };
   }, [data, pinLimit]);
 
-  const rows = useMemo<DisplayRow[]>(() => {
-    return [...pinnedRows, ...regularRows];
-  }, [pinnedRows, regularRows]);
-
   const handleRowKeyDown =
     (id: string | number, clickable: boolean) =>
     (e: React.KeyboardEvent<HTMLTableRowElement | HTMLLIElement>) => {
@@ -68,7 +66,7 @@ export default function NoticeTable({
       }
     };
 
-  const columns: Column<DisplayRow>[] = [
+  const baseColumns: Column<DisplayRow>[] = [
     {
       key: "__no",
       header: "번호",
@@ -78,10 +76,7 @@ export default function NoticeTable({
       headerClassName: "whitespace-nowrap",
       render: (row) => {
         const isPinned = row.pinned;
-        // 문의사항인지 확인 (category가 '문의' 또는 '답변'이거나, originalQuestionId/answerHeaderId가 있는 경우)
         const isInquiry = row.category === '문의' || row.category === '답변' || row.originalQuestionId !== undefined || row.answerHeaderId !== undefined;
-        
-        // 고정글인 경우
         if (isPinned) {
           return showPinnedBadgeInNo ? (
             <div className="flex items-center justify-center">
@@ -91,17 +86,12 @@ export default function NoticeTable({
             <span className="inline-block w-4 h-4" />
           );
         }
-        
-        // 문의사항인 경우: 번호 열에는 번호만 표시
         if (isInquiry) {
           if (row.__displayNo !== undefined && typeof row.__displayNo === 'number') {
             return <span className="text-[14px] text-[#111827] font-medium">{row.__displayNo}</span>;
           }
-          // 답변 행 등 번호가 없는 경우 빈 값
           return <span className="text-[14px] text-[#111827]"></span>;
         }
-        
-        // 공지사항인 경우: 번호 열에는 태그만 표시 (번호 없음)
         if (row.category) {
           return (
             <div className="flex items-center justify-center">
@@ -109,7 +99,6 @@ export default function NoticeTable({
             </div>
           );
         }
-        // category가 없으면 빈 값 표시
         return <span className="text-[14px] text-[#111827]"></span>;
       },
     },
@@ -121,12 +110,9 @@ export default function NoticeTable({
       render: (row) => {
         const isPinned = row.pinned;
         const clickable = !(isPinned && !pinnedClickable);
-        // 문의사항인지 확인 (category가 '문의' 또는 '답변'이거나, originalQuestionId/answerHeaderId가 있는 경우)
         const isInquiry = row.category === '문의' || row.category === '답변' || row.originalQuestionId !== undefined || row.answerHeaderId !== undefined;
-        
         return (
           <div className="flex min-w-0 items-center gap-2">
-            {/* 문의사항인 경우: 제목 앞에 태그 표시 */}
             {isInquiry && row.category && (
               <span className="flex-shrink-0">
                 <CategoryBadge category={row.category} size="md" />
@@ -146,7 +132,7 @@ export default function NoticeTable({
     {
       key: "author",
       header: "작성자",
-      width: 110,
+      width: 140,
       align: "center",
       className: "text-[#6B7280] whitespace-nowrap",
       headerClassName: "whitespace-nowrap",
@@ -154,21 +140,27 @@ export default function NoticeTable({
     {
       key: "date",
       header: "작성일",
-      width: 120,
+      width: 150,
       align: "center",
       className: "text-[#6B7280] whitespace-nowrap",
       headerClassName: "whitespace-nowrap",
     },
-    {
-      key: "views",
-      header: "조회수",
-      width: 100,
-      align: "center",
-      className: "text-[#6B7280]",
-      headerClassName: "whitespace-nowrap",
-      render: (row) => <span className="font-medium">{row.views.toLocaleString()}</span>,
-    },
   ];
+
+  const columns: Column<DisplayRow>[] = showViews
+    ? [
+        ...baseColumns,
+        {
+          key: "views",
+          header: "조회수",
+          width: 100,
+          align: "center",
+          className: "text-[#6B7280]",
+          headerClassName: "whitespace-nowrap",
+          render: (row) => <span className="font-medium">{row.views.toLocaleString()}</span>,
+        },
+      ]
+    : baseColumns;
 
   return (
     <div className="w-full">
@@ -210,7 +202,7 @@ export default function NoticeTable({
               zebra={false}
               hideTopBorder={pinnedRows.length > 0}
               hideHeader={pinnedRows.length > 0}
-              rowClassName={(row) => {
+              rowClassName={(_row) => {
                 const clickable = true;
                 return `bg-white hover:bg-[#F8FAFF] ${clickable ? 'cursor-pointer' : ''}`;
               }}
@@ -270,8 +262,12 @@ export default function NoticeTable({
                           <span className="shrink-0">{row.date}</span>
                           <span className="opacity-30">·</span>
                           <span className="shrink-0">첨부 {row.attachments ?? 0}</span>
-                          <span className="opacity-30">·</span>
-                          <span className="shrink-0">조회 {row.views}</span>
+                          {showViews && (
+                            <>
+                              <span className="opacity-30">·</span>
+                              <span className="shrink-0">조회 {row.views}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -327,8 +323,12 @@ export default function NoticeTable({
                           <span className="shrink-0">{row.date}</span>
                           <span className="opacity-30">·</span>
                           <span className="shrink-0">첨부 {row.attachments ?? 0}</span>
-                          <span className="opacity-30">·</span>
-                          <span className="shrink-0">조회 {row.views}</span>
+                          {showViews && (
+                            <>
+                              <span className="opacity-30">·</span>
+                              <span className="shrink-0">조회 {row.views}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -100,13 +100,6 @@ export default function NoticeEventTable({
     },
     { key: "author", header: "작성자", width: 110, align: "center" },
     { key: "date", header: "작성일", width: 120, align: "center" },
-    { 
-      key: "views", 
-      header: "조회수", 
-      width: 90, 
-      align: "center",
-      render: (r) => <span className="font-medium">{r.views.toLocaleString()}</span>
-    },
     {
       key: "delete",
       header: "삭제",

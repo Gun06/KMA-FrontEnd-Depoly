@@ -28,26 +28,23 @@ const verifyGroupRegistration = async (eventId: string, data: { groupName: strin
     
     if (!response.ok) {
       const errorText = await response.text();
-      // 사용자 친화적 에러 메시지 매핑
+      let backendMessage = '';
       try {
-        JSON.parse(errorText); // 파싱 확인용
-        const status = response.status;
-
-        if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+        const errorJson = JSON.parse(errorText) as { message?: string };
+        if (typeof errorJson?.message === 'string' && errorJson.message.trim()) {
+          backendMessage = errorJson.message.trim();
         }
-        if (status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        // 기타 케이스
-        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-      } catch (_e) {
-        // JSON 파싱 실패 시 기본 메시지
-        if (response.status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
+      } catch {
+        // JSON 파싱 실패 시 아래 fallback 사용
       }
+
+      if (backendMessage) {
+        throw new Error(backendMessage);
+      }
+      if (response.status >= 500) {
+        throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
+      throw new Error('신청정보 또는 비밀번호가 다릅니다.');
     }
     
     const result = await response.json();

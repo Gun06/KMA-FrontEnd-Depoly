@@ -147,30 +147,29 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
         }
       } else {
         const errorText = await response.text();
+        let backendMessage = '';
         try {
-          JSON.parse(errorText); // 파싱 확인용
-          const status = response.status;
+          const errorJson = JSON.parse(errorText) as { message?: string };
+          if (typeof errorJson?.message === 'string' && errorJson.message.trim()) {
+            backendMessage = errorJson.message.trim();
+          }
+        } catch {
+          // JSON 파싱 실패 시 아래 fallback 사용
+        }
 
-          if (status === 400 || status === 404) {
-            setError('신청정보 또는 비밀번호가 다릅니다.');
-          } else if (status >= 500) {
-            setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-          } else {
-            setError('신청정보 또는 비밀번호가 다릅니다.');
-          }
-        } catch (_e) {
-          if (response.status === 400 || response.status === 404) {
-            setError('신청정보 또는 비밀번호가 다릅니다.');
-          } else if (response.status >= 500) {
-            setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-          } else {
-            setError('신청정보 또는 비밀번호가 다릅니다.');
-          }
+        if (backendMessage) {
+          setError(backendMessage);
+        } else if (response.status >= 500) {
+          setError('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        } else {
+          setError('신청정보 또는 비밀번호가 다릅니다.');
         }
       }
     } catch (error) {
       // 네트워크 오류 등 기타 에러 처리
-      if (error instanceof Error && !error.message.includes('404') && !error.message.includes('400')) {
+      if (error instanceof Error && error.message.trim()) {
+        setError(error.message);
+      } else {
         setError('신청 내역을 확인할 수 없습니다. 입력 정보를 다시 확인해주세요.');
       }
     } finally {

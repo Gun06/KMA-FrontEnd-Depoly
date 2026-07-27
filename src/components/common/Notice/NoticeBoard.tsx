@@ -26,6 +26,7 @@ type Props = {
   showPinnedBadgeInNo?: boolean;
   pinnedClickable?: boolean;
   showSearch?: boolean; // 검색 기능 표시 여부
+  showViews?: boolean;
   className?: string;
   
   // 외부 페이지네이션 제어
@@ -53,6 +54,7 @@ export default function NoticeBoard({
   showPinnedBadgeInNo = true,
   pinnedClickable = true,
   showSearch = true,
+  showViews = true,
   className,
   currentPage: externalCurrentPage,
   totalElements: externalTotalElements,
@@ -69,15 +71,16 @@ export default function NoticeBoard({
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // 카테고리 목록 조회 (public API)
+  // 카테고리 목록 조회 (showSearch일 때만 호출)
   const { data: categoriesData } = useGetQuery(
     ['notice', 'categories', 'public'],
     '/api/v1/public/notice/category',
     'user',
     {
-      staleTime: 30 * 60 * 1000, // 30분
+      staleTime: 30 * 60 * 1000,
+      enabled: showSearch,
     },
-    false // withAuth = false (public API)
+    false
   ) as { data: Array<{ id: string; name: string }> | undefined };
 
   // 카테고리 옵션 생성
@@ -264,6 +267,7 @@ export default function NoticeBoard({
             numberDesc={numberDesc}
             showPinnedBadgeInNo={showPinnedBadgeInNo}
             pinnedClickable={pinnedClickable}
+            showViews={showViews}
             currentPage={currentPage}
             pageSize={pageSize}
             totalElements={finalData.total}

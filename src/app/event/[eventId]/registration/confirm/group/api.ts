@@ -3,6 +3,26 @@ import { IndividualGroupVerifyRequest, IndividualGroupRegistrationData, OwnedReg
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
 
+const FALLBACK_AUTH_ERROR = '신청정보 또는 비밀번호가 다릅니다.';
+const FALLBACK_SERVER_ERROR = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
+/** 조회 API 에러 응답에서 백엔드 message를 우선 사용 */
+function getViewApiErrorMessage(errorText: string, status: number): string {
+  try {
+    const errorJson = JSON.parse(errorText) as { message?: string };
+    if (typeof errorJson?.message === 'string' && errorJson.message.trim()) {
+      return errorJson.message.trim();
+    }
+  } catch {
+    // JSON 파싱 실패 시 fallback
+  }
+
+  if (status >= 500) {
+    return FALLBACK_SERVER_ERROR;
+  }
+  return FALLBACK_AUTH_ERROR;
+}
+
 // 단체 신청 개별 확인 데이터 조회
 export const fetchIndividualGroupRegistration = async (
   eventId: string,
@@ -27,26 +47,7 @@ export const fetchIndividualGroupRegistration = async (
     
     if (!response.ok) {
       const errorText = await response.text();
-      
-      // 에러 메시지 파싱 시도
-      try {
-        JSON.parse(errorText); // 파싱만 시도하여 형식 검증
-        const status = response.status;
-
-        if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-        }
-        if (status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-      } catch (_parseError) {
-        // JSON 파싱 실패 시 기본 메시지
-        if (response.status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-      }
+      throw new Error(getViewApiErrorMessage(errorText, response.status));
     }
     
     const result = await response.json();
@@ -80,26 +81,7 @@ export const fetchOwnedRegistrationView = async (
     
     if (!response.ok) {
       const errorText = await response.text();
-      
-      // 에러 메시지 파싱 시도
-      try {
-        const errorJson = JSON.parse(errorText);
-        const status = response.status;
-
-        if (status === 400 || status === 404) {
-          throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-        }
-        if (status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        throw new Error(errorJson.message || '신청정보 또는 비밀번호가 다릅니다.');
-      } catch (_parseError) {
-        // JSON 파싱 실패 시 기본 메시지
-        if (response.status >= 500) {
-          throw new Error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        throw new Error('신청정보 또는 비밀번호가 다릅니다.');
-      }
+      throw new Error(getViewApiErrorMessage(errorText, response.status));
     }
     
     const result = await response.json();
@@ -108,5 +90,3 @@ export const fetchOwnedRegistrationView = async (
     throw error;
   }
 };
-
-

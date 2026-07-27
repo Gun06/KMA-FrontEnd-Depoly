@@ -21,6 +21,8 @@ export default function InquiryDetailPage() {
   const inquiryId = searchParams.get('id');
   const answerId = searchParams.get('answerId');
   const urlPassword = searchParams.get('password'); // URL에서 비밀번호 가져오기
+  const [sessionPassword, setSessionPassword] = useState('');
+  const effectivePassword = sessionPassword || urlPassword;
   
   // 수정/삭제를 위한 비밀번호 확인 모달 상태
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -44,7 +46,7 @@ export default function InquiryDetailPage() {
     inquiryId, 
     currentUserId, 
     inquiryDetail,
-    urlPassword,
+    urlPassword: effectivePassword,
     urlAnswerId: answerId
   });
   const { 
@@ -61,11 +63,22 @@ export default function InquiryDetailPage() {
     router.push(`/event/${eventId}/notices/inquiry`);
   };
 
+  const syncPasswordToUrl = (password: string) => {
+    if (!inquiryId) return;
+
+    setSessionPassword(password);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('password', password);
+    router.replace(`/event/${eventId}/notices/inquiry/particular?${params.toString()}`, {
+      scroll: false,
+    });
+  };
+
   // 답변 보기 핸들러 (공개글)
   const handleViewAnswer = () => {
     if (inquiryId && answerHeader?.id) {
       // 문의글의 비밀번호를 URL에 포함해서 전달
-      const passwordParam = urlPassword ? `&password=${encodeURIComponent(urlPassword)}` : '';
+      const passwordParam = effectivePassword ? `&password=${encodeURIComponent(effectivePassword)}` : '';
       router.push(`/event/${eventId}/notices/inquiry/particular?id=${inquiryId}&answerId=${answerHeader.id}${passwordParam}`);
     }
   };
@@ -170,8 +183,11 @@ export default function InquiryDetailPage() {
   };
 
   // 비밀글 접근을 위한 비밀번호 확인 핸들러
-  const handleSecretPasswordConfirm = (password: string) => {
-    fetchInquiryWithPassword(password);
+  const handleSecretPasswordConfirm = async (password: string) => {
+    const success = await fetchInquiryWithPassword(password);
+    if (success) {
+      syncPasswordToUrl(password);
+    }
   };
 
   const handleSecretPasswordModalClose = () => {
@@ -300,7 +316,7 @@ export default function InquiryDetailPage() {
             currentUserId={currentUserId}
             showOnlyAnswer={true}
             onGoBack={handleGoBack}
-            urlPassword={urlPassword}
+            urlPassword={effectivePassword}
           />
         ) : inquiryDetail ? (
           // 문의글만 표시
@@ -309,7 +325,7 @@ export default function InquiryDetailPage() {
               inquiryDetail={inquiryDetail}
               currentUserId={currentUserId}
               answerHeader={answerHeader}
-              urlPassword={urlPassword}
+              urlPassword={effectivePassword}
               onGoBack={handleGoBack}
               onEdit={handleEdit}
               onDelete={handleDelete}
@@ -318,7 +334,7 @@ export default function InquiryDetailPage() {
             />
             <AttachmentList attachments={inquiryDetail.attachmentInfoList} />
             {/* 공개글이고 답변이 있으면 바로 표시 */}
-            {!inquiryDetail.secret && !urlPassword && answerHeader && answerDetail && (
+            {!inquiryDetail.secret && !effectivePassword && answerHeader && answerDetail && (
               <AnswerSection
                 answerHeader={answerHeader}
                 answerDetail={answerDetail}
@@ -327,7 +343,7 @@ export default function InquiryDetailPage() {
                 currentUserId={currentUserId}
                 showOnlyAnswer={false}
                 onGoBack={handleGoBack}
-                urlPassword={urlPassword}
+                urlPassword={effectivePassword}
               />
             )}
           </>

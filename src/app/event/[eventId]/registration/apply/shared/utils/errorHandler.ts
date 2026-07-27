@@ -20,6 +20,32 @@ interface ErrorResponse {
   errors?: BatchError[];
 }
 
+export interface FormatErrorOptions {
+  /**
+   * 단체 수정 등에서 소유 신청자를 제외하고 보낸 경우,
+   * 백엔드 row(소유 제외 목록 기준)를 화면 번호로 환산할 때 사용
+   */
+  participants?: Array<{ checkOwned?: boolean }>;
+}
+
+/**
+ * 백엔드 배치 row(소유 신청자 제외 1-based) → 화면 참가자 번호(소유 포함 1-based)
+ */
+export function mapBatchRowToDisplayNumber(
+  row: number,
+  participants: Array<{ checkOwned?: boolean }>
+): number {
+  let nonOwnedCount = 0;
+  for (let i = 0; i < participants.length; i++) {
+    if (participants[i].checkOwned === true) continue;
+    nonOwnedCount += 1;
+    if (nonOwnedCount === row) {
+      return i + 1;
+    }
+  }
+  return row;
+}
+
 /**
  * API 오류 메시지에서 서버 메시지 추출
  */
@@ -76,7 +102,10 @@ export function parseErrorJson(serverMessage: string): ErrorResponse | null {
 /**
  * 배치 오류 메시지 포맷팅
  */
-export function formatBatchError(error: BatchError): string {
+export function formatBatchError(
+  error: BatchError,
+  options?: FormatErrorOptions
+): string {
   const message = error.message || error.code || '오류가 발생했습니다.';
   let errorText = message;
   
@@ -88,9 +117,13 @@ export function formatBatchError(error: BatchError): string {
     errorText = `${message}\n(입력값: ${rejectedValue})`;
   }
   
-  // row 정보가 있으면 함께 표시
+  // row 정보가 있으면 함께 표시 (소유 제외 목록 → 화면 번호 환산)
   if (error.row !== undefined) {
-    errorText = `${errorText}${error.rejectedValue ? '' : '\n'}(참가자 ${error.row}번째 행)`;
+    const displayRow =
+      options?.participants && options.participants.length > 0
+        ? mapBatchRowToDisplayNumber(error.row, options.participants)
+        : error.row;
+    errorText = `${errorText}${error.rejectedValue ? '' : '\n'}(참가자 ${displayRow}번째 행)`;
   }
   
   return errorText;
@@ -99,12 +132,15 @@ export function formatBatchError(error: BatchError): string {
 /**
  * 배치 오류 메시지들을 사용자 친화적인 형식으로 변환
  */
-export function formatBatchErrors(errorJson: ErrorResponse): string {
+export function formatBatchErrors(
+  errorJson: ErrorResponse,
+  options?: FormatErrorOptions
+): string {
   const mainMessage = errorJson.message || errorJson.error || '오류가 발생했습니다.';
   
   // errors 배열이 있고 비어있지 않으면 상세 오류 메시지 추출
   if (errorJson.errors && Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
-    const formattedErrors = errorJson.errors.map(formatBatchError);
+    const formattedErrors = errorJson.errors.map((err) => formatBatchError(err, options));
     
     if (formattedErrors.length > 0) {
       // 메인 메시지와 상세 오류 메시지를 함께 표시
@@ -121,7 +157,7 @@ export function formatBatchErrors(errorJson: ErrorResponse): string {
 /**
  * 에러 객체를 사용자 친화적인 메시지로 변환
  */
-export function formatError(error: unknown): string {
+export function formatError(error: unknown, options?: FormatErrorOptions): string {
   if (!(error instanceof Error)) {
     return '오류가 발생했습니다.';
   }
@@ -133,7 +169,7 @@ export function formatError(error: unknown): string {
   const errorJson = parseErrorJson(serverMessage);
   
   if (errorJson) {
-    return formatBatchErrors(errorJson);
+    return formatBatchErrors(errorJson, options);
   }
   
   // JSON이 아닌 경우 원본 서버 메시지 사용
