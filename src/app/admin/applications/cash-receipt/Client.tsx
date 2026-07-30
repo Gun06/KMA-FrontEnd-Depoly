@@ -44,7 +44,8 @@ function getDownloadErrorMessage(error: unknown, hasPendingBatches: boolean): st
     }
     return '신규 현금영수증 신청 내역이 없습니다.';
   }
-  return message || '다운로드에 실패했습니다.';
+  // toast는 개행을 잘 안 보여주므로 한 줄로 합침
+  return (message || '다운로드에 실패했습니다.').replace(/\n+/g, ' ');
 }
 
 function formatBatchCount(totalCount: number) {
@@ -287,8 +288,14 @@ export default function Client({ initialPage, pageSize }: Props) {
       if (isCashReceiptDownloading) return;
       setIsCashReceiptDownloading(true);
       try {
-        await downloadRequestedCashReceiptsExcel();
-        toast.success('다운로드가 완료되었습니다.');
+        const targetIds = selectedIds.length > 0 ? selectedIds : undefined;
+        await downloadRequestedCashReceiptsExcel(targetIds);
+        toast.success(
+          targetIds
+            ? `선택한 ${targetIds.length.toLocaleString()}건 다운로드가 완료되었습니다.`
+            : '다운로드가 완료되었습니다.'
+        );
+        if (targetIds) setSelectedIds([]);
         await invalidateCashReceiptQueries();
       } catch (e) {
         toast.error(getDownloadErrorMessage(e, batches.length > 0));
@@ -296,7 +303,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         setIsCashReceiptDownloading(false);
       }
     })();
-  }, [isCashReceiptDownloading, invalidateCashReceiptQueries, batches.length]);
+  }, [isCashReceiptDownloading, invalidateCashReceiptQueries, batches.length, selectedIds]);
 
   const handleBatchComplete = React.useCallback((batchId: string, totalCount: number) => {
     setBatchConfirmModal({ type: 'complete', batchId, totalCount });

@@ -7,6 +7,8 @@ import type {
   CashReceiptUpdateRequest,
   CashReceiptBulkStatusRequest,
   CashReceiptBatch,
+  CashReceiptDownloadRequest,
+  CashReceiptDownloadErrorResponse,
 } from '../types/cashReceiptAdmin';
 import type { RegistrationCashReceiptRequest } from '@/types/registration';
 import { parseCashReceiptRequest } from '@/services/registration';
@@ -146,13 +148,36 @@ export async function updateCashReceiptsStatusBulk(
   ) as Promise<string>;
 }
 
+function formatDownloadErrorReasons(data: CashReceiptDownloadErrorResponse): string | null {
+  const reasons = data.meta?.errorCausedReasons;
+  if (!reasons?.length) return null;
+
+  const details = reasons
+    .map((reason) => {
+      const names = reason.targetNames?.filter(Boolean) ?? [];
+      const nameSuffix = names.length > 0 ? ` (${names.join(', ')})` : '';
+      return `${reason.errorReasonDetailMessage}${nameSuffix}`;
+    })
+    .filter(Boolean);
+
+  if (details.length === 0) return null;
+  return details.join('\n');
+}
+
 async function parseFetchErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const data: unknown = await response.json();
     if (typeof data === 'string' && data.trim()) return data;
-    if (typeof data === 'object' && data !== null && 'message' in data) {
-      const message = (data as { message?: unknown }).message;
-      if (typeof message === 'string' && message.trim()) return message;
+    if (typeof data === 'object' && data !== null) {
+      const errorData = data as CashReceiptDownloadErrorResponse;
+      const message =
+        typeof errorData.message === 'string' && errorData.message.trim()
+          ? errorData.message.trim()
+          : '';
+      const reasonDetails = formatDownloadErrorReasons(errorData);
+      if (message && reasonDetails) return `${message}\n${reasonDetails}`;
+      if (message) return message;
+      if (reasonDetails) return reasonDetails;
     }
   } catch {
     // JSON 파싱 실패 시 fallback 사용
@@ -187,8 +212,17 @@ function extractFilenameFromDisposition(contentDisposition: string | null, fallb
   return fallback;
 }
 
-/** POST /api/v1/cash-receipt/download — 대기 중(미다운로드) 건 전체 엑셀 다운로드 + 배치 생성 */
-export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
+/**
+ * POST /api/v1/cash-receipt/download
+ * - targetIds 비어 있음: 대기 중(미다운로드) 건 전체 엑셀 다운로드 + 배치 생성
+ * - targetIds 있음: 해당 ID만 엑셀 다운로드 + 해당 범위로 배치 생성
+ *
+ * 백엔드가 CashReceiptBatchTargetRequest body를 필수로 받으므로
+ * 전체 다운로드 시에도 { targetIds: [] } 를 전송한다.
+ */
+export async function downloadRequestedCashReceiptsExcel(
+  targetIds?: string[]
+): Promise<void> {
   const token = tokenService.getAdminAccessToken();
   if (!token) {
     throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
@@ -196,6 +230,9 @@ export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
   const fullUrl = `${baseUrl.replace(/\/+$/, '')}/api/v1/cash-receipt/download`;
+  const body: CashReceiptDownloadRequest = {
+    targetIds: Array.isArray(targetIds) ? targetIds : [],
+  };
 
   const response = await fetch(fullUrl, {
     method: 'POST',
@@ -203,7 +240,9 @@ export async function downloadRequestedCashReceiptsExcel(): Promise<void> {
       Authorization: `Bearer ${token}`,
       Accept:
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

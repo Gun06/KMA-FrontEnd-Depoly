@@ -46,6 +46,7 @@ export default function CashReceiptBatchList({
         <h4 className="text-sm font-semibold text-gray-900">영수증 처리 대기 큐</h4>
         <p className="mt-0.5 text-xs text-gray-500">
           다운로드 버튼을 누르면 처리 대기 건이 엑셀로 내려받아지고, 영수증 처리 대기 큐에 추가됩니다.
+          항목을 선택한 뒤 다운로드하면 선택한 건만 처리됩니다.
           토스에서 실제 발급을 마친 뒤 발급 완료 버튼을 눌러주세요. 잘못 다운로드한 경우 되돌리기 버튼을 사용할 수 있습니다.
         </p>
       </div>

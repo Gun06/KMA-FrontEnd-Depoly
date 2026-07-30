@@ -37,6 +37,25 @@ export interface CashReceiptBulkStatusRequest {
   targetStatus: CashReceiptAdminStatus;
 }
 
+/** POST /api/v1/cash-receipt/download — targetIds 없으면 대기 건 전체 */
+export interface CashReceiptDownloadRequest {
+  targetIds?: string[];
+}
+
+export interface CashReceiptDownloadErrorReason {
+  errorReasonDetailMessage: string;
+  targetIds: string[];
+  targetNames: string[];
+}
+
+export interface CashReceiptDownloadErrorResponse {
+  code?: string;
+  message?: string;
+  meta?: {
+    errorCausedReasons?: CashReceiptDownloadErrorReason[];
+  };
+}
+
 export type CashReceiptPurpose = 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
 export type CashReceiptRequesterType = 'INDIVIDUAL' | 'BUSINESS';
 export type CashReceiptIdentifierType = 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';
