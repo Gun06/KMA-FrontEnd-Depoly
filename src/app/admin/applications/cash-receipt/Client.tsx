@@ -13,9 +13,11 @@ import { useCashReceiptBatches, useCashReceiptSearch } from './hooks/useCashRece
 import CashReceiptDetailDrawer from './CashReceiptDetailDrawer';
 import CashReceiptBatchList from './CashReceiptBatchList';
 import ConfirmModal from '@/components/common/Modal/ConfirmModal';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import {
   cancelCashReceiptBatch,
+  CashReceiptDownloadError,
   completeCashReceiptBatch,
   downloadRequestedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
@@ -44,8 +46,7 @@ function getDownloadErrorMessage(error: unknown, hasPendingBatches: boolean): st
     }
     return '신규 현금영수증 신청 내역이 없습니다.';
   }
-  // toast는 개행을 잘 안 보여주므로 한 줄로 합침
-  return (message || '다운로드에 실패했습니다.').replace(/\n+/g, ' ');
+  return message || '다운로드에 실패했습니다.';
 }
 
 function formatBatchCount(totalCount: number) {
@@ -107,6 +108,11 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [processingBatchId, setProcessingBatchId] = React.useState<string | null>(null);
   const [processingAction, setProcessingAction] = React.useState<BatchAction | null>(null);
   const [batchConfirmModal, setBatchConfirmModal] = React.useState<BatchConfirmModal>(null);
+  const [downloadErrorModal, setDownloadErrorModal] = React.useState<{
+    title: string;
+    message: string;
+    reasons: Array<{ detail: string; names: string[] }>;
+  } | null>(null);
   const headCbRef = React.useRef<HTMLInputElement>(null);
   const autoOpenedFromQueryRef = React.useRef(false);
 
@@ -195,9 +201,10 @@ export default function Client({ initialPage, pageSize }: Props) {
 
   const idsOnPage = React.useMemo(() => rows.map((r) => r.id), [rows]);
 
+  // 필터/검색 변경 시에만 선택 초기화 (페이지 이동 시에는 유지)
   React.useEffect(() => {
     setSelectedIds([]);
-  }, [page, eventId, status, keyword]);
+  }, [eventId, status, keyword]);
 
   const pageAllSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r.id));
   const pageSomeSelected = rows.some((r) => selectedIds.includes(r.id)) && !pageAllSelected;
@@ -208,11 +215,19 @@ export default function Client({ initialPage, pageSize }: Props) {
 
   const handleToggleSelectAll = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.checked) setSelectedIds(idsOnPage);
-      else setSelectedIds([]);
+      if (e.target.checked) {
+        setSelectedIds((prev) => Array.from(new Set([...prev, ...idsOnPage])));
+      } else {
+        const pageIdSet = new Set(idsOnPage);
+        setSelectedIds((prev) => prev.filter((id) => !pageIdSet.has(id)));
+      }
     },
     [idsOnPage]
   );
+
+  const handleClearSelection = React.useCallback(() => {
+    setSelectedIds([]);
+  }, []);
 
   const handleToggleSelectOne = React.useCallback(
     (id: string, checked: boolean) => {
@@ -298,7 +313,18 @@ export default function Client({ initialPage, pageSize }: Props) {
         if (targetIds) setSelectedIds([]);
         await invalidateCashReceiptQueries();
       } catch (e) {
-        toast.error(getDownloadErrorMessage(e, batches.length > 0));
+        if (e instanceof CashReceiptDownloadError && e.hasDetailReasons) {
+          setDownloadErrorModal({
+            title: '다운로드 대상 확인',
+            message: e.message,
+            reasons: e.reasons.map((reason) => ({
+              detail: reason.errorReasonDetailMessage,
+              names: reason.targetNames?.filter(Boolean) ?? [],
+            })),
+          });
+        } else {
+          toast.error(getDownloadErrorMessage(e, batches.length > 0));
+        }
       } finally {
         setIsCashReceiptDownloading(false);
       }
@@ -378,8 +404,24 @@ export default function Client({ initialPage, pageSize }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex w-full min-w-0 items-center justify-between gap-4">
-        <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
+      <div className="flex w-full min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
+          {selectedIds.length > 0 && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 font-pretendard">
+                {selectedIds.length.toLocaleString()}개 선택됨
+              </span>
+              <button
+                type="button"
+                className="text-xs text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
+                onClick={handleClearSelection}
+              >
+                선택 해제
+              </button>
+            </div>
+          )}
+        </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end">
           <div data-stop-bubble="true" className="flex flex-wrap items-center gap-2">
             <SearchableSelect
@@ -497,6 +539,43 @@ export default function Client({ initialPage, pageSize }: Props) {
         variant="danger"
         multiline
         isLoading={processingAction === 'cancel'}
+      />
+
+      <ErrorModal
+        isOpen={downloadErrorModal !== null}
+        onClose={() => setDownloadErrorModal(null)}
+        title={downloadErrorModal?.title ?? '다운로드 대상 확인'}
+        message={
+          downloadErrorModal ? (
+            <div className="space-y-3">
+              <p className="text-sm sm:text-base leading-relaxed text-gray-700">
+                {downloadErrorModal.message}
+              </p>
+              {downloadErrorModal.reasons.length > 0 && (
+                <ol className="space-y-1.5 text-left">
+                  {downloadErrorModal.reasons.map((reason, index) => (
+                    <li key={`${reason.detail}-${index}`} className="text-xs sm:text-sm text-gray-500 leading-relaxed">
+                      <span>
+                        {downloadErrorModal.reasons.length > 1
+                          ? `${index + 1}. ${reason.detail}`
+                          : reason.detail}
+                      </span>
+                      {reason.names.length > 0 && (
+                        <span className="block mt-0.5 pl-3 text-gray-400">
+                          {reason.names.join(', ')}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          ) : (
+            ''
+          )
+        }
+        confirmText="확인"
+        fitContent
       />
     </div>
   );

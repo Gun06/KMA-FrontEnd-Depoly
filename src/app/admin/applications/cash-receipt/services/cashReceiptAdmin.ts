@@ -10,8 +10,11 @@ import type {
   CashReceiptDownloadRequest,
   CashReceiptDownloadErrorResponse,
 } from '../types/cashReceiptAdmin';
+import { CashReceiptDownloadError } from '../types/cashReceiptAdmin';
 import type { RegistrationCashReceiptRequest } from '@/types/registration';
 import { parseCashReceiptRequest } from '@/services/registration';
+
+export { CashReceiptDownloadError } from '../types/cashReceiptAdmin';
 
 export function mapCashReceiptDetailToRequest(
   detail: CashReceiptDetail
@@ -148,41 +151,31 @@ export async function updateCashReceiptsStatusBulk(
   ) as Promise<string>;
 }
 
-function formatDownloadErrorReasons(data: CashReceiptDownloadErrorResponse): string | null {
-  const reasons = data.meta?.errorCausedReasons;
-  if (!reasons?.length) return null;
-
-  const details = reasons
-    .map((reason) => {
-      const names = reason.targetNames?.filter(Boolean) ?? [];
-      const nameSuffix = names.length > 0 ? ` (${names.join(', ')})` : '';
-      return `${reason.errorReasonDetailMessage}${nameSuffix}`;
-    })
-    .filter(Boolean);
-
-  if (details.length === 0) return null;
-  return details.join('\n');
-}
-
-async function parseFetchErrorMessage(response: Response, fallback: string): Promise<string> {
+async function parseDownloadError(
+  response: Response,
+  fallback: string
+): Promise<CashReceiptDownloadError> {
   try {
     const data: unknown = await response.json();
-    if (typeof data === 'string' && data.trim()) return data;
+    if (typeof data === 'string' && data.trim()) {
+      return new CashReceiptDownloadError(data.trim());
+    }
     if (typeof data === 'object' && data !== null) {
       const errorData = data as CashReceiptDownloadErrorResponse;
       const message =
         typeof errorData.message === 'string' && errorData.message.trim()
           ? errorData.message.trim()
-          : '';
-      const reasonDetails = formatDownloadErrorReasons(errorData);
-      if (message && reasonDetails) return `${message}\n${reasonDetails}`;
-      if (message) return message;
-      if (reasonDetails) return reasonDetails;
+          : fallback;
+      const reasons = errorData.meta?.errorCausedReasons ?? [];
+      return new CashReceiptDownloadError(message, {
+        code: errorData.code,
+        reasons,
+      });
     }
   } catch {
     // JSON 파싱 실패 시 fallback 사용
   }
-  return fallback;
+  return new CashReceiptDownloadError(fallback);
 }
 
 function triggerBlobDownload(blob: Blob, filename: string): void {
@@ -246,11 +239,10 @@ export async function downloadRequestedCashReceiptsExcel(
   });
 
   if (!response.ok) {
-    const message = await parseFetchErrorMessage(
+    throw await parseDownloadError(
       response,
       `다운로드 실패: ${response.status} ${response.statusText}`
     );
-    throw new Error(message);
   }
 
   const blob = await response.blob();

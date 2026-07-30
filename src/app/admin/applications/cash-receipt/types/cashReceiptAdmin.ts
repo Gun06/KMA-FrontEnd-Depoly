@@ -56,6 +56,28 @@ export interface CashReceiptDownloadErrorResponse {
   };
 }
 
+export class CashReceiptDownloadError extends Error {
+  readonly code?: string;
+  readonly reasons: CashReceiptDownloadErrorReason[];
+
+  constructor(
+    message: string,
+    options?: {
+      code?: string;
+      reasons?: CashReceiptDownloadErrorReason[];
+    }
+  ) {
+    super(message);
+    this.name = 'CashReceiptDownloadError';
+    this.code = options?.code;
+    this.reasons = options?.reasons ?? [];
+  }
+
+  get hasDetailReasons(): boolean {
+    return this.reasons.length > 0;
+  }
+}
+
 export type CashReceiptPurpose = 'INCOME_DEDUCTION' | 'EXPENSE_PROOF';
 export type CashReceiptRequesterType = 'INDIVIDUAL' | 'BUSINESS';
 export type CashReceiptIdentifierType = 'PHONE_NUMBER' | 'BUSINESS_REG_NO' | 'CASH_RECEIPT_CARD_NO';

@@ -12,6 +12,8 @@ interface ErrorModalProps {
   onConfirm?: () => void;
   /** 지정 시 보조 버튼 표시 (닫기 등) */
   cancelText?: string;
+  /** true면 높이 제한/스크롤 없이 내용 전체 표시 */
+  fitContent?: boolean;
 }
 
 export default function ErrorModal({
@@ -22,6 +24,7 @@ export default function ErrorModal({
   confirmText = '확인',
   onConfirm,
   cancelText,
+  fitContent = false,
 }: ErrorModalProps) {
   const handleConfirm = onConfirm ?? onClose;
   if (!isOpen) return null;
@@ -35,7 +38,11 @@ export default function ErrorModal({
       />
 
       {/* 모달 컨테이너 */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-auto my-4 sm:my-6 max-h-[50vh] flex flex-col text-center overflow-hidden">
+      <div
+        className={`relative bg-white rounded-2xl shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-auto my-4 sm:my-6 flex flex-col text-center overflow-hidden ${
+          fitContent ? '' : 'max-h-[50vh]'
+        }`}
+      >
         {/* 닫기 버튼 */}
         <button
           onClick={onClose}
@@ -56,19 +63,27 @@ export default function ErrorModal({
         </h3>
         </div>
 
-        {/* 본문 메시지 - 스크롤 가능 영역 */}
-        <div className="px-5 pb-3 sm:px-8 sm:pb-4 flex-1 min-h-0 flex flex-col">
-          <div className="bg-gray-50 rounded-md p-4 border border-gray-200 overflow-y-auto flex-1 min-h-0">
-            <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-700 break-words text-left">
-              {typeof message === 'string' 
-                ? message.split('\n').map((line, index, array) => (
-                    <span key={index}>
-                      {line}
-                      {index < array.length - 1 && <br />}
-                    </span>
-                  ))
-                : message || '알 수 없는 오류가 발생했습니다.'}
-            </p>
+        {/* 본문 메시지 */}
+        <div className={`px-5 pb-3 sm:px-8 sm:pb-4 flex flex-col ${fitContent ? '' : 'flex-1 min-h-0'}`}>
+          <div
+            className={`bg-gray-50 rounded-md p-4 border border-gray-200 ${
+              fitContent ? '' : 'overflow-y-auto flex-1 min-h-0'
+            }`}
+          >
+            {typeof message === 'string' ? (
+              <p className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-700 break-words text-left">
+                {message.split('\n').map((line, index, array) => (
+                  <span key={index}>
+                    {line}
+                    {index < array.length - 1 && <br />}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <div className="text-xs sm:text-sm md:text-base leading-relaxed text-gray-700 break-words text-left">
+                {message || '알 수 없는 오류가 발생했습니다.'}
+              </div>
+            )}
           </div>
         </div>
 
