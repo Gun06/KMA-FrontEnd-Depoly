@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import HeroButton from '@/components/common/Button/HeroButton';
 import { HERO_OVERLAY_POSITION_CLASS } from './heroOverlayLayout';
 
 /** API date(대회일)를 D-Day 형식으로 변환 (KMA-Mobile 동일) */
@@ -155,133 +154,10 @@ export default function ApiBannerSlide({
           )}
 
           {hasEventId ? (
-            <span className="hero-anim hero-readmore pointer-events-none mt-3 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-4 py-2 font-pretendard-bold text-xs font-bold uppercase tracking-[0.12em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base sm:tracking-[0.14em]">
+            <span className="hero-anim hero-readmore pointer-events-none mt-3 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-4 py-2 font-pretendard-bold text-xs font-bold uppercase tracking-[0.12em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base sm:tracking-[0.14em] md:hidden lg:inline-flex">
               READ MORE
             </span>
           ) : null}
-
-          {/* Action buttons: 태블릿 이상에서만 노출 (KMA-Mobile에는 없음, 웹만 유지) */}
-          {hasEventId && (
-            <div className="hero-anim hero-buttons hidden sm:flex flex-row gap-2 md:gap-3 mt-4">
-              <HeroButton
-                variant="main"
-                tone="blue"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/apply`;
-                }}
-              >
-                신청하기
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="blue"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/apply`;
-                }}
-              >
-                신청하기
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="blue"
-                size="md"
-                className="hidden lg:inline-flex"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/apply`;
-                }}
-              >
-                신청하기
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/guide/overview`;
-                }}
-              >
-                대회 요강
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/guide/overview`;
-                }}
-              >
-                대회 요강
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="md"
-                className="hidden lg:inline-flex"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/guide/overview`;
-                }}
-              >
-                대회 요강
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="xs"
-                className="hidden sm:inline-flex md:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/confirm`;
-                }}
-              >
-                신청 확인
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="sm"
-                className="hidden md:inline-flex lg:hidden"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/confirm`;
-                }}
-              >
-                신청 확인
-              </HeroButton>
-              <HeroButton
-                variant="main"
-                tone="white"
-                size="md"
-                className="hidden lg:inline-flex"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/event/${eventId}/registration/confirm`;
-                }}
-              >
-                신청 확인
-              </HeroButton>
-            </div>
-          )}
         </div>
       )}
 

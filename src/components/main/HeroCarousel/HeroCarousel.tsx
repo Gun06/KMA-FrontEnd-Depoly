@@ -217,7 +217,6 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
         .swiper-slide-active .hero-title { transition-delay: 360ms; }
         .swiper-slide-active .hero-date { transition-delay: 540ms; }
         .swiper-slide-active .hero-readmore { transition-delay: 630ms; }
-        .swiper-slide-active .hero-buttons { transition-delay: 720ms; }
       `}</style>
     </div>
   );
