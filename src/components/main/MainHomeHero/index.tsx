@@ -274,16 +274,16 @@ function PopularDeadlineBanner({
               className={cn(
                 'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
                 isDesktopLikeMobile
-                  ? 'items-center -ml-6 w-[min(34vw,7.75rem)] pr-1 pl-2 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
+                  ? 'items-center -ml-8 w-[min(36vw,8rem)] pr-1.5 pl-3 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
                   : 'items-center justify-center -ml-32 w-80 pr-8 pl-20'
               )}
               style={{
                 background: isDesktopLikeMobile
-                  ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.55) 20%, #09090b 50%, #09090b 100%)'
+                  ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.2) 18%, rgba(9,9,11,0.65) 42%, #09090b 68%, #09090b 100%)'
                   : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
               }}
             >
-              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? '-translate-x-0.5 gap-1.5 pr-0 sm:-translate-x-1 sm:gap-2 sm:pr-1' : 'translate-x-10 gap-3')}>
+              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-[12%] gap-1.5 sm:-translate-x-1 sm:gap-2 sm:pr-1' : 'translate-x-10 gap-3')}>
                 <div className="flex flex-col items-center gap-1.5">
                   <div className="flex flex-col items-center gap-0.5">
                     <div className={cn('animate-pulse rounded bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-3 w-[4.5rem] sm:h-3.5 sm:w-20' : 'h-4 w-28')} />
@@ -383,13 +383,20 @@ function PopularDeadlineBanner({
           )}
         >
           {isDesktopLike ? (
-            <Image
-              src={item.url.trim()}
-              alt={item.eventName?.trim() || '마감임박 대회'}
-              fill
-              className={cn('object-cover object-center', cd.expired && 'grayscale opacity-70')}
-              sizes="(max-width: 768px) 46vw, 220px"
-            />
+            <>
+              <Image
+                src={item.url.trim()}
+                alt={item.eventName?.trim() || '마감임박 대회'}
+                fill
+                className={cn('object-cover object-center', cd.expired && 'grayscale opacity-70')}
+                sizes="(max-width: 768px) 46vw, 220px"
+              />
+              {/* 모바일: 사진→검정 패널 경계 페이드 */}
+              <div
+                className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-[42%] bg-gradient-to-r from-transparent via-black/35 to-black/80 sm:hidden"
+                aria-hidden
+              />
+            </>
           ) : (
             <Image
               src={item.url.trim()}
@@ -408,12 +415,12 @@ function PopularDeadlineBanner({
           className={cn(
             'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl',
             isDesktopLike
-              ? 'items-center -ml-6 w-[min(34vw,7.75rem)] pr-1 pl-2 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
+              ? 'items-center -ml-8 w-[min(36vw,8rem)] pr-1.5 pl-3 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
               : 'items-center justify-center -ml-28 w-72 pr-6 pl-16'
           )}
           style={{
             background: isDesktopLike
-              ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.55) 20%, #09090b 50%, #09090b 100%)'
+              ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.2) 18%, rgba(9,9,11,0.65) 42%, #09090b 68%, #09090b 100%)'
               : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
           }}
           role="timer"
@@ -429,7 +436,7 @@ function PopularDeadlineBanner({
             className={cn(
               'flex flex-col items-center text-center',
               isDesktopLike
-                ? '-translate-x-0.5 gap-1.5 pr-0 sm:-translate-x-1 sm:gap-2 sm:pr-1'
+                ? 'translate-x-[12%] gap-1.5 sm:-translate-x-1 sm:gap-2 sm:pr-1'
                 : 'translate-x-10 gap-3'
             )}
           >
