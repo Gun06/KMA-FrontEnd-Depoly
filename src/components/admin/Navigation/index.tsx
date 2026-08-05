@@ -42,7 +42,6 @@ const NAV_ITEMS: Item[] = [
     { name: '대회관리', href: '/admin/events/management' },
     { name: '지역대회관리', href: '/admin/local-events/management' },
     { name: '통계확인', href: '/admin/events/statistics' },
-    { name: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
   ]},
   { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
     { name: '공지사항', href: '/admin/boards/notice' },
@@ -63,6 +62,7 @@ const NAV_ITEMS: Item[] = [
   { name: '알림관리', base: '/admin/notifications', icon: Bell, children: [
     { name: '알림관리', href: '/admin/notifications' },
     { name: '알림등록', href: '/admin/notifications/all/register' },
+    { name: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
   ]},
 ];
 

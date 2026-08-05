@@ -45,7 +45,6 @@ const subMenus: Record<string, SubMenu> = {
       { label: '대회관리', href: '/admin/events/management' },
       { label: '지역대회관리', href: '/admin/local-events/management' },
       { label: '통계확인', href: '/admin/events/statistics' },
-      { label: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
     ],
   },
   게시판관리: {
@@ -74,6 +73,7 @@ const subMenus: Record<string, SubMenu> = {
     items: [
       { label: '알림관리', href: '/admin/notifications' },
       { label: '알림등록', href: '/admin/notifications/all/register' },
+      { label: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
     ],
   },
 };
