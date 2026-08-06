@@ -149,6 +149,7 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
                   subtitle={banner.subTitle}
                   date={banner.date}
                   eventId={banner.eventId}
+                  eventNameKr={banner.eventNameKr}
                   total={total}
                   currentIndex={activeIndex}
                 />

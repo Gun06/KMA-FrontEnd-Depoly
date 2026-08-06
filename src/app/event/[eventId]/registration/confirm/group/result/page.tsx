@@ -12,6 +12,7 @@ import GroupRefundUserSelectModal from "@/components/event/Registration/GroupRef
 import { requestGroupRefund, BatchValidationErrorResponse, BatchValidationError } from "@/app/event/[eventId]/registration/apply/shared/api/group";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
+import { formatAddressDetailDisplay } from "@/app/event/[eventId]/registration/apply/shared/constants/addressField";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -1053,7 +1054,7 @@ export default function GroupApplicationConfirmResultPage() {
                 <div className="flex items-start justify-between pb-4">
                   <label className="text-sm font-medium text-gray-500 min-w-[112px] pr-4">상세주소</label>
                   <span className="text-sm font-medium text-gray-800">
-                    {groupApplicationData.addressDetail || '-'}
+                    {formatAddressDetailDisplay(groupApplicationData.addressDetail)}
                   </span>
                 </div>
               </div>

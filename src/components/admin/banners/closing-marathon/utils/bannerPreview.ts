@@ -1,4 +1,4 @@
-/** approach 응답에서 마감임박 배너 URL·대회 ID 추출 */
+/** deadline-approach 응답에서 마감임박 배너 URL·대회 ID 추출 */
 export function parseApproachPreview(json: unknown): {
   eventId: string;
   url: string;
@@ -36,10 +36,17 @@ export function parseApproachPreview(json: unknown): {
   }
 
   if (typeof json === 'object') {
+    const o = json as Record<string, unknown>;
+
+    // { type, bannerInfo: {...} }
+    if (o.bannerInfo != null) {
+      const fromBanner = pickFrom(o.bannerInfo);
+      if (fromBanner) return fromBanner;
+    }
+
     const direct = pickFrom(json);
     if (direct) return direct;
 
-    const o = json as Record<string, unknown>;
     const inner = o.content ?? o.data ?? o.items ?? o.result ?? o.body;
     if (Array.isArray(inner)) {
       for (const el of inner) {
@@ -55,7 +62,7 @@ export function parseApproachPreview(json: unknown): {
   return null;
 }
 
-/** 대회 상세에서 마감임박 배너 후보 URL (approach와 유사 우선순위) */
+/** 대회 상세에서 마감임박 배너 후보 URL (deadline-approach와 유사 우선순위) */
 export function pickClosingBannerFromEventInfo(info: {
   eventAdvertiseBannerUrl?: string | null;
   promotionBanner?: string | null;

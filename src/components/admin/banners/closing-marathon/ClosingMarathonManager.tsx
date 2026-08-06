@@ -12,27 +12,35 @@ import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
 import {
   useClosingMarathonForAdmin,
+  useDeleteClosingMarathonEvent,
   usePatchClosingMarathonEvent,
 } from '@/hooks/useClosingMarathon';
-import { useAdminEventList } from '@/services/admin';
 import { useEventDetail } from '@/hooks/useEventDetail';
-import type { ClosingMarathonResponse } from '@/types/closingMarathon';
+import type {
+  ClosingMarathonResponse,
+  ClosingMarathonType,
+} from '@/types/closingMarathon';
+import { CLOSING_MARATHON_TYPE_LABEL } from '@/types/closingMarathon';
 import {
   parseApproachPreview,
   pickClosingBannerFromEventInfo,
 } from '@/components/admin/banners/closing-marathon/utils/bannerPreview';
-import { Pin, RefreshCw } from 'lucide-react';
+import { useClosingMarathonEventSelect } from '@/components/admin/banners/closing-marathon/hooks/useClosingMarathonEventSelect';
+import { userApi } from '@/hooks/api.presets';
+import { AlertCircle, Pin, RefreshCw } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
-async function fetchApproachPreview() {
-  const res = await fetch('/api/v1/public/main-page/advertise/approach', {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-    cache: 'no-store',
-  });
-  if (!res.ok) return null;
-  const json = await res.json();
-  return parseApproachPreview(json);
+const TYPE_TABS: ClosingMarathonType[] = ['D_DAY', 'REGISTRATION'];
+
+async function fetchDeadlineApproachPreview() {
+  try {
+    const json = await userApi.get<unknown>(
+      '/api/v1/public/main-page/advertise/deadline-approach'
+    );
+    return parseApproachPreview(json);
+  } catch {
+    return null;
+  }
 }
 
 function pickId(value: string | null | undefined): string | null {
@@ -60,12 +68,22 @@ function isDisplayMismatch(data: ClosingMarathonResponse | undefined): boolean {
   return pickId(data.designatedEventId) !== pickId(data.displayEventId);
 }
 
+function criteriaLabel(type: ClosingMarathonType): string {
+  return type === 'D_DAY' ? '개최일' : '접수 마감';
+}
+
 function StatusBadge({
   label,
   variant,
 }: {
   label: string;
-  variant: 'auto' | 'manual' | 'warn' | 'display-auto' | 'display-manual';
+  variant:
+    | 'auto'
+    | 'manual'
+    | 'warn'
+    | 'display-auto'
+    | 'display-manual'
+    | 'inactive';
 }) {
   const cls = {
     auto: 'bg-blue-100 text-[#1E5EFF]',
@@ -73,6 +91,7 @@ function StatusBadge({
     warn: 'bg-amber-100 text-amber-800',
     'display-auto': 'bg-blue-100 text-[#1E5EFF]',
     'display-manual': 'bg-violet-100 text-violet-700',
+    inactive: 'bg-gray-100 text-gray-600',
   }[variant];
 
   return (
@@ -87,7 +106,45 @@ function StatusBadge({
   );
 }
 
-function AutoModePlaceholder() {
+function TypeToggleTabs({
+  value,
+  onChange,
+}: {
+  value: ClosingMarathonType;
+  onChange: (type: ClosingMarathonType) => void;
+}) {
+  return (
+    <div
+      className="inline-flex gap-1 rounded-lg border bg-white p-1"
+      role="tablist"
+      aria-label="마감임박 기준 선택"
+    >
+      {TYPE_TABS.map((type) => {
+        const selected = value === type;
+        return (
+          <button
+            key={type}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => onChange(type)}
+            className={cn(
+              'h-9 rounded-md px-3 text-sm transition-colors',
+              selected
+                ? 'bg-[#1E5EFF] text-white'
+                : 'text-gray-700 hover:bg-gray-50'
+            )}
+          >
+            {CLOSING_MARATHON_TYPE_LABEL[type]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AutoModePlaceholder({ type }: { type: ClosingMarathonType }) {
+  const criteria = criteriaLabel(type);
   return (
     <div className="mt-3 space-y-3">
       <div className="flex aspect-[332/166] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-blue-200 bg-gradient-to-b from-blue-50/80 to-white px-4 text-center">
@@ -98,11 +155,33 @@ function AutoModePlaceholder() {
         <p className="text-[12px] leading-relaxed text-gray-500">
           직접 지정된 대회가 없습니다.
           <br />
-          접수 마감이 가장 임박한 대회가 자동 노출됩니다.
+          {criteria}이 가장 임박한 대회가 자동 노출됩니다.
         </p>
       </div>
       <p className="text-[12px] leading-relaxed text-gray-400">
         아래에서 대회를 선택하면 수동 모드로 전환할 수 있습니다.
+      </p>
+    </div>
+  );
+}
+
+function NotTargetPlaceholder() {
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="flex aspect-[332/166] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gradient-to-b from-gray-50 to-white px-4 text-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+          <AlertCircle className="h-5 w-5" strokeWidth={2.2} />
+        </div>
+        <p className="text-[14px] font-semibold text-gray-800">표기 대상 아님</p>
+        <p className="text-[12px] leading-relaxed text-gray-500">
+          현재 메인 화면 내 표기 대상이 아닙니다.
+          <br />
+          해당 양식의 대회를 표기하고 싶은 경우 본 화면에서 설정을
+          마쳐주세요.
+        </p>
+      </div>
+      <p className="text-[12px] leading-relaxed text-gray-400">
+        아래에서 대회를 선택하면 표기 대상으로 전환할 수 있습니다.
       </p>
     </div>
   );
@@ -113,33 +192,43 @@ function DesignatedStatusCard({
   eventId,
   eventName,
   isMismatch,
+  type,
+  isTarget,
 }: {
   eventId: string | null;
   eventName: string | null;
   isMismatch: boolean;
+  type: ClosingMarathonType;
+  isTarget: boolean;
 }) {
-  const isManual = Boolean(eventId && eventName);
+  const isManual = isTarget && Boolean(eventId && eventName);
+  const criteria = criteriaLabel(type);
 
   return (
     <div
       className={cn(
         'flex h-full flex-col rounded-lg border p-5 shadow-sm',
-        isManual
-          ? 'border-violet-200 bg-gradient-to-b from-violet-50/60 to-white'
-          : 'border-blue-200 bg-gradient-to-b from-blue-50/40 to-white'
+        !isTarget
+          ? 'border-gray-200 bg-gradient-to-b from-gray-50/80 to-white'
+          : isManual
+            ? 'border-violet-200 bg-gradient-to-b from-violet-50/60 to-white'
+            : 'border-blue-200 bg-gradient-to-b from-blue-50/40 to-white'
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-gray-500">관리자 지정</h3>
         <StatusBadge
-          label={isManual ? '수동 모드' : '자동 모드'}
-          variant={isManual ? 'manual' : 'auto'}
+          label={
+            !isTarget ? '표기 대상 아님' : isManual ? '수동 모드' : '자동 모드'
+          }
+          variant={!isTarget ? 'inactive' : isManual ? 'manual' : 'auto'}
         />
       </div>
 
-      {isManual ? (
+      {!isTarget ? (
+        <NotTargetPlaceholder />
+      ) : isManual ? (
         <div className="mt-3 flex flex-1 flex-col space-y-4">
-          {/* 모드 안내 박스 */}
           <div className="rounded-lg border border-violet-200 bg-violet-50/70 px-4 py-4">
             <div className="flex gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
@@ -151,14 +240,13 @@ function DesignatedStatusCard({
                 </p>
                 <p className="text-[12px] leading-relaxed text-gray-600">
                   {isMismatch
-                    ? '지정한 대회의 접수 마감일이 지나 메인에는 다른 대회가 노출됩니다.'
-                    : '지정한 대회가 접수 마감 전까지 메인에 우선 노출됩니다.'}
+                    ? `지정한 대회의 ${criteria}이 지나 메인에는 다른 대회가 노출됩니다.`
+                    : `지정한 대회가 ${criteria} 전까지 메인에 우선 노출됩니다.`}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 지정 대회명 + 편집 링크 */}
           <div className="space-y-1.5">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-500">
               지정 대회
@@ -179,7 +267,7 @@ function DesignatedStatusCard({
           </p>
         </div>
       ) : (
-        <AutoModePlaceholder />
+        <AutoModePlaceholder type={type} />
       )}
     </div>
   );
@@ -193,29 +281,55 @@ function DisplayPreviewCard({
   badge,
   tone = 'default',
   hideEventMeta = false,
+  isTarget,
 }: {
   eventId: string | null;
   eventName: string | null;
   bannerUrl: string | null;
-  badge?: { label: string; variant: 'auto' | 'manual' | 'warn' | 'display-auto' | 'display-manual' };
+  badge?: {
+    label: string;
+    variant:
+      | 'auto'
+      | 'manual'
+      | 'warn'
+      | 'display-auto'
+      | 'display-manual'
+      | 'inactive';
+  };
   tone?: 'default' | 'warn';
   hideEventMeta?: boolean;
+  isTarget: boolean;
 }) {
   return (
     <div
       className={cn(
         'flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm',
-        tone === 'warn' ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200'
+        !isTarget
+          ? 'border-gray-200'
+          : tone === 'warn'
+            ? 'border-amber-300 bg-amber-50/40'
+            : 'border-gray-200'
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-gray-500">
           메인 실제 노출
         </h3>
-        {badge ? <StatusBadge label={badge.label} variant={badge.variant} /> : null}
+        {isTarget && badge ? (
+          <StatusBadge label={badge.label} variant={badge.variant} />
+        ) : null}
       </div>
 
-      {eventId && eventName ? (
+      {!isTarget ? (
+        <div className="mt-3 flex aspect-[332/166] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 text-center">
+          <p className="text-[13px] font-medium text-gray-500">
+            표기 대상이 아닙니다
+          </p>
+          <p className="text-[12px] leading-relaxed text-gray-400">
+            아래에서 대회를 지정하면 메인 노출 미리보기가 표시됩니다.
+          </p>
+        </div>
+      ) : eventId && eventName ? (
         <div className="mt-3 space-y-3">
           {bannerUrl ? (
             <div className="relative aspect-[332/166] w-full overflow-hidden rounded-lg border border-gray-100 bg-gray-100">
@@ -237,7 +351,9 @@ function DisplayPreviewCard({
           )}
           {!hideEventMeta && (
             <>
-              <p className="text-[15px] font-semibold text-gray-900">{eventName}</p>
+              <p className="text-[15px] font-semibold text-gray-900">
+                {eventName}
+              </p>
               <Link
                 href={`/admin/events/${eventId}/edit`}
                 className="inline-flex text-[13px] font-medium text-[#1E5EFF] hover:underline"
@@ -259,13 +375,25 @@ function DisplayPreviewCard({
 export default function ClosingMarathonManager() {
   const { data, isLoading, isError, refetch } = useClosingMarathonForAdmin();
   const patchMutation = usePatchClosingMarathonEvent();
-  const { data: eventData, isLoading: eventsLoading } = useAdminEventList({
-    page: 1,
-    size: 1000,
-    eventStatus: 'OPEN',
-  });
+  const deleteMutation = useDeleteClosingMarathonEvent();
+  const {
+    options: eventOptionsBase,
+    eventsLoading,
+    setKeyword: setEventSearchKeyword,
+    hasMore: hasMoreEvents,
+    isLoadingMore: isLoadingMoreEvents,
+    fetchNextPage: fetchMoreEvents,
+    loadMoreLabel,
+  } = useClosingMarathonEventSelect();
 
-  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null);
+  const [viewingType, setViewingType] =
+    React.useState<ClosingMarathonType | null>(null);
+  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
+    null
+  );
+  const [selectedEventLabel, setSelectedEventLabel] = React.useState<
+    string | null
+  >(null);
   const [confirmModal, setConfirmModal] = React.useState<{
     isOpen: boolean;
     message: string;
@@ -280,28 +408,54 @@ export default function ClosingMarathonManager() {
     message: '',
   });
 
-  const eventOptions = React.useMemo(() => {
-    return (eventData?.content ?? []).map((event) => ({
-      value: event.id,
-      label: event.nameKr,
-    }));
-  }, [eventData]);
+  // GET type → 진입 시 기본 탭
+  React.useEffect(() => {
+    if (!data?.type) return;
+    setViewingType((prev) => prev ?? data.type);
+  }, [data?.type]);
 
-  const designatedId = pickId(data?.designatedEventId);
-  const designatedName = pickName(data?.designatedEventName);
-  const displayId = pickId(data?.displayEventId);
-  const displayName = pickName(data?.displayEventName);
+  const activeType = data?.type ?? null;
+  const currentType: ClosingMarathonType = viewingType ?? activeType ?? 'D_DAY';
+  const isTarget = activeType != null && currentType === activeType;
+
+  const handleTypeChange = (type: ClosingMarathonType) => {
+    setViewingType(type);
+    if (type !== activeType) {
+      setSelectedEventId(null);
+      setSelectedEventLabel(null);
+    }
+  };
+
+  const eventOptions = React.useMemo(() => {
+    if (
+      selectedEventId &&
+      selectedEventLabel &&
+      !eventOptionsBase.some((o) => o.value === selectedEventId)
+    ) {
+      return [
+        { value: selectedEventId, label: selectedEventLabel },
+        ...eventOptionsBase,
+      ];
+    }
+    return eventOptionsBase;
+  }, [eventOptionsBase, selectedEventId, selectedEventLabel]);
+
+  const designatedId = isTarget ? pickId(data?.designatedEventId) : null;
+  const designatedName = isTarget ? pickName(data?.designatedEventName) : null;
+  const displayId = isTarget ? pickId(data?.displayEventId) : null;
+  const displayName = isTarget ? pickName(data?.displayEventName) : null;
 
   const { data: approachPreview } = useQuery({
-    queryKey: ['closingMarathon', 'approachPreview'],
-    queryFn: fetchApproachPreview,
+    queryKey: ['closingMarathon', 'deadlineApproachPreview'],
+    queryFn: fetchDeadlineApproachPreview,
     staleTime: 60 * 1000,
+    enabled: isTarget,
   });
 
   const { data: displayEventDetail } = useEventDetail(displayId ?? '');
 
   const displayBannerUrl = React.useMemo(() => {
-    if (!displayId) return null;
+    if (!displayId || !isTarget) return null;
     if (approachPreview?.eventId === displayId && approachPreview.url) {
       return approachPreview.url;
     }
@@ -309,11 +463,12 @@ export default function ClosingMarathonManager() {
       return pickClosingBannerFromEventInfo(displayEventDetail.eventInfo);
     }
     return null;
-  }, [displayId, approachPreview, displayEventDetail]);
+  }, [displayId, approachPreview, displayEventDetail, isTarget]);
 
-  const displayMismatch = isDisplayMismatch(data);
+  const displayMismatch = isTarget && isDisplayMismatch(data);
 
   const displayBadge = React.useMemo(() => {
+    if (!isTarget) return undefined;
     if (displayMismatch) {
       return { label: '자동 전환', variant: 'warn' as const };
     }
@@ -324,22 +479,51 @@ export default function ClosingMarathonManager() {
       return { label: '지정 대회', variant: 'display-manual' as const };
     }
     return undefined;
-  }, [displayMismatch, designatedId, displayId]);
+  }, [isTarget, displayMismatch, designatedId, displayId]);
 
-  const isSaving = patchMutation.isPending;
+  const isSaving = patchMutation.isPending || deleteMutation.isPending;
+  const criteria = criteriaLabel(currentType);
 
   const runPatch = async (
-    eventId: string | null | undefined,
+    type: ClosingMarathonType,
+    eventId: string,
     successMessage: string
   ) => {
     try {
-      await patchMutation.mutateAsync(eventId);
+      await patchMutation.mutateAsync({ type, eventId });
+      setViewingType(type);
       setSelectedEventId(null);
+      setSelectedEventLabel(null);
+
+      const refreshed = await refetch();
+      const savedType = refreshed.data?.type;
+      if (savedType && savedType !== type) {
+        setErrorModal({
+          isOpen: true,
+          message: `저장은 완료됐지만 서버 표기 타입이「${CLOSING_MARATHON_TYPE_LABEL[savedType]}」입니다. 「${CLOSING_MARATHON_TYPE_LABEL[type]}」으로 전환되지 않았습니다. 백엔드 type 처리를 확인해 주세요.`,
+        });
+        return;
+      }
+
       setSuccessModal({ isOpen: true, message: successMessage });
     } catch {
       setErrorModal({
         isOpen: true,
         message: '저장에 실패했습니다. 다시 시도해주세요.',
+      });
+    }
+  };
+
+  const runDelete = async (successMessage: string) => {
+    try {
+      await deleteMutation.mutateAsync();
+      setSelectedEventId(null);
+      setSelectedEventLabel(null);
+      setSuccessModal({ isOpen: true, message: successMessage });
+    } catch {
+      setErrorModal({
+        isOpen: true,
+        message: '지정 해제에 실패했습니다. 다시 시도해주세요.',
       });
     }
   };
@@ -353,12 +537,22 @@ export default function ClosingMarathonManager() {
       return;
     }
 
+    const typeToSave = currentType;
+    const eventIdToSave = selectedEventId;
+    const switchNote = !isTarget
+      ? ` (${CLOSING_MARATHON_TYPE_LABEL[typeToSave]}으로 표기 대상이 전환됩니다)`
+      : '';
+
     setConfirmModal({
       isOpen: true,
-      message: '선택한 대회를 마감임박 대회로 지정하시겠습니까?',
+      message: `선택한 대회를 ${CLOSING_MARATHON_TYPE_LABEL[typeToSave]} 대회로 지정하시겠습니까?${switchNote}`,
       onConfirm: () => {
         setConfirmModal((s) => ({ ...s, isOpen: false }));
-        void runPatch(selectedEventId, '마감임박 대회가 지정되었습니다.');
+        void runPatch(
+          typeToSave,
+          eventIdToSave,
+          `${CLOSING_MARATHON_TYPE_LABEL[typeToSave]} 대회가 지정되었습니다.`
+        );
       },
     });
   };
@@ -370,10 +564,32 @@ export default function ClosingMarathonManager() {
         '마감임박 대회 지정을 해제하고 자동 모드로 전환하시겠습니까?',
       onConfirm: () => {
         setConfirmModal((s) => ({ ...s, isOpen: false }));
-        void runPatch(null, '자동 모드로 전환되었습니다.');
+        void runDelete('자동 모드로 전환되었습니다.');
       },
     });
   };
+
+  const noticeItems = React.useMemo(() => {
+    const items = [
+      {
+        text: '※ 마감임박 배너 이미지는 대회 등록/수정 > 배너 업로드(홍보용 인스타배너 등)에서 변경합니다.',
+      },
+      {
+        text: `※ 지정을 하지 않으면 ${criteria}이 가장 임박한 대회 1개가 자동으로 노출됩니다.`,
+      },
+      {
+        text: `※ 지정한 대회의 ${criteria}이 지나면 메인에는 다른 대회가 자동 노출될 수 있습니다.`,
+        highlight: true,
+      },
+    ];
+    if (!isTarget) {
+      items.push({
+        text: '※ 현재 선택한 메뉴는 메인 표기 대상이 아닙니다. 대회를 지정하면 해당 기준으로 전환됩니다.',
+        highlight: true,
+      });
+    }
+    return items;
+  }, [criteria, isTarget]);
 
   return (
     <div className="mx-auto max-w-[900px] space-y-6 px-4 py-2">
@@ -386,6 +602,8 @@ export default function ClosingMarathonManager() {
           이미지는 대회 등록/수정에서 관리합니다.
         </p>
       </div>
+
+      <TypeToggleTabs value={currentType} onChange={handleTypeChange} />
 
       {isLoading ? (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-[13px] text-gray-500">
@@ -412,6 +630,8 @@ export default function ClosingMarathonManager() {
               eventId={designatedId}
               eventName={designatedName}
               isMismatch={displayMismatch}
+              type={currentType}
+              isTarget={isTarget}
             />
             <DisplayPreviewCard
               eventId={displayId}
@@ -420,12 +640,13 @@ export default function ClosingMarathonManager() {
               badge={displayBadge}
               tone={displayMismatch ? 'warn' : 'default'}
               hideEventMeta={Boolean(designatedId)}
+              isTarget={isTarget}
             />
           </div>
 
           {displayMismatch && (
             <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
-              지정한 대회의 접수 마감일이 지나 메인에는 다른 대회가 자동
+              지정한 대회의 {criteria}이 지나 메인에는 다른 대회가 자동
               노출됩니다. 지정을 변경하거나 해제할 수 있습니다.
             </div>
           )}
@@ -439,12 +660,17 @@ export default function ClosingMarathonManager() {
         <div className="mt-4 space-y-4">
           <div>
             <label className="mb-2 block text-[13px] font-medium text-gray-700">
-              접수중 대회 선택
+              대회 선택 (접수중·접수마감)
             </label>
             <SearchableSelect
               value={selectedEventId ?? undefined}
               options={eventOptions}
-              onChange={(v) => setSelectedEventId(v)}
+              onChange={(v) => {
+                setSelectedEventId(v);
+                setSelectedEventLabel(
+                  eventOptions.find((o) => o.value === v)?.label ?? null
+                );
+              }}
               placeholder={
                 eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
               }
@@ -452,6 +678,17 @@ export default function ClosingMarathonManager() {
               searchPlaceholder="대회명 검색"
               variant="compact"
               showPlaceholderColor
+              maxHeight="max-h-80"
+              onSearchChange={setEventSearchKeyword}
+              onLoadMore={() => {
+                void fetchMoreEvents();
+              }}
+              hasMore={hasMoreEvents}
+              isLoadingMore={isLoadingMoreEvents}
+              loadMoreLabel={loadMoreLabel}
+              emptyMessage={
+                eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
+              }
             />
           </div>
 
@@ -464,7 +701,7 @@ export default function ClosingMarathonManager() {
             >
               {isSaving ? '저장 중…' : '지정 저장'}
             </Button>
-            {hasDesignated(data) && (
+            {isTarget && hasDesignated(data) && (
               <Button
                 size="md"
                 tone="neutral"
@@ -478,20 +715,7 @@ export default function ClosingMarathonManager() {
         </div>
       </div>
 
-      <NoticeMessage
-        items={[
-          {
-            text: '※ 마감임박 배너 이미지는 대회 등록/수정 > 배너 업로드(홍보용 인스타배너 등)에서 변경합니다.',
-          },
-          {
-            text: '※ 지정을 하지 않으면 접수 마감이 가장 임박한 대회 1개가 자동으로 노출됩니다.',
-          },
-          {
-            text: '※ 지정한 대회의 접수 마감일이 지나면 메인에는 다른 대회가 자동 노출될 수 있습니다.',
-            highlight: true,
-          },
-        ]}
-      />
+      <NoticeMessage items={noticeItems} />
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}

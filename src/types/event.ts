@@ -218,12 +218,23 @@ export interface MainPageAdvertiseItem {
   deadline: string;
   startTime: string;
   eventName: string;
-  /** GET .../approach 인기대회 응답에만 올 수 있음 */
+  /** GET .../deadline-approach 등 응답에만 올 수 있음 */
   registrationCount?: number;
 }
 
-/** GET /api/v1/public/main-page/advertise/approach — 인기(마감임박) 대회 배너(단건·복수 동일 필드) */
-export type MainPagePopularAdvertiseItem = MainPageAdvertiseItem;
+/** 기한 임박 기준 — REGISTRATION: 신청 마감일, D_DAY: 대회 시작일 */
+export type MainPageDeadlineApproachType = 'REGISTRATION' | 'D_DAY';
+
+/** GET /api/v1/public/main-page/advertise/deadline-approach */
+export interface MainPageDeadlineApproachResponse {
+  type: MainPageDeadlineApproachType;
+  bannerInfo: MainPageAdvertiseItem;
+}
+
+/** 메인 마감임박 배너 표시용 (bannerInfo + type) */
+export type MainPagePopularAdvertiseItem = MainPageAdvertiseItem & {
+  type?: MainPageDeadlineApproachType;
+};
 
 // 스폰서 배너 API 응답 타입
 export interface SponsorBanner {
@@ -295,6 +306,7 @@ export interface MainBannerItem {
   imageUrl: string;
   orderNo: number;
   eventId: string;
+  eventNameKr?: string | null;
 }
 
 // 개인 기록 조회 API 타입

@@ -12,6 +12,7 @@ import { requestIndividualRefund } from "@/app/event/[eventId]/registration/appl
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { fetchIndividualRegistrationConfirm, normalizeIndividualRegistrationListResponse } from "./api";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
+import { formatAddressDetailDisplay } from "@/app/event/[eventId]/registration/apply/shared/constants/addressField";
 
 export default function IndividualApplicationConfirmResultPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
@@ -733,7 +734,7 @@ export default function IndividualApplicationConfirmResultPage({ params }: { par
                 <div className="flex items-start justify-between pb-4">
                   <label className="font-medium text-gray-500 min-w-[112px] pr-4">상세주소</label>
                   <span className="font-medium text-gray-800">
-                    {registrationData.addressDetail || '-'}
+                    {formatAddressDetailDisplay(registrationData.addressDetail)}
                   </span>
                 </div>
               </div>

@@ -72,7 +72,7 @@ export default function FeaturesSection() {
       <div className="mx-auto max-w-[1920px] px-4 sm:px-5 lg:px-[6vw]">
         <div className="mb-6 pt-3 text-center sm:mb-8 sm:pt-2 md:mb-12 md:pt-0">
           <h2 className="font-giants mb-3 text-xl leading-snug text-gray-900 sm:mb-4 sm:text-2xl md:text-3xl lg:text-4xl">
-            전국마라톤 협회에서 지원하는 더 많은 기능
+            전국마라톤협회에서 지원하는 더 많은 기능
           </h2>
           <div className="mx-auto h-1 w-24 bg-slate-200 sm:w-32 md:w-48 lg:w-60" />
         </div>

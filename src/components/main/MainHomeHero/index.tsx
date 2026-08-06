@@ -131,9 +131,17 @@ function parsePopularAdvertiseList(
   limit: number
 ): MainPagePopularAdvertiseItem[] {
   const out: MainPagePopularAdvertiseItem[] = [];
-  const push = (raw: unknown) => {
+  const push = (raw: unknown, type?: MainPagePopularAdvertiseItem['type']) => {
     const n = normalizePopularAdvertiseRaw(raw);
-    if (n && out.length < limit) out.push(n);
+    if (n && out.length < limit) {
+      out.push(type ? { ...n, type } : n);
+    }
+  };
+
+  const pickType = (raw: Record<string, unknown>) => {
+    const t = raw.type;
+    if (t === 'REGISTRATION' || t === 'D_DAY') return t;
+    return undefined;
   };
 
   if (json == null) return out;
@@ -148,28 +156,38 @@ function parsePopularAdvertiseList(
 
   if (typeof json === 'object') {
     const o = json as Record<string, unknown>;
+    const responseType = pickType(o);
+
+    // { type, bannerInfo: {...} }
+    if (o.bannerInfo != null) {
+      push(o.bannerInfo, responseType);
+      if (out.length >= limit) return out.slice(0, limit);
+    }
+
     const direct = normalizePopularAdvertiseRaw(o);
     if (direct) {
-      out.push(direct);
+      out.push(responseType ? { ...direct, type: responseType } : direct);
       return out.slice(0, limit);
     }
 
     const inner = o.content ?? o.data ?? o.items ?? o.result ?? o.body;
     if (Array.isArray(inner)) {
       for (const el of inner) {
-        push(el);
+        push(el, responseType);
         if (out.length >= limit) break;
       }
       return out;
     }
     const single = normalizePopularAdvertiseRaw(inner);
-    if (single) out.push(single);
+    if (single) {
+      out.push(responseType ? { ...single, type: responseType } : single);
+    }
 
     if (out.length < limit) {
       for (const v of Object.values(o)) {
         if (Array.isArray(v)) {
           for (const el of v) {
-            push(el);
+            push(el, responseType);
             if (out.length >= limit) break;
           }
         }
@@ -235,7 +253,17 @@ function PopularDeadlineBanner({
     variant === 'mobileDesktopLike';
   const isCompactMobile = variant === 'mobileCompact';
   const isDesktopLikeMobile = variant === 'mobileDesktopLike';
-  const cd = useDeadlineCountdown(item?.deadline);
+  const isDdayType = item?.type === 'D_DAY';
+  const countdownIso = isDdayType
+    ? item?.startTime || item?.deadline
+    : item?.deadline || item?.startTime;
+  const cd = useDeadlineCountdown(countdownIso);
+  const imminentLabel = isDdayType ? '개최 임박!' : '접수마감 임박!';
+  const expiredLabel = isDdayType ? '개최일 지남' : '접수 마감';
+  const fromLabel = isDdayType ? '개최일까지' : '대회일로부터';
+  const timerAria = cd.expired
+    ? expiredLabel
+    : `${imminentLabel} ${fromLabel} D-${cd.expired ? 0 : cd.days}`;
 
   if (loading) {
     /* 데스크톱: 실제 카드와 동일 — 이미지 열 + 겹친 D-day 패널 */
@@ -425,11 +453,7 @@ function PopularDeadlineBanner({
           }}
           role="timer"
           aria-live="off"
-          aria-label={
-            cd.expired
-              ? '접수 마감'
-              : `접수마감 임박! 대회일로부터 D-${daysLabel}`
-          }
+          aria-label={timerAria}
         >
           {/* 가운데 정렬 유지 + 블록만 오른쪽으로 이동 */}
           <div
@@ -442,7 +466,7 @@ function PopularDeadlineBanner({
           >
             {cd.expired ? (
               <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold text-white/90">
-                접수 마감
+                {expiredLabel}
               </span>
             ) : (
               <>
@@ -455,7 +479,7 @@ function PopularDeadlineBanner({
                         : 'text-[clamp(13px,2.2vw,18px)]'
                     )}
                   >
-                    접수마감 임박!
+                    {imminentLabel}
                   </span>
                   <span
                     className={cn(
@@ -465,7 +489,7 @@ function PopularDeadlineBanner({
                         : 'text-[clamp(11px,1.8vw,14px)]'
                     )}
                   >
-                    대회일로부터
+                    {fromLabel}
                   </span>
                 </div>
                 <div
@@ -519,11 +543,7 @@ function PopularDeadlineBanner({
       )}
       role="timer"
       aria-live="off"
-      aria-label={
-        cd.expired
-          ? '접수 마감'
-          : `접수마감 임박! 대회일로부터 D-${daysLabel}`
-      }
+      aria-label={timerAria}
     >
       {cd.expired ? (
         <div
@@ -536,7 +556,7 @@ function PopularDeadlineBanner({
               : 'py-1 text-[8px] sm:text-[9px]'
           )}
         >
-          접수 마감
+          {expiredLabel}
         </div>
       ) : (
         <div
@@ -555,7 +575,7 @@ function PopularDeadlineBanner({
                 : 'text-[clamp(10px,2.8vw,13px)]'
             )}
           >
-            접수마감 임박!
+            {imminentLabel}
           </span>
           <span
             className={cn(
@@ -567,7 +587,7 @@ function PopularDeadlineBanner({
                 : 'text-[clamp(8px,2.2vw,11px)]'
             )}
           >
-            대회일로부터
+            {fromLabel}
           </span>
           <div
             className={cn(
@@ -1504,10 +1524,15 @@ export default function MainHomeHero() {
 
 
     const fetchPopularAdvertise = async () => {
+      if (!API_BASE_URL) {
+        setPopularItems([]);
+        setPopularLoading(false);
+        return;
+      }
       try {
         setPopularLoading(true);
         const response = await fetch(
-          '/api/v1/public/main-page/advertise/approach',
+          `${API_BASE_URL}/api/v1/public/main-page/advertise/deadline-approach`,
           {
             method: 'GET',
             headers: {

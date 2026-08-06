@@ -28,6 +28,18 @@ interface SearchableSelectProps<T = string> {
   maxHeight?: string;
   /** 트리거(닫힌 상태) 밀도 — compact: 관리자 툴바 버튼과 동일 h-10·text-sm */
   variant?: 'default' | 'compact';
+  /**
+   * 전달 시 클라이언트 필터 대신 서버 검색 모드.
+   * 부모에서 options를 검색 결과에 맞게 갱신해야 함.
+   */
+  onSearchChange?: (keyword: string) => void;
+  /** 추가 페이지 로드 */
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  /** 더보기 버튼 문구 (기본: 더보기 (현재/전체)) */
+  loadMoreLabel?: string;
+  emptyMessage?: string;
 }
 
 const TRIGGER_VARIANT: Record<'default' | 'compact', { button: string; label: string }> = {
@@ -53,14 +65,20 @@ export function SearchableSelect<T = string>({
   showPlaceholderColor = true,
   maxHeight = 'max-h-60',
   variant = 'default',
+  onSearchChange,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
+  loadMoreLabel,
+  emptyMessage = '검색 결과가 없습니다.',
 }: SearchableSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const serverSearch = typeof onSearchChange === 'function';
 
   const trigger = TRIGGER_VARIANT[variant];
 
-  // 외부 클릭 감지
   useEffect(() => {
     if (!isOpen) return;
 
@@ -68,6 +86,7 @@ export function SearchableSelect<T = string>({
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchKeyword('');
+        if (serverSearch) onSearchChange('');
       }
     };
 
@@ -75,33 +94,39 @@ export function SearchableSelect<T = string>({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, serverSearch, onSearchChange]);
 
-  // 선택된 옵션 찾기
   const selectedOption = options.find(opt => opt.value === value);
-  
-  // 검색 필터링
-  const filteredOptions = searchable && searchKeyword
-    ? options.filter(opt => 
-        opt.label.toLowerCase().includes(searchKeyword.toLowerCase())
-      )
-    : options;
+
+  const filteredOptions =
+    searchable && searchKeyword && !serverSearch
+      ? options.filter(opt =>
+          opt.label.toLowerCase().includes(searchKeyword.toLowerCase())
+        )
+      : options;
 
   const handleSelect = (optionValue: T) => {
     onChange(optionValue);
     setIsOpen(false);
     setSearchKeyword('');
+    if (serverSearch) onSearchChange('');
+  };
+
+  const handleSearchInput = (next: string) => {
+    setSearchKeyword(next);
+    if (serverSearch) onSearchChange(next);
   };
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      {/* 선택된 값 표시 버튼 */}
       <button
         type="button"
         className={trigger.button}
         onClick={() => {
-          setIsOpen(!isOpen);
+          const next = !isOpen;
+          setIsOpen(next);
           setSearchKeyword('');
+          if (serverSearch) onSearchChange('');
         }}
       >
         <span
@@ -115,58 +140,73 @@ export function SearchableSelect<T = string>({
         >
           {selectedOption?.label || placeholder}
         </span>
-        <svg 
-          className={`absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-transform pointer-events-none ${isOpen ? 'rotate-180' : ''}`} 
-          fill="none" 
-          stroke="currentColor" 
+        <svg
+          className={`absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-transform pointer-events-none ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      
-      {/* 드롭다운 메뉴 */}
+
       {isOpen && (
         <div className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-[71] ${maxHeight} flex flex-col`}>
-            {/* 검색 입력 필드 (searchable이 true일 때만) */}
-            {searchable && (
-              <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
-                <input
-                  type="text"
-                  className="w-full rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={searchPlaceholder}
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  autoFocus
-                />
-              </div>
-            )}
-            
-            {/* 옵션 리스트 */}
-            <div className="overflow-y-auto flex-1">
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                  검색 결과가 없습니다.
-                </div>
-              ) : (
-                filteredOptions.map((option) => (
-                  <button
-                    key={String(option.value)}
-                    type="button"
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
-                      option.value === value ? 'bg-blue-50 font-medium' : ''
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelect(option.value);
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))
-              )}
+          {searchable && (
+            <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <input
+                type="text"
+                className="w-full rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={searchPlaceholder}
+                value={searchKeyword}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
             </div>
+          )}
+
+          <div className="overflow-y-auto flex-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                {emptyMessage}
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <button
+                  key={String(option.value)}
+                  type="button"
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+                    option.value === value ? 'bg-blue-50 font-medium' : ''
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelect(option.value);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))
+            )}
+
+            {hasMore && onLoadMore ? (
+              <div className="sticky bottom-0 border-t border-gray-200 bg-white p-2">
+                <button
+                  type="button"
+                  className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-60"
+                  disabled={isLoadingMore}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLoadMore();
+                  }}
+                >
+                  {isLoadingMore
+                    ? '불러오는 중…'
+                    : loadMoreLabel ?? '더보기'}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </div>

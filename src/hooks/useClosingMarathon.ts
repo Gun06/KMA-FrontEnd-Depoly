@@ -2,7 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getClosingMarathonForAdmin,
   patchClosingMarathonEvent,
+  deleteClosingMarathonEvent,
 } from '@/components/admin/banners/closing-marathon/api/closingMarathon';
+import type { ClosingMarathonType } from '@/types/closingMarathon';
 
 export const closingMarathonKeys = {
   all: ['closingMarathon'] as const,
@@ -21,7 +23,24 @@ export function usePatchClosingMarathonEvent() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (eventId?: string | null) => patchClosingMarathonEvent(eventId),
+    mutationFn: ({
+      type,
+      eventId,
+    }: {
+      type: ClosingMarathonType;
+      eventId: string;
+    }) => patchClosingMarathonEvent(type, eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: closingMarathonKeys.all });
+    },
+  });
+}
+
+export function useDeleteClosingMarathonEvent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteClosingMarathonEvent(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: closingMarathonKeys.all });
     },

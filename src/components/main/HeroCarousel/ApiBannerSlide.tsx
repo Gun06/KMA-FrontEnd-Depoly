@@ -60,6 +60,7 @@ interface ApiBannerSlideProps {
   subtitle: string;
   date: string;
   eventId: string;
+  eventNameKr?: string | null;
   total: number;
   currentIndex: number;
 }
@@ -70,6 +71,7 @@ export default function ApiBannerSlide({
   subtitle,
   date,
   eventId,
+  eventNameKr,
   total,
   currentIndex,
 }: ApiBannerSlideProps) {
@@ -77,6 +79,8 @@ export default function ApiBannerSlide({
   const overviewHref = hasEventId ? `/event/${eventId.trim()}` : '';
   const SlideWrapper = hasEventId ? 'a' : 'div';
   const wrapperProps = hasEventId ? { href: overviewHref } : {};
+  const ctaLabel = eventNameKr?.trim() || 'READ MORE';
+  const isEventNameCta = Boolean(eventNameKr?.trim());
 
   const trimmedDate = date?.trim() ?? '';
   const parsedBannerDate = trimmedDate ? parseDate(trimmedDate) : null;
@@ -154,8 +158,14 @@ export default function ApiBannerSlide({
           )}
 
           {hasEventId ? (
-            <span className="hero-anim hero-readmore pointer-events-none mt-3 inline-flex items-center justify-center rounded-md bg-[#FFED00] px-4 py-2 font-pretendard-bold text-xs font-bold uppercase tracking-[0.12em] text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base sm:tracking-[0.14em] md:hidden lg:inline-flex">
-              READ MORE
+            <span
+              className={`hero-anim hero-readmore pointer-events-none mt-3 inline-flex max-w-full items-center justify-center rounded-md bg-[#FFED00] px-4 py-2 font-pretendard-bold text-xs font-bold text-neutral-900 shadow-[0_4px_14px_rgba(0,0,0,0.25)] sm:mt-5 sm:px-6 sm:py-3 sm:text-base md:hidden lg:inline-flex ${
+                isEventNameCta
+                  ? 'tracking-normal normal-case line-clamp-2 text-left leading-snug'
+                  : 'uppercase tracking-[0.12em] sm:tracking-[0.14em]'
+              }`}
+            >
+              {ctaLabel}
             </span>
           ) : null}
         </div>

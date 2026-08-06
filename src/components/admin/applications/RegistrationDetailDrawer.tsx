@@ -26,6 +26,7 @@ import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplic
 import { REFUND_BANK_LIST } from '@/components/event/Registration/RefundModal';
 import AdminCashReceiptRequestModal from '@/components/admin/applications/AdminCashReceiptRequestModal';
 import { AlertTriangle } from 'lucide-react';
+import { formatAddressDetailDisplay } from '@/app/event/[eventId]/registration/apply/shared/constants/addressField';
 
 // Daum Postcode API 타입 정의
 interface DaumPostcodeData {
@@ -1294,7 +1295,7 @@ export default function RegistrationDetailDrawer({
                   placeholder="주소 검색 버튼으로 입력"
                 />
               ))}
-              {!canEditFields ? line('상세주소', item.addressDetail || '-') : editLine('상세주소', (
+              {!canEditFields ? line('상세주소', formatAddressDetailDisplay(item.addressDetail)) : editLine('상세주소', (
                 <input className="w-full rounded border px-2 py-1" value={form.addressDetail} onChange={e => setForm(v => ({ ...v, addressDetail: e.target.value }))} />
               ))}
 
