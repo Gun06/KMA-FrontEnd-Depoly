@@ -1,9 +1,12 @@
 "use client";
 
 import React from "react";
-import { useAdminEventList } from "@/services/admin";
 import type { NotificationFormData } from "../types/notification";
 import { SearchableSelect } from "@/components/common/Dropdown/SearchableSelect";
+import {
+  pinSelectedEventOption,
+  useAdminEventSelect,
+} from "@/hooks/useAdminEventSelect";
 
 type Props = {
   formData: NotificationFormData;
@@ -20,34 +23,47 @@ export default function NotificationForm({
   isSubmitting: _isSubmitting = false,
   hideTargetSelection = false,
 }: Props) {
-  // 대회 목록 조회
-  const { data: eventData, isLoading: isLoadingEvents } = useAdminEventList({
-    page: 1,
-    size: 1000, // 모든 대회를 가져오기 위해 큰 값 설정
-  });
+  const {
+    options: eventOptionsBase,
+    eventsLoading,
+    setKeyword: setEventSearchKeyword,
+    hasMore,
+    isLoadingMore,
+    fetchNextPage,
+    loadMoreLabel,
+  } = useAdminEventSelect();
 
-  const events = React.useMemo(() => {
-    return eventData?.content || [];
-  }, [eventData]);
+  const [selectedEventLabel, setSelectedEventLabel] = React.useState<
+    string | null
+  >(null);
 
-  const eventOptions = React.useMemo(() => {
-    return events.map((event) => ({
-      value: event.id,
-      label: event.nameKr,
-    }));
-  }, [events]);
+  const eventOptions = React.useMemo(
+    () =>
+      pinSelectedEventOption(
+        eventOptionsBase,
+        formData.eventId != null ? String(formData.eventId) : null,
+        selectedEventLabel
+      ),
+    [eventOptionsBase, formData.eventId, selectedEventLabel]
+  );
 
-  const paymentStatusOptions = React.useMemo(() => [
-    { value: "", label: "전체 신청자" },
-    { value: "UNPAID", label: "미결제" },
-    { value: "COMPLETED", label: "결제완료" },
-    { value: "MUST_CHECK", label: "확인필요" },
-    { value: "NEED_PARTITIAL_REFUND", label: "차액환불요청" },
-    { value: "NEED_REFUND", label: "전액환불요청" },
-    { value: "REFUNDED", label: "전액환불완료" },
-  ], []);
+  const paymentStatusOptions = React.useMemo(
+    () => [
+      { value: "", label: "전체 신청자" },
+      { value: "UNPAID", label: "미결제" },
+      { value: "COMPLETED", label: "결제완료" },
+      { value: "MUST_CHECK", label: "확인필요" },
+      { value: "NEED_PARTITIAL_REFUND", label: "차액환불요청" },
+      { value: "NEED_REFUND", label: "전액환불요청" },
+      { value: "REFUNDED", label: "전액환불완료" },
+    ],
+    []
+  );
 
-  const handleChange = (field: keyof NotificationFormData, value: string | number | undefined) => {
+  const handleChange = (
+    field: keyof NotificationFormData,
+    value: string | number | undefined
+  ) => {
     onChange({ ...formData, [field]: value });
   };
 
@@ -93,21 +109,33 @@ export default function NotificationForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               대회 선택 <span className="text-red-500">*</span>
             </label>
-            {isLoadingEvents ? (
-              <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
-                <p className="text-sm text-gray-500">대회 목록을 불러오는 중...</p>
-              </div>
-            ) : (
-              <SearchableSelect<string | number>
-                value={formData.eventId || null}
-                options={eventOptions}
-                onChange={(value) => handleChange("eventId", value || undefined)}
-                placeholder="대회를 선택하세요"
-                searchable={true}
-                searchPlaceholder="대회명 검색..."
-                className="w-full"
-              />
-            )}
+            <SearchableSelect<string | number>
+              value={formData.eventId || null}
+              options={eventOptions}
+              onChange={(value) => {
+                handleChange("eventId", value || undefined);
+                setSelectedEventLabel(
+                  eventOptions.find((o) => o.value === String(value))?.label ??
+                    null
+                );
+              }}
+              placeholder={
+                eventsLoading ? "대회 목록 불러오는 중…" : "대회를 선택하세요"
+              }
+              searchable
+              searchPlaceholder="대회명 검색..."
+              className="w-full"
+              onSearchChange={setEventSearchKeyword}
+              onLoadMore={() => {
+                void fetchNextPage();
+              }}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              loadMoreLabel={loadMoreLabel}
+              emptyMessage={
+                eventsLoading ? "불러오는 중…" : "검색 결과가 없습니다."
+              }
+            />
           </div>
 
           {formData.eventId && (
@@ -118,13 +146,16 @@ export default function NotificationForm({
               <SearchableSelect
                 value={formData.paymentStatus || ""}
                 options={paymentStatusOptions}
-                onChange={(value) => handleChange("paymentStatus", value || undefined)}
+                onChange={(value) =>
+                  handleChange("paymentStatus", value || undefined)
+                }
                 placeholder="전체 신청자"
                 searchable={false}
                 className="w-full"
               />
               <p className="mt-1 text-xs text-gray-500">
-                결제 상태를 선택하지 않으면 해당 대회의 모든 신청자에게 전송됩니다.
+                결제 상태를 선택하지 않으면 해당 대회의 모든 신청자에게
+                전송됩니다.
               </p>
             </div>
           )}

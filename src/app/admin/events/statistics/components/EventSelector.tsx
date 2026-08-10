@@ -4,8 +4,11 @@
 'use client';
 
 import React from 'react';
-import { useAdminEventList } from '@/services/admin';
-import { SearchableSelect, type SearchableSelectOption } from '@/components/common/Dropdown/SearchableSelect';
+import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
+import {
+  pinSelectedEventOption,
+  useAdminEventSelect,
+} from '@/hooks/useAdminEventSelect';
 
 interface EventSelectorProps {
   selectedEventId: string | null;
@@ -16,56 +19,34 @@ export default function EventSelector({
   selectedEventId,
   onSelectEvent,
 }: EventSelectorProps) {
-  const { data, isLoading, error } = useAdminEventList({
-    page: 1,
-    size: 100, // 모든 대회를 가져오기 위해 큰 값 설정
-  });
+  const {
+    events,
+    eventsLoading,
+    isError,
+    setKeyword: setEventSearchKeyword,
+    hasMore,
+    isLoadingMore,
+    fetchNextPage,
+    loadMoreLabel,
+  } = useAdminEventSelect();
 
-  // Hook은 항상 조건부 return 이전에 호출되어야 함
-  const events = React.useMemo(() => {
-    const eventList = data?.content || [];
-    // 날짜순 내림차순 정렬 (최신 대회가 먼저)
-    return [...eventList].sort((a, b) => {
-      const dateA = new Date(a.startDate).getTime();
-      const dateB = new Date(b.startDate).getTime();
-      return dateB - dateA;
-    });
-  }, [data]);
+  const [selectedEventLabel, setSelectedEventLabel] = React.useState<
+    string | null
+  >(null);
 
-  // SearchableSelect용 옵션 변환 (조건부 return 이전에 호출)
-  const selectOptions: SearchableSelectOption<string>[] = React.useMemo(() => {
-    return events.map((event) => ({
+  const selectOptions = React.useMemo(() => {
+    const base = events.map((event) => ({
       value: String(event.id),
       label: `${event.nameKr} (${event.startDate.split('T')[0]})`,
     }));
-  }, [events]);
+    return pinSelectedEventOption(base, selectedEventId, selectedEventLabel);
+  }, [events, selectedEventId, selectedEventLabel]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-gray-500">대회 목록을 불러오는 중...</div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-red-500">
           대회 목록을 불러오는 중 오류가 발생했습니다.
-        </div>
-      </div>
-    );
-  }
-
-  if (events.length === 0) {
-    return (
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          대회 선택
-        </label>
-        <div className="bg-gray-50 border border-gray-200 rounded-md p-4 text-center text-gray-500">
-          등록된 대회가 없습니다.
         </div>
       </div>
     );
@@ -81,17 +62,28 @@ export default function EventSelector({
           value={selectedEventId || null}
           options={selectOptions}
           onChange={(value) => {
-            if (value) {
-              onSelectEvent(value);
-            } else {
-              onSelectEvent('');
-            }
+            onSelectEvent(value || '');
+            setSelectedEventLabel(
+              selectOptions.find((o) => o.value === value)?.label ?? null
+            );
           }}
-          placeholder="대회를 선택하세요"
-          searchable={true}
+          placeholder={
+            eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
+          }
+          searchable
           searchPlaceholder="대회명 검색..."
           showPlaceholderColor={false}
           maxHeight="max-h-96"
+          onSearchChange={setEventSearchKeyword}
+          onLoadMore={() => {
+            void fetchNextPage();
+          }}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          loadMoreLabel={loadMoreLabel}
+          emptyMessage={
+            eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
+          }
         />
       </div>
     </div>

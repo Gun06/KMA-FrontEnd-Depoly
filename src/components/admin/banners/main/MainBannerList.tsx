@@ -12,8 +12,6 @@ import type { UploadItem } from '@/components/common/Upload/types';
 import MainBannersPreview, { MainBannerRow } from './components/MainBannersPreview';
 import { ChevronUp, ChevronDown, Plus, Minus, Pencil } from 'lucide-react';
 import EventDropdownPortal from './components/EventDropdownPortal';
-import type { Opt } from './types';
-import { getSimpleEventList } from '@/services/event';
 import { useMainBannersForAdmin, useCreateOrUpdateMainBanners } from '@/hooks/useMainBanners';
 import type { MainBannerResponse, MainBannerBatchRequest, MainBannerInfo } from '@/types/mainBanner';
 
@@ -215,7 +213,6 @@ export default function MainBannerManager() {
   const mounted = useMounted();
   const [mode, setMode] = React.useState<'manage' | 'preview'>('manage');
   const [rows, setRows] = React.useState<RowWithDraft[]>([]);
-  const [eventOptions, setEventOptions] = React.useState<Opt[]>([]);
 
   // API 훅들
   const { data: apiMainBanners } = useMainBannersForAdmin();
@@ -243,27 +240,6 @@ export default function MainBannerManager() {
       }]);
     }
   }, [apiMainBanners, mounted]);
-
-  // 대회 목록 로드
-  React.useEffect(() => {
-    if (!mounted) return;
-    
-    const loadEventOptions = async () => {
-      try {
-        const eventsData = await getSimpleEventList();
-        const eventOpts: Opt[] = eventsData.map(event => ({
-          key: event.id,
-          label: event.title
-        }));
-        setEventOptions(eventOpts);
-      } catch (_error) {
-        setEventOptions([]);
-      }
-    };
-    
-    loadEventOptions();
-  }, [mounted]);
-
 
   const updateRow = (id: string | number, patch: Partial<RowWithDraft>) =>
     setRows(prev => prev.map(r => (r.id === id ? { ...r, ...patch } : r)));
@@ -525,7 +501,6 @@ export default function MainBannerManager() {
                 <EventDropdownPortal
                   value={r.eventId}
                   onChange={(id) => r.draft && updateRow(r.id, { eventId: id })}
-                  options={eventOptions}
                   placeholder={PH.event}
                   readOnly={!r.draft}
                 />

@@ -10,8 +10,7 @@ import { HelpCircle } from "lucide-react";
 import { formatBytes } from "@/components/common/Upload/utils";
 import type { UploadItem } from "@/components/common/Upload/types";
 import EventDropdownPortal from "./EventDropdownPortal";
-import { getSimpleEventList } from "@/services/event";
-import type { MainBannerFormData, Opt } from "../types";
+import type { MainBannerFormData } from "../types";
 
 type Props = {
   value: MainBannerFormData;
@@ -38,26 +37,6 @@ export default function MainBannerForm({
   dense = false,
   className,
 }: Props) {
-  const [eventOptions, setEventOptions] = React.useState<Opt[]>([]);
-
-  // 대회 목록 로드
-  React.useEffect(() => {
-    const loadEventOptions = async () => {
-      try {
-        const eventsData = await getSimpleEventList();
-        const eventOpts: Opt[] = eventsData.map(event => ({
-          key: event.id,
-          label: event.title
-        }));
-        setEventOptions(eventOpts);
-      } catch (_error) {
-        setEventOptions([]);
-      }
-    };
-
-    loadEventOptions();
-  }, []);
-
   const patch = (p: Partial<MainBannerFormData>) => onChange?.({ ...value, ...p });
 
   const readOnlyInputCls = "!border-0 !ring-0 !outline-none bg-transparent";
@@ -159,7 +138,6 @@ export default function MainBannerForm({
               <EventDropdownPortal
                 value={value.eventId}
                 onChange={(id) => !readOnly && patch({ eventId: id })}
-                options={eventOptions}
                 placeholder="대회를 선택해주세요"
                 readOnly={readOnly}
               />

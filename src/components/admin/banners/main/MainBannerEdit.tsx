@@ -8,9 +8,7 @@ import Button from '@/components/common/Button/Button';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { UploadItem } from '@/components/common/Upload/types';
 import EventDropdownPortal from './components/EventDropdownPortal';
-import type { Opt } from './types';
 import { getMainBannersForAdmin, updateMainBanner } from './api';
-import { getSimpleEventList } from '@/services/event';
 import type { MainBannerUpdateInfo } from '@/types/mainBanner';
 import { mainBannerKeys } from '@/hooks/useMainBanners';
 
@@ -91,9 +89,8 @@ export default function MainBannerEdit({ idParam }: { idParam: string }) {
   const [row, setRow] = React.useState<EditRow | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [eventOptions, setEventOptions] = React.useState<Opt[]>([]);
 
-  // API에서 배너 데이터와 대회 목록 로드
+  // API에서 배너 데이터 로드
   React.useEffect(() => {
     const loadData = async () => {
       try {
@@ -116,10 +113,7 @@ export default function MainBannerEdit({ idParam }: { idParam: string }) {
           setRow(draft);
         } else {
           // 기존 배너 수정 - 전체 목록에서 해당 배너 찾기
-          const [allBanners, eventsData] = await Promise.all([
-            getMainBannersForAdmin(),
-            getSimpleEventList().catch(() => [])
-          ]);
+          const allBanners = await getMainBannersForAdmin();
           
           // URL의 UUID를 직접 사용해서 매칭
           const bannerData = allBanners.find(banner => banner.id === idParam);
@@ -127,13 +121,6 @@ export default function MainBannerEdit({ idParam }: { idParam: string }) {
           if (!bannerData) {
             throw new Error('배너를 찾을 수 없습니다.');
           }
-
-          // 대회 목록을 드롭다운 옵션으로 변환
-          const eventOpts: Opt[] = eventsData.map(event => ({
-            key: event.id,
-            label: event.title
-          }));
-          setEventOptions(eventOpts);
 
           // 백엔드에서 eventId를 제공하므로 직접 사용
           const eventId = parseInt(bannerData.eventId);
@@ -165,9 +152,6 @@ export default function MainBannerEdit({ idParam }: { idParam: string }) {
 
       } catch (_err) {
         setError('데이터를 불러오는데 실패했습니다.');
-        
-        // 에러 시 빈 배열로 설정
-        setEventOptions([]);
         
           if (idParam === '0') {
           const draft: EditRow = {
@@ -294,7 +278,6 @@ export default function MainBannerEdit({ idParam }: { idParam: string }) {
             <EventDropdownPortal
               value={row.eventId?.toString()}
               onChange={(v) => update({ eventId: v ? parseInt(v) : undefined })}
-              options={eventOptions}
               placeholder="대회를 선택해주세요"
             />
             {row.eventId && <p className="mt-1 text-xs text-gray-500">버튼 경로는 자동으로 생성됩니다.</p>}

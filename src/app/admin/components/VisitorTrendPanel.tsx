@@ -3,9 +3,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { format, parseISO, subDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useAdminEventList } from '@/services/admin';
 import { fillVisitorTrendRange, useVisitorTrend } from '@/app/admin/api/visitors';
 import { useVisitorSnapshot } from '@/hooks/useVisitorCount';
+import {
+  pinSelectedEventOption,
+  useAdminEventSelect,
+} from '@/hooks/useAdminEventSelect';
 import { SearchableSelect, type SearchableSelectOption } from '@/components/common/Dropdown/SearchableSelect';
 import type { VisitorTrendItem } from '@/types/visitor';
 
@@ -175,10 +178,19 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
   const linePlotRef = useRef<HTMLDivElement>(null);
   const [linePlotWidth, setLinePlotWidth] = useState(0);
 
-  const { data: eventData, isLoading: eventsLoading } = useAdminEventList({
-    page: 1,
-    size: 100,
-  });
+  const {
+    options: eventOptionsBase,
+    eventsLoading,
+    setKeyword: setEventSearchKeyword,
+    hasMore: hasMoreEvents,
+    isLoadingMore: isLoadingMoreEvents,
+    fetchNextPage: fetchMoreEvents,
+    loadMoreLabel,
+  } = useAdminEventSelect();
+
+  const [selectedEventLabel, setSelectedEventLabel] = useState<string | null>(
+    '메인 홈페이지'
+  );
 
   const trendParams = useMemo(
     () => ({ eventId, startDate, endDate }),
@@ -199,18 +211,14 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
   } = useVisitorSnapshot(eventId);
 
   const eventOptions: SearchableSelectOption<string>[] = useMemo(() => {
-    const events = eventData?.content ?? [];
-    const sorted = [...events].sort(
-      (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    const withoutMain = eventOptionsBase.filter((o) => o.value !== MAIN_EVENT_ID);
+    const pinned = pinSelectedEventOption(
+      withoutMain,
+      eventId === MAIN_EVENT_ID ? null : eventId,
+      selectedEventLabel
     );
-    return [
-      { value: MAIN_EVENT_ID, label: '메인 홈페이지' },
-      ...sorted.map((e) => ({
-        value: String(e.id),
-        label: e.nameKr,
-      })),
-    ];
-  }, [eventData]);
+    return [{ value: MAIN_EVENT_ID, label: '메인 홈페이지' }, ...pinned];
+  }, [eventOptionsBase, eventId, selectedEventLabel]);
 
   const useLineChart = trend.length > EVEN_BAR_SPACING_MAX_DAYS;
   const evenBarSpacing = trend.length > 0 && !useLineChart;
@@ -394,11 +402,26 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
             <SearchableSelect
               value={eventId}
               options={eventOptions}
-              onChange={setEventId}
+              onChange={(value) => {
+                setEventId(value);
+                setSelectedEventLabel(
+                  eventOptions.find((o) => o.value === value)?.label ?? null
+                );
+              }}
               placeholder={eventsLoading ? '불러오는 중...' : '대상 선택'}
               searchable
               searchPlaceholder="대회명 검색..."
               variant="compact"
+              onSearchChange={setEventSearchKeyword}
+              onLoadMore={() => {
+                void fetchMoreEvents();
+              }}
+              hasMore={hasMoreEvents}
+              isLoadingMore={isLoadingMoreEvents}
+              loadMoreLabel={loadMoreLabel}
+              emptyMessage={
+                eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
+              }
             />
           </label>
           <label className={DATE_LABEL_CLASS}>
