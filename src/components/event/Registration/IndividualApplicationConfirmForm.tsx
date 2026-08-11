@@ -471,31 +471,34 @@ export default function IndividualApplicationConfirmForm({ eventId }: { eventId:
         <hr className="border-gray-200" />
 
         {/* 비밀번호 */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <label className="w-full sm:w-24 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
+        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-0">
+          <label className="w-full sm:w-24 sm:pt-3 text-base sm:text-lg font-black text-black" style={{ fontWeight: 900 }}>
             비밀번호 <span className="text-red-500">*</span>
           </label>
-          <div className="w-full sm:w-[400px] relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              placeholder="입력해주세요."
-              autoComplete="new-password"
-              name="no-autofill-individual-password"
-              className="w-full px-3 sm:px-4 py-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
-            </button>
+          <div className="w-full sm:w-[400px]">
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
+                placeholder="비밀번호를 입력해주세요."
+                autoComplete="new-password"
+                name="no-autofill-individual-password"
+                className="w-full px-3 sm:px-4 py-3 sm:py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">최소 6자리, 공백 없이 입력해주세요.</p>
           </div>
         </div>
       </div>
