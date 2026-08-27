@@ -10,20 +10,28 @@ const HERO_MAX_HEIGHT_MOBILE = 400;
 const MOBILE_HERO_VH = 0.56;
 const LG_MEDIA = '(min-width: 1024px)';
 const MOBILE_MEDIA = '(max-width: 639px)';
+/** 히어로·스폰서 사이 회색 구분 (MainSectionDivider와 동일) */
+const HERO_SPONSOR_DIVIDER_PX = 8;
 
 interface MainHomeScrollLayoutProps {
-  /** 덮개 시트: 주요대회일정·스폰서·갤러리 등 */
+  /** 히어로 바로 아래. 덮개 시트(children)에는 없음 — 스크롤해도 시트와 같이 올라가지 않음 */
+  belowHero?: ReactNode;
+  /** 덮개 시트: 주요대회일정·갤러리 등 */
   children: ReactNode;
 }
 
 /**
+ * WIP 메인과 동일 원리 + 스폰서 밴드
  * - 고정 히어로(z-0)
- * - z-10 시트만 올라와 히어로를 덮음
+ * - 고정 스폰서(z-[5]): 히어로 바로 아래, 문서 스크롤·시트와 분리
+ * - z-10 시트만 올라와 히어로·스폰서를 덮음 (시트 안에 스폰서 없음)
  */
-export default function MainHomeScrollLayout({ children }: MainHomeScrollLayoutProps) {
+export default function MainHomeScrollLayout({ belowHero, children }: MainHomeScrollLayoutProps) {
   /** 배너(.hero-section) 실제 하단 — -mt 헤더 보정으로 wrapper보다 짧음 */
   const [heroBottom, setHeroBottom] = useState(0);
+  const [sponsorHeight, setSponsorHeight] = useState(0);
   const heroMeasureRef = useRef<HTMLDivElement>(null);
+  const sponsorMeasureRef = useRef<HTMLDivElement>(null);
 
   const measureHero = useCallback(() => {
     const carousel = heroMeasureRef.current?.querySelector('.hero-section') as HTMLElement | null;
@@ -100,11 +108,40 @@ export default function MainHomeScrollLayout({ children }: MainHomeScrollLayoutP
     };
   }, [measureHero]);
 
+  useEffect(() => {
+    if (!belowHero) {
+      setSponsorHeight(0);
+      return;
+    }
+
+    const el = sponsorMeasureRef.current;
+    if (!el) return;
+
+    const update = () => setSponsorHeight(el.offsetHeight);
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('resize', update);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [belowHero]);
+
   const heroReady = heroBottom > 0;
-  const stackHeightPx = heroReady ? heroBottom : 0;
+  const dividerTop = heroBottom;
+  const sponsorTop = heroBottom + HERO_SPONSOR_DIVIDER_PX;
+
+  const stackHeightPx = heroReady
+    ? sponsorHeight > 0
+      ? heroBottom + HERO_SPONSOR_DIVIDER_PX + sponsorHeight
+      : heroBottom
+    : 0;
   const stackH = stackHeightPx > 0 ? stackHeightPx : HERO_HEIGHT_FALLBACK;
 
-  /** 푸터가 보이기 시작하면 고정 히어로 숨김 — 맨 아래에서 뒤 콘텐츠 비침 방지 */
+  /** 푸터가 보이기 시작하면 고정 히어로·스폰서 숨김 — 맨 아래에서 뒤 콘텐츠 비침 방지 */
   const [pinHeroLayers, setPinHeroLayers] = useState(true);
 
   useEffect(() => {
@@ -177,11 +214,31 @@ export default function MainHomeScrollLayout({ children }: MainHomeScrollLayoutP
         </div>
       </div>
 
-      {/* 스크롤 여백: 히어로 높이만큼 */}
+      {/* 히어로·스폰서 사이 회색 구분선만 */}
+      {belowHero && heroReady ? (
+        <div
+          className={`fixed inset-x-0 z-[5] h-2 shrink-0 bg-[#F2F4F6] transition-opacity duration-200 ${pinnedLayerClass}`}
+          style={{ top: dividerTop }}
+          aria-hidden
+        />
+      ) : null}
+
+      {/* 고정 스폰서 */}
+      {belowHero ? (
+        <div
+          ref={sponsorMeasureRef}
+          className={`fixed inset-x-0 z-[5] m-0 bg-white p-0 transition-opacity duration-200 ${pinnedLayerClass}`}
+          style={heroReady ? { top: sponsorTop } : undefined}
+        >
+          {belowHero}
+        </div>
+      ) : null}
+
+      {/* 스크롤 여백: 히어로+구분+스폰서 */}
       <div className="shrink-0" style={{ height: stackH }} aria-hidden />
 
-      {/* 덮개 시트 — 히어로 위로 겹쳐 상단 좌우 모서리가 보이게 */}
-      <div className="relative z-10 -mt-6 overflow-hidden rounded-t-3xl bg-white shadow-[0_-8px_28px_rgba(0,0,0,0.12)] md:-mt-8 md:rounded-t-[32px] lg:-mt-10 lg:rounded-t-[40px]">
+      {/* 덮개 시트 — 상단 좌우 모서리 둥글게 */}
+      <div className="relative z-10 overflow-hidden rounded-t-2xl bg-white shadow-[0_-10px_36px_rgba(0,0,0,0.06)] md:rounded-t-3xl">
         {children}
       </div>
     </div>

@@ -157,7 +157,6 @@ export function transformApiDataToEventDetail(
     meetingPlacePageImageUrl: eventInfo.meetingPlacePageImageUrl,
     resultImageUrl: eventInfo.resultImageUrl,
     coursePageImageUrl: eventInfo.coursePageImageUrl,
-    coursePageImages: apiData.coursePageImages,
     eventsPageUrl: eventInfo.eventsPageUrl,
     statisticsUrl: eventInfo.statisticsUrl,
     eventStatus: eventInfo.eventStatus,

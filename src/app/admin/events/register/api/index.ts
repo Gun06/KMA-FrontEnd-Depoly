@@ -2,6 +2,7 @@
 export { useCreateEvent } from './eventApi';
 export { useUpdateSouvenirs, updateSouvenirs } from './souvenirApi';
 export { useUpdateEventCategories, updateEventCategories } from './categoryApi';
+export { updateEventSetting } from './eventSettingApi';
 export { EventDataTransformer } from './eventDataTransformer';
 export { FormDataBuilder } from './formDataBuilder';
 export { transformSouvenirsToApi } from './souvenirTransformer';

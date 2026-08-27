@@ -13,6 +13,8 @@ import { requestGroupRefund, BatchValidationErrorResponse, BatchValidationError 
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { checkStatusToRequest } from "@/app/event/[eventId]/registration/apply/shared/api/event";
 import { formatAddressDetailDisplay } from "@/app/event/[eventId]/registration/apply/shared/constants/addressField";
+import { useGroupRegistrationGuard } from "@/app/event/[eventId]/registration/apply/shared/hooks/useGroupRegistrationGuard";
+import LoadingSpinner from "@/app/event/[eventId]/registration/apply/shared/components/LoadingSpinner";
 
 
 export default function GroupApplicationConfirmResultPage() {
@@ -20,6 +22,10 @@ export default function GroupApplicationConfirmResultPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const eventId = params.eventId as string;
+  const { isBlocked: isGroupRegistrationBlocked } = useGroupRegistrationGuard(
+    eventId,
+    `/event/${eventId}/registration/confirm`
+  );
   const [groupApplicationData, setGroupApplicationData] = useState<GroupRegistrationConfirmData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -741,6 +747,22 @@ export default function GroupApplicationConfirmResultPage() {
     }
     return 'text-gray-600';
   };
+
+  if (isGroupRegistrationBlocked) {
+    return (
+      <SubmenuLayout
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "참가신청",
+          subMenu: "단체 신청 조회 결과",
+        }}
+      >
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner text="페이지를 확인하는 중..." />
+        </div>
+      </SubmenuLayout>
+    );
+  }
 
   if (isLoading) {
     return (

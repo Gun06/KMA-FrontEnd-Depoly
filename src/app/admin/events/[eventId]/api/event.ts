@@ -1,4 +1,5 @@
 // API 응답 타입 정의
+import type { EventSettingSpec } from '@/types/eventSetting';
 
 export interface EventDetailApiResponse {
   eventInfo: {
@@ -86,30 +87,25 @@ export interface EventDetailApiResponse {
     sizes: string;
     isActive?: boolean;
   }>;
-  // 페이지별 이미지 (다중 이미지 지원, VIDEO_LINK 포함)
+  // 페이지별 이미지 (다중 이미지 지원)
   outlinePageImages?: Array<{
     imageUrl: string;
-    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   noticePageImages?: Array<{
     imageUrl: string;
-    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   meetingPlacePageImages?: Array<{
     imageUrl: string;
-    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   coursePageImages?: Array<{
     imageUrl: string;
-    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   souvenirPageImages?: Array<{
     imageUrl: string;
-    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   /** 약관 (일부 API는 termsInfo) */
@@ -136,5 +132,7 @@ export interface EventDetailApiResponse {
     required?: boolean;
     termsLabel?: string;
   }>;
+  /** 신청 UI 설정 (단체신청·개인 ID 불러오기) */
+  eventSettingSpec?: EventSettingSpec;
 }
 

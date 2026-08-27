@@ -11,12 +11,18 @@ import ConfirmModal from "@/components/common/Modal/ConfirmModal";
 import PasswordResetRequestModal from "@/components/event/Registration/PasswordResetRequestModal";
 import PasswordResetOtpModal from "@/components/event/Registration/PasswordResetOtpModal";
 import { requestOwnedPasswordReset, reissueOwnedOtp, changeOwnedPassword } from "@/app/event/[eventId]/registration/apply/shared/api/passwordReset";
+import { useGroupRegistrationGuard } from "@/app/event/[eventId]/registration/apply/shared/hooks/useGroupRegistrationGuard";
+import LoadingSpinner from "@/app/event/[eventId]/registration/apply/shared/components/LoadingSpinner";
 
 export default function IndividualGroupConfirmResultPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const eventId = params.eventId as string;
+  const { isBlocked: isGroupRegistrationBlocked } = useGroupRegistrationGuard(
+    eventId,
+    `/event/${eventId}/registration/confirm`
+  );
   const [individualData, setIndividualData] = useState<IndividualGroupRegistrationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -192,6 +198,22 @@ export default function IndividualGroupConfirmResultPage() {
     // 데이터를 다시 불러와서 checkOwned 상태 업데이트 확인
     loadData();
   };
+
+  if (isGroupRegistrationBlocked) {
+    return (
+      <SubmenuLayout
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "참가신청",
+          subMenu: "단체 신청 개별 조회 결과",
+        }}
+      >
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner text="페이지를 확인하는 중..." />
+        </div>
+      </SubmenuLayout>
+    );
+  }
 
   if (isLoading) {
     return (

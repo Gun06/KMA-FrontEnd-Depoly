@@ -11,7 +11,6 @@ import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
 import type { TermsInfoItem } from "../../hooks/useCompetitionForm";
 import { MiniToggle } from "@/components/admin/Form/PartyRows";
-import { isVideoLinkMedia } from "@/utils/youtube";
 
 /** 업로드 필드 & 세터 타입 */
 export type CompetitionForm = {
@@ -86,15 +85,12 @@ type UploadsSectionProps = {
 
 // UploadItem[] -> ReadonlyFile[] 매핑
 const toRO = (arr: UploadItem[] | undefined): ReadonlyFile[] =>
-  (arr ?? []).map((it: UploadItem, i: number) => {
-    const isVideo = isVideoLinkMedia(it.mediaType, it.url);
-    return {
-      id: it?.id ?? i,
-      name: it?.name ?? `파일 ${i + 1}`,
-      sizeMB: isVideo ? undefined : it?.sizeMB,
-      url: it?.url,
-    };
-  });
+  (arr ?? []).map((it: UploadItem, i: number) => ({
+    id: it?.id ?? i,
+    name: it?.name ?? `파일 ${i + 1}`,
+    sizeMB: it?.sizeMB,
+    url: undefined, // UploadItem에 url이 없다고 했으니 유지
+  }));
 
 // 내용 높이만 살짝 여유 — 라벨엔 영향 없도록 content에만 패딩
 const contentPad = (count: number) => (count > 0 ? "items-start py-2" : "items-center py-0");
@@ -268,13 +264,11 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           editable={!readOnly}
           accept="image/*"
           maxSizeMB={30}
-          helper={"선택된 파일 없음. 최대 10개 / 30MB 이내. 유튜브 링크도 등록 가능"}
+          helper={"선택된 파일 없음. 최대 10개 / 30MB 이내"}
           valueEditable={f.imgCourse}
           onChangeEditable={f.setImgCourse}
           valueReadonly={toRO(f.imgCourse)}
           contentClassName={cn("px-4", contentPad((f.imgCourse ?? []).length))}
-          allowVideoLink
-          pageMediaKey="course"
         />
         <SortableFileSection
           label="기념품 상세 페이지"

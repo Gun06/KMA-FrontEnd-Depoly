@@ -16,8 +16,11 @@ import BottomNoticeSection from "./components/BottomNoticeSection";
 import SubmitButton from "./components/SubmitButton";
 import IdPasswordModal from "@/components/event/Registration/IdPasswordModal";
 import RegistrationOtpModal from "@/components/event/Registration/RegistrationOtpModal";
+import { useEventUseableUI } from "../shared/hooks/useEventUseableUI";
 
 export default function IndividualApplyPage({ params }: { params: { eventId: string } }) {
+  const { settings: useableUI, isLoading: isUseableUILoading } =
+    useEventUseableUI(params.eventId);
   const { eventInfo, isLoading: isLoadingEvent, error: eventError, refetch } = useEventRegistration(params.eventId);
   const {
     formData,
@@ -91,6 +94,9 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
                 onLoadInfo={modal.handleLoadInfo}
                 isLoadingInfo={modal.isLoadingInfo}
                 isEditMode={isEditMode}
+                hideJeonmahyupIdSection={
+                  !isUseableUILoading && !useableUI.individualLoginIdEnabled
+                }
                 refs={refs}
               />
 
@@ -137,12 +143,14 @@ export default function IndividualApplyPage({ params }: { params: { eventId: str
       </div>
 
       {/* 아이디/비밀번호 모달 */}
-      <IdPasswordModal
-        isOpen={modal.isIdPasswordModalOpen}
-        onClose={() => modal.setIsIdPasswordModalOpen(false)}
-        onSuccess={modal.handleUserDataLoad}
-        initialAccountId={formData.jeonmahyupId}
-      />
+      {!isUseableUILoading && useableUI.individualLoginIdEnabled && (
+        <IdPasswordModal
+          isOpen={modal.isIdPasswordModalOpen}
+          onClose={() => modal.setIsIdPasswordModalOpen(false)}
+          onSuccess={modal.handleUserDataLoad}
+          initialAccountId={formData.jeonmahyupId}
+        />
+      )}
       
       {/* 신청용 전화번호 OTP 모달 */}
       <RegistrationOtpModal

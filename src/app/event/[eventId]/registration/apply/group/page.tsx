@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useEventRegistration } from "../shared/hooks/useEventRegistration";
+import { useEventUseableUI } from "../shared/hooks/useEventUseableUI";
 import { useGroupForm } from "../shared/hooks/useGroupForm";
 import LoadingSpinner from "../shared/components/LoadingSpinner";
 import ErrorAlert from "../shared/components/ErrorAlert";
@@ -17,6 +19,9 @@ import ParticipantsSection from "@/components/event/GroupRegistration/Participan
 import RegistrationOtpModal from "@/components/event/Registration/RegistrationOtpModal";
 
 export default function GroupApplyPage({ params }: { params: { eventId: string } }) {
+  const router = useRouter();
+  const { settings: useableUI, isLoading: isUseableUILoading } =
+    useEventUseableUI(params.eventId);
   const { eventInfo, isLoading: isLoadingEvent, error: eventError, refetch } = useEventRegistration(params.eventId);
   const {
     formData,
@@ -34,6 +39,18 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
   } = useGroupForm(params.eventId, eventInfo);
   
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isUseableUILoading) return;
+    if (!useableUI.groupRegistrationEnabled) {
+      router.replace(`/event/${params.eventId}/registration/apply`);
+    }
+  }, [
+    isUseableUILoading,
+    useableUI.groupRegistrationEnabled,
+    params.eventId,
+    router,
+  ]);
   
   // 오류 메시지가 변경되면 모달 열기
   useEffect(() => {
@@ -45,6 +62,27 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
       setIsErrorModalOpen(true);
     }
   }, [error.submitError, otp.isOpen]);
+
+  if (
+    isUseableUILoading ||
+    (!isUseableUILoading && !useableUI.groupRegistrationEnabled)
+  ) {
+    return (
+      <SubmenuLayout
+        eventId={params.eventId}
+        breadcrumb={{
+          mainMenu: "참가신청",
+          subMenu: "단체신청",
+        }}
+      >
+        <div className="container mx-auto px-4 py-4 sm:py-8">
+          <div className="max-w-4xl mx-auto">
+            <LoadingSpinner text="페이지를 확인하는 중..." />
+          </div>
+        </div>
+      </SubmenuLayout>
+    );
+  }
 
   return (
     <SubmenuLayout 
@@ -72,7 +110,7 @@ export default function GroupApplyPage({ params }: { params: { eventId: string }
             )}
             
             {/* 폼 - 이벤트 정보가 로드된 후에만 표시 */}
-            {eventInfo && !isLoadingEvent && (
+            {eventInfo && !isLoadingEvent && !isUseableUILoading && useableUI.groupRegistrationEnabled && (
             <form className="space-y-12 sm:space-y-16" onSubmit={handlers.handleSubmit} noValidate>
               {/* 단체 정보 섹션 */}
               <GroupInfoSection

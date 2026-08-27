@@ -15,10 +15,14 @@ import { useEventDetail } from '@/hooks/useEventDetail';
 import { transformApiResponseToFormPrefill, extractGroupsFromApiResponse, useEventCategoryDropdown } from '@/app/admin/events/register/api';
 import { useApiMutation } from '@/hooks/useFetch';
 import { FormDataBuilder } from '@/app/admin/events/register/api/formDataBuilder';
-import { updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi, updateAllPageImages } from '@/app/admin/events/register/api';
+import { updateSouvenirs, updateEventCategories, transformSouvenirsToApi, transformCategoriesToApi, updateAllPageImages, updateEventSetting } from '@/app/admin/events/register/api';
 import Button from '@/components/common/Button/Button';
 import InfoModal from '@/app/admin/events/register/components/parts/InfoModal';
 import { usePhoneAuthPolicy } from '@/services/admin/phoneAuth';
+import {
+  DEFAULT_EVENT_SETTING,
+  type EventSettingSpec,
+} from '@/types/eventSetting';
 
 export default function EditClient({
   eventId,
@@ -151,6 +155,20 @@ export default function EditClient({
       };
     });
   }, [dropdownData, initialGifts]);
+
+  const initialEventSetting = useMemo<EventSettingSpec>(() => {
+    const spec = apiData?.eventSettingSpec;
+    return {
+      groupRegistrationEnabled:
+        typeof spec?.groupRegistrationEnabled === 'boolean'
+          ? spec.groupRegistrationEnabled
+          : DEFAULT_EVENT_SETTING.groupRegistrationEnabled,
+      individualLoginIdEnabled:
+        typeof spec?.individualLoginIdEnabled === 'boolean'
+          ? spec.individualLoginIdEnabled
+          : DEFAULT_EVENT_SETTING.individualLoginIdEnabled,
+    };
+  }, [apiData?.eventSettingSpec]);
 
   // 결제정보(은행/가상계좌) 별도 API 연동
   const [bankName, setBankName] = React.useState<string>('');
@@ -432,6 +450,30 @@ export default function EditClient({
     }
   };
 
+  // STEP 4: 신청 UI 설정 저장
+  const handleSaveEventSetting = async (settings: EventSettingSpec) => {
+    try {
+      await updateEventSetting(eventId, settings);
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['eventDetail', String(eventId)] }),
+        queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
+      ]);
+
+      setInfoModalType('success');
+      setInfoModalMessage('신청 UI 설정이 성공적으로 저장되었습니다.');
+      setInfoModalOpen(true);
+    } catch (error) {
+      setInfoModalType('error');
+      setInfoModalMessage(
+        error instanceof Error
+          ? error.message
+          : '신청 UI 설정 저장에 실패했습니다. 다시 시도해주세요.'
+      );
+      setInfoModalOpen(true);
+    }
+  };
+
   // 로딩 상태 처리
   if (isLoading || isLoadingDropdown || updateEventMutation.isPending) {
     return (
@@ -532,6 +574,7 @@ export default function EditClient({
         onSubmit={handleSubmit}
         onSaveSouvenirs={handleSaveSouvenirs}
         onSaveCourses={handleSaveCategories}
+        onSaveEventSetting={handleSaveEventSetting}
         existingEventBanners={
           apiData?.eventBanners as
             | Array<{
@@ -546,6 +589,7 @@ export default function EditClient({
         }
         initialGifts={initialGifts}
         initialCourses={initialCourses}
+        initialEventSetting={initialEventSetting}
         phoneAuthGlobalPolicy={phoneAuthPolicyData?.policy}
       />
 

@@ -14,10 +14,6 @@ import type {
 } from '../api/types';
 import type { UploadItem } from '@/components/common/Upload/types';
 import type { RegStatus } from '@/components/common/Badge/RegistrationStatusBadge';
-import {
-  getRegisteredPageMedia,
-} from '@/utils/pendingVideoLinks';
-import { isVideoLinkMedia } from '@/utils/youtube';
 
 /** ===== 로컬 타입 (UI 전용) ===== */
 export type CourseItem = { name: string; price: string };
@@ -110,11 +106,11 @@ type PrefillUploads = {
   bannerMainMobile?: UploadItem[] | Array<{ url: string }>;
 
   // 🔹 페이지별 이미지
-  imgNotice?: UploadItem[] | Array<{ url: string; mediaType?: string }>;
-  imgPost?: UploadItem[] | Array<{ url: string; mediaType?: string }>;
-  imgCourse?: UploadItem[] | Array<{ url: string; mediaType?: string }>;
-  imgGift?: UploadItem[] | Array<{ url: string; mediaType?: string }>;
-  imgConfirm?: UploadItem[] | Array<{ url: string; mediaType?: string }>;
+  imgNotice?: UploadItem[] | Array<{ url: string }>;
+  imgPost?: UploadItem[] | Array<{ url: string }>;
+  imgCourse?: UploadItem[] | Array<{ url: string }>;
+  imgGift?: UploadItem[] | Array<{ url: string }>;
+  imgConfirm?: UploadItem[] | Array<{ url: string }>;
   imgResult?: UploadItem[] | Array<{ url: string }>;
 };
 
@@ -676,7 +672,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
     if (prefill.uploads) {
       // URL을 UploadItem으로 변환하는 함수
       const convertToUploadItems = (
-        files?: UploadItem[] | Array<{ url: string; mediaType?: string }>
+        files?: UploadItem[] | Array<{ url: string }>
       ): UploadItem[] => {
         if (!files) return [];
 
@@ -687,20 +683,16 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
           }
 
           // URL만 있는 경우 UploadItem 형태로 변환
-          const urlItem = item as { url: string; mediaType?: string };
-          const isVideo = isVideoLinkMedia(urlItem.mediaType, urlItem.url);
+          const urlItem = item as { url: string };
           return {
             id: `api-upload-${index}-${Date.now()}`,
             // 기존 이미지는 URL만 있으므로 file은 null로 설정하고 url로만 미리보기/식별
             file: null,
             url: urlItem.url,
-            name: isVideo
-              ? '유튜브 영상'
-              : urlItem.url.split('/').pop() || 'image',
+            name: urlItem.url.split('/').pop() || 'image',
             size: 0,
             sizeMB: 0,
             tooLarge: false,
-            mediaType: isVideo ? 'VIDEO_LINK' : urlItem.mediaType,
           };
         });
       };
@@ -1085,7 +1077,7 @@ export function useCompetitionForm(prefill?: UseCompetitionPrefill) {
         // 🔹 페이지별 이미지
         imgNotice,
         imgPost,
-        imgCourse: getRegisteredPageMedia('course', imgCourse),
+        imgCourse,
         imgGift,
         imgConfirm,
         imgResult,

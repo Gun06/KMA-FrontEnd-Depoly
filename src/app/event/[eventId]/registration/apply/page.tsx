@@ -19,9 +19,12 @@ import {
   buildEventTermsAgreeRequestList,
   saveEventTermsAgreement,
 } from "./shared/utils/eventTermsAgreement";
+import { useEventUseableUI } from "./shared/hooks/useEventUseableUI";
 
 export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
+  const { settings: useableUI, isLoading: isUseableUILoading } =
+    useEventUseableUI(params.eventId);
   const agreementData = getAgreementData(params.eventId);
   const [isFinalAgreed, setIsFinalAgreed] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -228,6 +231,11 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   };
 
   const handleApplyClick = (kind: "individual" | "group") => {
+    if (kind === "group" && !useableUI.groupRegistrationEnabled) {
+      showAlert("이 대회는 단체신청을 받지 않습니다.");
+      return;
+    }
+
     if (!isStaticTermsAgreed) {
       showAlert("필수 약관에 동의해 주세요.");
       return;
@@ -472,16 +480,18 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               >
                 개인신청
               </button>
-              <button
-                type="button"
-                className={`px-8 py-3 rounded font-semibold transition-colors ${canSubmitApply
-                  ? "bg-black text-white hover:bg-gray-800"
-                  : "bg-gray-300 text-gray-500 cursor-pointer"
-                  }`}
-                onClick={() => handleApplyClick("group")}
-              >
-                단체신청
-              </button>
+              {!isUseableUILoading && useableUI.groupRegistrationEnabled && (
+                <button
+                  type="button"
+                  className={`px-8 py-3 rounded font-semibold transition-colors ${canSubmitApply
+                    ? "bg-black text-white hover:bg-gray-800"
+                    : "bg-gray-300 text-gray-500 cursor-pointer"
+                    }`}
+                  onClick={() => handleApplyClick("group")}
+                >
+                  단체신청
+                </button>
+              )}
             </div>
           </div>
         </div>

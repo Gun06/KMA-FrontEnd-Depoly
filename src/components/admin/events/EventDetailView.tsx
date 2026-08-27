@@ -22,7 +22,6 @@ import {
   isPhoneAuthGloballyOverridden,
   type PhoneAuthPolicy,
 } from '@/services/admin/phoneAuth';
-import PageMediaList from '@/components/event/PageMediaList';
 
 export type EventDetailData = {
   id: string;
@@ -51,11 +50,6 @@ export type EventDetailData = {
   meetingPlacePageImageUrl?: string;
   resultImageUrl?: string;
   coursePageImageUrl?: string;
-  coursePageImages?: Array<{
-    imageUrl: string;
-    mediaType?: string;
-    orderNumber: number;
-  }>;
   eventsPageUrl?: string;
   /** 통계 페이지 URL */
   statisticsUrl?: string;
@@ -1343,37 +1337,23 @@ export default function EventDetailView({
             )}
 
             {/* 코스 페이지 */}
-            {(() => {
-              const courseItems =
-                eventData.coursePageImages && eventData.coursePageImages.length > 0
-                  ? [...eventData.coursePageImages].sort(
-                      (a, b) => a.orderNumber - b.orderNumber
-                    )
-                  : eventData.coursePageImageUrl
-                    ? [
-                        {
-                          imageUrl: eventData.coursePageImageUrl,
-                          mediaType: 'IMAGE',
-                          orderNumber: 0,
-                        },
-                      ]
-                    : [];
-
-              if (courseItems.length === 0) return null;
-
-              return (
-                <div className="space-y-2">
-                  <h3 className="text-base font-pretendard font-medium text-gray-900">
-                    대회코스 페이지
-                  </h3>
-                  <PageMediaList
-                    items={courseItems}
-                    altPrefix="대회코스 페이지"
-                    variant="gallery"
-                  />
-                </div>
-              );
-            })()}
+            {eventData.coursePageImageUrl && (
+              <div className="space-y-2">
+                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                  대회코스 페이지
+                </h3>
+                <img
+                  src={eventData.coursePageImageUrl}
+                  alt="대회코스 페이지"
+                  className="w-full h-40 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => handleImageClick(eventData.coursePageImageUrl)}
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

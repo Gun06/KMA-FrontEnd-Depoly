@@ -11,11 +11,11 @@ import MainSectionDivider from '@/components/main/MainSectionDivider'
 
 export default function AssociationPage() {
   return (
-    <MainHomeScrollLayout>
-      <EventSection variant="embedded" />
-
+    <MainHomeScrollLayout
+      belowHero={<MainSponsorSection variant="embedded" />}
+    >
       <MainSectionDivider />
-      <MainSponsorSection variant="embedded" />
+      <EventSection variant="embedded" />
 
       <MainSectionDivider />
       <GallerySection variant="embedded" />

@@ -10,7 +10,6 @@ import type {
 } from './types';
 import type { UploadItem } from '@/components/common/Upload/types';
 import { api } from '@/hooks/useFetch';
-import { resolvePageMediaType } from '@/utils/youtube';
 
 /**
  * 페이지별 이미지 업데이트를 위한 FormData 생성
@@ -27,23 +26,11 @@ export function buildPageImageFormData(imageItems: UploadItem[]): FormData {
   
   imageItems.forEach((item, index) => {
     const orderNumber = index; // 배열 순서가 곧 orderNumber
-    const mediaType = resolvePageMediaType(item.mediaType, item.url);
     
-    // 영상 링크 (imageUrl에 URL을 넣고 mediaType=VIDEO_LINK)
-    if (mediaType === 'VIDEO_LINK' && item.url) {
-      eventPageImageRequests.push({
-        imageUrl: item.url,
-        mediaType: 'VIDEO_LINK',
-        orderNumber,
-      });
-      return;
-    }
-
     // 기존 이미지 (url이 있고 새 파일이 없는 경우)
     if (item.url && (!item.file || item.file.size === 0)) {
       eventPageImageRequests.push({
         imageUrl: item.url,
-        mediaType: 'IMAGE',
         orderNumber,
       });
     } 
@@ -51,7 +38,6 @@ export function buildPageImageFormData(imageItems: UploadItem[]): FormData {
     else if (item.file && item.file instanceof File && item.file.size > 0) {
       eventPageImageRequests.push({
         imageUrl: null, // 백엔드 스펙: null이면 생성
-        mediaType: 'IMAGE',
         orderNumber,
       });
       newImageFiles.push(item.file);
@@ -142,9 +128,8 @@ export async function updateAllPageImages(
     
     // 실제로 업데이트할 이미지가 있는지 확인 (url이나 file이 있어야 함)
     const hasValidItems = page.items.some(
-      item =>
-        Boolean(item.url) ||
-        (item.file && item.file instanceof File && item.file.size > 0)
+      item => (item.url && (!item.file || item.file.size === 0)) || 
+              (item.file && item.file instanceof File && item.file.size > 0)
     );
     
     if (!hasValidItems) {

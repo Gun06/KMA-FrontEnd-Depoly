@@ -15,6 +15,7 @@ import UploadsSection from '@/app/admin/events/register/components/sections/Uplo
 import ThemeSection from '@/app/admin/events/register/components/sections/ThemeSection';
 import GiftsSection from '@/app/admin/events/register/components/sections/GiftsSection';
 import CoursesSection from '@/app/admin/events/register/components/sections/CoursesSection';
+import EventSettingSection from '@/app/admin/events/register/components/sections/EventSettingSection';
 
 // 파츠 (register에서 import)
 import EditActionBar from '@/app/admin/events/register/components/parts/EditActionBar';
@@ -31,7 +32,10 @@ import type {
   EventCreatePayload,
 } from '@/app/admin/events/register/api/types';
 import type { PhoneAuthPolicy } from '@/services/admin/phoneAuth';
-import { flushPendingVideoLinks } from '@/utils/pendingVideoLinks';
+import {
+  DEFAULT_EVENT_SETTING,
+  type EventSettingSpec,
+} from '@/types/eventSetting';
 
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
@@ -42,6 +46,7 @@ type Props = {
     courses: Array<{ id?: string; name: string; price: string; selectedGifts: number[]; isActive?: boolean }>,
     gifts: Array<{ id?: string; name: string; size: string }>
   ) => Promise<void>;
+  onSaveEventSetting?: (settings: EventSettingSpec) => Promise<void>;
   onBack?: () => void;
   onCancel?: () => void;
   onDelete?: () => Promise<void>;
@@ -58,6 +63,7 @@ type Props = {
   }>;
   initialGifts?: Array<{ id?: string; name: string; size: string; isActive?: boolean }>;
   initialCourses?: Array<{ id?: string; name: string; price: string; selectedGifts: number[]; isActive?: boolean }>;
+  initialEventSetting?: EventSettingSpec;
   phoneAuthGlobalPolicy?: PhoneAuthPolicy;
 };
 
@@ -65,6 +71,7 @@ export default function EditForm({
   onSubmit,
   onSaveSouvenirs,
   onSaveCourses,
+  onSaveEventSetting,
   onBack,
   onCancel,
   onDelete,
@@ -74,6 +81,7 @@ export default function EditForm({
   existingEventBanners,
   initialGifts = [],
   initialCourses = [],
+  initialEventSetting = DEFAULT_EVENT_SETTING,
   phoneAuthGlobalPolicy,
 }: Props) {
   const searchParams = useSearchParams();
@@ -165,6 +173,14 @@ export default function EditForm({
   // 기념품/종목 저장용 로딩 상태
   const [loadingSouvenirs, setLoadingSouvenirs] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingEventSetting, setLoadingEventSetting] = useState(false);
+  const [eventSetting, setEventSetting] = useState<EventSettingSpec>(
+    initialEventSetting
+  );
+
+  useEffect(() => {
+    setEventSetting(initialEventSetting);
+  }, [initialEventSetting]);
 
   // 쿼리 파라미터로 기념품 섹션으로 스크롤
   useEffect(() => {
@@ -255,7 +271,6 @@ export default function EditForm({
 
     try {
       // 기본 정보만 저장 (groups 제외)
-      flushPendingVideoLinks();
       const body = f.buildApiBody();
       const basicBody = {
         ...body,
@@ -273,7 +288,6 @@ export default function EditForm({
 
   // 공통: 기념품/종목 groups 포함한 페이로드 생성
   const buildPayloadWithGroups = (): EventCreatePayload => {
-    flushPendingVideoLinks();
     const body = f.buildApiBody();
 
     const groups = courses.map(course => ({
@@ -324,6 +338,20 @@ export default function EditForm({
       // 에러는 상위에서 처리
     } finally {
       setLoadingCourses(false);
+    }
+  };
+
+  // STEP 4: 신청 UI 설정 저장
+  const handleSaveEventSetting = async () => {
+    if (!onSaveEventSetting || readOnly) return;
+
+    setLoadingEventSetting(true);
+    try {
+      await onSaveEventSetting(eventSetting);
+    } catch {
+      // 에러는 상위에서 처리
+    } finally {
+      setLoadingEventSetting(false);
     }
   };
 
@@ -528,6 +556,29 @@ export default function EditForm({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 7. 신청 UI 설정 */}
+        <EventSettingSection
+          settings={eventSetting}
+          onChange={setEventSetting}
+          readOnly={readOnly}
+        />
+
+        {/* 신청 UI 설정 저장 버튼 */}
+        {!readOnly && onSaveEventSetting && (
+          <div className="flex justify-center mt-4">
+            <Button
+              tone="primary"
+              size="sm"
+              widthType="pager"
+              onClick={handleSaveEventSetting}
+              disabled={loadingEventSetting}
+              aria-busy={loadingEventSetting}
+            >
+              {loadingEventSetting ? '저장 중...' : '신청 UI 설정 저장'}
+            </Button>
           </div>
         )}
       </div>
