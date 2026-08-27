@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Portal from "@/components/common/portal";
 import type { PageMediaItem } from "@/types/pageMedia";
 import { cn } from "@/utils/cn";
@@ -14,6 +15,8 @@ import {
 type Props = {
   items: PageMediaItem[];
   altPrefix: string;
+  /** stack: 유저 페이지처럼 순서대로 본문 표시 / gallery: 관리자 썸네일 그리드 */
+  variant?: "stack" | "gallery";
 };
 
 type ResolvedMedia = {
@@ -60,6 +63,88 @@ function PlayBadge() {
         </svg>
       </span>
     </span>
+  );
+}
+
+function StackedMediaItem({
+  item,
+  index,
+  altPrefix,
+}: {
+  item: ResolvedMedia;
+  index: number;
+  altPrefix: string;
+}) {
+  const loopingEmbedUrl = toYoutubeEmbedUrl(item.url, {
+    autoplay: true,
+    loop: true,
+  });
+
+  if (loopingEmbedUrl) {
+    return (
+      <div className="w-full max-w-[800px] aspect-video bg-black">
+        <iframe
+          src={loopingEmbedUrl}
+          title={`${altPrefix} 영상 ${index + 1}`}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
+    );
+  }
+
+  if (item.isVideo && item.isDirectVideo) {
+    return (
+      <video
+        src={item.url}
+        autoPlay
+        loop
+        playsInline
+        controls
+        className="w-full max-w-[800px] h-auto bg-black"
+      />
+    );
+  }
+
+  if (item.isVideo) {
+    let src = item.url;
+    try {
+      const parsed = new URL(
+        /^https?:\/\//i.test(item.url) ? item.url : `https://${item.url}`
+      );
+      parsed.searchParams.set("autoplay", "1");
+      parsed.searchParams.set("loop", "1");
+      src = parsed.toString();
+    } catch {
+      // URL 파싱 실패 시 원본 사용
+    }
+
+    return (
+      <div className="w-full max-w-[800px] aspect-video bg-black">
+        <iframe
+          src={src}
+          title={`${altPrefix} 영상 ${index + 1}`}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={item.url}
+      alt={`${altPrefix} ${index + 1}`}
+      width={800}
+      height={600}
+      priority={index === 0}
+      className="max-w-full h-auto"
+      style={{ touchAction: "auto" }}
+    />
   );
 }
 
@@ -226,7 +311,11 @@ function MediaPreview({
   );
 }
 
-export default function PageMediaList({ items, altPrefix }: Props) {
+export default function PageMediaList({
+  items,
+  altPrefix,
+  variant = "stack",
+}: Props) {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const mediaItems = useMemo(
@@ -235,6 +324,25 @@ export default function PageMediaList({ items, altPrefix }: Props) {
   );
 
   if (!mediaItems.length) return null;
+
+  if (variant === "stack") {
+    return (
+      <div>
+        {mediaItems.map((item, index) => (
+          <div
+            key={`${item.url}-${index}`}
+            className="flex justify-center mb-4 last:mb-0"
+          >
+            <StackedMediaItem
+              item={item}
+              index={index}
+              altPrefix={altPrefix}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const visibleCount = Math.min(mediaItems.length, MAX_VISIBLE);
   const remainingCount = mediaItems.length - visibleCount;

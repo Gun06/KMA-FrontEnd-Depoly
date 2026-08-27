@@ -1369,6 +1369,7 @@ export default function EventDetailView({
                   <PageMediaList
                     items={courseItems}
                     altPrefix="대회코스 페이지"
+                    variant="gallery"
                   />
                 </div>
               );

@@ -43,7 +43,14 @@ export function getYoutubeVideoId(url: string | undefined | null): string | null
   }
 }
 
-export function toYoutubeEmbedUrl(url: string | undefined | null): string | null {
+export function toYoutubeEmbedUrl(
+  url: string | undefined | null,
+  options?: {
+    autoplay?: boolean;
+    loop?: boolean;
+    mute?: boolean;
+  }
+): string | null {
   const videoId = getYoutubeVideoId(url);
   if (!videoId) return null;
 
@@ -51,6 +58,18 @@ export function toYoutubeEmbedUrl(url: string | undefined | null): string | null
   embedUrl.searchParams.set('rel', '0');
   embedUrl.searchParams.set('modestbranding', '1');
   embedUrl.searchParams.set('playsinline', '1');
+
+  const autoplay = options?.autoplay === true;
+  const loop = options?.loop === true;
+  const mute = options?.mute === true;
+
+  if (autoplay) embedUrl.searchParams.set('autoplay', '1');
+  if (mute) embedUrl.searchParams.set('mute', '1');
+  if (loop) {
+    embedUrl.searchParams.set('loop', '1');
+    embedUrl.searchParams.set('playlist', videoId);
+  }
+
   return embedUrl.toString();
 }
 
