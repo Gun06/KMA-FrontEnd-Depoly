@@ -2,13 +2,94 @@
 import React from "react";
 import { cn } from "@/utils/cn";
 import UploadButton from "./UploadButton";
-import { mapFilesToItems } from "./utils";
+import { getUploadItemDisplayName, mapFilesToItems } from "./utils";
 import type { MultipleUploaderProps, UploadItem } from "./types";
+import { getYoutubeVideoId } from "@/utils/youtube";
 
 type Props = MultipleUploaderProps & {
   /** true면 파일 1개만 업로드 가능, 업로드 후 버튼 숨김, 카운트/전체삭제 숨김 */
   single?: boolean;
 };
+
+function isLikelyImage(item: UploadItem) {
+  if (item.file) return item.file.type.startsWith("image/");
+  const source = item.name || item.url || "";
+  if (/\.(pdf|docx?|xlsx?|zip|hwp)(\?|$)/i.test(source)) return false;
+  if (item.url) return !getYoutubeVideoId(item.url);
+  return /\.(jpe?g|png|gif|webp|bmp|svg|heic|heif|avif)(\?|$)/i.test(source);
+}
+
+function FileRow({
+  item,
+  onRemove,
+  showDivider,
+}: {
+  item: UploadItem;
+  onRemove: (id: string) => void;
+  showDivider?: boolean;
+}) {
+  const isError = item.tooLarge && item.error;
+  const displayName = getUploadItemDisplayName(item);
+  const canPreview = isLikelyImage(item);
+  const remoteUrl = item.previewUrl || (canPreview ? item.url : undefined);
+  const blobUrl = React.useMemo(() => {
+    if (remoteUrl || !item.file || !canPreview) return null;
+    return URL.createObjectURL(item.file);
+  }, [item.file, remoteUrl, canPreview]);
+
+  React.useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
+
+  const preview = remoteUrl || blobUrl;
+
+  return (
+    <div
+      className={cn(
+        "w-full min-w-0 py-1",
+        showDivider && "border-b border-[#EEE]",
+        isError && "bg-[#FEF2F2]"
+      )}
+    >
+      <div className="flex items-center gap-2.5 min-w-0 w-full">
+        <div className="shrink-0 w-12 h-12 overflow-hidden bg-gray-100">
+          {preview ? (
+            <img
+              src={preview}
+              alt={displayName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-[11px]">
+              {canPreview ? "이미지" : "파일"}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <p className="truncate text-[13px] text-[#111827]" title={item.name}>
+            {displayName}
+          </p>
+          <p className="mt-0.5 text-[12px] text-[#8A949E]">{item.sizeMB}MB</p>
+        </div>
+        <button
+          type="button"
+          className="shrink-0 text-[13px] text-[#9CA3AF] hover:text-[#DC2626]"
+          onClick={() => onRemove(item.id)}
+          aria-label={`${displayName} 삭제`}
+        >
+          삭제
+        </button>
+      </div>
+      {isError && (
+        <div className="mt-1 text-[12px] text-[#B42318] whitespace-pre-line">
+          {item.error}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function FileUploader({
   single = false,
@@ -80,8 +161,7 @@ export default function FileUploader({
 
   return (
     <div className={cn("w-full min-w-0", className)}>
-      {/* 버튼 + 설명 (single 모드: 업로드 후 버튼/헬퍼 숨김) */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {!(single && hasItems) && (
           <UploadButton
             label={label}
@@ -89,71 +169,42 @@ export default function FileUploader({
             multiple={effectiveMultiple}
             disabled={disabled}
             onFilesSelected={handleSelect}
-            className="self-start"
           />
         )}
         {!(single && hasItems) && (
-          <p className="text-[13px] text-[#8A949E] sm:ml-2">
-            {single ? `선택된 파일 없음 / ${maxSizeMB}MB 이내` : helper}
+          <p className="flex-1 min-w-0 text-[13px] text-[#8A949E]">
+            {helper ?? (single ? `${maxSizeMB}MB 이내` : null)}
           </p>
+        )}
+        {!single && hasItems && (
+          <>
+            <p className="flex-1 min-w-0 text-[13px] text-[#8A949E]" aria-live="polite">
+              <b className="text-[#256EF4] font-semibold">{items.length}</b>
+              <span> / {effectiveMaxCount}</span>
+            </p>
+            <button
+              type="button"
+              onClick={removeAll}
+              className="text-[13px] text-[#6B7280] hover:text-[#DC2626]"
+            >
+              전체 삭제
+            </button>
+          </>
         )}
       </div>
 
-      {/* 멀티 전용: 카운트 + 전체 삭제 */}
-      {!single && hasItems && (
-        <div className="mt-3 flex items-center justify-between" aria-live="polite">
-          <span className="text-[13px] text-[#0F1113]">
-            <b className="text-[#256EF4]">{items.length}개</b> / {effectiveMaxCount}개
-          </span>
-          <button
-            type="button"
-            onClick={removeAll}
-            className="rounded-[8px] border border-[#D1D5DB] px-3 py-1.5 text-[13px] text-[#374151] hover:bg-gray-50"
-          >
-            전체 파일 삭제
-          </button>
+      {hasItems && (
+        <div className={cn(!single && "mt-1")}>
+          {items.map((it, index) => (
+            <FileRow
+              key={it.id}
+              item={it}
+              onRemove={removeOne}
+              showDivider={!single && index < items.length - 1}
+            />
+          ))}
         </div>
       )}
-
-      {/* 리스트 */}
-      <div className={cn("space-y-3", !single && hasItems && "mt-3")}>
-        {items.map((it) => {
-          const isError = it.tooLarge && it.error;
-          const rowCls = cn(
-            "rounded-[10px] border px-4 py-3",
-            isError ? "border-[#EF4444] bg-[#FEEDEC]" : "border-[#E5E7EB] bg-white"
-          );
-
-          return (
-            <div key={it.id} className={cn(rowCls, "w-full min-w-0")}>
-              <div className="flex items-center justify-between gap-3 min-w-0 w-full">
-                <div className="min-w-0 flex-1 text-[#0F1113] overflow-hidden">
-                  <span className="block truncate text-[13px] w-full" title={it.name}>
-                    {it.name}
-                  </span>
-                  <span className="ml-0.5 text-[12px] text-[#6B7280]">[{it.sizeMB}MB]</span>
-                </div>
-
-                <button
-                  type="button"
-                  className="shrink-0 flex-shrink-0 text-[13px] text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
-                  onClick={() => removeOne(it.id)}
-                  aria-label={`${it.name} 삭제`}
-                >
-                  삭제 ✕
-                </button>
-              </div>
-
-              {isError && (
-                <>
-                  <div className="my-3 h-px bg-[#B7B7B7]/70" />
-                  <div className="text-[13px] text-[#B42318] whitespace-pre-line">{it.error}</div>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

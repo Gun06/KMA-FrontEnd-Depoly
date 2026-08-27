@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/utils/cn';
 
 import FormTable from '@/components/admin/Form/FormTable';
@@ -16,6 +16,11 @@ import ThemeSection from '@/app/admin/events/register/components/sections/ThemeS
 import GiftsSection from '@/app/admin/events/register/components/sections/GiftsSection';
 import CoursesSection from '@/app/admin/events/register/components/sections/CoursesSection';
 import EventSettingSection from '@/app/admin/events/register/components/sections/EventSettingSection';
+import EditStepNav, {
+  StickyEditStepNav,
+  parseEditStep,
+  type EditStepId,
+} from './EditStepNav';
 
 // 파츠 (register에서 import)
 import EditActionBar from '@/app/admin/events/register/components/parts/EditActionBar';
@@ -32,10 +37,64 @@ import type {
   EventCreatePayload,
 } from '@/app/admin/events/register/api/types';
 import type { PhoneAuthPolicy } from '@/services/admin/phoneAuth';
+import { flushPendingVideoLinks } from '@/utils/pendingVideoLinks';
 import {
   DEFAULT_EVENT_SETTING,
   type EventSettingSpec,
 } from '@/types/eventSetting';
+
+function StepSaveButton({
+  title,
+  description,
+  label,
+  loading,
+  loadingLabel,
+  onClick,
+  disabled,
+}: {
+  title: string;
+  description: string;
+  label: string;
+  loading?: boolean;
+  loadingLabel?: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex justify-center mt-6">
+      <div className="relative group">
+        <Button
+          tone="primary"
+          size="sm"
+          widthType="pager"
+          onClick={onClick}
+          disabled={disabled || loading}
+          aria-busy={loading}
+        >
+          {loading ? loadingLabel ?? '저장 중...' : label}
+        </Button>
+        <div
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none"
+          style={{ width: 'max-content', maxWidth: '320px' }}
+        >
+          <div
+            className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl"
+            style={{ minWidth: '280px', width: 'max-content' }}
+          >
+            <div className="font-semibold mb-2 text-[13px]">{title}</div>
+            <div
+              className="text-[13px] text-gray-300 leading-relaxed"
+              style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
+            >
+              {description}
+            </div>
+            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
@@ -85,10 +144,13 @@ export default function EditForm({
   phoneAuthGlobalPolicy,
 }: Props) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const step = searchParams?.get('step');
+  const activeStep = parseEditStep(step);
   const [isEditing, setIsEditing] = useState(initialEditing);
   const snapshotRef = useRef<HydrateSnapshotInput | null>(null);
-  
+
   // 커스텀 모달 상태
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -182,15 +244,22 @@ export default function EditForm({
     setEventSetting(initialEventSetting);
   }, [initialEventSetting]);
 
-  // 쿼리 파라미터로 기념품 섹션으로 스크롤
+  const handleChangeStep = (next: EditStepId) => {
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    if (next === 'basic') {
+      params.delete('step');
+    } else {
+      params.set('step', next);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    window.scrollTo({ top: 0 });
+  };
+
+  // 쿼리 파라미터로 기념품 섹션 진입 (등록 직후 step=souvenirs)
   useEffect(() => {
     if (step === 'souvenirs') {
-      setTimeout(() => {
-        const element = document.getElementById('souvenirs-section');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+      window.scrollTo({ top: 0 });
     }
   }, [step]);
 
@@ -199,7 +268,7 @@ export default function EditForm({
   const inputColorCls = readOnly ? 'text-[#646464]' : 'text-black';
   const fieldCls =
     'w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none';
-  const noop = () => {};
+  const noop = () => { };
 
   // 편집 시작
   const startEdit = () => {
@@ -271,6 +340,7 @@ export default function EditForm({
 
     try {
       // 기본 정보만 저장 (groups 제외)
+      flushPendingVideoLinks();
       const body = f.buildApiBody();
       const basicBody = {
         ...body,
@@ -288,6 +358,7 @@ export default function EditForm({
 
   // 공통: 기념품/종목 groups 포함한 페이로드 생성
   const buildPayloadWithGroups = (): EventCreatePayload => {
+    flushPendingVideoLinks();
     const body = f.buildApiBody();
 
     const groups = courses.map(course => ({
@@ -310,7 +381,7 @@ export default function EditForm({
   // STEP 2: 기념품만 저장
   const handleSaveSouvenirs = async () => {
     if (!onSaveSouvenirs || readOnly) return;
-    
+
     setLoadingSouvenirs(true);
     try {
       const giftsToSave = gifts.map((gift, index) => ({
@@ -329,7 +400,7 @@ export default function EditForm({
   // STEP 3: 종목만 저장
   const handleSaveCourses = async () => {
     if (!onSaveCourses || readOnly) return;
-    
+
     setLoadingCourses(true);
     try {
       // courses와 gifts 배열을 직접 전달
@@ -359,15 +430,11 @@ export default function EditForm({
 
   return (
     <div className="w-full">
-      <div className="max-w-[1280px] mx-auto px-3 space-y-6 pb-24">
-        <FormTable
-          title={
-            <h1 className="text-[17px] font-semibold">{title}</h1>
-          }
-          labelWidth={200}
-          tightRows
-          actions={
-            <div className="flex items-center gap-3">
+      <StickyEditStepNav activeStep={activeStep} onChange={handleChangeStep} />
+
+      <div className="px-8 pt-8 pb-24 md:ml-[240px] min-h-[calc(100vh-4rem)]">
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <h1 className="text-[17px] font-semibold">{title}</h1>
               <EditActionBar
                 isEditPage={true}
                 isEditing={isEditing}
@@ -375,12 +442,21 @@ export default function EditForm({
                 onBack={onBack}
                 onStartEdit={startEdit}
                 onCancel={handleCancel}
-                onSave={saveEdit}
                 onDelete={handleDelete}
                 editHref={editHref}
               />
             </div>
-          }
+
+            <div className="md:hidden mb-4">
+              <EditStepNav activeStep={activeStep} onChange={handleChangeStep} />
+            </div>
+
+            <div className="space-y-6">
+            <div className={cn(activeStep !== 'basic' && 'hidden')}>
+              <div className="space-y-6">
+        <FormTable
+          labelWidth={200}
+          tightRows
         >
           {/* 1. 대회 기본 정보 */}
           <BasicInfoSection
@@ -425,162 +501,81 @@ export default function EditForm({
         {/* 색상 섹션 */}
         <ThemeSection f={f} readOnly={readOnly} />
 
-        {/* 수정 모드에서 기본 정보 저장 버튼 (STEP 1) */}
         {!readOnly && (
-          <div className="flex justify-center mx-auto mt-6">
-            <div className="relative group">
-              <Button
-                tone="primary"
-                widthType="pager"
-                size="sm"
-                onClick={saveEdit}
-                disabled={loadingBasicInfo}
-                aria-busy={loadingBasicInfo}
-              >
-                {loadingBasicInfo ? '저장 중...' : '기본 정보 저장'}
-              </Button>
-              {/* Tooltip */}
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
-                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-[13px]">1단계: 기본 정보 저장</div>
-                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-                    대회명, 날짜, 장소 등 기본 정보를 입력하고 저장하세요. 기본 정보를 먼저 저장해야 다음 단계로 진행할 수 있습니다.
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
-                </div>
+          <StepSaveButton
+            title="1단계: 기본 정보 저장"
+            description="대회명, 날짜, 장소, 배너, 페이지 이미지를 저장합니다. 기념품·종목·신청 UI는 왼쪽 단계에서 따로 저장하세요."
+            label="기본 정보 저장"
+            loading={loadingBasicInfo}
+            onClick={saveEdit}
+          />
+        )}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* 기념품/종목 설정 안내 */}
-        <div 
-          id="souvenirs-section"
-          className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-[17px] font-semibold text-blue-900 mb-1">
-                기념품 및 종목 설정
-              </h3>
-              <p className="text-[13px] text-blue-700 leading-relaxed">
-                대회에 제공할 기념품과 종목을 추가해주세요. 대회 정보는 아래에서 수정할 수 있습니다.
-              </p>
+            <div className={cn(activeStep !== 'souvenirs' && 'hidden')}>
+              <GiftsSection
+                gifts={gifts}
+                onAddGift={giftsHandlers.handleAddGift}
+                onRemoveGift={giftsHandlers.handleRemoveGift}
+                onChangeGiftName={giftsHandlers.handleChangeGiftName}
+                onChangeGiftSize={giftsHandlers.handleChangeGiftSize}
+                onToggleGiftEnabled={giftsHandlers.handleToggleGiftEnabled}
+                onSkip={onBack}
+                readOnly={readOnly}
+              />
+              {!readOnly && (
+                <StepSaveButton
+                  title="2단계: 기념품 저장"
+                  description="대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다."
+                  label="기념품 저장"
+                  loading={loadingSouvenirs}
+                  onClick={handleSaveSouvenirs}
+                />
+              )}
             </div>
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="ml-4 px-4 py-2 text-[13px] font-medium text-blue-700 bg-white border border-blue-300 rounded-md hover:bg-blue-50 transition-colors"
-              >
-                나중에 설정하기
-              </button>
-            )}
-          </div>
-        </div>
 
-        {/* 5. 기념품 */}
-        <GiftsSection
-          gifts={gifts}
-          onAddGift={giftsHandlers.handleAddGift}
-          onRemoveGift={giftsHandlers.handleRemoveGift}
-          onChangeGiftName={giftsHandlers.handleChangeGiftName}
-          onChangeGiftSize={giftsHandlers.handleChangeGiftSize}
-          onToggleGiftEnabled={giftsHandlers.handleToggleGiftEnabled}
-          readOnly={readOnly}
-        />
-
-        {/* 기념품 저장 버튼 (STEP 2) */}
-        {!readOnly && (
-          <div className="flex justify-center mt-4">
-            <div className="relative group">
-              <Button
-                tone="primary"
-                size="sm"
-                widthType="pager"
-                onClick={handleSaveSouvenirs}
-                disabled={loadingSouvenirs}
-                aria-busy={loadingSouvenirs}
-              >
-                {loadingSouvenirs ? '저장 중...' : '기념품 저장'}
-              </Button>
-              {/* Tooltip */}
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
-                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-[13px]">2단계: 기념품 저장</div>
-                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-                    대회에서 제공할 기념품을 추가하고 저장하세요. 기념품을 저장해야 종목에서 기념품을 선택할 수 있습니다.
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
-                </div>
-              </div>
+            <div className={cn(activeStep !== 'courses' && 'hidden')}>
+              <CoursesSection
+                courses={courses}
+                availableGifts={savedGifts}
+                onAddCourse={coursesHandlers.handleAddCourse}
+                onRemoveCourse={coursesHandlers.handleRemoveCourse}
+                onChangeCourseName={coursesHandlers.handleChangeCourseName}
+                onChangeCoursePrice={coursesHandlers.handleChangeCoursePrice}
+                onToggleCourseEnabled={coursesHandlers.handleToggleCourseEnabled}
+                onSelectGifts={coursesHandlers.handleSelectGifts}
+                onRemoveGiftFromCourse={coursesHandlers.handleRemoveGiftFromCourse}
+                readOnly={readOnly}
+              />
+              {!readOnly && (
+                <StepSaveButton
+                  title="3단계: 종목 저장"
+                  description="참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 신청 UI 설정은 왼쪽 4단계에서 따로 저장합니다."
+                  label="종목 저장"
+                  loading={loadingCourses}
+                  onClick={handleSaveCourses}
+                />
+              )}
             </div>
-          </div>
-        )}
 
-        {/* 6. 종목 */}
-        <CoursesSection
-          courses={courses}
-          availableGifts={savedGifts}
-          onAddCourse={coursesHandlers.handleAddCourse}
-          onRemoveCourse={coursesHandlers.handleRemoveCourse}
-          onChangeCourseName={coursesHandlers.handleChangeCourseName}
-          onChangeCoursePrice={coursesHandlers.handleChangeCoursePrice}
-          onToggleCourseEnabled={coursesHandlers.handleToggleCourseEnabled}
-          onSelectGifts={coursesHandlers.handleSelectGifts}
-          onRemoveGiftFromCourse={coursesHandlers.handleRemoveGiftFromCourse}
-          readOnly={readOnly}
-        />
-
-        {/* 종목 저장 버튼 (STEP 3) */}
-        {!readOnly && (
-          <div className="flex justify-center mt-4">
-            <div className="relative group">
-              <Button
-                tone="primary"
-                size="sm"
-                widthType="pager"
-                onClick={handleSaveCourses}
-                disabled={loadingCourses}
-                aria-busy={loadingCourses}
-              >
-                {loadingCourses ? '저장 중...' : '종목 저장'}
-              </Button>
-              {/* Tooltip */}
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
-                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-[13px]">3단계: 종목 저장</div>
-                  <div className="text-[13px] text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-                    참가부문(종목)을 추가하고 각 종목에 기념품을 연결한 후 저장하세요. 모든 정보가 저장되면 대회 설정이 완료됩니다.
-                  </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
-                </div>
-              </div>
+            <div className={cn(activeStep !== 'settings' && 'hidden')}>
+              <EventSettingSection
+                settings={eventSetting}
+                onChange={setEventSetting}
+                readOnly={readOnly}
+              />
+              {!readOnly && onSaveEventSetting && (
+                <StepSaveButton
+                  title="4단계: 신청 UI 설정 저장"
+                  description="단체신청 버튼과 개인 ID 불러오기 노출 여부를 저장하세요. 다른 단계 저장과 별도로 이 버튼을 눌러야 반영됩니다."
+                  label="신청 UI 설정 저장"
+                  loading={loadingEventSetting}
+                  onClick={handleSaveEventSetting}
+                />
+              )}
             </div>
-          </div>
-        )}
-
-        {/* 7. 신청 UI 설정 */}
-        <EventSettingSection
-          settings={eventSetting}
-          onChange={setEventSetting}
-          readOnly={readOnly}
-        />
-
-        {/* 신청 UI 설정 저장 버튼 */}
-        {!readOnly && onSaveEventSetting && (
-          <div className="flex justify-center mt-4">
-            <Button
-              tone="primary"
-              size="sm"
-              widthType="pager"
-              onClick={handleSaveEventSetting}
-              disabled={loadingEventSetting}
-              aria-busy={loadingEventSetting}
-            >
-              {loadingEventSetting ? '저장 중...' : '신청 UI 설정 저장'}
-            </Button>
-          </div>
-        )}
+            </div>
       </div>
 
       {/* 커스텀 모달들 */}

@@ -3,10 +3,9 @@
 
 import React, { useState } from 'react';
 import { cn } from '@/utils/cn';
-import TextField from '@/components/common/TextField/TextField';
 import NoticeMessage from '@/components/admin/Form/NoticeMessage';
 import GiftSelectionModal from '../parts/GiftSelectionModal';
-import { Plus, Minus, Trophy } from 'lucide-react';
+import { Plus, Trophy } from 'lucide-react';
 import MiniToggle from '@/components/common/Toggle/MiniToggle';
 import type { GiftItem } from './GiftsSection';
 
@@ -31,6 +30,18 @@ type CoursesSectionProps = {
   readOnly?: boolean;
 };
 
+const headerFieldCls =
+  'h-9 bg-transparent border-0 border-b border-white/35 px-0 text-[13px] text-white outline-none focus:border-white placeholder:text-white/40 read-only:border-transparent';
+
+function formatGiftSize(size?: string) {
+  if (!size?.trim()) return '';
+  return size
+    .split('|')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(' · ');
+}
+
 export default function CoursesSection({
   courses,
   availableGifts,
@@ -46,7 +57,7 @@ export default function CoursesSection({
   const [modalOpen, setModalOpen] = useState(false);
   const [currentCourseIndex, setCurrentCourseIndex] = useState<number | null>(null);
 
-  const noop = () => { };
+  const noop = () => {};
 
   const handleOpenModal = (courseIndex: number) => {
     setCurrentCourseIndex(courseIndex);
@@ -68,9 +79,23 @@ export default function CoursesSection({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[17px] font-semibold mb-3 text-left">종목</h1>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h1 className="text-[17px] font-semibold text-left">종목</h1>
+          {!readOnly && courses.length > 0 && (
+            <button
+              type="button"
+              onClick={onAddCourse}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
+              aria-label="종목 추가"
+            >
+              <Plus size={16} strokeWidth={2.25} />
+              추가
+            </button>
+          )}
+        </div>
+
         {courses.length === 0 ? (
-          <div className="bg-white border border-neutral-300 rounded-lg overflow-hidden">
+          <div className="bg-white border border-neutral-300 rounded-sm">
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center mb-4">
                 <Trophy className="w-8 h-8 text-neutral-400" />
@@ -95,169 +120,148 @@ export default function CoursesSection({
             </div>
           </div>
         ) : (
-          <div className="space-y-4 pr-12">
+          <div className="space-y-3">
             {courses.map((course, courseIndex) => {
-              const isCourseActive = course.isActive !== false; // 기본값은 true
+              const isCourseActive = course.isActive !== false;
+              const selectedGifts = course.selectedGifts
+                .map((giftIndex) => ({ giftIndex, gift: availableGifts[giftIndex] }))
+                .filter((item) => item.gift);
+
               return (
-              <div key={courseIndex} className="relative">
-                {/* 종목 블록 */}
-                <div className={cn(
-                  "border border-neutral-300 rounded-lg overflow-hidden",
-                  isCourseActive ? "bg-white" : "bg-gray-200 opacity-70"
-                )}>
-                  {/* 참가부문 및 참가비 헤더 */}
-                  <div className={cn(
-                    "flex items-stretch min-h-[52px]",
-                    isCourseActive ? "bg-[#4D4D4D]" : "bg-[#4D4D4D]"
-                  )}>
-                    {/* 참가부문 */}
-                    <div className="flex-1 flex items-stretch min-h-[52px]">
-                      <div className="min-w-[140px] bg-transparent text-white text-[13px] flex items-center justify-center gap-2 px-3 py-1 border-r border-neutral-300 shrink-0">
-                        <span className="whitespace-nowrap">참가부문</span>
-                        {!readOnly && onToggleCourseEnabled && (
-                          <MiniToggle
-                            value={isCourseActive}
-                            onChange={(enabled) => onToggleCourseEnabled(courseIndex, enabled)}
-                            disabled={readOnly}
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 bg-transparent px-3 py-1 flex items-center min-w-0">
-                  <TextField
-                    placeholder="참가부문을 입력하세요. 예) 22km|짝궁마라톤"
-                    value={course.name}
-                    onChange={(e) =>
-                      readOnly
-                        ? noop()
-                        : onChangeCourseName(courseIndex, e.currentTarget.value)
-                    }
-                          className="w-full text-[13px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
-                    fontSizePx={13}
-                    heightPx={52}
-                    readOnly={readOnly || !isCourseActive}
-                  />
-                      </div>
+                <div
+                  key={course.id ?? courseIndex}
+                  className={cn(
+                    'border border-neutral-300 rounded-sm bg-white',
+                    !isCourseActive && 'bg-[#FAFAFA]'
+                  )}
+                >
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 bg-[#4D4D4D]">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[13px] text-white">참가부문</span>
+                      {!readOnly && onToggleCourseEnabled && (
+                        <MiniToggle
+                          value={isCourseActive}
+                          onChange={(enabled) => onToggleCourseEnabled(courseIndex, enabled)}
+                          disabled={readOnly}
+                        />
+                      )}
+                      {!isCourseActive && (
+                        <span className="text-[12px] text-white/60">마감</span>
+                      )}
                     </div>
-                    {/* 참가비 */}
-                    <div className="flex items-stretch border-l border-neutral-300 shrink-0">
-                      <div className="w-[88px] bg-transparent text-white text-[13px] flex items-center justify-center px-2 py-1 border-r border-neutral-300">
-                        참가비
-                </div>
-                      <div className="w-[200px] bg-transparent px-3 py-1 flex items-center">
-                <TextField
-                  inputMode="numeric"
-                  placeholder="금액(숫자만)"
-                  value={course.price}
-                  onChange={(e) =>
-                    readOnly
-                      ? noop()
-                      : onChangeCoursePrice(courseIndex, e.currentTarget.value)
-                  }
-                          className="w-full text-[13px] bg-white text-neutral-900 placeholder:text-neutral-400 border-0 outline-none focus:outline-none focus:ring-0 shadow-none rounded"
-                  fontSizePx={13}
-                  heightPx={52}
-                  readOnly={readOnly || !isCourseActive}
-                />
-                      </div>
+
+                    <input
+                      placeholder="예) 1|5km|일반"
+                      value={course.name}
+                      onChange={(e) =>
+                        readOnly ? noop() : onChangeCourseName(courseIndex, e.currentTarget.value)
+                      }
+                      readOnly={readOnly || !isCourseActive}
+                      className={cn(headerFieldCls, 'flex-1 min-w-[160px]')}
+                    />
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[13px] text-white">참가비</span>
+                      <input
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={course.price}
+                        onChange={(e) =>
+                          readOnly
+                            ? noop()
+                            : onChangeCoursePrice(
+                                courseIndex,
+                                e.currentTarget.value.replace(/[^\d]/g, '')
+                              )
+                        }
+                        readOnly={readOnly || !isCourseActive}
+                        className={cn(headerFieldCls, 'w-[108px] text-right tabular-nums')}
+                      />
+                      <span className="text-[13px] text-white/60">원</span>
                     </div>
+
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveCourse(courseIndex)}
+                        className="shrink-0 ml-auto text-[13px] text-white/55 hover:text-white"
+                        aria-label="종목 삭제"
+                      >
+                        삭제
+                      </button>
+                    )}
                   </div>
 
-                  {/* 기념품 섹션 */}
-                  <div>
-                    {/* 기념품 제목 행 */}
-                    <div className="bg-[#F5F5F5] flex items-center justify-between min-h-[44px] px-3 py-1 border-b border-neutral-200">
-                      <div className="text-[13px] font-medium text-neutral-900">기념품</div>
+                  <div className="px-4 py-2.5">
+                    <div className="flex items-center justify-between gap-3 min-h-[28px]">
+                      <span className="text-[13px] text-[#6B7280]">기념품</span>
                       {!readOnly && availableGifts.length > 0 && (
                         <button
                           type="button"
                           onClick={() => handleOpenModal(courseIndex)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-neutral-700 bg-white border border-neutral-300 rounded-md hover:bg-neutral-50 transition-colors"
+                          className="text-[13px] text-[#256EF4] font-medium hover:underline"
                         >
-                          <Plus size={14} strokeWidth={2} />
                           기념품 추가
                         </button>
                       )}
                     </div>
 
-                    {/* 선택된 기념품 표시 */}
-                    <div className="bg-white px-3 py-2.5">
-                  {availableGifts.length === 0 ? (
-                        <div className="text-[13px] text-neutral-500">
-                      먼저 기념품을 생성해주세요.
-                        </div>
-                      ) : course.selectedGifts.length === 0 ? (
-                        <div className="text-[13px] text-neutral-500">
-                          기념품을 선택해주세요.
-                    </div>
-                  ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {course.selectedGifts.map((giftIndex) => {
-                            const gift = availableGifts[giftIndex];
-                            if (!gift) return null;
-                            const isGiftActive = gift.isActive !== false; // 기본값은 true
-                        return (
-                              <div
-                            key={giftIndex}
-                                className={cn(
-                                  "inline-flex items-center gap-2 px-3 py-1.5 text-[13px] rounded",
-                                  isGiftActive
-                                    ? "text-neutral-700 bg-white border border-neutral-200"
-                                    : "text-neutral-400 bg-neutral-100 border border-neutral-300 opacity-60"
-                                )}
-                              >
-                                <span>
-                              {gift.name} {gift.size && `(${gift.size})`}
-                            </span>
-                                {!readOnly && onRemoveGiftFromCourse && (
-                                  <button
-                                    type="button"
-                                    onClick={() => onRemoveGiftFromCourse(courseIndex, giftIndex)}
-                                    className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-neutral-200 text-neutral-600 hover:bg-red-100 hover:text-red-600 transition-colors"
-                                    aria-label="기념품 제거"
-                                  >
-                                    <Minus size={12} strokeWidth={2.5} />
-                                  </button>
+                    {availableGifts.length === 0 ? (
+                      <p className="mt-1 text-[13px] text-[#8A949E]">
+                        먼저 기념품을 생성해주세요.
+                      </p>
+                    ) : selectedGifts.length === 0 ? (
+                      <p className="mt-1 text-[13px] text-[#8A949E]">
+                        기념품을 선택해주세요.
+                      </p>
+                    ) : (
+                      <div className="mt-1">
+                        {selectedGifts.map(({ giftIndex, gift }) => {
+                          const isGiftActive = gift.isActive !== false;
+                          const sizeText = formatGiftSize(gift.size);
+                          return (
+                            <div
+                              key={giftIndex}
+                              className={cn(
+                                'flex items-start gap-3 py-2 border-b border-[#EEE] last:border-b-0',
+                                !isGiftActive && 'opacity-50'
+                              )}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[13px] text-[#111827]">
+                                  {gift.name}
+                                  {!isGiftActive && (
+                                    <span className="ml-1.5 text-[12px] text-[#9CA3AF]">
+                                      마감
+                                    </span>
+                                  )}
+                                </p>
+                                {sizeText && (
+                                  <p className="mt-0.5 text-[12px] text-[#8A949E] leading-relaxed">
+                                    {sizeText}
+                                  </p>
                                 )}
                               </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                              {!readOnly && onRemoveGiftFromCourse && (
+                                <button
+                                  type="button"
+                                  onClick={() => onRemoveGiftFromCourse(courseIndex, giftIndex)}
+                                  className="shrink-0 text-[13px] text-[#9CA3AF] hover:text-[#DC2626]"
+                                  aria-label={`${gift.name} 제거`}
+                                >
+                                  삭제
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* 종목 삭제 버튼 (외부) */}
-                {!readOnly && (
-                  <div className="absolute -right-12 top-0 flex items-center h-full">
-                    <button
-                      type="button"
-                      onClick={() => onRemoveCourse(courseIndex)}
-                      className="h-10 w-10 inline-flex items-center justify-center rounded-full bg-neutral-200 text-neutral-600 hover:bg-red-100 hover:text-red-600 transition-colors shrink-0"
-                      aria-label="종목 삭제"
-                    >
-                      <Minus size={18} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                )}
-              </div>
               );
             })}
-            </div>
-        )}
-
-        {!readOnly && courses.length > 0 && (
-          <div className="flex justify-center mt-4">
-              <button
-                type="button"
-                onClick={onAddCourse}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-medium text-white bg-[#4D4D4D] rounded-md hover:bg-[#3D3D3D] transition-colors"
-                aria-label="종목 추가"
-              >
-                <Plus size={16} strokeWidth={2.25} />
-                종목 추가
-              </button>
-            </div>
+          </div>
         )}
       </div>
 
@@ -271,7 +275,7 @@ export default function CoursesSection({
               text: '※ 하나의 종목에 여러 기념품을 선택할 수 있습니다.',
             },
             {
-              text: '※ 참가부문은 \'순서|종목|세부종목\' 형식으로 입력하세요. 순서 번호에 따라 표시 순서가 결정됩니다. 예) 1|22km|짝궁마라톤, 2|22km|풀코스',
+              text: "※ 참가부문은 '순서|종목|세부종목' 형식으로 입력하세요. 순서 번호에 따라 표시 순서가 결정됩니다. 예) 1|22km|짝궁마라톤, 2|22km|풀코스",
             },
             {
               text: '※ 참가비는 숫자만 입력하세요. 예) 50000',
@@ -283,7 +287,6 @@ export default function CoursesSection({
         />
       </div>
 
-      {/* 기념품 선택 모달 */}
       {currentCourseIndex !== null && (
         <GiftSelectionModal
           isOpen={modalOpen}

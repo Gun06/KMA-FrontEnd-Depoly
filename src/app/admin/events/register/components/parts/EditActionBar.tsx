@@ -70,17 +70,21 @@ export default function EditActionBar({
       <Button key="cancel" tone="outlineDark" variant="outline" size="sm" widthType="pager" onClick={onCancel} disabled={loading}>
         수정 취소
       </Button>,
-      <Button
-        key="save"
-        tone="primary"
-        size="sm"
-        widthType="pager"
-        onClick={onSave}
-        disabled={loading}
-        aria-busy={loading}
-      >
-        {loading ? "저장 중..." : "저장하기"}
-      </Button>,
+      ...(onSave
+        ? [
+            <Button
+              key="save"
+              tone="primary"
+              size="sm"
+              widthType="pager"
+              onClick={onSave}
+              disabled={loading}
+              aria-busy={loading}
+            >
+              {loading ? "저장 중..." : "저장하기"}
+            </Button>,
+          ]
+        : []),
     ],
   };
 

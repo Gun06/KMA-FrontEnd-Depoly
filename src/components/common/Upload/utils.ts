@@ -1,6 +1,7 @@
 // 공용 유틸/상수
 
 import type { UploadItem } from "./types";
+import { getYoutubeVideoId } from "@/utils/youtube";
 
 // ====== 형식/문구 상수 & 헬퍼 ======
 export const ACCEPT_IMAGES =
@@ -49,6 +50,44 @@ export function mapFilesToItems(files: File[], maxSizeMB: number): UploadItem[] 
       sizeMB,
       tooLarge,
       error,
+      mediaType: "IMAGE",
     };
   });
+}
+
+export function createVideoLinkUploadItem(url: string): UploadItem {
+  const trimmed = url.trim();
+  const videoId = getYoutubeVideoId(trimmed);
+  return {
+    id: crypto.randomUUID(),
+    file: null,
+    name: videoId ? "유튜브 영상" : "영상 링크",
+    size: 0,
+    sizeMB: 0,
+    tooLarge: false,
+    url: trimmed,
+    mediaType: "VIDEO_LINK",
+  };
+}
+
+export function getUploadItemDisplayName(
+  item: UploadItem,
+  isVideo = false
+): string {
+  if (isVideo) return item.name?.trim() || "유튜브 영상";
+
+  const raw = item.file?.name || item.name || "";
+  let decoded = raw;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    decoded = raw;
+  }
+
+  const base = decoded.split(/[/\\]/).pop() || decoded;
+  const cleaned = base.replace(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]?/i,
+    ""
+  );
+  return cleaned.trim() || "이미지";
 }

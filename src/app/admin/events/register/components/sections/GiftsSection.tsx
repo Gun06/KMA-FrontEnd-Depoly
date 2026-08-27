@@ -19,6 +19,7 @@ type GiftsSectionProps = {
   onChangeGiftName: (index: number, value: string) => void;
   onChangeGiftSize: (index: number, value: string) => void;
   onToggleGiftEnabled?: (index: number, enabled: boolean) => void;
+  onSkip?: () => void;
   readOnly?: boolean;
 };
 
@@ -29,6 +30,7 @@ export default function GiftsSection({
   onChangeGiftName,
   onChangeGiftSize,
   onToggleGiftEnabled,
+  onSkip,
   readOnly = false,
 }: GiftsSectionProps) {
   const noop = () => {};
@@ -39,7 +41,18 @@ export default function GiftsSection({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[17px] font-semibold mb-3 text-left">기념품</h1>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h1 className="text-[17px] font-semibold text-left">기념품</h1>
+          {onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-[13px] text-[#6B7280] hover:text-[#111827]"
+            >
+              나중에 설정하기
+            </button>
+          )}
+        </div>
         <FormLayoutProvider labelWidth={200} tightRows>
           <div className="w-full border border-neutral-300 rounded-sm overflow-hidden">
             {gifts.length === 0 ? (

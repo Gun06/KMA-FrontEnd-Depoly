@@ -39,6 +39,7 @@ export default function FileSection({
     <FormRow label={label} contentClassName={contentClassName}>
       {editable ? (
         <FileUploader
+          label="이미지 업로드"
           accept={accept}
           maxSizeMB={maxSizeMB}
           multiple={multiple}

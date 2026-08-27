@@ -4,7 +4,7 @@
 import React from "react";
 import { cn } from "@/utils/cn";
 import UploadButton from "./UploadButton";
-import { mapFilesToItems } from "./utils";
+import { getUploadItemDisplayName, mapFilesToItems } from "./utils";
 import type { UploadItem } from "./types";
 
 type Props = {
@@ -20,28 +20,19 @@ type Props = {
   value?: UploadItem[];
   onChange?: (items: UploadItem[]) => void;
   dense?: boolean;
-  /** 파일명 가운데 말줄임 기준 글자수(기본 28) */
+  /** @deprecated 썸네일 행에서는 사용하지 않음 */
   nameMaxChars?: number;
   /** ✅ 읽기 전용 + 파일 없음일 때 표시할 문구 */
   emptyText?: string;
 };
 
-/** 파일명을 가운데 말줄임으로 축약 (확장자 유지) */
-const truncateMiddle = (name: string, max = 22) => {
-  if (!name) return "";
-  if (name.length <= max) return name;
-
-  const m = name.match(/(\.[^.]*)$/); // 확장자
-  const ext = m ? m[1] : "";
-  const base = ext ? name.slice(0, -ext.length) : name;
-
-  const keep = Math.max(0, max - ext.length - 1); // 1은 '…'
-  const left = Math.ceil(keep * 0.6);
-  const right = keep - left;
-
-  if (keep <= 0) return "…" + ext;
-  return `${base.slice(0, left)}…${base.slice(-right)}${ext}`;
-};
+function isLikelyImage(item: UploadItem) {
+  if (item.file) return item.file.type.startsWith("image/");
+  const source = item.name || item.url || "";
+  if (/\.(pdf|docx?|xlsx?|zip|hwp)(\?|$)/i.test(source)) return false;
+  if (item.url) return true;
+  return /\.(jpe?g|png|gif|webp|bmp|svg|heic|heif|avif)(\?|$)/i.test(source);
+}
 
 export default function EventUploader({
   label = "첨부파일",
@@ -54,8 +45,6 @@ export default function EventUploader({
   buttonClassName,
   value,
   onChange,
-  dense = false,
-  nameMaxChars = 25,
   emptyText = "등록된 파일이 없습니다.",
 }: Props) {
   const [items, setItems] = React.useState<UploadItem[]>(value ?? []);
@@ -98,15 +87,26 @@ export default function EventUploader({
   const hasFile = items.length > 0;
   const file = items[0];
   const hasError = !!(file?.tooLarge && file?.error);
+  const displayName = file ? getUploadItemDisplayName(file) : "";
+  const canPreview = file ? isLikelyImage(file) : false;
+  const remoteUrl = file?.previewUrl || (canPreview ? file?.url : undefined);
+  const blobUrl = React.useMemo(() => {
+    if (remoteUrl || !file?.file || !canPreview) return null;
+    return URL.createObjectURL(file.file);
+  }, [file?.file, remoteUrl, canPreview]);
 
-  const padX = dense ? "px-3" : "px-5";
+  React.useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
+
+  const preview = remoteUrl || blobUrl;
 
   return (
     <div className={cn("w-full min-w-0 max-w-full", className)} aria-readonly={readOnly || undefined}>
-      {/* 파일 없을 때 */}
       {!hasFile && (
         readOnly ? (
-          // ✅ 프리필(읽기 전용) + 파일 없음 → 안내 문구만 표시
           <div className="text-[13px] text-[#8A949E] py-2" role="status">
             {emptyText}
           </div>
@@ -122,49 +122,50 @@ export default function EventUploader({
               showIcon
               className={cn("self-start", buttonClassName)}
             />
-            <p className="text-[13px] text-[#8A949E]">
-              선택된 파일 없음 / {maxSizeMB}MB 이내
+            <p className="text-[13px] text-[#8A949E] truncate">
+              선택된 파일 없음
             </p>
           </div>
         )
       )}
 
-      {/* 파일 있을 때 */}
-      {hasFile && (
-        <div
-          className={cn(
-            "w-full min-w-0 rounded-[10px] border border-[#E5E7EB] bg-white",
-            hasError ? `${padX} py-5` : `h-[50px] ${padX}`
-          )}
-          aria-live="polite"
-        >
-          <div className={cn("flex items-center gap-3 min-w-0 w-full", hasError ? "" : "h-full")}>
-            {/* 파일명 + 용량 */}
-            <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
-              <span className="truncate text-[13px] text-[#0F1113] w-full" title={file.name}>
-                {truncateMiddle(file.name, nameMaxChars)}
-              </span>
-              <span className="text-[12px] text-[#6B7280] shrink-0">[{file.sizeMB}MB]</span>
+      {hasFile && file && (
+        <div className="w-full min-w-0" aria-live="polite">
+          <div className="flex items-center gap-2 min-w-0 w-full">
+            <div className="shrink-0 w-10 h-10 overflow-hidden bg-gray-100">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">
+                  이미지
+                </div>
+              )}
             </div>
-
-            {/* 읽기 전용이면 삭제 버튼 숨김 */}
+            <p
+              className="min-w-0 flex-1 truncate text-[13px] text-[#111827]"
+              title={file.name}
+            >
+              {displayName}
+            </p>
             {!readOnly && (
               <button
                 type="button"
-                className="shrink-0 flex-shrink-0 text-[13px] text-[#6B7280] hover:text-[#FF2727] whitespace-nowrap"
+                className="shrink-0 text-[13px] text-[#9CA3AF] hover:text-[#DC2626]"
                 onClick={removeOne}
-                aria-label={`${file.name} 삭제`}
+                aria-label={`${displayName} 삭제`}
               >
                 삭제
               </button>
             )}
           </div>
-
           {hasError && (
-            <>
-              <div className="my-3 h-px bg-[#B7B7B7]/70" />
-              <div className="text-[13px] text-[#B42318] whitespace-pre-line">{file.error}</div>
-            </>
+            <div className="mt-1 text-[12px] text-[#B42318] whitespace-pre-line">
+              {file.error}
+            </div>
           )}
         </div>
       )}

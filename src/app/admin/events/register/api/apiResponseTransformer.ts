@@ -284,12 +284,12 @@ export function transformApiResponseToFormPrefill(
 
   // 페이지별 이미지 배열을 orderNumber로 정렬하여 반환하는 헬퍼 함수
   const sortImagesByOrder = (
-    images?: Array<{ imageUrl: string; orderNumber: number }>
-  ): Array<{ url: string }> => {
+    images?: Array<{ imageUrl: string; mediaType?: string; orderNumber: number }>
+  ): Array<{ url: string; mediaType?: string }> => {
     if (!images || images.length === 0) return [];
     return images
       .sort((a, b) => a.orderNumber - b.orderNumber)
-      .map((img) => ({ url: img.imageUrl }));
+      .map((img) => ({ url: img.imageUrl, mediaType: img.mediaType }));
   };
 
   // 업로드 정보 구성 (이미지 URL → UploadItem 형태)

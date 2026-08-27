@@ -87,25 +87,30 @@ export interface EventDetailApiResponse {
     sizes: string;
     isActive?: boolean;
   }>;
-  // 페이지별 이미지 (다중 이미지 지원)
+  // 페이지별 이미지 (다중 이미지 지원, VIDEO_LINK 포함)
   outlinePageImages?: Array<{
     imageUrl: string;
+    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   noticePageImages?: Array<{
     imageUrl: string;
+    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   meetingPlacePageImages?: Array<{
     imageUrl: string;
+    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   coursePageImages?: Array<{
     imageUrl: string;
+    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   souvenirPageImages?: Array<{
     imageUrl: string;
+    mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
     orderNumber: number;
   }>;
   /** 약관 (일부 API는 termsInfo) */

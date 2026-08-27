@@ -2,15 +2,20 @@
 import React from "react";
 import { cn } from "@/utils/cn";
 import FormTable from "@/components/admin/Form/FormTable";
+import FormRow from "@/components/admin/Form/FormRow";
 import NoticeMessage from "@/components/admin/Form/NoticeMessage";
 import FileSection from "@/components/admin/Form/FileSection";
 import SortableFileSection from "@/components/admin/Form/SortableFileSection";
-import TextField from "@/components/common/TextField/TextField";
 import { Minus, Plus } from "lucide-react";
 import type { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
 import type { UploadItem } from "@/components/common/Upload/types";
 import type { TermsInfoItem } from "../../hooks/useCompetitionForm";
 import { MiniToggle } from "@/components/admin/Form/PartyRows";
+import {
+  getYoutubeThumbnailUrl,
+  getYoutubeVideoId,
+  isVideoLinkMedia,
+} from "@/utils/youtube";
 
 /** 업로드 필드 & 세터 타입 */
 export type CompetitionForm = {
@@ -85,18 +90,22 @@ type UploadsSectionProps = {
 
 // UploadItem[] -> ReadonlyFile[] 매핑
 const toRO = (arr: UploadItem[] | undefined): ReadonlyFile[] =>
-  (arr ?? []).map((it: UploadItem, i: number) => ({
-    id: it?.id ?? i,
-    name: it?.name ?? `파일 ${i + 1}`,
-    sizeMB: it?.sizeMB,
-    url: undefined, // UploadItem에 url이 없다고 했으니 유지
-  }));
+  (arr ?? []).map((it: UploadItem, i: number) => {
+    const isVideo = isVideoLinkMedia(it.mediaType, it.url);
+    return {
+      id: it?.id ?? i,
+      name: it?.name ?? `파일 ${i + 1}`,
+      sizeMB: isVideo ? undefined : it?.sizeMB,
+      url: it?.url,
+    };
+  });
 
 // 내용 높이만 살짝 여유 — 라벨엔 영향 없도록 content에만 패딩
-const contentPad = (count: number) => (count > 0 ? "items-start py-2" : "items-center py-0");
+const contentPad = (count: number) =>
+  count > 0 ? "items-center py-1.5" : "items-center py-0";
 
 export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
-  const noop = () => {};
+  const noop = () => { };
   const termsRows = f.termsInfo ?? [];
   const [previewIndex, setPreviewIndex] = React.useState<number | null>(null);
   const previewTerm =
@@ -132,29 +141,46 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           contentClassName={cn("px-4", contentPad((f.bannerMainMobile ?? []).length))}
           single={true}
         />
-        <div
-          className="grid border-b border-neutral-200"
-          style={{ gridTemplateColumns: "200px 1fr" }}
+        <FormRow
+          label="메인 배너 첫화면 영상(URL)"
+          contentClassName="px-4 items-center"
         >
-          <div className="bg-[#4D4D4D] text-white flex items-center justify-center text-[13px] border-r border-neutral-300 min-h-[52px]">
-            메인 배너 첫화면 영상(URL)
-          </div>
-          <div className="bg-white px-4 min-h-[52px] flex items-center">
-            <TextField
-              placeholder="https://www.youtube.com/embed/... 형태의 링크를 입력하세요."
+          <div className="flex items-center gap-2.5 min-w-0 w-full">
+            {getYoutubeVideoId(f.youtubeUrl) && (
+              <div className="shrink-0 w-12 h-12 overflow-hidden bg-black relative">
+                <img
+                  src={getYoutubeThumbnailUrl(f.youtubeUrl) ?? ""}
+                  alt="유튜브 썸네일"
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-white text-[9px] bg-black/25">
+                  ▶
+                </span>
+              </div>
+            )}
+            <input
+              type="url"
+              placeholder="유튜브 링크 붙여넣기"
               value={f.youtubeUrl ?? ""}
               onChange={(e) =>
                 readOnly || !f.setYoutubeUrl
                   ? noop()
                   : f.setYoutubeUrl(e.currentTarget.value)
               }
-              className="w-full text-[13px] bg-transparent border-0 outline-none focus:outline-none focus:ring-0 shadow-none"
-              fontSizePx={13}
-              heightPx={52}
               readOnly={readOnly}
+              className="flex-1 min-w-0 h-9 bg-transparent border-0 border-b border-[#D1D5DB] px-0 text-[13px] outline-none focus:border-[#256EF4] placeholder:text-[#C0C5CC] read-only:border-transparent"
             />
+            {!!f.youtubeUrl?.trim() && !readOnly && f.setYoutubeUrl && (
+              <button
+                type="button"
+                className="shrink-0 text-[13px] text-[#9CA3AF] hover:text-[#DC2626]"
+                onClick={() => f.setYoutubeUrl?.("")}
+              >
+                삭제
+              </button>
+            )}
           </div>
-        </div>
+        </FormRow>
         <FileSection
           label="대회메인 중간배너-데스크탑"
           editable={!readOnly}
@@ -246,7 +272,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueEditable={f.imgNotice}
           onChangeEditable={f.setImgNotice}
           valueReadonly={toRO(f.imgNotice)}
-          contentClassName={cn("px-4", contentPad((f.imgNotice ?? []).length))}
+          contentClassName={cn("px-4 py-3")}
         />
         <SortableFileSection
           label="대회요강 페이지"
@@ -257,18 +283,20 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueEditable={f.imgPost}
           onChangeEditable={f.setImgPost}
           valueReadonly={toRO(f.imgPost)}
-          contentClassName={cn("px-4", contentPad((f.imgPost ?? []).length))}
+          contentClassName={cn("px-4 py-3")}
         />
         <SortableFileSection
           label="대회코스 페이지"
           editable={!readOnly}
           accept="image/*"
           maxSizeMB={30}
-          helper={"선택된 파일 없음. 최대 10개 / 30MB 이내"}
+          helper={"이미지 또는 유튜브 링크 · 최대 10개 / 30MB 이내"}
           valueEditable={f.imgCourse}
           onChangeEditable={f.setImgCourse}
           valueReadonly={toRO(f.imgCourse)}
-          contentClassName={cn("px-4", contentPad((f.imgCourse ?? []).length))}
+          contentClassName={cn("px-4 py-3")}
+          allowVideoLink
+          pageMediaKey="course"
         />
         <SortableFileSection
           label="기념품 상세 페이지"
@@ -279,7 +307,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueEditable={f.imgGift}
           onChangeEditable={f.setImgGift}
           valueReadonly={toRO(f.imgGift)}
-          contentClassName={cn("px-4", contentPad((f.imgGift ?? []).length))}
+          contentClassName={cn("px-4 py-3")}
         />
         <SortableFileSection
           label="집결/출발 이미지"
@@ -290,7 +318,7 @@ export default function UploadsSection({ f, readOnly }: UploadsSectionProps) {
           valueEditable={f.imgConfirm}
           onChangeEditable={f.setImgConfirm}
           valueReadonly={toRO(f.imgConfirm)}
-          contentClassName={cn("px-4", contentPad((f.imgConfirm ?? []).length))}
+          contentClassName={cn("px-4 py-3")}
         />
         <FileSection
           label="이벤트 이미지 (선택)"
