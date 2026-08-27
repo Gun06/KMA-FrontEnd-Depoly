@@ -6,6 +6,7 @@ import { cn } from "@/utils/cn";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { UploadItem } from "./types";
+import { getYoutubeThumbnailUrl, isVideoLinkMedia } from "@/utils/youtube";
 
 type Props = {
   item: UploadItem;
@@ -39,6 +40,10 @@ export default function SortableFileItem({
   };
 
   const isError = item.tooLarge && item.error;
+  const isVideo = isVideoLinkMedia(item.mediaType, item.url);
+  const thumbnailUrl = isVideo
+    ? getYoutubeThumbnailUrl(item.url) ?? undefined
+    : item.url;
   const rowCls = cn(
     "rounded-[10px] border px-4 py-3",
     isError ? "border-[#EF4444] bg-[#FEEDEC]" : "border-[#E5E7EB] bg-white",
@@ -96,10 +101,10 @@ export default function SortableFileItem({
         </div>
 
         {/* 썸네일 */}
-        <div className="shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 border border-gray-200">
-          {item.url ? (
+        <div className="shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 border border-gray-200 relative">
+          {thumbnailUrl ? (
             <img
-              src={item.url}
+              src={thumbnailUrl}
               alt={item.name}
               className="w-full h-full object-cover"
             />
@@ -115,17 +120,26 @@ export default function SortableFileItem({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-              No Image
+              {isVideo ? "영상" : "No Image"}
+            </div>
+          )}
+          {isVideo && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <span className="text-white text-[10px] font-medium">▶</span>
             </div>
           )}
         </div>
 
         {/* 파일 정보 */}
         <div className="min-w-0 flex-1 text-[#0F1113] overflow-hidden">
-              <span className="block truncate text-[13px] w-full" title={item.name}>
+              <span className="block truncate text-[13px] w-full" title={item.url || item.name}>
             {item.name}
           </span>
-          <span className="ml-0.5 text-[12px] text-[#6B7280]">[{item.sizeMB}MB]</span>
+          {isVideo ? (
+            <span className="ml-0.5 text-[12px] text-[#6B7280]">[영상 링크]</span>
+          ) : (
+            <span className="ml-0.5 text-[12px] text-[#6B7280]">[{item.sizeMB}MB]</span>
+          )}
         </div>
 
         {/* 순서 변경 버튼 */}

@@ -323,6 +323,7 @@ export interface EventCategoryUpdateRequest {
  */
 export interface EventPageImage {
   imageUrl: string;
+  mediaType?: 'IMAGE' | 'VIDEO_LINK' | string;
   orderNumber: number;
 }
 
@@ -341,7 +342,8 @@ export interface EventDetailPageImages {
  * 페이지별 이미지 업데이트 요청 (POST /api/v1/event/{eventId}/*Page)
  */
 export interface EventPageImageRequest {
-  imageUrl?: string | null; // null이면 생성, string이면 수정 (순서 변경)
+  imageUrl?: string | null; // null이면 생성, string이면 수정 (순서 변경) / VIDEO_LINK면 영상 URL
+  mediaType?: 'IMAGE' | 'VIDEO_LINK';
   orderNumber: number; // 이미지 순서
 }
 

@@ -5,6 +5,7 @@ import React from "react";
 import FormRow from "@/components/admin/Form/FormRow";
 import SortableFileUploader from "@/components/common/Upload/SortableFileUploader";
 import ReadonlyFileList, { ReadonlyFile } from "@/components/common/Upload/ReadonlyFileList";
+import type { PageMediaKey } from "@/utils/pendingVideoLinks";
 
 type Props = {
   label: string;
@@ -17,6 +18,10 @@ type Props = {
   multiple?: boolean;
   single?: boolean;
   helper?: string;
+
+  /** 유튜브 영상 링크를 이미지와 함께 등록 */
+  allowVideoLink?: boolean;
+  pageMediaKey?: PageMediaKey;
 
   /** ✅ FormRow의 content 쪽 클래스 (라벨에는 영향 없음) */
   contentClassName?: string;
@@ -33,6 +38,8 @@ export default function SortableFileSection({
   multiple = true,
   single,
   helper,
+  allowVideoLink,
+  pageMediaKey,
   contentClassName = "px-4",
 }: Props) {
   return (
@@ -46,6 +53,8 @@ export default function SortableFileSection({
           helper={helper}
           value={valueEditable}
           onChange={onChangeEditable}
+          allowVideoLink={allowVideoLink}
+          pageMediaKey={pageMediaKey}
         />
       ) : (
         <ReadonlyFileList files={valueReadonly} />

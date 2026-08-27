@@ -20,12 +20,19 @@ import {
 } from "@dnd-kit/sortable";
 import UploadButton from "./UploadButton";
 import SortableFileItem from "./SortableFileItem";
-import { mapFilesToItems } from "./utils";
+import { createVideoLinkUploadItem, mapFilesToItems } from "./utils";
 import type { MultipleUploaderProps, UploadItem } from "./types";
+import type { PageMediaKey } from "@/utils/pendingVideoLinks";
+import { registerPageMedia } from "@/utils/pendingVideoLinks";
+import { getYoutubeVideoId } from "@/utils/youtube";
 
 type Props = MultipleUploaderProps & {
   /** true면 파일 1개만 업로드 가능, 업로드 후 버튼 숨김, 카운트/전체삭제 숨김 */
   single?: boolean;
+  /** 유튜브 영상 링크를 이미지와 함께 등록 */
+  allowVideoLink?: boolean;
+  /** 저장 직전 입력 중인 영상 링크를 반영할 페이지 키 */
+  pageMediaKey?: PageMediaKey;
 };
 
 export default function SortableFileUploader({
@@ -41,12 +48,22 @@ export default function SortableFileUploader({
   value,
   onChange,
   className,
+  allowVideoLink = false,
+  pageMediaKey,
 }: Props) {
   const effectiveMultiple = single ? false : multiple;
   const effectiveMaxCount = single ? 1 : maxCount;
 
   const [items, setItems] = React.useState<UploadItem[]>(value ?? []);
+  const [pendingVideoUrl, setPendingVideoUrl] = React.useState("");
+  const [videoError, setVideoError] = React.useState<string | null>(null);
   const controlled = value !== undefined;
+  const itemsRef = React.useRef<UploadItem[]>(value ?? []);
+  const pendingVideoUrlRef = React.useRef("");
+  const onChangeRef = React.useRef(onChange);
+  const controlledRef = React.useRef(controlled);
+  onChangeRef.current = onChange;
+  controlledRef.current = controlled;
 
   // 드래그 앤 드롭 센서 설정
   const sensors = useSensors(
@@ -60,9 +77,14 @@ export default function SortableFileUploader({
     if (controlled) setItems(value ?? []);
   }, [controlled, value]);
 
+  React.useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
   const setList = (next: UploadItem[]) => {
-    onChange?.(next);
-    if (!controlled) setItems(next);
+    itemsRef.current = next;
+    onChangeRef.current?.(next);
+    if (!controlledRef.current) setItems(next);
   };
 
   const handleSelect = (list: FileList) => {
@@ -84,10 +106,11 @@ export default function SortableFileUploader({
       return;
     }
 
-    const remain = Math.max(0, effectiveMaxCount - items.length);
+    const current = itemsRef.current;
+    const remain = Math.max(0, effectiveMaxCount - current.length);
     const picked = remain ? files.slice(0, remain) : [];
     const added = mapFilesToItems(picked, maxSizeMB);
-    const merged = [...items, ...added];
+    const merged = [...current, ...added];
 
     if (totalMaxMB) {
       const sum = merged.reduce((acc, f) => acc + f.sizeMB, 0);
@@ -98,6 +121,53 @@ export default function SortableFileUploader({
     }
     setList(merged);
   };
+
+  const addVideoLink = React.useCallback(
+    (rawUrl?: string): boolean => {
+      const url = (rawUrl ?? pendingVideoUrlRef.current).trim();
+      if (!url) return false;
+
+      if (!getYoutubeVideoId(url)) {
+        setVideoError("유튜브 링크를 확인해주세요.");
+        return false;
+      }
+
+      const current = itemsRef.current;
+      if (current.length >= effectiveMaxCount) {
+        setVideoError(`최대 ${effectiveMaxCount}개까지 등록할 수 있습니다.`);
+        return false;
+      }
+
+      const exists = current.some(
+        (item) => (item.url ?? "").trim() === url
+      );
+      if (exists) {
+        setVideoError("이미 등록된 링크입니다.");
+        return false;
+      }
+
+      setList([...current, createVideoLinkUploadItem(url)]);
+      pendingVideoUrlRef.current = "";
+      setPendingVideoUrl("");
+      setVideoError(null);
+      return true;
+    },
+    // setList는 ref 기반이라 최신 onChange를 사용함
+    [effectiveMaxCount]
+  );
+
+  const addVideoLinkRef = React.useRef(addVideoLink);
+  addVideoLinkRef.current = addVideoLink;
+
+  React.useEffect(() => {
+    if (!allowVideoLink || !pageMediaKey) return;
+    return registerPageMedia(pageMediaKey, {
+      flush: () => {
+        addVideoLinkRef.current();
+      },
+      getItems: () => itemsRef.current,
+    });
+  }, [allowVideoLink, pageMediaKey]);
 
   const removeOne = (id: string) => setList(items.filter((it) => it.id !== id));
   const removeAll = () => setList([]);
@@ -133,6 +203,7 @@ export default function SortableFileUploader({
   };
 
   const hasItems = items.length > 0;
+  const canAddVideo = allowVideoLink && !disabled && items.length < effectiveMaxCount;
 
   return (
     <div className={cn("w-full min-w-0", className)}>
@@ -154,6 +225,42 @@ export default function SortableFileUploader({
           </p>
         )}
       </div>
+
+      {allowVideoLink && (
+        <div className="mt-3 flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <input
+              type="url"
+              value={pendingVideoUrl}
+              onChange={(e) => {
+                pendingVideoUrlRef.current = e.target.value;
+                setPendingVideoUrl(e.target.value);
+                if (videoError) setVideoError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addVideoLink();
+                }
+              }}
+              placeholder="유튜브 링크를 입력하세요 (https://www.youtube.com/...)"
+              disabled={!canAddVideo}
+              className="flex-1 h-9 px-3 text-[13px] border border-[#D1D5DB] rounded-[8px] bg-white focus:outline-none focus:ring-1 focus:ring-[#256EF4] disabled:bg-gray-50 disabled:text-gray-400"
+            />
+            <button
+              type="button"
+              onClick={() => addVideoLink()}
+              disabled={!canAddVideo || !pendingVideoUrl.trim()}
+              className="shrink-0 h-9 px-3 rounded-[8px] border border-[#D1D5DB] text-[13px] text-[#374151] hover:bg-gray-50 disabled:bg-gray-50 disabled:text-gray-300 disabled:cursor-not-allowed"
+            >
+              영상 추가
+            </button>
+          </div>
+          {videoError && (
+            <p className="text-[12px] text-[#B42318]">{videoError}</p>
+          )}
+        </div>
+      )}
 
       {/* 멀티 전용: 카운트 + 전체 삭제 */}
       {!single && hasItems && (
@@ -196,4 +303,3 @@ export default function SortableFileUploader({
     </div>
   );
 }
-

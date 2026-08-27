@@ -1,3 +1,5 @@
+import type { PageMediaType } from "@/types/pageMedia";
+
 export type UploadItem = {
   id: string;
   file: File | null;  // 기존 파일의 경우 null
@@ -7,8 +9,9 @@ export type UploadItem = {
   tooLarge: boolean;
   error?: string;
   isExisting?: boolean;  // 기존 파일 여부
-  url?: string;          // 기존 파일의 URL
+  url?: string;          // 기존 파일의 URL (영상 링크 포함)
   previewUrl?: string;   // 미리보기 URL (로컬에서 생성한 blob URL 등)
+  mediaType?: PageMediaType | string;
 };
 
 export type MultipleUploaderProps = {

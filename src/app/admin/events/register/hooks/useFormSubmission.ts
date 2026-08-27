@@ -6,6 +6,7 @@ import type { CompetitionFormHandle } from '../components/sections/BasicInfoSect
 import type { CourseItem } from '../components/sections/CoursesSection';
 import type { GiftItem } from '../components/sections/GiftsSection';
 import type { EventCreatePayload } from '../api/types';
+import { flushPendingVideoLinks } from '@/utils/pendingVideoLinks';
 
 interface UseFormSubmissionOptions {
   f: CompetitionFormHandle;
@@ -54,6 +55,7 @@ export function useFormSubmission({
       if (!f.buildApiBody) {
         return { ok: false, errors: ['buildApiBody 메서드가 없습니다.'] };
       }
+      flushPendingVideoLinks();
       const body = f.buildApiBody();
       await Promise.resolve((onRegister ?? onSubmit)?.(body));
       // 성공 시에만 편집 모드 종료
@@ -83,6 +85,7 @@ export function useFormSubmission({
       if (!f.buildApiBody) {
         return { ok: false, errors: ['buildApiBody 메서드가 없습니다.'] };
       }
+      flushPendingVideoLinks();
       const body = f.buildApiBody();
       // 1차 저장: 참가부문이 없어도 저장 가능하도록 처리
       // 빈 groups 배열을 포함하여 전달 (handleRegister에서 자동으로 검증 건너뛰기)
@@ -120,6 +123,7 @@ export function useFormSubmission({
       if (!f.buildApiBody) {
         return { ok: false, errors: ['buildApiBody 메서드가 없습니다.'] };
       }
+      flushPendingVideoLinks();
       const body = f.buildApiBody();
       
       // 기념품과 종목을 groups 형태로 변환

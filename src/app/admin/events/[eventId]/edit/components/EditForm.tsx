@@ -31,6 +31,7 @@ import type {
   EventCreatePayload,
 } from '@/app/admin/events/register/api/types';
 import type { PhoneAuthPolicy } from '@/services/admin/phoneAuth';
+import { flushPendingVideoLinks } from '@/utils/pendingVideoLinks';
 
 type Props = {
   onSubmit: (payload: EventCreatePayload) => Promise<void>;
@@ -254,6 +255,7 @@ export default function EditForm({
 
     try {
       // 기본 정보만 저장 (groups 제외)
+      flushPendingVideoLinks();
       const body = f.buildApiBody();
       const basicBody = {
         ...body,
@@ -271,6 +273,7 @@ export default function EditForm({
 
   // 공통: 기념품/종목 groups 포함한 페이로드 생성
   const buildPayloadWithGroups = (): EventCreatePayload => {
+    flushPendingVideoLinks();
     const body = f.buildApiBody();
 
     const groups = courses.map(course => ({

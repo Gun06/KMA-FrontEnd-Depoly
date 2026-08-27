@@ -405,7 +405,18 @@ export default function EditClient({
       
       if (categoryRequests.length > 0) {
         await updateEventCategories(eventId, categoryRequests);
-        await refetch();
+
+        // 종목 저장 후 관련 쿼리 무효화 및 재조회 (재진입 시 드롭다운 캐시로 예전 값이 보이지 않도록)
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['eventDetail', String(eventId)] }),
+          queryClient.refetchQueries({ queryKey: ['eventDetail', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }),
+          queryClient.refetchQueries({ queryKey: ['eventCategoryDropdown', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['souvenirDropdown', String(eventId)] }),
+          queryClient.invalidateQueries({ queryKey: ['admin', 'events', 'list'] }),
+          queryClient.invalidateQueries({ queryKey: ['notice', 'eventList'] }),
+        ]);
+
         setInfoModalType('success');
         setInfoModalMessage('종목이 성공적으로 저장되었습니다.');
         setInfoModalOpen(true);
