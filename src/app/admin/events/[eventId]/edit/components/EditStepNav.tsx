@@ -43,12 +43,19 @@ type Props = {
   activeStep: EditStepId;
   onChange: (step: EditStepId) => void;
   className?: string;
+  /** 스크롤 복귀 중 레이아웃 점프 시 색상 전환 애니메이션 억제 */
+  instantActive?: boolean;
 };
 
 const HEADER_HEIGHT = 64;
 export const EDIT_SIDEBAR_WIDTH = 240;
 
-export default function EditStepNav({ activeStep, onChange, className }: Props) {
+export default function EditStepNav({
+  activeStep,
+  onChange,
+  className,
+  instantActive = false,
+}: Props) {
   return (
     <nav
       aria-label="대회 설정 단계"
@@ -67,7 +74,8 @@ export default function EditStepNav({ activeStep, onChange, className }: Props) 
                 type="button"
                 onClick={() => onChange(step.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors',
+                  'w-full flex items-center gap-3 px-5 py-3.5 text-left',
+                  !instantActive && 'transition-colors duration-150',
                   isActive
                     ? 'bg-[#256EF4] text-white'
                     : 'text-white/70 hover:bg-white/[0.06] hover:text-white'
@@ -103,47 +111,88 @@ export default function EditStepNav({ activeStep, onChange, className }: Props) 
   );
 }
 
+export type EditStepNavHandle = {
+  /** 스크롤이 내려간 상태에서 단계 전환 직전 — 사이드바 top을 맨 위 기준 위치로 미리 맞춤 */
+  prepareForStepChange: () => void;
+  /** scrollTo(0) 직후 sentinel 기준으로 top 재동기화 */
+  syncSidebarTop: () => void;
+};
+
+type StickyProps = Props;
+
 /** 왼쪽 컬럼을 화면 아래까지 채우고, 스크롤해도 헤더 아래에 고정 */
-export function StickyEditStepNav({ activeStep, onChange }: Props) {
-  const sentinelRef = React.useRef<HTMLDivElement>(null);
-  const [top, setTop] = React.useState(HEADER_HEIGHT);
+export const StickyEditStepNav = React.forwardRef<EditStepNavHandle, StickyProps>(
+  function StickyEditStepNav({ activeStep, onChange, instantActive }, ref) {
+    const sentinelRef = React.useRef<HTMLDivElement>(null);
+    const asideRef = React.useRef<HTMLElement>(null);
+    const restingTopRef = React.useRef(HEADER_HEIGHT);
 
-  React.useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const measureTop = React.useCallback(() => {
+      const sentinel = sentinelRef.current;
+      if (!sentinel) return HEADER_HEIGHT;
+      return Math.max(HEADER_HEIGHT, sentinel.getBoundingClientRect().top);
+    }, []);
 
-    const update = () => {
-      // main.pt-6 바로 위(브레드크럼 밑)부터 채우고, 스크롤되면 헤더 아래에 붙인다.
-      const start = sentinel.getBoundingClientRect().top;
-      setTop(Math.max(HEADER_HEIGHT, start));
-    };
+    const applyTop = React.useCallback((top: number) => {
+      const aside = asideRef.current;
+      if (!aside) return;
+      aside.style.top = `${top}px`;
+    }, []);
 
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
-    };
-  }, []);
+    const syncSidebarTop = React.useCallback(() => {
+      const top = measureTop();
+      applyTop(top);
+      if (window.scrollY === 0) {
+        restingTopRef.current = top;
+      }
+    }, [measureTop, applyTop]);
 
-  return (
-    <>
-      <div
-        ref={sentinelRef}
-        className="hidden md:block h-0 -mt-6"
-        aria-hidden
-      />
-      <aside
-        className="hidden md:flex flex-col fixed left-0 z-20 overflow-y-auto bg-[#2B3038]"
-        style={{
-          top,
-          bottom: 0,
-          width: EDIT_SIDEBAR_WIDTH,
-        }}
-      >
-        <EditStepNav activeStep={activeStep} onChange={onChange} />
-      </aside>
-    </>
-  );
-}
+    const prepareForStepChange = React.useCallback(() => {
+      applyTop(restingTopRef.current);
+    }, [applyTop]);
+
+    React.useImperativeHandle(
+      ref,
+      () => ({
+        prepareForStepChange,
+        syncSidebarTop,
+      }),
+      [prepareForStepChange, syncSidebarTop]
+    );
+
+    React.useEffect(() => {
+      syncSidebarTop();
+      window.addEventListener('scroll', syncSidebarTop, { passive: true });
+      window.addEventListener('resize', syncSidebarTop);
+      return () => {
+        window.removeEventListener('scroll', syncSidebarTop);
+        window.removeEventListener('resize', syncSidebarTop);
+      };
+    }, [syncSidebarTop]);
+
+    return (
+      <>
+        <div
+          ref={sentinelRef}
+          className="hidden md:block h-0 -mt-6"
+          aria-hidden
+        />
+        <aside
+          ref={asideRef}
+          className="hidden md:flex flex-col fixed left-0 z-20 overflow-y-auto bg-[#2B3038]"
+          style={{
+            top: HEADER_HEIGHT,
+            bottom: 0,
+            width: EDIT_SIDEBAR_WIDTH,
+          }}
+        >
+          <EditStepNav
+            activeStep={activeStep}
+            onChange={onChange}
+            instantActive={instantActive}
+          />
+        </aside>
+      </>
+    );
+  }
+);

@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EventHeader from '@/components/event/Header';
 import HeroSection from '@/components/event/HeroSection';
 import _NoticeSection from '@/components/event/NoticeSection';
 import Breadcrumb from '@/components/event/Breadcrumb';
 import { useMainBanner } from '@/components/providers/MainBannerContext';
+import { usePublicEventDetail } from '@/hooks/usePublicEventData';
+import type { PublicEventDetailResponse } from '@/services/publicEventAssets';
 
 const MAP_BG: Record<string, string> = {
   dark: 'bg-neutral-900',
@@ -82,6 +84,13 @@ interface HeroEventData {
   };
 }
 
+function toSubmenuHeroData(
+  data: PublicEventDetailResponse | null | undefined
+): HeroEventData | null {
+  if (!data?.eventInfo) return null;
+  return data as HeroEventData;
+}
+
 export default function SubmenuLayout({
   children,
   eventId,
@@ -99,22 +108,15 @@ export default function SubmenuLayout({
   const normalizedTheme = theme === 'white' ? '' : theme;
   const normalizedHb = hb === 'white' ? '' : hb;
   
-  // color 파라미터가 있으면 우선 사용, 없으면 theme/hb 사용
-  const getCachedHero = useCallback((): HeroEventData | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem(`hero_event_${eventId}`);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return parsed?.data || null;
-    } catch {
-      return null;
-    }
-  }, [eventId]);
-
-  const [heroEventData, setHeroEventData] = useState<HeroEventData | null>(getCachedHero());
-  const [isLoading, setIsLoading] = useState(!getCachedHero());
-  const [error, setError] = useState<string | null>(null);
+  const { data: eventDetailData, isError: isEventDetailError } =
+    usePublicEventDetail(eventId);
+  const heroEventData = useMemo(
+    () => toSubmenuHeroData(eventDetailData),
+    [eventDetailData]
+  );
+  const error = isEventDetailError && !heroEventData
+    ? '이벤트 정보를 불러올 수 없습니다.'
+    : null;
 
   const pickFinalColorKey = (): string => {
     if (color) return color;
@@ -190,38 +192,6 @@ export default function SubmenuLayout({
     return undefined;
   }, [color, normalizedHb, normalizedTheme, contextMainBannerColor, heroEventData]);
 
-  useEffect(() => {
-    const fetchHeroData = async () => {
-      try {
-        setIsLoading(!getCachedHero());
-        setError(null);
-
-        // API에서 Hero 데이터 가져오기
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}`;
-
-        const response = await fetch(API_ENDPOINT);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setHeroEventData(data);
-          // 2) 성공 시 캐시 갱신
-          try {
-            localStorage.setItem(`hero_event_${eventId}`, JSON.stringify({ data, ts: Date.now() }));
-          } catch {}
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      } catch (_error) {
-        setError('이벤트 정보를 불러올 수 없습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHeroData();
-  }, [eventId, getCachedHero]);
-
   // 로딩 상태를 표시하지 않고 기본 레이아웃을 즉시 렌더링
 
   if (error && !heroEventData) {
@@ -286,37 +256,15 @@ export function SubmenuLayoutThemed({
   headerBgClass, 
   _accentColor  
 }: SubmenuLayoutThemedProps) {
-  const [heroEventData, setHeroEventData] = useState<HeroEventData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchHeroData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // API에서 Hero 데이터 가져오기
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}`;
-
-        const response = await fetch(API_ENDPOINT);
-        
-        if (response.ok) {
-          const data = await response.json();
-          setHeroEventData(data);
-        } else {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-      } catch (_error) {
-        setError('이벤트 정보를 불러올 수 없습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHeroData();
-  }, [eventId]);
+  const { data: eventDetailData, isError: isEventDetailError } =
+    usePublicEventDetail(eventId);
+  const heroEventData = useMemo(
+    () => toSubmenuHeroData(eventDetailData),
+    [eventDetailData]
+  );
+  const error = isEventDetailError && !heroEventData
+    ? '이벤트 정보를 불러올 수 없습니다.'
+    : null;
 
   // 그라데이션 키에서 끝색 추출하여 포인트색 결정
   const gradEndMap: Record<string, string> = {

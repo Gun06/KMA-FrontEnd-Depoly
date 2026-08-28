@@ -1,1 +1,1 @@
-export { default as FloatingVisitorCount } from './FloatingVisitorCount';
+export { default as FloatingVisitorCount, MainFloatingVisitorCount, EventFloatingVisitorCount } from './FloatingVisitorCount';

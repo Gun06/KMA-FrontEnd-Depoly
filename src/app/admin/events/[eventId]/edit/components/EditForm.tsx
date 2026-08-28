@@ -20,6 +20,7 @@ import EditStepNav, {
   StickyEditStepNav,
   parseEditStep,
   type EditStepId,
+  type EditStepNavHandle,
 } from './EditStepNav';
 
 // 파츠 (register에서 import)
@@ -147,7 +148,15 @@ export default function EditForm({
   const router = useRouter();
   const pathname = usePathname();
   const step = searchParams?.get('step');
-  const activeStep = parseEditStep(step);
+  const urlStep = parseEditStep(step);
+  const [pendingStep, setPendingStep] = useState<EditStepId | null>(null);
+  const activeStep = pendingStep ?? urlStep;
+
+  useEffect(() => {
+    setPendingStep(null);
+  }, [step]);
+  const stepNavRef = useRef<EditStepNavHandle>(null);
+  const [instantNavActive, setInstantNavActive] = useState(false);
   const [isEditing, setIsEditing] = useState(initialEditing);
   const snapshotRef = useRef<HydrateSnapshotInput | null>(null);
 
@@ -245,6 +254,15 @@ export default function EditForm({
   }, [initialEventSetting]);
 
   const handleChangeStep = (next: EditStepId) => {
+    if (next === activeStep) return;
+
+    const wasScrolled = window.scrollY > 0;
+    if (wasScrolled) {
+      setInstantNavActive(true);
+    }
+
+    setPendingStep(next);
+
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (next === 'basic') {
       params.delete('step');
@@ -253,15 +271,21 @@ export default function EditForm({
     }
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    window.scrollTo({ top: 0 });
-  };
 
-  // 쿼리 파라미터로 기념품 섹션 진입 (등록 직후 step=souvenirs)
-  useEffect(() => {
-    if (step === 'souvenirs') {
-      window.scrollTo({ top: 0 });
+    if (wasScrolled) {
+      stepNavRef.current?.prepareForStepChange();
     }
-  }, [step]);
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    stepNavRef.current?.syncSidebarTop();
+
+    if (wasScrolled) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setInstantNavActive(false);
+        });
+      });
+    }
+  };
 
   // 공통 스타일 (대회 등록 CreateForm과 동일: 13px, 타이트 행)
   const readOnly = !isEditing;
@@ -430,7 +454,12 @@ export default function EditForm({
 
   return (
     <div className="w-full">
-      <StickyEditStepNav activeStep={activeStep} onChange={handleChangeStep} />
+      <StickyEditStepNav
+        ref={stepNavRef}
+        activeStep={activeStep}
+        onChange={handleChangeStep}
+        instantActive={instantNavActive}
+      />
 
       <div className="px-8 pt-8 pb-24 md:ml-[240px] min-h-[calc(100vh-4rem)]">
             <div className="mb-6 flex items-center justify-between gap-3">
@@ -448,7 +477,11 @@ export default function EditForm({
             </div>
 
             <div className="md:hidden mb-4">
-              <EditStepNav activeStep={activeStep} onChange={handleChangeStep} />
+              <EditStepNav
+                activeStep={activeStep}
+                onChange={handleChangeStep}
+                instantActive={instantNavActive}
+              />
             </div>
 
             <div className="space-y-6">

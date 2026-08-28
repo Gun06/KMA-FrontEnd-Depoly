@@ -1,7 +1,7 @@
 "use client";
 
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import { getAgreementData } from "../agreement/data";
+import { useAgreementData, usePublicEventStatus } from "@/hooks/usePublicEventData";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
@@ -25,7 +25,8 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const router = useRouter();
   const { settings: useableUI, isLoading: isUseableUILoading } =
     useEventUseableUI(params.eventId);
-  const agreementData = getAgreementData(params.eventId);
+  const agreementData = useAgreementData(params.eventId);
+  const { eventStatus } = usePublicEventStatus(params.eventId);
   const [isFinalAgreed, setIsFinalAgreed] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [possibleToRequest, setPossibleToRequest] = useState<boolean | null>(null);
@@ -33,7 +34,6 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
   const [isStatusLoading, setIsStatusLoading] = useState(true);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const [eventStatus, setEventStatus] = useState<string | null>(null);
   const [apiTerms, setApiTerms] = useState<PublicEventTerm[]>([]);
   const [allAgreeLabel, setAllAgreeLabel] = useState("");
   const [termsLoading, setTermsLoading] = useState(true);
@@ -82,33 +82,6 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
     };
 
     fetchStatus();
-  }, [params.eventId]);
-
-  // 이벤트 상태 명시적으로 로드 (접수마감/내부마감 구분용)
-  useEffect(() => {
-    const loadEventStatus = async () => {
-      const eventId = params.eventId;
-      if (!eventId) return;
-      const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-      try {
-        const eventRes = await fetch(`${base}/api/v1/public/event/${eventId}`, {
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
-        });
-        if (!eventRes.ok) return;
-        const eventData = await eventRes.json();
-        // 이벤트 상태 추출
-        if (eventData?.eventInfo?.eventStatus) {
-          setEventStatus(eventData.eventInfo.eventStatus);
-        } else if (eventData?.eventStatus) {
-          setEventStatus(eventData.eventStatus);
-        }
-      } catch {
-        // 실패 시 무시
-      }
-    };
-
-    loadEventStatus();
   }, [params.eventId]);
 
   useEffect(() => {

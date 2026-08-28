@@ -9,6 +9,7 @@ import {
   fetchAwardInfoImageUrl,
   fetchSpecialEventImageUrl,
 } from '@/services/publicEventAssets';
+import { usePublicMainPageImages } from '@/hooks/usePublicEventData';
 
 interface EventHeaderProps {
   eventName?: string;
@@ -35,7 +36,6 @@ export default function EventHeader({
   headerBgClass,
 }: EventHeaderProps) {
   const { mainBannerColor: contextBannerColor } = useMainBanner();
-  const [eventInfo, setEventInfo] = useState<EventInfo | null>(null);
   const [isOpen, setIsOpen] = React.useState(false);
   const [desktopOpenKey, setDesktopOpenKey] = React.useState<string | null>(
     null
@@ -49,52 +49,19 @@ export default function EventHeader({
   });
   const { isLoggedIn, user } = useAuthStore();
   const pathname = usePathname();
+  const { data: mainPageImages } = usePublicMainPageImages(eventId ?? '');
 
-  // API에서 이벤트 정보 가져오기 (캐시 사용)
-  useEffect(() => {
-    if (!eventId) return;
-
-    const fetchEventInfo = async () => {
-      try {
-        // 로컬 스토리지에서 캐시된 데이터 확인
-        const cacheKey = `event_info_${eventId}`;
-        const cachedData = localStorage.getItem(cacheKey);
-        
-        if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          // 캐시된 데이터가 1시간 이내인지 확인
-          const cacheTime = parsedData.timestamp;
-          const now = Date.now();
-          const oneHour = 60 * 60 * 1000;
-          
-          if (now - cacheTime < oneHour) {
-            setEventInfo(parsedData.data);
-            return;
-          }
-        }
-
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-        const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/mainpage-images`;
-
-        const response = await fetch(API_ENDPOINT);
-        if (response.ok) {
-          const data = await response.json();
-          setEventInfo(data);
-          
-          // 로컬 스토리지에 캐시 저장
-          localStorage.setItem(cacheKey, JSON.stringify({
-            data: data,
-            timestamp: Date.now()
-          }));
-        }
-      } catch (_error) {
-        // 이벤트 정보를 가져오는데 실패했습니다
-      } finally {
-      }
+  const eventInfo = useMemo<EventInfo | null>(() => {
+    if (!mainPageImages) return null;
+    return {
+      id: mainPageImages.id ?? eventId ?? '',
+      nameEng: mainPageImages.nameEng ?? '',
+      nameKr: mainPageImages.nameKr ?? '',
+      startDate: mainPageImages.startDate ?? '',
+      region: mainPageImages.region ?? '',
+      mainBannerColor: mainPageImages.mainBannerColor,
     };
-
-    fetchEventInfo();
-  }, [eventId]);
+  }, [mainPageImages, eventId]);
 
   useEffect(() => {
     if (!eventId) return;

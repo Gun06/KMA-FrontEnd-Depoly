@@ -4,17 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Users, X } from 'lucide-react';
 import { useMainVisitorCount, useEventVisitorCount } from '@/hooks/useVisitorCount';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
-import {
-  MAIN_FLOATING_ROOT_CLASS,
-} from '@/components/main/mainLayoutTokens';
+import { MAIN_FLOATING_ROOT_CLASS } from '@/components/main/mainLayoutTokens';
 
-type FloatingVisitorCountProps = {
-  variant: 'main' | 'event';
-  eventId?: string;
-};
+type VisitorVariant = 'main' | 'event';
 
-/** 메인: 우측 플로팅 패널(FloatingPanels)과 동일한 fixed·z-index·right 기준 */
-const ROOT_CLASS: Record<FloatingVisitorCountProps['variant'], string> = {
+type VisitorQueryResult = ReturnType<typeof useMainVisitorCount>;
+
+const ROOT_CLASS: Record<VisitorVariant, string> = {
   main:
     `pointer-events-auto ${MAIN_FLOATING_ROOT_CLASS} flex flex-col gap-3 ` +
     'bottom-5 sm:bottom-6 md:bottom-7 custom:bottom-8 items-end',
@@ -24,7 +20,7 @@ const ROOT_CLASS: Record<FloatingVisitorCountProps['variant'], string> = {
     'items-start',
 };
 
-const PANEL_CLASS: Record<FloatingVisitorCountProps['variant'], string> = {
+const PANEL_CLASS: Record<VisitorVariant, string> = {
   main:
     'w-[220px] max-w-[calc(100vw-2rem)] rounded-2xl px-4 py-3 shadow-2xl ring-1 ring-white/15 text-white',
   event:
@@ -41,15 +37,16 @@ function formatCount(value: number | undefined) {
   return value.toLocaleString('ko-KR');
 }
 
-export default function FloatingVisitorCount({ variant, eventId }: FloatingVisitorCountProps) {
+function FloatingVisitorCountInner({
+  variant,
+  query,
+}: {
+  variant: VisitorVariant;
+  query: VisitorQueryResult;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-
-  const mainQuery = useMainVisitorCount();
-  const eventQuery = useEventVisitorCount(eventId);
-
-  const { data, isLoading, isError, refetch } =
-    variant === 'main' ? mainQuery : eventQuery;
+  const { data, isLoading, isError, refetch } = query;
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +64,6 @@ export default function FloatingVisitorCount({ variant, eventId }: FloatingVisit
   }, [open, refetch]);
 
   const panelAlign = variant === 'main' ? 'origin-bottom-right' : 'origin-bottom-left';
-  const panelTitle = '방문자';
 
   return (
     <div ref={rootRef} className={ROOT_CLASS[variant]}>
@@ -87,7 +83,7 @@ export default function FloatingVisitorCount({ variant, eventId }: FloatingVisit
             }`}
           >
             <p className="text-xs font-semibold tracking-wide text-inherit opacity-90">
-              {panelTitle}
+              방문자
             </p>
             <button
               type="button"
@@ -132,4 +128,29 @@ export default function FloatingVisitorCount({ variant, eventId }: FloatingVisit
       </button>
     </div>
   );
+}
+
+/** @deprecated variant prop 대신 MainFloatingVisitorCount / EventFloatingVisitorCount 사용 */
+export default function FloatingVisitorCount({
+  variant,
+  eventId,
+}: {
+  variant: VisitorVariant;
+  eventId?: string;
+}) {
+  if (variant === 'main') {
+    return <MainFloatingVisitorCount />;
+  }
+  if (!eventId) return null;
+  return <EventFloatingVisitorCount eventId={eventId} />;
+}
+
+export function MainFloatingVisitorCount() {
+  const query = useMainVisitorCount();
+  return <FloatingVisitorCountInner variant="main" query={query} />;
+}
+
+export function EventFloatingVisitorCount({ eventId }: { eventId: string }) {
+  const query = useEventVisitorCount(eventId);
+  return <FloatingVisitorCountInner variant="event" query={query} />;
 }

@@ -2,6 +2,7 @@
 import React from 'react';
 import FormField from '../../shared/components/FormField';
 import { GroupFormData } from '../../shared/types/group';
+import { useEventPaymentDisplayInfo } from '@/hooks/usePublicEventData';
 
 interface GroupPaymentInfoSectionProps {
   formData: GroupFormData;
@@ -16,55 +17,9 @@ export default function GroupPaymentInfoSection({
   eventId,
   isEditMode = false
 }: GroupPaymentInfoSectionProps) {
-  const [bankName, setBankName] = React.useState<string>('');
-  const [virtualAccount, setVirtualAccount] = React.useState<string>('');
-  const [accountHolderName, setAccountHolderName] = React.useState<string>('');
+  const { bankName, virtualAccount, accountHolderName } =
+    useEventPaymentDisplayInfo(eventId, { prefer: 'payment-info' });
 
-  React.useEffect(() => {
-    let ignore = false;
-    const load = async () => {
-      try {
-        if (!eventId) return;
-        const base = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-        
-        // 먼저 전용 결제 정보 API 시도
-        try {
-          const res = await fetch(`${base}/api/v1/public/event/${eventId}/payment-info`, {
-            headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (!ignore) {
-              setBankName(String(data?.bankName || ''));
-              setVirtualAccount(String(data?.virtualAccount || ''));
-              setAccountHolderName(String(data?.accountHolderName || ''));
-            }
-            return; // 성공하면 종료
-          }
-        } catch (_e) {
-          // 결제 정보 API 실패 시 무시하고 fallback으로 진행
-        }
-        
-        // Fallback: 메인 이벤트 정보 API에서 가져오기
-        const res = await fetch(`${base}/api/v1/public/event/${eventId}`, {
-          headers: { 'Accept': 'application/json' },
-          cache: 'no-store'
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!ignore && data?.eventInfo) {
-          setBankName(String(data.eventInfo.bank || ''));
-          setVirtualAccount(String(data.eventInfo.virtualAccount || ''));
-          setAccountHolderName(String(data.eventInfo.accountHolderName || ''));
-        }
-      } catch (_error) {
-        // 결제 정보 로드 실패 시 무시
-      }
-    };
-    load();
-    return () => { ignore = true; };
-  }, [eventId]);
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="mb-8">
@@ -90,7 +45,6 @@ export default function GroupPaymentInfoSection({
               </span>
             </p>
             <p>※ 입금자명을 정확히 입력해주세요.</p>
-            {/* 수정 모드일 때만 표시되는 설명문 */}
             {isEditMode && (
               <p className="text-gray-600">
                 ※ 결제 정보를 수정할 경우, 현재 미결제 상태인 인원 및 수정 시 추가된 인원에게만 적용됩니다. 결제 완료, 환불 진행 중, 환불 완료 상태의 인원에게는 미적용됩니다.

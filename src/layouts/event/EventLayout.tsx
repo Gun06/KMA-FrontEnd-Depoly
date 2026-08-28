@@ -2,9 +2,11 @@ import React from 'react'
 import EventHeader from '@/components/event/Header'
 import EventFooter from '@/components/event/Footer'
 import SponsorsMarquee from '@/components/event/Sponsors/index'
-import { FloatingVisitorCount } from '@/components/common/VisitorCount'
+import { EventFloatingVisitorCount } from '@/components/common/VisitorCount'
 import { MainBannerProvider, useMainBanner } from '@/components/providers/MainBannerContext';
 import { useSearchParams } from 'next/navigation';
+import { usePublicEventDetail } from '@/hooks/usePublicEventData';
+import type { PublicEventDetailResponse } from '@/services/publicEventAssets';
 
 interface EventLayoutProps {
   children: React.ReactNode
@@ -20,6 +22,13 @@ interface HeroEventData {
   eventInfo?: {
     mainBannerColor?: string;
   };
+}
+
+function toHeroEventData(
+  data: PublicEventDetailResponse | null | undefined
+): HeroEventData | null {
+  if (!data) return null;
+  return data as HeroEventData;
 }
 
 export default function EventLayout({ children, eventId, mainBannerColor }: EventLayoutProps) {
@@ -56,7 +65,11 @@ function EventLayoutContent({
 }: EventLayoutContentProps) {
   const { mainBannerColor: contextMainBannerColor, setMainBannerColor } = useMainBanner();
   const [cachedColor, setCachedColor] = React.useState<string | null>(null);
-  const [heroEventData, setHeroEventData] = React.useState<HeroEventData | null>(null);
+  const { data: eventDetailData } = usePublicEventDetail(eventId ?? '');
+  const heroEventData = React.useMemo(
+    () => toHeroEventData(eventDetailData),
+    [eventDetailData]
+  );
 
   // 글로벌 스크롤 위치 저장 및 복원
   React.useEffect(() => {
@@ -166,54 +179,6 @@ function EventLayoutContent({
     };
   }, [eventId]);
  
-  // Hero 이벤트 데이터 페치 (Submenu와 동일한 엔드포인트 활용)
-  React.useEffect(() => {
-    if (!eventId) return;
-    const cached = () => {
-      if (typeof window === 'undefined') return null;
-      try {
-        const raw = localStorage.getItem(`hero_event_${eventId}`);
-        if (!raw) return null;
-        return JSON.parse(raw)?.data ?? null;
-      } catch {
-        return null;
-      }
-    };
-    const existing = cached();
-    if (existing) {
-      setHeroEventData(prev => prev ?? existing);
-      return;
-    }
-
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
-    if (!API_BASE_URL) return;
-
-    let cancelled = false;
-
-    fetch(`${API_BASE_URL}/api/v1/public/event/${eventId}`)
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        if (!data || cancelled) return;
-        setHeroEventData(data);
-        try {
-          localStorage.setItem(
-            `hero_event_${eventId}`,
-            JSON.stringify({ data, ts: Date.now() }),
-          );
-        } catch {
-          /* noop */
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        /* noop */
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId]);
-
   // 우선순위: URL > prop > context > 기본값 (URL을 최우선으로)
   const mainBannerColor =
     urlColor ||
@@ -356,7 +321,7 @@ function EventLayoutContent({
       {/* 스폰서 마퀸 섹션 */}
       <SponsorsMarquee eventId={eventId} />
       <EventFooter footerBgClass={footerBgClass} accentColor={accentColor} />
-      {eventId ? <FloatingVisitorCount variant="event" eventId={eventId} /> : null}
+      {eventId ? <EventFloatingVisitorCount eventId={eventId} /> : null}
     </div>
   )
 }
@@ -380,7 +345,7 @@ export function EventLayoutThemed({ children, eventId, headerBgClass, footerBgCl
       {/* 스폰서 마퀸 섹션 */}
       <SponsorsMarquee eventId={eventId} />
       <EventFooter footerBgClass={footerBgClass} accentColor={accentColor} />
-      {eventId ? <FloatingVisitorCount variant="event" eventId={eventId} /> : null}
+      {eventId ? <EventFloatingVisitorCount eventId={eventId} /> : null}
     </div>
   )
 }

@@ -14,6 +14,31 @@ export type PublicMainPageImagesResponse = {
   youtubeUrl?: string;
 };
 
+export type PublicEventInfo = {
+  nameKr?: string;
+  nameEng?: string;
+  startDate?: string;
+  region?: string;
+  eventStatus?: string;
+  mainBannerColor?: string;
+  mainBannerPcImageUrl?: string;
+  mainBannerMobileImageUrl?: string;
+  bank?: string;
+  virtualAccount?: string;
+  accountHolderName?: string;
+};
+
+export type PublicEventDetailResponse = {
+  eventInfo?: PublicEventInfo;
+  eventStatus?: string;
+};
+
+export type PublicPaymentInfoResponse = {
+  bankName?: string;
+  virtualAccount?: string;
+  accountHolderName?: string;
+};
+
 function getStringField(data: unknown, camel: string, snake: string): string {
   if (!data || typeof data !== "object") return "";
   const record = data as Record<string, unknown>;
@@ -121,4 +146,50 @@ export async function fetchAwardInfoImageUrl(
   return typeof candidate === "string" && candidate.length > 0
     ? candidate
     : null;
+}
+
+/**
+ * GET /api/v1/public/event/{eventId}
+ */
+export async function fetchPublicEventDetail(
+  eventId: string
+): Promise<PublicEventDetailResponse | null> {
+  if (!USER_API_BASE_URL) return null;
+  const response = await fetch(
+    `${USER_API_BASE_URL}/api/v1/public/event/${eventId}`,
+    {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as PublicEventDetailResponse;
+}
+
+/**
+ * GET /api/v1/public/event/{eventId}/payment-info
+ */
+export async function fetchPublicPaymentInfo(
+  eventId: string
+): Promise<PublicPaymentInfoResponse | null> {
+  if (!USER_API_BASE_URL) return null;
+  const response = await fetch(
+    `${USER_API_BASE_URL}/api/v1/public/event/${eventId}/payment-info`,
+    {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as PublicPaymentInfoResponse;
+}
+
+/** 접수 마감 판단용 — 기존 apply/page.tsx와 동일한 우선순위 */
+export function extractEventStatus(
+  data: PublicEventDetailResponse | null | undefined
+): string | null {
+  if (!data) return null;
+  if (data.eventInfo?.eventStatus) return data.eventInfo.eventStatus;
+  if (typeof data.eventStatus === "string") return data.eventStatus;
+  return null;
 }

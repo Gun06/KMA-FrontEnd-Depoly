@@ -3,7 +3,7 @@ import Header from '@/components/main/Header'
 import Footer from '@/components/main/Footer'
 import { PopupManager } from '@/components/main/Popup'
 import FloatingPanels from '@/components/main/FloatingPanels'
-import { FloatingVisitorCount } from '@/components/common/VisitorCount'
+import { MainFloatingVisitorCount } from '@/components/common/VisitorCount'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -27,7 +27,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </div>
       {/* fixed 플로팅 — 레이아웃 flex 밖, 방문자 위젯과 동일 stacking */}
       <FloatingPanels />
-      <FloatingVisitorCount variant="main" />
+      <MainFloatingVisitorCount />
     </>
   )
 } 
