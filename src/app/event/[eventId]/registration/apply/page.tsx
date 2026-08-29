@@ -375,30 +375,6 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               </span>
               <span>[대회신청 약관 안내 동의]</span>
             </label>
-            {/* 안전 안내 (고정 블록) */}
-            <div className="bg-gray-100 rounded-lg p-4 mb-4">
-              <p className="font-bold text-gray-800 mb-4">
-                안전한 레이스를 위한 안내 사항 (필독)
-              </p>
-
-              <div className="space-y-3 text-sm sm:text-base text-gray-700 leading-relaxed">
-                <p
-                  style={{
-                    fontWeight: 400,
-                    fontFamily:
-                      '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif',
-                  }}
-                >
-                  레이스 중 이상 증상이 느껴지면 즉시 중단하고 진행 요원이나 의료진의 도움을 받으시기 바랍니다.<br />
-                  (예: 어지러움, 가슴 통증, 숨 가쁨, 극심한 피로, 근육 경련 등)<br />
-                  체력과 운동 능력을 고려해 적절한 속도 유지가 필요하며, 충분한 준비 운동과 레이스 후 휴식을 권장합니다.
-                </p>
-                <p className="font-semibold text-gray-800">
-                  건강 상태 미고려, 기저 질환 등으로 발생한 본인 과실 사고는 보험 적용 대상에서 제외됩니다.
-                </p>
-              </div>
-            </div>
-
             <p className="text-xs text-gray-500 mb-2 font-pretendard">
               참가 신청 약관 안내
             </p>
