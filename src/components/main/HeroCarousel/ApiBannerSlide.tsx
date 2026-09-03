@@ -171,9 +171,9 @@ export default function ApiBannerSlide({
         </div>
       )}
 
-      {/* KMA-Mobile 스타일: 우하단 "1 / N" 인디케이터 (bg black/40, rounded-2xl) */}
+      {/* KMA-Mobile 스타일: 우하단 "1 / N" — 흰색 시트(-mt)에 가리지 않게 올림 */}
       {total > 0 && (
-        <div className="absolute right-3 z-10 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:right-5 sm:bottom-5">
+        <div className="absolute right-3 z-10 bottom-10 sm:right-5 sm:bottom-12 md:bottom-14 lg:bottom-16">
           <div className="rounded-[20px] bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white sm:px-3 sm:py-1.5 sm:text-xs">
             {safeIndex + 1} / {total}
           </div>

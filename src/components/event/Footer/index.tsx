@@ -26,14 +26,14 @@ export default function EventFooter({ footerBgClass, accentColor }: EventFooterP
           <div className="w-12 h-12 rounded-full ring-2 ring-green-600 overflow-hidden flex items-center justify-center bg-white shrink-0">
             <Image src={logoImage} alt="전국마라톤협회 로고" width={48} height={48} className="object-cover w-full h-full" />
           </div>
-          <div className="text-[11px] min-[1000px]:text-[12px] leading-5 min-[1000px]:leading-6 text-white/70">
+          <div className="text-[11px] min-[1000px]:text-[12px] leading-5 min-[1000px]:leading-6 text-white/70 min-w-0 break-words">
             <div>전국마라톤협회</div>
             <div>
               사업자 등록번호: <span className="tabular-nums">215-82-66070</span>
               <span className="mx-2">|</span>
               대표: 장영기
               <span className="mx-2">|</span>
-              통신판매신고: <span className="tabular-nums">2014-대전대덕-0082호</span>
+              통신판매신고: <span className="tabular-nums break-all">2014-대전대덕-0082호</span>
             </div>
             <div>
               대전 본사: 대전광역시 대덕구 비래동 103-1 대동빌딩 2층

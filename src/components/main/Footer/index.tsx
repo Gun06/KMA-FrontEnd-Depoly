@@ -78,8 +78,8 @@ export default function Footer() {
     <footer className="relative bg-white text-gray-800 border-t border-gray-200">
       {/* 상단 본문 컨테이너 */}
       <div className="w-full max-w-[1920px] mx-auto px-4 md:px-6 py-6 md:py-7">
-        <div className="w-full md:mx-auto md:w-fit pl-2 md:pl-0">
-          <div className="flex flex-col lg:flex-row gap-4 md:gap-5 items-start">
+        <div className="w-full md:mx-auto md:w-fit max-w-full pl-2 md:pl-0">
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-5 items-start min-w-0">
             {/* 왼쪽: 로고 + 타이틀 */}
             <div className="flex-shrink-0 flex items-start self-start gap-3">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-full ring-2 ring-green-600 overflow-hidden flex items-center justify-center bg-white">
@@ -92,21 +92,31 @@ export default function Footer() {
             </div>
 
             {/* 오른쪽: 정보 표기 */}
-            <div className="flex-none">
+            <div className="min-w-0 w-full lg:w-auto">
               <h3 className="font-pretendard font-bold text-gray-900 text-[13px] md:text-[14px] break-keep">전국마라톤협회</h3>
 
-              <div className="mt-2.5 text-gray-400 text-[11px] md:text-[13px] leading-relaxed break-keep">
-                <span>사업자 등록번호</span>
-                <span className="mx-1">:</span>
-                <span className="tabular-nums whitespace-nowrap">215-82-66070</span>
-                <span className="mx-2">|</span>
-                <span>대표</span>
-                <span className="mx-1">:</span>
-                <span>장영기</span>
-                <span className="mx-2">|</span>
-                <span>통신판매신고</span>
-                <span className="mx-1">:</span>
-                <span className="tabular-nums whitespace-nowrap">2014-대전대덕-0082호</span>
+              <div className="mt-2.5 text-gray-400 text-[11px] md:text-[13px] leading-relaxed break-words">
+                <span className="inline">
+                  <span>사업자 등록번호</span>
+                  <span className="mx-1">:</span>
+                  <span className="tabular-nums">215-82-66070</span>
+                </span>
+                <span className="mx-1.5 text-gray-300" aria-hidden>
+                  |
+                </span>
+                <span className="inline">
+                  <span>대표</span>
+                  <span className="mx-1">:</span>
+                  <span>장영기</span>
+                </span>
+                <span className="mx-1.5 text-gray-300" aria-hidden>
+                  |
+                </span>
+                <span className="inline">
+                  <span>통신판매신고</span>
+                  <span className="mx-1">:</span>
+                  <span className="tabular-nums break-all">2014-대전대덕-0082호</span>
+                </span>
               </div>
 
               <div className="mt-3 text-[12px] md:text-[14px] leading-relaxed text-gray-400">

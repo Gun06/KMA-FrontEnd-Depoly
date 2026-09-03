@@ -64,8 +64,8 @@ export default function AssociationBanner({ total, currentIndex }: AssociationBa
         </div>
       </div>
 
-      {/* per-slide fraction at right-bottom inside slide */}
-      <div className="absolute right-4 bottom-3 z-10">
+      {/* per-slide fraction — 흰색 시트 overlap에 가리지 않게 올림 */}
+      <div className="absolute right-4 bottom-10 z-10 sm:bottom-12 md:bottom-14">
         <div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-xs md:text-sm backdrop-blur-sm border border-white/20">
           {currentIndex + 1}/{total}
         </div>
