@@ -194,6 +194,7 @@ export default function Page() {
         height="520px" 
         imageDomainType="NOTICE"
         placeholder="내용을 작성해주세요..."
+        showLink
       />
 
       {/* 첨부파일 */}

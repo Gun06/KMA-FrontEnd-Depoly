@@ -205,6 +205,7 @@ function InquiryDetailPanel({ detail, onBack, onSave }: Props) {
               height="360px" 
               imageDomainType="ANSWER"
               placeholder="답변을 작성해주세요..."
+              showLink
             />
           </div>
           <div className="space-y-2">

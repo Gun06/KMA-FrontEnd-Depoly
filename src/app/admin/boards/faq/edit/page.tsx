@@ -142,6 +142,7 @@ export default function Page() {
                   height="200px"
                   initialContent="<p>질문 내용을 입력하세요...</p>"
                   onChange={handleQuestionChange}
+                  showLink
                 />
 
               </div>
@@ -161,6 +162,7 @@ export default function Page() {
                   height="300px"
                   initialContent="<p>답변 내용을 입력하세요...</p>"
                   onChange={handleAnswerChange}
+                  showLink
                 />
               </div>
             </div>

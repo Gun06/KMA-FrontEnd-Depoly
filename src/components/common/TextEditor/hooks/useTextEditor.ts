@@ -3,6 +3,7 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Color } from '@tiptap/extension-color';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import Link from '@tiptap/extension-link';
 import { CustomImage, CustomTextStyle, TextAlign } from '../extensions';
 import { compressHtml } from '../utils/compressHtml';
 import { compressImage, shouldCompressImage } from '../utils/imageCompression';
@@ -18,6 +19,7 @@ export const useTextEditor = (props: TextEditorProps) => {
     imageServerType = 'admin',
     defaultTextColor,
     defaultFontSize,
+    showLink = false,
   } = props;
 
   const [isMounted, setIsMounted] = useState(false);
@@ -54,6 +56,20 @@ export const useTextEditor = (props: TextEditorProps) => {
         inline: false,
         allowBase64: true,
       }),
+      ...(showLink
+        ? [
+            Link.configure({
+              openOnClick: false,
+              autolink: true,
+              defaultProtocol: 'https',
+              HTMLAttributes: {
+                target: '_blank',
+                rel: 'noopener noreferrer nofollow',
+                class: 'kma-editor-link',
+              },
+            }),
+          ]
+        : []),
     ],
     content: initialContent || '<p></p>',
     editorProps: {

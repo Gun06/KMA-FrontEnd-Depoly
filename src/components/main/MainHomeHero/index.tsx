@@ -207,37 +207,19 @@ function parsePopularAdvertiseList(
   return out.slice(0, limit);
 }
 
-/** 접수 마감일(deadline)까지 남은 일수 (1초마다 갱신) */
-function useDeadlineCountdown(deadlineIso: string | undefined) {
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    if (!deadlineIso?.trim()) return;
-    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [deadlineIso]);
-
-  void tick;
-
-  if (!deadlineIso?.trim()) {
-    return { days: 0, expired: true as const };
-  }
+/** 접수/개최 기준일이 지났는지 판별 (D-day 숫자 표시 없이 만료 UI만 사용) */
+function isDeadlineExpired(deadlineIso: string | undefined): boolean {
+  if (!deadlineIso?.trim()) return true;
   let s = deadlineIso.trim();
   if (!s.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(s)) {
     s = `${s}Z`;
   }
   const end = new Date(s).getTime();
-  if (Number.isNaN(end)) {
-    return { days: 0, expired: true as const };
-  }
-  const now = Date.now();
-  const diff = Math.max(0, end - now);
-  const expired = end <= now;
-  const days = Math.floor(diff / 1000 / 86400);
-  return { days, expired };
+  if (Number.isNaN(end)) return true;
+  return end <= Date.now();
 }
 
-/** 마감임박 1건: 이미지 + 접수마감 임박 문구 / D-day 패널 */
+/** 마감임박 1건: 배너 이미지 (검정 패널·D-day 없음) */
 function PopularDeadlineBanner({
   item,
   loading,
@@ -257,76 +239,33 @@ function PopularDeadlineBanner({
   const countdownIso = isDdayType
     ? item?.startTime || item?.deadline
     : item?.deadline || item?.startTime;
-  const cd = useDeadlineCountdown(countdownIso);
-  const imminentLabel = isDdayType ? '개최 임박!' : '접수마감 임박!';
-  const expiredLabel = isDdayType ? '개최일 지남' : '접수 마감';
-  const fromLabel = isDdayType ? '개최일까지' : '대회일로부터';
-  const timerAria = cd.expired
-    ? expiredLabel
-    : `${imminentLabel} ${fromLabel} D-${cd.expired ? 0 : cd.days}`;
+  const expired = isDeadlineExpired(countdownIso);
+  const statusLabel = expired
+    ? isDdayType
+      ? '개최일 지남'
+      : '접수 마감'
+    : isDdayType
+      ? '개최 임박'
+      : '접수마감 임박';
+
+  const href =
+    !loading && item?.url?.trim() ? advertiseHref(item) : undefined;
+
+  const shellClassName = cn(
+    'w-full',
+    isDesktopLikeMobile
+      ? 'max-w-[min(52vw,10.25rem)] origin-top-left sm:max-w-[min(48vw,12.5rem)]'
+      : !isMobile && 'max-w-[332px]'
+  );
+
+  const imageFrameClassName = cn(
+    'relative w-full overflow-hidden rounded-2xl',
+    isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS,
+    isMobile && !isDesktopLikeMobile && 'rounded-2xl',
+    !isMobile && 'ring-1 ring-white/15'
+  );
 
   if (loading) {
-    /* 데스크톱: 실제 카드와 동일 — 이미지 열 + 겹친 D-day 패널 */
-    if (!isMobile || isDesktopLikeMobile) {
-      return (
-        <motion.div
-          className="w-full"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <div
-            className={cn(
-              'flex w-full items-stretch',
-              isDesktopLikeMobile
-                ? 'max-w-[min(78vw,16rem)] origin-top-left sm:max-w-[min(90vw,19rem)]'
-                : 'origin-center rotate-[-4.5deg]'
-            )}
-            aria-busy="true"
-            aria-label="마감임박 대회 로딩"
-          >
-            <div
-              className={cn(
-                'relative min-w-0 overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/15',
-                isDesktopLikeMobile
-                  ? 'basis-[64%] max-w-[64%] shrink-0 sm:basis-[66%] sm:max-w-[66%] sm:shrink sm:flex-1'
-                  : 'flex-1'
-              )}
-            >
-              <div
-                className="w-full animate-pulse bg-white/20"
-                style={{ aspectRatio: '332/166' }}
-              />
-            </div>
-            <div
-              className={cn(
-                'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl ring-1 ring-white/10',
-                isDesktopLikeMobile
-                  ? 'items-center -ml-8 w-[min(36vw,8rem)] pr-1.5 pl-3 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
-                  : 'items-center justify-center -ml-32 w-80 pr-8 pl-20'
-              )}
-              style={{
-                background: isDesktopLikeMobile
-                  ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.2) 18%, rgba(9,9,11,0.65) 42%, #09090b 68%, #09090b 100%)'
-                  : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
-              }}
-            >
-              <div className={cn('flex flex-col items-center', isDesktopLikeMobile ? 'translate-x-[12%] gap-1.5 sm:-translate-x-1 sm:gap-2 sm:pr-1' : 'translate-x-10 gap-3')}>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <div className={cn('animate-pulse rounded bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-3 w-[4.5rem] sm:h-3.5 sm:w-20' : 'h-4 w-28')} />
-                    <div className={cn('animate-pulse rounded bg-[#FFDC12]/30', isDesktopLikeMobile ? 'h-2.5 w-14 sm:h-3 sm:w-16' : 'h-3 w-20')} />
-                  </div>
-                  <div className={cn('animate-pulse rounded-xl bg-[#FFDC12]/45', isDesktopLikeMobile ? 'h-5 w-10 sm:h-6 sm:w-12' : 'h-9 w-[4.25rem]')} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      );
-    }
-
-    /* 모바일: aspect 카드 + 우하단 카운트다운 패널 (로드 후 레이아웃과 동일) */
     return (
       <motion.div
         className="w-full"
@@ -334,34 +273,14 @@ function PopularDeadlineBanner({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div
-          className={cn(
-            'relative w-full overflow-hidden rounded-2xl bg-zinc-200 ring-1 ring-black/10',
-            isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS
-          )}
-          aria-busy="true"
-          aria-label="마감임박 대회 로딩"
-        >
-          <div className="absolute inset-0 animate-pulse bg-zinc-300/90" />
+        <div className={shellClassName} aria-busy="true" aria-label="마감임박 대회 로딩">
           <div
             className={cn(
-              'absolute z-[2] overflow-hidden rounded-lg bg-black shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30',
-              isCompactMobile
-                ? 'bottom-2 right-2 w-[calc(100%-1rem)]'
-                : 'bottom-3 right-3 w-[min(calc(100%-1.5rem),14rem)]'
+              imageFrameClassName,
+              'animate-pulse bg-white/15 ring-1 ring-white/10',
+              isMobile && !isDesktopLikeMobile && 'bg-zinc-200 ring-black/10'
             )}
-          >
-            <div
-              className={cn(
-                'flex flex-col items-center gap-1 px-2 py-1.5',
-                isCompactMobile ? 'gap-0.5 py-1' : 'sm:px-3 sm:py-2'
-              )}
-            >
-              <div className={cn('animate-pulse rounded bg-[#FFDC12]/45', isCompactMobile ? 'h-2.5 w-16' : 'h-3 w-20')} />
-              <div className={cn('animate-pulse rounded bg-[#FFDC12]/30', isCompactMobile ? 'h-2 w-12' : 'h-2.5 w-14')} />
-              <div className={cn('animate-pulse rounded-lg bg-[#FFDC12]/45', isCompactMobile ? 'h-4 w-8' : 'h-5 w-10')} />
-            </div>
-          </div>
+          />
         </div>
       </motion.div>
     );
@@ -384,270 +303,30 @@ function PopularDeadlineBanner({
     );
   }
 
-  const href = advertiseHref(item);
-  const daysLabel = cd.expired ? 0 : cd.days;
-
-  /* ── default 변형: 두 개의 겹친 pill 카드 ── */
-  if (!isMobile || isDesktopLikeMobile) {
-    const isDesktopLike = isDesktopLikeMobile;
-    /* 좌측 이미지 카드 (파란 테두리) + 우측 카운트다운 카드 (빨간 테두리) 겹침 */
-    const card = (
-      <div
-        className={cn(
-          'flex w-full items-stretch',
-          isDesktopLike
-            ? 'max-w-[min(78vw,16rem)] origin-top-left sm:max-w-[min(90vw,19rem)]'
-            : 'max-w-[92%] origin-center rotate-[-4.5deg]'
-        )}
-      >
-
-        {/* 좌측 — 이미지 카드 (자연 비율) */}
-        <div
+  const card = (
+    <div className={shellClassName}>
+      <div className={imageFrameClassName}>
+        <Image
+          src={item.url.trim()}
+          alt={item.eventName?.trim() || '마감임박 대회'}
+          fill
           className={cn(
-            'relative min-w-0 overflow-hidden rounded-2xl',
-            isDesktopLike
-              ? 'aspect-[332/166] basis-[64%] max-w-[64%] min-w-0 sm:basis-[66%] sm:max-w-[66%] md:basis-[72%] md:max-w-[72%]'
-              : 'flex-1'
+            'object-cover object-center',
+            expired && (isMobile && !isDesktopLikeMobile ? 'opacity-60' : 'grayscale opacity-70')
           )}
-        >
-          {isDesktopLike ? (
-            <>
-              <Image
-                src={item.url.trim()}
-                alt={item.eventName?.trim() || '마감임박 대회'}
-                fill
-                className={cn('object-cover object-center', cd.expired && 'grayscale opacity-70')}
-                sizes="(max-width: 768px) 46vw, 220px"
-              />
-              {/* 모바일: 사진→검정 패널 경계 페이드 */}
-              <div
-                className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-[42%] bg-gradient-to-r from-transparent via-black/35 to-black/80 sm:hidden"
-                aria-hidden
-              />
-            </>
-          ) : (
-            <Image
-              src={item.url.trim()}
-              alt={item.eventName?.trim() || '마감임박 대회'}
-              width={332}
-              height={166}
-              style={{ width: '100%', height: 'auto', display: 'block' }}
-              className={cn(cd.expired && 'grayscale opacity-70')}
-              sizes="(max-width:1024px) 60vw, 320px"
-            />
-          )}
-        </div>
-
-        {/* 우측 — D-day 카드 (이미지 위로 살짝 겹침) */}
-        <div
-          className={cn(
-            'relative z-10 flex shrink-0 flex-col justify-center rounded-2xl shadow-xl',
-            isDesktopLike
-              ? 'items-center -ml-8 w-[min(36vw,8rem)] pr-1.5 pl-3 sm:items-end sm:-ml-14 sm:w-40 sm:pr-2 sm:pl-7'
-              : 'items-center justify-center -ml-28 w-72 pr-6 pl-16'
-          )}
-          style={{
-            background: isDesktopLike
-              ? 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.2) 18%, rgba(9,9,11,0.65) 42%, #09090b 68%, #09090b 100%)'
-              : 'linear-gradient(to right, transparent 0%, rgba(9,9,11,0.7) 30%, #09090b 60%)',
-          }}
-          role="timer"
-          aria-live="off"
-          aria-label={timerAria}
-        >
-          {/* 가운데 정렬 유지 + 블록만 오른쪽으로 이동 */}
-          <div
-            className={cn(
-              'flex flex-col items-center text-center',
-              isDesktopLike
-                ? 'translate-x-[12%] gap-1.5 sm:-translate-x-1 sm:gap-2 sm:pr-1'
-                : 'translate-x-10 gap-3'
-            )}
-          >
-            {cd.expired ? (
-              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold text-white/90">
-                {expiredLabel}
-              </span>
-            ) : (
-              <>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span
-                    className={cn(
-                      'font-giants font-black leading-tight tracking-tight text-[#FFDC12]',
-                      isDesktopLike
-                        ? 'text-[clamp(9px,2.4vw,13px)]'
-                        : 'text-[clamp(13px,2.2vw,18px)]'
-                    )}
-                  >
-                    {imminentLabel}
-                  </span>
-                  <span
-                    className={cn(
-                      'font-pretendard font-semibold leading-tight text-[#FFDC12]/90',
-                      isDesktopLike
-                        ? 'text-[clamp(8px,2vw,11px)]'
-                        : 'text-[clamp(11px,1.8vw,14px)]'
-                    )}
-                  >
-                    {fromLabel}
-                  </span>
-                </div>
-                <div
-                  className={cn(
-                    'rounded-xl bg-[#FFDC12] shadow-lg',
-                    isDesktopLike ? 'px-1.5 py-0.5 sm:px-2 sm:py-1' : 'px-3 py-1.5'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'font-giants font-black leading-none tracking-tight text-black',
-                      isDesktopLike
-                        ? 'text-[clamp(11px,3vw,15px)]'
-                        : 'text-[clamp(16px,2.6vw,26px)]'
-                    )}
-                  >
-                    D-{daysLabel}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          sizes={
+            isCompactMobile
+              ? '(max-width: 768px) 170px, 180px'
+              : isDesktopLikeMobile
+                ? '(max-width: 768px) 46vw, 220px'
+                : '(max-width: 1024px) 60vw, 320px'
+          }
+        />
+        <span className="sr-only">
+          {[item.eventName?.trim(), statusLabel].filter(Boolean).join(' · ')}
+        </span>
       </div>
-    );
-
-    return (
-      <motion.div
-        key={item.eventId || item.url}
-        className="w-full"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {href ? <Link href={href} className="block w-full">{card}</Link> : card}
-      </motion.div>
-    );
-  }
-
-  /** 모바일(overlay): 접수마감 임박 문구 + D-day */
-  const countdownPanel = (
-    <div
-      className={cn(
-        'absolute z-[2] overflow-hidden rounded-lg bg-black',
-        isMobile
-          ? isCompactMobile
-            ? 'bottom-2 right-2 w-[calc(100%-1rem)] shadow-[0_7px_20px_rgba(0,0,0,0.5)] ring-1 ring-black/25'
-            : 'bottom-3 right-3 w-[min(calc(100%-1.5rem),14rem)] shadow-[0_8px_28px_rgba(0,0,0,0.55)] ring-2 ring-black/30'
-          : 'bottom-2 right-2 w-[min(94%,11rem)] shadow-[0_4px_18px_rgba(0,0,0,0.4)] ring-1 ring-black/15',
-        cd.expired && 'opacity-95'
-      )}
-      role="timer"
-      aria-live="off"
-      aria-label={timerAria}
-    >
-      {cd.expired ? (
-        <div
-          className={cn(
-            'bg-[#FFDC12] py-1.5 text-center font-semibold leading-none text-neutral-900',
-            isMobile
-              ? isCompactMobile
-                ? 'text-[10px]'
-                : 'text-xs sm:text-sm'
-              : 'py-1 text-[8px] sm:text-[9px]'
-          )}
-        >
-          {expiredLabel}
-        </div>
-      ) : (
-        <div
-          className={cn(
-            'flex flex-col items-center gap-1 px-2 py-1.5 text-center sm:px-2.5 sm:py-2',
-            isMobile && (isCompactMobile ? 'gap-0.5 px-2 py-1' : 'gap-1 px-3 py-1.5 sm:py-2')
-          )}
-        >
-          <span
-            className={cn(
-              'font-giants font-black leading-tight tracking-tight text-[#FFDC12]',
-              isMobile
-                ? isCompactMobile
-                  ? 'text-[10px]'
-                  : 'text-xs sm:text-sm'
-                : 'text-[clamp(10px,2.8vw,13px)]'
-            )}
-          >
-            {imminentLabel}
-          </span>
-          <span
-            className={cn(
-              'font-pretendard font-semibold leading-tight text-[#FFDC12]/90',
-              isMobile
-                ? isCompactMobile
-                  ? 'text-[9px]'
-                  : 'text-[10px] sm:text-xs'
-                : 'text-[clamp(8px,2.2vw,11px)]'
-            )}
-          >
-            {fromLabel}
-          </span>
-          <div
-            className={cn(
-              'rounded-lg bg-[#FFDC12]',
-              isMobile
-                ? isCompactMobile
-                  ? 'px-1.5 py-0.5'
-                  : 'px-2 py-0.5 sm:px-2.5 sm:py-1'
-                : 'px-1.5 py-0.5'
-            )}
-          >
-            <span
-              className={cn(
-                'font-giants font-black leading-none tracking-tight text-black',
-                isMobile
-                  ? isCompactMobile
-                    ? 'text-xs'
-                    : 'text-sm sm:text-base'
-                  : 'text-[clamp(11px,3vw,15px)]'
-              )}
-            >
-              D-{daysLabel}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
-  );
-
-  const imageBlock = (
-    <div
-      className={cn(
-        'relative w-full overflow-hidden bg-gray-100 transition',
-        isCompactMobile ? 'aspect-[17/12]' : SIDEBAR_AD_ASPECT_CLASS,
-        isMobile
-          ? 'rounded-2xl'
-          : 'rounded-lg bg-black ring-1 ring-white/15 backdrop-blur-sm',
-        !isMobile && href && 'hover:ring-white/35'
-      )}
-    >
-      <Image
-        src={item.url.trim()}
-        alt={item.eventName?.trim() ? `${item.eventName} 접수 마감 카운트다운` : ''}
-        fill
-        className={cn('object-cover object-center', cd.expired && 'opacity-60')}
-        sizes={isCompactMobile ? '(max-width: 768px) 170px, 180px' : '(max-width: 1024px) 100vw, 300px'}
-      />
-      <span className="sr-only">
-        {item.eventName?.trim() || '마감임박 대회'}
-      </span>
-      {countdownPanel}
-    </div>
-  );
-
-  const body = href ? (
-    <Link href={href} className="block w-full">
-      {imageBlock}
-    </Link>
-  ) : (
-    imageBlock
   );
 
   return (
@@ -658,7 +337,13 @@ function PopularDeadlineBanner({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      {body}
+      {href ? (
+        <Link href={href} className="block w-full transition hover:opacity-95">
+          {card}
+        </Link>
+      ) : (
+        card
+      )}
     </motion.div>
   );
 }
@@ -937,8 +622,8 @@ function HeroMobileDeadlineInBanner({
       aria-label="마감임박 대회"
       aria-busy={popularLoading}
     >
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-8 sm:px-5 sm:pb-6 sm:pt-12 md:px-6 md:pb-7 md:pt-14">
-        <div className="w-full max-w-[min(78vw,16rem)] sm:max-w-[min(90vw,19rem)]">
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-12 md:px-6 md:pb-14 md:pt-14">
+        <div className="w-full max-w-[min(52vw,10.25rem)] sm:max-w-[min(48vw,12.5rem)]">
           <PopularDeadlineBanner
             variant="mobileDesktopLike"
             item={popularItems[0] ?? null}

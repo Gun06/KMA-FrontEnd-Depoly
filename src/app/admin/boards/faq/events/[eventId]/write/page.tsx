@@ -139,6 +139,7 @@ export default function Page() {
                   placeholder="질문 내용을 입력하세요..."
                   onChange={setQuestionContent}
                   onEditorReady={handleQuestionEditorReady}
+                  showLink
                 />
               </div>
             </div>
@@ -158,6 +159,7 @@ export default function Page() {
                   placeholder="답변 내용을 입력하세요..."
                   onChange={setAnswerContent}
                   onEditorReady={handleAnswerEditorReady}
+                  showLink
                 />
               </div>
             </div>

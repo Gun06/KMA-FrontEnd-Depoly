@@ -87,6 +87,7 @@ export default function NoticeDetailPanel({ detail, onBack, onSave }: Props) {
             height="360px" 
             imageDomainType="NOTICE"
             placeholder="내용을 작성해주세요..."
+            showLink
           />
           <BoardFileBox
             variant="edit"

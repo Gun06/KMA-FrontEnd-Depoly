@@ -13,6 +13,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   showFontSize = true,
   showTextColor = true,
   showImageUpload = true,
+  showLink = false,
   imageDomainType = 'NOTICE',
   imageServerType = 'admin',
   placeholder = "내용을 작성해주세요...",
@@ -38,6 +39,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     imageServerType,
     defaultTextColor,
     defaultFontSize,
+    showLink,
   });
 
   // 클라이언트 사이드에서만 에디터 렌더링
@@ -67,6 +69,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         showFontSize={showFontSize}
         showTextColor={showTextColor}
         showImageUpload={showImageUpload}
+        showLink={showLink}
         defaultTextColor={defaultTextColor}
       />
 

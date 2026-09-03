@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PopupItem } from './PopupManager';
+import { setKmaPopupOpen } from './popupOpenState';
 
 interface PopupDisplayProps {
   popups: PopupItem[];
@@ -29,6 +30,13 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
+
+  // 팝업 열림 → 방문자 등 플로팅 UI 숨김용 전역 플래그
+  React.useEffect(() => {
+    const open = isOpen && !!currentPopup;
+    setKmaPopupOpen(open);
+    return () => setKmaPopupOpen(false);
+  }, [isOpen, currentPopup]);
 
   const goToNext = React.useCallback(() => {
     if (!isOpen) return;

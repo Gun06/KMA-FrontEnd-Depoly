@@ -16,6 +16,8 @@ export function sanitizeHtml(dirty: string): string {
       USE_PROFILES: { html: true },
       FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
       FORBID_ATTR: [/^on/i],
+      // target은 기본 프로필에서 빠지는 경우가 있어 명시적으로 허용
+      ADD_ATTR: ['target'],
       ALLOW_ARIA_ATTR: true,
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|ftp):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
     });

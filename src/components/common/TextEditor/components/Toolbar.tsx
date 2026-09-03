@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { 
-  Bold, 
-  Italic, 
-  Strikethrough, 
-  ImageIcon, 
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  ImageIcon,
   Undo,
   Redo,
   AlignLeft,
@@ -13,9 +13,12 @@ import {
   AlignJustify,
   MoveLeft,
   MoveRight,
-  Circle
-} from "lucide-react";
-import type { TextEditorProps } from '../types';
+  Circle,
+  Link2,
+  Unlink,
+} from 'lucide-react';
+import ErrorModal from '@/components/common/Modal/ErrorModal';
+import LinkModal, { type LinkModalSubmitPayload } from './LinkModal';
 
 interface ToolbarProps {
   editor: Editor;
@@ -28,8 +31,39 @@ interface ToolbarProps {
   showFontSize?: boolean;
   showTextColor?: boolean;
   showImageUpload?: boolean;
+  showLink?: boolean;
   defaultTextColor?: string;
 }
+
+const LINK_CLASS = 'kma-editor-link';
+const LINK_NO_UNDERLINE_CLASS = 'kma-editor-link--no-underline';
+
+function linkHasUnderline(className: unknown): boolean {
+  const cls = typeof className === 'string' ? className : '';
+  return !cls.includes(LINK_NO_UNDERLINE_CLASS);
+}
+
+function buildLinkClass(underline: boolean): string {
+  return underline ? LINK_CLASS : `${LINK_CLASS} ${LINK_NO_UNDERLINE_CLASS}`;
+}
+
+type LinkModalState = {
+  open: boolean;
+  from: number;
+  to: number;
+  url: string;
+  underline: boolean;
+  isEditing: boolean;
+};
+
+const INITIAL_LINK_MODAL: LinkModalState = {
+  open: false,
+  from: 0,
+  to: 0,
+  url: '',
+  underline: true,
+  isEditing: false,
+};
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   editor,
@@ -42,139 +76,243 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   showFontSize = true,
   showTextColor = true,
   showImageUpload = true,
+  showLink = false,
   defaultTextColor = '#374151',
 }) => {
+  const [linkModal, setLinkModal] = useState<LinkModalState>(INITIAL_LINK_MODAL);
+  const [linkNotice, setLinkNotice] = useState<string | null>(null);
+
+  const openLinkModal = () => {
+    const { from, to } = editor.state.selection;
+    const hasSelection = from !== to;
+    const isEditing = editor.isActive('link');
+
+    if (!hasSelection && !isEditing) {
+      setLinkNotice('링크를 걸 텍스트를 먼저 선택해 주세요.');
+      return;
+    }
+
+    const attrs = editor.getAttributes('link');
+    setLinkModal({
+      open: true,
+      from,
+      to: isEditing && !hasSelection ? from : to,
+      url: (attrs.href as string | undefined) || '',
+      underline: linkHasUnderline(attrs.class),
+      isEditing,
+    });
+  };
+
+  const closeLinkModal = () => {
+    setLinkModal(INITIAL_LINK_MODAL);
+    editor.chain().focus().run();
+  };
+
+  const applyLink = ({ href, underline }: LinkModalSubmitPayload) => {
+    const { from, to, isEditing } = linkModal;
+    const chain = editor.chain().focus();
+    if (from !== to) {
+      chain.setTextSelection({ from, to });
+    } else if (isEditing) {
+      chain.extendMarkRange('link');
+    }
+
+    chain
+      .setLink({
+        href,
+        target: '_blank',
+        rel: 'noopener noreferrer nofollow',
+        class: buildLinkClass(underline),
+      })
+      .run();
+
+    setLinkModal(INITIAL_LINK_MODAL);
+  };
+
+  const removeLink = () => {
+    const { from, to, isEditing } = linkModal;
+    const chain = editor.chain().focus();
+    if (from !== to) {
+      chain.setTextSelection({ from, to });
+    }
+    if (isEditing || from !== to) {
+      chain.extendMarkRange('link');
+    }
+    chain.unsetLink().run();
+    setLinkModal(INITIAL_LINK_MODAL);
+  };
+
   return (
     <div className="border-b border-gray-100 bg-gray-50/50 px-4 py-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* 실행 취소/다시 실행 */}
-        <div className="flex items-center gap-1 mr-4">
+        <div className="mr-4 flex items-center gap-1">
           <button
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
             title="실행 취소"
           >
-            <Undo className="w-4 h-4" />
+            <Undo className="h-4 w-4" />
           </button>
           <button
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
             title="다시 실행"
           >
-            <Redo className="w-4 h-4" />
+            <Redo className="h-4 w-4" />
           </button>
         </div>
 
-        {/* 구분선 */}
-        <div className="w-px h-6 bg-gray-300" />
+        <div className="h-6 w-px bg-gray-300" />
 
-        {/* 서식 도구 */}
         {showFormatting && (
           <>
             <button
               onClick={() => editor.chain().focus().toggleBold().run()}
-              className={`p-2 rounded-md transition-colors ${
-                editor.isActive("bold") 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className={`rounded-md p-2 transition-colors ${
+                editor.isActive('bold')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
               title="굵게"
             >
-              <Bold className="w-4 h-4" />
+              <Bold className="h-4 w-4" />
             </button>
             <button
               onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={`p-2 rounded-md transition-colors ${
-                editor.isActive("italic") 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className={`rounded-md p-2 transition-colors ${
+                editor.isActive('italic')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
               title="기울임"
             >
-              <Italic className="w-4 h-4" />
+              <Italic className="h-4 w-4" />
             </button>
             <button
               onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={`p-2 rounded-md transition-colors ${
-                editor.isActive("strike") 
-                  ? "bg-blue-100 text-blue-700" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className={`rounded-md p-2 transition-colors ${
+                editor.isActive('strike')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
               title="취소선"
             >
-              <Strikethrough className="w-4 h-4" />
+              <Strikethrough className="h-4 w-4" />
             </button>
           </>
         )}
 
-        {/* 텍스트 정렬 도구 */}
-        <div className="w-px h-6 bg-gray-300" />
+        {showLink && (
+          <>
+            <div className="h-6 w-px bg-gray-300" />
+            <button
+              type="button"
+              onClick={openLinkModal}
+              className={`rounded-md p-2 transition-colors ${
+                editor.isActive('link')
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+              title="링크"
+            >
+              <Link2 className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                editor.chain().focus().extendMarkRange('link').unsetLink().run()
+              }
+              disabled={!editor.isActive('link')}
+              className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+              title="링크 제거"
+            >
+              <Unlink className="h-4 w-4" />
+            </button>
+          </>
+        )}
+
+        <div className="h-6 w-px bg-gray-300" />
         <button
           onClick={() => {
-            editor.chain().focus().updateAttributes('paragraph', { textAlign: 'left' }).run();
+            editor
+              .chain()
+              .focus()
+              .updateAttributes('paragraph', { textAlign: 'left' })
+              .run();
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('textAlign', { textAlign: 'left' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('textAlign', { textAlign: 'left' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="왼쪽 정렬"
         >
-          <AlignLeft className="w-4 h-4" />
+          <AlignLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => {
-            editor.chain().focus().updateAttributes('paragraph', { textAlign: 'center' }).run();
+            editor
+              .chain()
+              .focus()
+              .updateAttributes('paragraph', { textAlign: 'center' })
+              .run();
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('textAlign', { textAlign: 'center' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('textAlign', { textAlign: 'center' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="가운데 정렬"
         >
-          <AlignCenter className="w-4 h-4" />
+          <AlignCenter className="h-4 w-4" />
         </button>
         <button
           onClick={() => {
-            editor.chain().focus().updateAttributes('paragraph', { textAlign: 'right' }).run();
+            editor
+              .chain()
+              .focus()
+              .updateAttributes('paragraph', { textAlign: 'right' })
+              .run();
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('textAlign', { textAlign: 'right' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('textAlign', { textAlign: 'right' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="오른쪽 정렬"
         >
-          <AlignRight className="w-4 h-4" />
+          <AlignRight className="h-4 w-4" />
         </button>
         <button
           onClick={() => {
-            editor.chain().focus().updateAttributes('paragraph', { textAlign: 'justify' }).run();
+            editor
+              .chain()
+              .focus()
+              .updateAttributes('paragraph', { textAlign: 'justify' })
+              .run();
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('textAlign', { textAlign: 'justify' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('textAlign', { textAlign: 'justify' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="양쪽 정렬"
         >
-          <AlignJustify className="w-4 h-4" />
+          <AlignJustify className="h-4 w-4" />
         </button>
 
-        {/* 글씨 크기 도구 */}
         {showFontSize && (
           <>
-            <div className="w-px h-6 bg-gray-300" />
+            <div className="h-6 w-px bg-gray-300" />
             <div className="relative">
-              <select 
+              <select
                 value={fontSize}
                 onChange={(e) => onFontSizeChange(e.target.value)}
-                className="px-3 py-2 pr-8 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[90px]"
+                className="min-w-[90px] cursor-pointer appearance-none rounded-md border border-gray-200 bg-white px-3 py-2 pr-8 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 style={{
-                  fontSize: fontSize !== 'default' ? fontSize : '14px'
+                  fontSize: fontSize !== 'default' ? fontSize : '14px',
                 }}
               >
                 <option value="default">기본 (14px)</option>
@@ -188,29 +326,37 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <option value="28px">28px</option>
                 <option value="32px">32px</option>
               </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+                <svg
+                  className="h-4 w-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
           </>
         )}
 
-        {/* 글씨 색상 도구 */}
         {showTextColor && (
           <>
-            <div className="w-px h-6 bg-gray-300" />
+            <div className="h-6 w-px bg-gray-300" />
             <div className="relative">
-              <select 
+              <select
                 value={textColor}
                 onChange={(e) => {
-                  // 색상 변경 (에디터 포커스는 핸들러 내에서 처리)
                   onTextColorChange(e.target.value);
                 }}
-                className="px-3 py-2 pr-8 pl-8 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer min-w-[110px]"
+                className="min-w-[110px] cursor-pointer appearance-none rounded-md border border-gray-200 bg-white px-3 py-2 pl-8 pr-8 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                 style={{
-                  color: textColor !== 'default' ? textColor : defaultTextColor
+                  color: textColor !== 'default' ? textColor : defaultTextColor,
                 }}
               >
                 <option value="default">기본</option>
@@ -223,27 +369,35 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <option value="#ec4899">분홍</option>
                 <option value="#6b7280">회색</option>
               </select>
-              {/* 색상 미리보기 원 */}
-              <div 
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border border-gray-300 pointer-events-none"
+              <div
+                className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-gray-300"
                 style={{
-                  backgroundColor: textColor !== 'default' ? textColor : defaultTextColor
+                  backgroundColor:
+                    textColor !== 'default' ? textColor : defaultTextColor,
                 }}
               />
-              {/* 드롭다운 화살표 */}
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+                <svg
+                  className="h-4 w-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
           </>
         )}
 
-        {/* 이미지 삽입 도구 */}
         {showImageUpload && (
           <>
-            <div className="w-px h-6 bg-gray-300" />
+            <div className="h-6 w-px bg-gray-300" />
             <input
               type="file"
               accept="image/*"
@@ -252,38 +406,34 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               className="hidden"
               id="image-upload"
             />
-            <label 
-              htmlFor="image-upload"
-              className="cursor-pointer"
-            >
+            <label htmlFor="image-upload" className="cursor-pointer">
               <button
                 type="button"
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                className="rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
                 title="이미지 삽입"
                 onClick={() => document.getElementById('image-upload')?.click()}
               >
-                <ImageIcon className="w-4 h-4" />
+                <ImageIcon className="h-4 w-4" />
               </button>
             </label>
           </>
         )}
 
-        {/* 이미지 정렬 도구 */}
-        <div className="w-px h-6 bg-gray-300" />
+        <div className="h-6 w-px bg-gray-300" />
         <button
           onClick={() => {
             if (editor.isActive('image')) {
               editor.commands.updateAttributes('image', { align: 'left' });
             }
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('image', { align: 'left' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('image', { align: 'left' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="이미지 왼쪽 정렬"
         >
-          <MoveLeft className="w-4 h-4" />
+          <MoveLeft className="h-4 w-4" />
         </button>
         <button
           onClick={() => {
@@ -291,14 +441,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               editor.commands.updateAttributes('image', { align: 'center' });
             }
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('image', { align: 'center' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('image', { align: 'center' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="이미지 가운데 정렬"
         >
-          <Circle className="w-4 h-4" />
+          <Circle className="h-4 w-4" />
         </button>
         <button
           onClick={() => {
@@ -306,16 +456,38 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               editor.commands.updateAttributes('image', { align: 'right' });
             }
           }}
-          className={`p-2 rounded-md transition-colors ${
-            editor.isActive('image', { align: 'right' }) 
-              ? "bg-blue-100 text-blue-700" 
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className={`rounded-md p-2 transition-colors ${
+            editor.isActive('image', { align: 'right' })
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
           }`}
           title="이미지 오른쪽 정렬"
         >
-          <MoveRight className="w-4 h-4" />
+          <MoveRight className="h-4 w-4" />
         </button>
       </div>
+
+      {showLink ? (
+        <>
+          <LinkModal
+            isOpen={linkModal.open}
+            initialUrl={linkModal.url}
+            initialUnderline={linkModal.underline}
+            isEditing={linkModal.isEditing}
+            onClose={closeLinkModal}
+            onSubmit={applyLink}
+            onRemove={linkModal.isEditing ? removeLink : undefined}
+          />
+          <ErrorModal
+            isOpen={!!linkNotice}
+            onClose={() => setLinkNotice(null)}
+            title="알림"
+            message={linkNotice ?? ''}
+            confirmText="확인"
+            fitContent
+          />
+        </>
+      ) : null}
     </div>
   );
 };

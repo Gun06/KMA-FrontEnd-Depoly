@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { EventPopupItem } from './types';
+import { setKmaPopupOpen } from '@/components/main/Popup/popupOpenState';
 
 interface EventPopupDisplayProps {
   popups: EventPopupItem[];
@@ -28,6 +29,13 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
     window.addEventListener('resize', checkIsMobile);
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
+
+  // 팝업 열림 → 방문자 등 플로팅 UI 숨김용 전역 플래그
+  React.useEffect(() => {
+    const open = isOpen && !!currentPopup;
+    setKmaPopupOpen(open);
+    return () => setKmaPopupOpen(false);
+  }, [isOpen, currentPopup]);
 
   const handleClose = React.useCallback((e?: React.MouseEvent) => {
     if (e) {

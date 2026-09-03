@@ -51,6 +51,27 @@ export const EditorStyles: React.FC = () => {
         white-space: pre-wrap !important;
         display: inline;
       }
+      .ProseMirror a,
+      .ProseMirror a.kma-editor-link {
+        color: inherit;
+        text-decoration: underline;
+        text-decoration-color: currentColor;
+        text-underline-offset: 2px;
+        cursor: pointer;
+      }
+      /* 글자색이 안쪽 span에 있으면 밑줄도 그 색을 따름 */
+      .ProseMirror a:not(.kma-editor-link--no-underline):has(span[style*="color"]) {
+        text-decoration: none;
+      }
+      .ProseMirror a:not(.kma-editor-link--no-underline) span[style*="color"] {
+        text-decoration: underline;
+        text-decoration-color: currentColor;
+        text-underline-offset: 2px;
+      }
+      .ProseMirror a.kma-editor-link--no-underline,
+      .ProseMirror a.kma-editor-link--no-underline span[style*="color"] {
+        text-decoration: none;
+      }
       .ProseMirror[data-placeholder] p.is-editor-empty:first-child::before {
         content: attr(data-placeholder);
         float: left;

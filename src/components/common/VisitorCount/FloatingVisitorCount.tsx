@@ -5,6 +5,10 @@ import { Users, X } from 'lucide-react';
 import { useMainVisitorCount, useEventVisitorCount } from '@/hooks/useVisitorCount';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
 import { MAIN_FLOATING_ROOT_CLASS } from '@/components/main/mainLayoutTokens';
+import {
+  isKmaPopupOpen,
+  KMA_POPUP_OPEN_EVENT,
+} from '@/components/main/Popup/popupOpenState';
 
 type VisitorVariant = 'main' | 'event';
 
@@ -37,6 +41,19 @@ function formatCount(value: number | undefined) {
   return value.toLocaleString('ko-KR');
 }
 
+function useHideWhilePopupOpen() {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setHidden(isKmaPopupOpen());
+    sync();
+    window.addEventListener(KMA_POPUP_OPEN_EVENT, sync);
+    return () => window.removeEventListener(KMA_POPUP_OPEN_EVENT, sync);
+  }, []);
+
+  return hidden;
+}
+
 function FloatingVisitorCountInner({
   variant,
   query,
@@ -47,6 +64,7 @@ function FloatingVisitorCountInner({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError, refetch } = query;
+  const hideForPopup = useHideWhilePopupOpen();
 
   useEffect(() => {
     if (!open) return;
@@ -62,6 +80,12 @@ function FloatingVisitorCountInner({
   useEffect(() => {
     if (open) void refetch();
   }, [open, refetch]);
+
+  useEffect(() => {
+    if (hideForPopup) setOpen(false);
+  }, [hideForPopup]);
+
+  if (hideForPopup) return null;
 
   const panelAlign = variant === 'main' ? 'origin-bottom-right' : 'origin-bottom-left';
 

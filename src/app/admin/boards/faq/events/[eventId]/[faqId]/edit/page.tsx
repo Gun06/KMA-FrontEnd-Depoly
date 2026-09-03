@@ -170,6 +170,7 @@ export default function Page() {
                   showImageUpload={false}
                   onChange={setQuestionContent}
                   onEditorReady={handleQuestionEditorReady}
+                  showLink
                 />
               </div>
             </div>
@@ -187,6 +188,7 @@ export default function Page() {
                   showImageUpload={false}
                   onChange={setAnswerContent}
                   onEditorReady={handleAnswerEditorReady}
+                  showLink
                 />
               </div>
             </div>

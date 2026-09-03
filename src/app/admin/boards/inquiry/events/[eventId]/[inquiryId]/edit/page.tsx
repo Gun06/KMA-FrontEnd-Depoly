@@ -111,6 +111,7 @@ export default function Page() {
           onChange={setAnswer} 
           height="420px" 
           imageDomainType="ANSWER" 
+          showLink
         />
       </section>
     </main>

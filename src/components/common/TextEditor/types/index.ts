@@ -13,6 +13,8 @@ export interface TextEditorProps {
   showTextColor?: boolean;
   /** 이미지 삽입 도구 표시 여부 (기본: true) */
   showImageUpload?: boolean;
+  /** 하이퍼링크 도구 표시 여부 (기본: false, 관리자만 사용) */
+  showLink?: boolean;
   /** 이미지 업로드 도메인 타입 (기본: NOTICE) */
   imageDomainType?: 'NOTICE' | 'ANSWER' | 'FAQ' | 'COURSE' | 'QUESTION' | 'EVENT' | 'MAIN_BANNER' | 'MAIN_SPONSOR';
   /** 이미지 업로드 서버 타입 (기본: admin) */

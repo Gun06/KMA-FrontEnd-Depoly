@@ -181,6 +181,7 @@ export default function Page() {
                   onEditorReady={handleQuestionEditorReady}
                   defaultTextColor="#1F2937"
                   defaultFontSize="16px"
+                  showLink
                 />
               </div>
             </div>
@@ -201,6 +202,7 @@ export default function Page() {
                   onEditorReady={handleAnswerEditorReady}
                   defaultTextColor="#4B5563"
                   defaultFontSize="15px"
+                  showLink
                 />
               </div>
             </div>

@@ -7,9 +7,13 @@ const HEADER_OFFSET_VAR = 'var(--kma-main-header-offset, 64px)';
 const HERO_HEIGHT_FALLBACK = 'var(--kma-main-hero-height-mobile, min(56vh, 400px))';
 const HERO_MAX_HEIGHT_PC = 800;
 const HERO_MAX_HEIGHT_MOBILE = 400;
+const HERO_MAX_HEIGHT_TABLET = 560;
+const HERO_MIN_HEIGHT_TABLET = 420;
 const MOBILE_HERO_VH = 0.56;
+const TABLET_HERO_VH = 0.52;
 const LG_MEDIA = '(min-width: 1024px)';
 const MOBILE_MEDIA = '(max-width: 639px)';
+const TABLET_MEDIA = '(min-width: 640px) and (max-width: 1023px)';
 
 interface MainHomeScrollLayoutProps {
   /** 덮개 시트: 주요대회일정·스폰서·갤러리 등 */
@@ -32,6 +36,8 @@ export default function MainHomeScrollLayout({ children }: MainHomeScrollLayoutP
     const isPc = typeof window !== 'undefined' && window.matchMedia(LG_MEDIA).matches;
     const isMobile =
       typeof window !== 'undefined' && window.matchMedia(MOBILE_MEDIA).matches;
+    const isTablet =
+      typeof window !== 'undefined' && window.matchMedia(TABLET_MEDIA).matches;
 
     let heightPx = Math.round(carousel.getBoundingClientRect().height);
     const offsetH = carousel.offsetHeight;
@@ -41,6 +47,15 @@ export default function MainHomeScrollLayout({ children }: MainHomeScrollLayoutP
       heightPx = Math.max(
         heightPx,
         Math.min(Math.round(window.innerHeight * MOBILE_HERO_VH), HERO_MAX_HEIGHT_MOBILE)
+      );
+    } else if (isTablet) {
+      heightPx = Math.min(
+        Math.max(
+          heightPx,
+          HERO_MIN_HEIGHT_TABLET,
+          Math.round(window.innerHeight * TABLET_HERO_VH)
+        ),
+        HERO_MAX_HEIGHT_TABLET
       );
     } else if (isPc) {
       heightPx = Math.min(heightPx, HERO_MAX_HEIGHT_PC);

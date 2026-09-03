@@ -172,22 +172,21 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
           max-height: none !important;
           height: 100% !important;
         }
-        @media (max-width: 1023px) {
-          .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: auto !important;
-          }
-        }
         @media (max-width: 639px) {
           .hero-section:not(.hero-section--fill-viewport) {
+            aspect-ratio: auto !important;
             height: min(56vh, 400px) !important;
             min-height: min(56vh, 400px) !important;
             max-height: min(56vh, 400px) !important;
           }
         }
+        /* 태블릿: 모바일 400px 상한을 쓰면 가로가 넓어 납작해 보임 → 별도 높이 */
         @media (min-width: 640px) and (max-width: 1023px) {
           .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: 16 / 9;
-            min-height: 280px;
+            aspect-ratio: auto !important;
+            height: clamp(420px, 52vh, 560px) !important;
+            min-height: clamp(420px, 52vh, 560px) !important;
+            max-height: clamp(420px, 52vh, 560px) !important;
           }
         }
         @media (min-width: 1024px) {

@@ -44,7 +44,7 @@ export default function Page() {
         <h1 className="text-lg font-semibold">
           {detail?.title ?? "문의사항"}
         </h1>
-        <TextEditor initialContent={answer} onChange={setAnswer} height="420px" />
+        <TextEditor initialContent={answer} onChange={setAnswer} height="420px" showLink />
       </section>
     </main>
   );
