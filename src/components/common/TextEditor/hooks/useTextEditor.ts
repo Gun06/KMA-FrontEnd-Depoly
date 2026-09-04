@@ -117,11 +117,17 @@ export const useTextEditor = (props: TextEditorProps) => {
       }
     },
     onCreate: ({ editor }) => {
-      // defaultFontSize가 있으면 에디터 초기화 시 해당 크기로 설정
+      // defaultFontSize / defaultTextColor가 있으면 에디터 초기화 시 설정
       // onCreate는 에디터가 생성될 때 한 번만 호출되므로 포커스 문제 없음
+      const chain = editor.chain();
       if (defaultFontSize && defaultFontSize !== "default") {
-        // 다음에 입력할 텍스트에 적용될 기본 마크 설정 (포커스 없이)
-        editor.chain().setMark("textStyle", { fontSize: defaultFontSize }).run();
+        chain.setMark("textStyle", { fontSize: defaultFontSize });
+      }
+      if (defaultTextColor) {
+        chain.setColor(defaultTextColor);
+      }
+      if ((defaultFontSize && defaultFontSize !== "default") || defaultTextColor) {
+        chain.run();
       }
     },
     // SSR 오류 방지를 위한 설정

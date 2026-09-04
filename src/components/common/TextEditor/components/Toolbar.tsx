@@ -310,10 +310,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
               <select
                 value={fontSize}
                 onChange={(e) => onFontSizeChange(e.target.value)}
-                className="min-w-[90px] cursor-pointer appearance-none rounded-md border border-gray-200 bg-white px-3 py-2 pr-8 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{
-                  fontSize: fontSize !== 'default' ? fontSize : '14px',
-                }}
+                className="h-9 min-w-[110px] cursor-pointer appearance-none rounded-md border border-gray-200 bg-white px-3 py-2 pr-8 text-sm text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="default">기본 (14px)</option>
                 <option value="12px">12px</option>
