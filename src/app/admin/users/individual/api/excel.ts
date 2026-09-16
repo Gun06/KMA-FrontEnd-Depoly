@@ -1,4 +1,4 @@
-import { tokenService } from '@/utils/tokenService';
+import { adminAuthFetch } from '@/utils/adminAuthFetch';
 
 /**
  * 개인 회원 목록 Excel 다운로드
@@ -8,25 +8,15 @@ export async function downloadIndividualUserListExcel(): Promise<void> {
   const url = `/api/v1/user/excel/download`;
   
   try {
-    // tokenService를 사용하여 토큰 가져오기
-    const token = tokenService.getAdminAccessToken();
-    
-    if (!token) {
-      throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-    }
-    
-    // baseUrl을 직접 구성하여 전체 URL 생성
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN;
     if (!baseUrl) {
       throw new Error('API base URL이 설정되지 않았습니다.');
     }
     const fullUrl = `${baseUrl}${url}`;
-    
-    // Authorization 헤더를 추가하여 fetch로 요청
-    const response = await fetch(fullUrl, {
+
+    const response = await adminAuthFetch(fullUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
       },
     });
@@ -71,6 +61,7 @@ export async function downloadIndividualUserListExcel(): Promise<void> {
     window.URL.revokeObjectURL(blobUrl);
     
   } catch (error) {
+    if (error instanceof Error) throw error;
     throw new Error('다운로드에 실패했습니다.');
   }
 }

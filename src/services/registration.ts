@@ -1,5 +1,5 @@
 import { request } from '@/hooks/useFetch';
-import { tokenService } from '@/utils/tokenService';
+import { adminAuthFetch } from '@/utils/adminAuthFetch';
 import { normalizeBirthDate, normalizePhoneNumber } from '@/utils/formatRegistration';
 import type {
   RegistrationListResponse,
@@ -109,19 +109,12 @@ export async function downloadRegistrationList(
   const url = `/api/v1/registration/download?${searchParams.toString()}`;
 
   try {
-    const token = tokenService.getAdminAccessToken();
-
-    if (!token) {
-      throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-    }
-
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
     const fullUrl = `${baseUrl}${url}`;
 
-    const response = await fetch(fullUrl, {
+    const response = await adminAuthFetch(fullUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept:
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
         'Content-Type': 'application/json',
@@ -176,18 +169,12 @@ export async function downloadTermsAgreedList(eventId: string): Promise<void> {
 
   const url = `/api/v1/${eventId}/terms-agreed/download`;
 
-  const token = tokenService.getAdminAccessToken();
-  if (!token) {
-    throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-  }
-
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
   const fullUrl = `${baseUrl}${url}`;
 
-  const response = await fetch(fullUrl, {
+  const response = await adminAuthFetch(fullUrl, {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${token}`,
       Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
     },
   });

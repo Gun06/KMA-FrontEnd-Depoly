@@ -1,5 +1,5 @@
 import { request } from '@/hooks/useFetch';
-import { tokenService } from '@/utils/tokenService';
+import { adminAuthFetch } from '@/utils/adminAuthFetch';
 import type {
   CashReceiptSearchParams,
   CashReceiptSearchResponse,
@@ -216,21 +216,15 @@ function extractFilenameFromDisposition(contentDisposition: string | null, fallb
 export async function downloadRequestedCashReceiptsExcel(
   targetIds?: string[]
 ): Promise<void> {
-  const token = tokenService.getAdminAccessToken();
-  if (!token) {
-    throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.');
-  }
-
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_ADMIN || 'http://localhost:8080';
   const fullUrl = `${baseUrl.replace(/\/+$/, '')}/api/v1/cash-receipt/download`;
   const body: CashReceiptDownloadRequest = {
     targetIds: Array.isArray(targetIds) ? targetIds : [],
   };
 
-  const response = await fetch(fullUrl, {
+  const response = await adminAuthFetch(fullUrl, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${token}`,
       Accept:
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, */*',
       'Content-Type': 'application/json',
