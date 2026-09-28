@@ -15,64 +15,84 @@ declare global {
 
 const POSTCODE_SCRIPT_ID = 'daum-postcode-script'
 
+/** 접수 폼과 동일: 도로명+참고항목(법정동·건물명)을 기본주소에 합침 */
+function buildFullAddress(data: {
+  userSelectedType?: string
+  roadAddress?: string
+  jibunAddress?: string
+  address?: string
+  bname?: string
+  buildingName?: string
+  apartment?: string
+}): string {
+  let fullAddress =
+    data.userSelectedType === 'R'
+      ? data.roadAddress || data.address || ''
+      : data.userSelectedType === 'J'
+        ? data.jibunAddress || data.address || ''
+        : data.address || ''
+
+  if (data.userSelectedType === 'R') {
+    let extraAddress = ''
+    if (data.bname && /[동|로|가]$/g.test(data.bname)) {
+      extraAddress += data.bname
+    }
+    if (data.buildingName) {
+      extraAddress += extraAddress !== '' ? `, ${data.buildingName}` : data.buildingName
+    }
+    if (extraAddress) {
+      fullAddress += ` (${extraAddress})`
+    }
+  }
+
+  return fullAddress
+}
+
 export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSearchProps) {
   const isOpeningRef = useRef(false)
 
   const openPostalCodeSearch = useCallback(() => {
-    if (isOpeningRef.current) return // 이미 열리는 중이면 무시
+    if (isOpeningRef.current) return
     if (typeof window.daum === 'undefined') return
 
     isOpeningRef.current = true
 
     new window.daum.Postcode({
-      oncomplete: function(data: any) {
+      oncomplete: function (data: any) {
         isOpeningRef.current = false
-        // 사용자가 선택한 타입에 따라 도로명/지번 주소를 구분해서 사용
-        const selectedAddress =
-          data.userSelectedType === 'R'
-            ? data.roadAddress
-            : data.userSelectedType === 'J'
-              ? data.jibunAddress
-              : data.address
-
-        // 우편번호 정보를 콜백으로 전달
         onComplete({
           postalCode: data.zonecode,
-          address: selectedAddress,
-          detailedAddress: data.bname + ' ' + data.buildingName
+          address: buildFullAddress(data),
+          // 상세주소(동·호수)는 사용자가 직접 입력
+          detailedAddress: '',
         })
         onClose()
-        // 팝업에서 선택 후 부모 창으로 포커스 복귀
         window.setTimeout(() => {
           window.focus()
         }, 0)
       },
-      onclose: function() {
+      onclose: function () {
         isOpeningRef.current = false
         onClose()
         window.setTimeout(() => {
           window.focus()
         }, 0)
-      }
+      },
     }).open()
   }, [onComplete, onClose])
 
   useEffect(() => {
-    // 스크립트가 이미 로드되어 있는지 확인
     const existingScript = document.getElementById(POSTCODE_SCRIPT_ID)
-    
+
     if (existingScript) {
-      // 스크립트가 이미 있으면 바로 열기
       if (window.daum) {
         openPostalCodeSearch()
       } else {
-        // 스크립트는 있지만 아직 로드 중이면 onload 이벤트 대기
         existingScript.addEventListener('load', openPostalCodeSearch, { once: true })
       }
       return
     }
 
-    // 다음 우편번호 스크립트 로드
     const script = document.createElement('script')
     script.id = POSTCODE_SCRIPT_ID
     script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
@@ -83,11 +103,8 @@ export default function PostalCodeSearch({ onComplete, onClose }: PostalCodeSear
     document.head.appendChild(script)
 
     return () => {
-      // cleanup: 스크립트가 존재하고 우리가 추가한 것인지 확인
       const scriptToRemove = document.getElementById(POSTCODE_SCRIPT_ID)
       if (scriptToRemove && scriptToRemove === script) {
-        // 다른 컴포넌트에서 사용 중일 수 있으므로 제거하지 않음
-        // 대신 이벤트 리스너만 제거
         scriptToRemove.removeEventListener('load', openPostalCodeSearch)
       }
       isOpeningRef.current = false

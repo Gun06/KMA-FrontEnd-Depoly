@@ -27,6 +27,7 @@ import {
   mapLoadedAddressDetail
 } from "../../shared/constants/addressField";
 import { isRegistrationDetailedAddressValid } from "../../shared/utils/validation";
+import { genderToApiEnum, genderToFormValue } from "@/utils/formatRegistration";
 
 interface OwnedRegistrationEditClientProps {
   eventId: string;
@@ -151,7 +152,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
           birthYear: birthParts[0] || '',
           birthMonth: birthParts[1] || '',
           birthDay: birthParts[2] || '',
-          gender: ownedData.gender === 'M' ? 'male' : 'female',
+          gender: genderToFormValue(ownedData.gender),
           phone1: phoneParts[0] || '010',
           phone2: phoneParts[1] || '',
           phone3: phoneParts[2] || '',
@@ -287,7 +288,7 @@ export default function OwnedRegistrationEditClient({ eventId, registrationId }:
               name: formData.name,
               phNum: `${formData.phone1}-${formData.phone2}-${formData.phone3}`,
               email: formatEmail(formData.email1, formData.emailDomain),
-              gender: formData.gender === 'male' ? 'M' : 'F',
+              gender: genderToApiEnum(formData.gender) || 'M',
               guardianPhNum:
                 guardianIsBasedOnOrgLeader
                   ? null

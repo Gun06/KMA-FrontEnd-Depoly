@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -31,7 +31,7 @@ export default function SuccessModal({
       
       {/* 모달 */}
       <div
-        className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4"
         onClick={e => e.stopPropagation()}
       >
         {allowDismissal && (
@@ -47,8 +47,8 @@ export default function SuccessModal({
         {/* 모달 내용 */}
         <div className="p-8 text-center">
           {/* 아이콘 */}
-          <div className="flex justify-center mb-4">
-            <CheckCircle className="w-16 h-16 text-green-500" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <Check className="h-8 w-8 text-green-600" strokeWidth={2.5} />
           </div>
           
           {/* 제목 */}
@@ -65,7 +65,7 @@ export default function SuccessModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full bg-gray-900 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
             확인
           </button>

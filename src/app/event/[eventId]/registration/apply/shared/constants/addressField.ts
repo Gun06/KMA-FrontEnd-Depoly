@@ -26,6 +26,58 @@ export function mapLoadedAddressDetail(detail: string | undefined | null): {
   };
 }
 
+/**
+ * 프로필 등: 예전 가입/수정에서 참고항목(법정동·건물명)이 addressDetail에 들어간 경우
+ * 접수 폼처럼 기본주소 괄호로 옮기고 상세주소는 비운다.
+ */
+export function migrateLegacyAddressFields(
+  address?: string | null,
+  addressDetail?: string | null
+): {
+  address: string;
+  detailedAddress: string;
+  noDetailedAddress: boolean;
+} {
+  const base = (address ?? '').trim();
+  const detail = (addressDetail ?? '').trim();
+
+  if (!base) {
+    return {
+      address: '',
+      ...mapLoadedAddressDetail(detail),
+    };
+  }
+
+  // 이미 접수/다음주소 형식: "... (고척동, 건물명)"
+  if (/\([^)]+\)\s*$/.test(base)) {
+    return {
+      address: base,
+      ...mapLoadedAddressDetail(detail),
+    };
+  }
+
+  // 예전: addressDetail에 "고척동 동양미래대학교"처럼 숫자 없는 참고항목만 저장된 경우
+  const looksLikeDaumReference =
+    detail !== '' &&
+    detail !== ADDRESS_DETAIL_NONE_LABEL &&
+    detail !== ADDRESS_DETAIL_LEGACY_DOT &&
+    !/\d/.test(detail);
+
+  if (looksLikeDaumReference) {
+    const extra = detail.includes(',') ? detail : detail.replace(/\s+/, ', ');
+    return {
+      address: `${base} (${extra})`,
+      detailedAddress: '',
+      noDetailedAddress: false,
+    };
+  }
+
+  return {
+    address: base,
+    ...mapLoadedAddressDetail(detail),
+  };
+}
+
 type RegistrationAddressFormSlice = {
   address: string;
   postalCode: string;

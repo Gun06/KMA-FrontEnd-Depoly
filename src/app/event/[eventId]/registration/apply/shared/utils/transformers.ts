@@ -4,7 +4,7 @@ import { ApiSubmitData } from "../types/common";
 import { GroupFormData, GroupApiRequestData } from "../types/group";
 import { EventRegistrationInfo } from "../types/common";
 import type { EventTermsAgreeRequestItem } from "../types/common";
-import { formatBirthDate, formatPhoneNumber, formatEmail } from "./formatters";
+import { formatBirthDate, formatPhoneNumber, formatEmail, formatGender } from "./formatters";
 import { findCategoryInEventInfo, parseCategoryWithDistance } from "@/components/event/GroupRegistration/utils/participantHelpers";
 import type { ParticipantData } from "../types/group";
 import type { CategorySouvenir } from "../types/common";
@@ -156,7 +156,7 @@ export const transformFormDataToApi = (
             formData.phone3
           ),
           email: formatEmail(formData.email1, formData.emailDomain),
-          gender: formData.gender === 'male' ? 'M' : 'F',
+          gender: formatGender(formData.gender),
           guardianPhNum:
             formData.guardianPhone2?.trim() && formData.guardianPhone3?.trim()
               ? formatPhoneNumber(formData.guardianPhone1, formData.guardianPhone2, formData.guardianPhone3)
@@ -267,7 +267,7 @@ export const transformFormDataToUpdateApi = (
             formData.emailDomain,
             formData.email2
           ),
-          gender: formData.gender === 'male' ? 'M' : 'F',
+          gender: formatGender(formData.gender),
           guardianPhNum:
             formData.guardianPhone2?.trim() && formData.guardianPhone3?.trim()
               ? formatPhoneNumber(formData.guardianPhone1, formData.guardianPhone2, formData.guardianPhone3)

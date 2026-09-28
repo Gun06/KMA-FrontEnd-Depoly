@@ -93,3 +93,14 @@ export function genderToApiEnum(g?: string | null): 'M' | 'F' | '' {
   return '';
 }
 
+/**
+ * 성별을 사용자 폼용 male / female 로 정규화
+ * 알 수 없는 값은 빈 문자열 (여자로 기본값 강제하지 않음)
+ */
+export function genderToFormValue(g?: string | null): 'male' | 'female' | '' {
+  const api = genderToApiEnum(g);
+  if (api === 'M') return 'male';
+  if (api === 'F') return 'female';
+  return '';
+}
+

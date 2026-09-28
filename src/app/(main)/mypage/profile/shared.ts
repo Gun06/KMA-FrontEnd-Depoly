@@ -20,12 +20,46 @@ export interface ProfileResponse {
   pushAlarmAble?: boolean
 }
 
+function pickString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+/** flat string 또는 nested address 객체 모두 지원 */
+function pickAddressFields(user: Record<string, unknown>): {
+  address?: string
+  addressDetail?: string
+  zipCode?: string
+} {
+  if (typeof user.address === 'string') {
+    return {
+      address: user.address,
+      addressDetail: pickString(user.addressDetail),
+      zipCode: pickString(user.zipCode),
+    }
+  }
+
+  if (user.address && typeof user.address === 'object') {
+    const addr = user.address as Record<string, unknown>
+    return {
+      address: pickString(addr.address) ?? pickString(addr.roadAddress),
+      addressDetail: pickString(addr.addressDetail) ?? pickString(user.addressDetail),
+      zipCode: pickString(addr.zipCode) ?? pickString(user.zipCode),
+    }
+  }
+
+  return {
+    addressDetail: pickString(user.addressDetail),
+    zipCode: pickString(user.zipCode),
+  }
+}
+
 export function normalizeProfileResponse(data: unknown): ProfileResponse {
   if (!data || typeof data !== 'object') return {}
   const record = data as Record<string, unknown>
   const user = (record.user && typeof record.user === 'object'
     ? record.user
     : record) as Record<string, unknown>
+  const addressFields = pickAddressFields(user)
 
   return {
     id:
@@ -45,10 +79,9 @@ export function normalizeProfileResponse(data: unknown): ProfileResponse {
     birth: typeof user.birth === 'string' ? user.birth : undefined,
     email: typeof user.email === 'string' ? user.email : undefined,
     gender: typeof user.gender === 'string' ? user.gender : undefined,
-    address: typeof user.address === 'string' ? user.address : undefined,
-    addressDetail:
-      typeof user.addressDetail === 'string' ? user.addressDetail : undefined,
-    zipCode: typeof user.zipCode === 'string' ? user.zipCode : undefined,
+    address: addressFields.address,
+    addressDetail: addressFields.addressDetail,
+    zipCode: addressFields.zipCode,
     pushAlarmAble:
       typeof user.pushAlarmAble === 'boolean'
         ? user.pushAlarmAble

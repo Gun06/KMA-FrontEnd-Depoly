@@ -8,8 +8,14 @@ import DatePicker from '@/app/(main)/signup/step3/DatePicker'
 import PostalCodeSearch from '@/app/(main)/signup/step4/PostalCodeSearch'
 import { userApi } from '@/hooks/api.presets'
 import ErrorModal from '@/components/common/Modal/ErrorModal'
+import SuccessModal from '@/components/common/Modal/SuccessModal'
 import ProfileManageFrame from '../components/ProfileManageFrame'
 import { useMyProfile } from '../shared'
+import { genderToApiEnum, genderToFormValue, normalizePhoneNumber } from '@/utils/formatRegistration'
+import {
+  ADDRESS_DETAIL_NONE_LABEL,
+  migrateLegacyAddressFields,
+} from '@/app/event/[eventId]/registration/apply/shared/constants/addressField'
 
 interface FormData {
   name: string
@@ -22,6 +28,7 @@ interface FormData {
   phoneLast: string
   address: string
   addressDetail: string
+  noDetailedAddress: boolean
   zipCode: string
 }
 
@@ -51,8 +58,60 @@ const emailDomains = [
 ]
 
 const toBirthDisplay = (birth?: string) => (birth ? birth.replace(/-/g, '.') : '')
-const toGenderValue = (gender?: string): '' | 'male' | 'female' =>
-  gender === 'F' ? 'female' : gender === 'M' ? 'male' : ''
+
+const isUsableEmail = (email?: string | null): boolean => {
+  const value = (email ?? '').trim()
+  if (!value || !value.includes('@')) return false
+  if (value.includes('TEMP_EMAIL') || value.includes('NOT_TRUE_VALUE')) return false
+  const [local, domain] = value.split('@')
+  return Boolean(local?.trim() && domain?.trim())
+}
+
+const splitEmail = (email?: string | null): { emailLocal: string; emailDomain: string } => {
+  if (!isUsableEmail(email)) return { emailLocal: '', emailDomain: '' }
+  const [emailLocal = '', emailDomain = ''] = (email ?? '').split('@')
+  return { emailLocal, emailDomain }
+}
+
+const buildEmailPayload = (emailLocal: string, emailDomain: string): string => {
+  const local = emailLocal.trim()
+  const domain = emailDomain.trim()
+  if (!local && !domain) return ''
+  return `${local}@${domain}`
+}
+
+const validateEmailParts = (emailLocal: string, emailDomain: string): string | null => {
+  const local = emailLocal.trim()
+  const domain = emailDomain.trim()
+  if (!local && !domain) return null
+  if (!local || !domain) return '이메일 아이디와 도메인을 모두 입력해 주세요.'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(`${local}@${domain}`)) {
+    return '올바른 이메일 형식을 입력해 주세요.'
+  }
+  return null
+}
+
+const buildAddressDetailPayload = (
+  addressDetail: string,
+  noDetailedAddress: boolean
+): string => {
+  const detail = addressDetail.trim()
+  if (noDetailedAddress || !detail || detail === ADDRESS_DETAIL_NONE_LABEL) return ''
+  return detail
+}
+
+const validateAddressDetail = (
+  addressDetail: string,
+  noDetailedAddress: boolean
+): string | null => {
+  if (noDetailedAddress) return null
+  const detail = addressDetail.trim()
+  if (!detail || detail === ADDRESS_DETAIL_NONE_LABEL) {
+    return '상세주소를 입력해 주세요. 동·호수 등이 없으면 「상세주소가 없습니다」를 체크해 주세요.'
+  }
+  return null
+}
+
 export default function Client() {
   const router = useRouter()
   const { data, isLoading } = useMyProfile()
@@ -76,8 +135,15 @@ export default function Client() {
     token: string
     expiresInSecond?: number
   } | null>(null)
-  const [modal, setModal] = useState({
+  const [modal, setModal] = useState<{
+    isOpen: boolean
+    variant: 'success' | 'error'
+    title: string
+    message: string
+    redirectToProfile?: boolean
+  }>({
     isOpen: false,
+    variant: 'error',
     title: '알림',
     message: '',
   })
@@ -92,29 +158,33 @@ export default function Client() {
     phoneLast: '',
     address: '',
     addressDetail: '',
+    noDetailedAddress: false,
     zipCode: '',
   })
 
   useEffect(() => {
     if (!data) return
-    const emailParts = (data.email ?? '').split('@')
-    const phoneParts = (data.phNum ?? '').split('-')
-    setOriginalPhone(data.phNum ?? '')
+    const { emailLocal, emailDomain } = splitEmail(data.email)
+    const normalizedPhone = normalizePhoneNumber(data.phNum) ?? data.phNum ?? ''
+    const phoneParts = normalizedPhone.split('-')
+    const addressMapped = migrateLegacyAddressFields(data.address, data.addressDetail)
+    setOriginalPhone(normalizedPhone)
     setFormData(prev => ({
       ...prev,
       name: data.name ?? '',
       birthDate: toBirthDisplay(data.birth),
-      gender: toGenderValue(data.gender),
-      emailLocal: emailParts[0] ?? '',
-      emailDomain: emailParts[1] ?? '',
+      gender: genderToFormValue(data.gender),
+      emailLocal,
+      emailDomain,
       phonePrefix: phoneParts[0] ?? '',
       phoneMiddle: phoneParts[1] ?? '',
       phoneLast: phoneParts[2] ?? '',
-      address: data.address ?? '',
-      addressDetail: data.addressDetail ?? '',
+      address: addressMapped.address,
+      addressDetail: addressMapped.detailedAddress,
+      noDetailedAddress: addressMapped.noDetailedAddress,
       zipCode: data.zipCode ?? '',
     }))
-    setIsCustomDomain(Boolean(emailParts[1] && !emailDomains.includes(emailParts[1])))
+    setIsCustomDomain(Boolean(emailDomain && !emailDomains.includes(emailDomain)))
   }, [data])
 
   useEffect(() => {
@@ -170,28 +240,59 @@ export default function Client() {
     if (!confirmPassword.trim()) {
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '입력 확인',
         message: '현재 비밀번호를 입력해 주세요.',
       })
       return
     }
+
+    const emailError = validateEmailParts(formData.emailLocal, formData.emailDomain)
+    if (emailError) {
+      setModal({
+        isOpen: true,
+        variant: 'error',
+        title: '입력 확인',
+        message: emailError,
+      })
+      return
+    }
+
+    const addressDetailError = validateAddressDetail(
+      formData.addressDetail,
+      formData.noDetailedAddress
+    )
+    if (addressDetailError) {
+      setModal({
+        isOpen: true,
+        variant: 'error',
+        title: '입력 확인',
+        message: addressDetailError,
+      })
+      return
+    }
+
     setIsSaving(true)
     try {
       const nextPhone = `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`
       const isPhoneChanged = nextPhone !== (originalPhone || '')
+      const nextEmail = buildEmailPayload(formData.emailLocal, formData.emailDomain)
 
       const response = await userApi.authPatch<ModifyProfileResponse>('/api/v1/user/modify-profile', {
         patchedProfile: {
           birth: formData.birthDate.replace(/\./g, '-'),
           name: formData.name,
           phNum: nextPhone,
-          email: `${formData.emailLocal}@${formData.emailDomain}`,
-          gender: formData.gender === 'female' ? 'F' : 'M',
+          email: nextEmail,
+          gender: genderToApiEnum(formData.gender) || undefined,
         },
         address: {
           address: formData.address,
           zipCode: formData.zipCode,
-          addressDetail: formData.addressDetail,
+          addressDetail: buildAddressDetailPayload(
+            formData.addressDetail,
+            formData.noDetailedAddress
+          ),
         },
         previousPassword: confirmPassword,
       })
@@ -222,8 +323,10 @@ export default function Client() {
         }
         setModal({
           isOpen: true,
+          variant: 'success',
           title: '수정 완료',
           message: '회원정보가 수정되었습니다.',
+          redirectToProfile: true,
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
         setIsPasswordModalOpen(false)
@@ -236,6 +339,7 @@ export default function Client() {
           : '회원정보 수정에 실패했습니다.'
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '수정 실패',
         message,
       })
@@ -252,6 +356,7 @@ export default function Client() {
     if (!pendingOtpInfo) {
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '안내',
         message: '먼저 전화번호 인증 요청을 진행해 주세요.',
       })
@@ -317,6 +422,7 @@ export default function Client() {
     if (!pendingOtpInfo) {
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '안내',
         message: '먼저 전화번호 인증 요청을 진행해 주세요.',
       })
@@ -325,6 +431,7 @@ export default function Client() {
     if (otpTimeLeft <= 0) {
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '시간 만료',
         message: '인증번호 유효 시간이 만료되었습니다. 전화번호 인증 요청을 다시 진행해 주세요.',
       })
@@ -333,6 +440,7 @@ export default function Client() {
     if (!phoneOtpNumber.trim()) {
       setModal({
         isOpen: true,
+        variant: 'error',
         title: '입력 확인',
         message: '전화번호 인증번호를 입력해 주세요.',
       })
@@ -354,8 +462,10 @@ export default function Client() {
         setIsPasswordModalOpen(false)
         setModal({
           isOpen: true,
+          variant: 'success',
           title: '인증 완료',
           message: '전화번호 인증이 완료되어 전화번호 변경 내역이 적용되었습니다.',
+          redirectToProfile: true,
         })
         await queryClient.invalidateQueries({ queryKey: ['mypage', 'profile-info'] })
       } catch (error) {
@@ -365,6 +475,7 @@ export default function Client() {
             : '전화번호 인증 확인에 실패했습니다.'
         setModal({
           isOpen: true,
+          variant: 'error',
           title: '인증 실패',
           message,
         })
@@ -558,7 +669,38 @@ export default function Client() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">상세주소</label>
-                  <input className="w-full max-w-3xl h-11 px-3 rounded-xl border border-gray-200" value={formData.addressDetail} onChange={handleChange('addressDetail')} />
+                  <input
+                    className={`w-full max-w-3xl h-11 px-3 rounded-xl border border-gray-200 ${
+                      formData.noDetailedAddress ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
+                    }`}
+                    placeholder="동·호수·건물명 등"
+                    value={formData.addressDetail}
+                    disabled={formData.noDetailedAddress}
+                    onChange={handleChange('addressDetail')}
+                  />
+                  <label className="mt-2 flex items-start gap-2 cursor-pointer select-none text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.noDetailedAddress}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setFormData(prev => ({
+                          ...prev,
+                          noDetailedAddress: checked,
+                          addressDetail: checked
+                            ? ADDRESS_DETAIL_NONE_LABEL
+                            : prev.addressDetail === ADDRESS_DETAIL_NONE_LABEL
+                              ? ''
+                              : prev.addressDetail,
+                        }))
+                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>
+                      상세주소가 없습니다{' '}
+                      <span className="text-gray-500">(단독주택·번지만 있는 주소 등)</span>
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -697,7 +839,13 @@ export default function Client() {
                 </div>
               </>
             ) : (
-              <>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (isSaving) return
+                  void handleSave()
+                }}
+              >
                 <h3 className="text-base font-bold text-gray-900">비밀번호 확인</h3>
                 <p className="mt-1 text-sm text-gray-600">
                   현재 비밀번호를 입력 후 수정하기를 눌러주세요.
@@ -710,6 +858,7 @@ export default function Client() {
                       className="w-full h-11 px-3 pr-11 rounded-xl border border-gray-200"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
+                      autoFocus
                     />
                     <button
                       type="button"
@@ -731,15 +880,14 @@ export default function Client() {
                     취소
                   </button>
                   <button
-                    type="button"
-                    onClick={() => void handleSave()}
+                    type="submit"
                     disabled={isSaving}
                     className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold disabled:opacity-60"
                   >
                     {isSaving ? '저장 중...' : '수정하기'}
                   </button>
                 </div>
-              </>
+              </form>
             )}
           </div>
         </div>
@@ -747,20 +895,34 @@ export default function Client() {
 
       {showPostalCodeSearch && (
         <PostalCodeSearch
-          onComplete={({ postalCode, address, detailedAddress }) => {
+          onComplete={({ postalCode, address }) => {
+            // 접수/가입과 동일: 기본주소만 채우고 상세주소는 사용자가 직접 입력
             setFormData(prev => ({
               ...prev,
               zipCode: postalCode,
               address,
-              addressDetail: prev.addressDetail || detailedAddress || '',
+              addressDetail: '',
+              noDetailedAddress: false,
             }))
             setShowPostalCodeSearch(false)
           }}
           onClose={() => setShowPostalCodeSearch(false)}
         />
       )}
+      <SuccessModal
+        isOpen={modal.isOpen && modal.variant === 'success'}
+        onClose={() => {
+          const shouldRedirect = modal.redirectToProfile
+          setModal(prev => ({ ...prev, isOpen: false, redirectToProfile: false }))
+          if (shouldRedirect) {
+            router.push('/mypage/profile')
+          }
+        }}
+        title={modal.title}
+        message={modal.message}
+      />
       <ErrorModal
-        isOpen={modal.isOpen}
+        isOpen={modal.isOpen && modal.variant === 'error'}
         onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
         title={modal.title}
         message={modal.message}

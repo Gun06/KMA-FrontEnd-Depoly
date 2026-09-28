@@ -12,6 +12,7 @@ import { formatError } from '../utils/errorHandler';
 import { mapLoadedAddressDetail } from '../constants/addressField';
 import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
 import { parseRegistrationFlowResponse } from '../utils/registrationFlow';
+import { genderToFormValue } from '@/utils/formatRegistration';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
 
@@ -183,7 +184,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
             birthYear: birthParts[0] || '',
             birthMonth: birthParts[1] || '',
             birthDay: birthParts[2] || '',
-            gender: editData.gender === 'M' ? 'male' : 'female',
+            gender: genderToFormValue(editData.gender),
             jeonmahyupId: editData.personalAccount || '',
             postalCode: editData.zipCode || '',
             address: baseAddress,
@@ -613,7 +614,7 @@ export const useIndividualForm = (eventId: string, eventInfo: EventRegistrationI
       birthYear: birthParts[0] || '',
       birthMonth: birthParts[1] || '',
       birthDay: birthParts[2] || '',
-      gender: userData.gender === '남자' ? 'male' : 'female',
+      gender: genderToFormValue(userData.gender),
       postalCode: userData.address?.zipCode || '',
       address: fullAddress,
       detailedAddress: addressDetailMapped.detailedAddress,

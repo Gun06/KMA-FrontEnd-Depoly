@@ -12,6 +12,7 @@ import { stripClosureSuffix } from '@/components/event/GroupRegistration/utils/p
 import { loadEventTermsAgreement } from '../utils/eventTermsAgreement';
 import { parseRegistrationFlowResponse } from '../utils/registrationFlow';
 import { useRouter } from 'next/navigation';
+import { genderToFormValue } from '@/utils/formatRegistration';
 
 const isEditPasswordValid = (password: string) => password.length >= 4 && !/\s/.test(password);
 
@@ -141,7 +142,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
 
               return {
                 name: participant.name || '',
-                gender: participant.gender === 'M' ? 'male' : 'female',
+                gender: genderToFormValue(participant.gender),
                 birthYear: participant.birth?.split('-')[0] || '',
                 birthMonth: participant.birth?.split('-')[1] || '',
                 birthDay: participant.birth?.split('-')[2] || '',

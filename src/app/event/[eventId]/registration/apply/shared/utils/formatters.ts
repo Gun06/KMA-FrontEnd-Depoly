@@ -74,8 +74,10 @@ export const formatEmail = (email1: string, emailDomain: string, email2?: string
 };
 
 // 성별을 M/F로 변환
-export const formatGender = (gender: 'male' | 'female'): string => {
-  return gender === 'male' ? 'M' : 'F';
+export const formatGender = (gender: 'male' | 'female' | ''): string => {
+  if (gender === 'male') return 'M';
+  if (gender === 'female') return 'F';
+  return '';
 };
 
 // 주소 정보 파싱

@@ -50,6 +50,27 @@ function normalizeProfileResponse(data: unknown): ProfileResponse {
     ? record.user
     : record) as Record<string, unknown>
 
+  const pickString = (value: unknown): string | undefined =>
+    typeof value === 'string' ? value : undefined
+
+  let address: string | undefined
+  let addressDetail: string | undefined
+  let zipCode: string | undefined
+
+  if (typeof user.address === 'string') {
+    address = user.address
+    addressDetail = pickString(user.addressDetail)
+    zipCode = pickString(user.zipCode)
+  } else if (user.address && typeof user.address === 'object') {
+    const addr = user.address as Record<string, unknown>
+    address = pickString(addr.address) ?? pickString(addr.roadAddress)
+    addressDetail = pickString(addr.addressDetail) ?? pickString(user.addressDetail)
+    zipCode = pickString(addr.zipCode) ?? pickString(user.zipCode)
+  } else {
+    addressDetail = pickString(user.addressDetail)
+    zipCode = pickString(user.zipCode)
+  }
+
   return {
     id: typeof user.id === 'string' ? user.id : undefined,
     account: typeof user.account === 'string' ? user.account : undefined,
@@ -58,10 +79,9 @@ function normalizeProfileResponse(data: unknown): ProfileResponse {
     birth: typeof user.birth === 'string' ? user.birth : undefined,
     email: typeof user.email === 'string' ? user.email : undefined,
     gender: typeof user.gender === 'string' ? user.gender : undefined,
-    address: typeof user.address === 'string' ? user.address : undefined,
-    addressDetail:
-      typeof user.addressDetail === 'string' ? user.addressDetail : undefined,
-    zipCode: typeof user.zipCode === 'string' ? user.zipCode : undefined,
+    address,
+    addressDetail,
+    zipCode,
     pushAlarmAble:
       typeof user.pushAlarmAble === 'boolean'
         ? user.pushAlarmAble
@@ -154,8 +174,8 @@ export default function Client() {
 
   const toGenderValue = (gender?: string): '' | 'male' | 'female' => {
     if (!gender) return ''
-    if (gender === 'M') return 'male'
-    if (gender === 'F') return 'female'
+    if (gender === 'M' || gender === 'male' || gender.startsWith('남')) return 'male'
+    if (gender === 'F' || gender === 'female' || gender.startsWith('여')) return 'female'
     return ''
   }
 
@@ -233,8 +253,11 @@ export default function Client() {
   ]
 
   const toBirthPayload = (birthDate: string) => birthDate.replace(/\./g, '-')
-  const toGenderPayload = (gender: '' | 'male' | 'female'): 'M' | 'F' =>
-    gender === 'female' ? 'F' : 'M'
+  const toGenderPayload = (gender: '' | 'male' | 'female'): 'M' | 'F' | undefined => {
+    if (gender === 'female') return 'F'
+    if (gender === 'male') return 'M'
+    return undefined
+  }
   const toPhonePayload = () =>
     `${formData.phonePrefix}-${formData.phoneMiddle}-${formData.phoneLast}`
   const toEmailPayload = () => `${formData.emailLocal}@${formData.emailDomain}`
