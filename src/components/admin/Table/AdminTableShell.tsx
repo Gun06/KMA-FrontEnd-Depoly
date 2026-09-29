@@ -31,6 +31,8 @@ type Props<T> = {
   emptyMessage?: string;
   /** 흰 카드 안에 들어가는 조밀한 목록. 페이지 번호는 하단 한 줄 */
   dense?: boolean;
+  /** 가로 스크롤 없이 폭에 맞춤. BaseTable fit 참고 */
+  fit?: boolean;
 };
 
 export default function AdminTableShell<T>({
@@ -52,6 +54,7 @@ export default function AdminTableShell<T>({
   loadingMessage,
   emptyMessage,
   dense = false,
+  fit = false,
 }: Props<T>) {
   const minH = contentMinHeight 
     ? (typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight)
@@ -110,6 +113,7 @@ export default function AdminTableShell<T>({
           zebra={false}
           allowTextSelection={allowTextSelection}
           dense={dense}
+          fit={fit}
           hideTopBorder={dense}
           {...(minWidth ? { minWidth } : {})}
         />

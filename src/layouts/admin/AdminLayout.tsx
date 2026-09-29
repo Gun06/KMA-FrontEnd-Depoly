@@ -13,6 +13,7 @@ import { tokenService } from '@/utils/tokenService';
 import { navigationGuard } from '@/utils/navigationGuard';
 
 const CARD_LIST_ROUTES = [
+  /^\/admin$/,
   /^\/admin\/applications\/management(\/[^/]+)?$/,
   /^\/admin\/applications\/cash-receipt$/,
   /^\/admin\/events\/management$/,

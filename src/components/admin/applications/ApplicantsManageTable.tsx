@@ -319,7 +319,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
           />
         </div>
       ),
-      width: 40, align: 'center', headerAlign: 'center',
+      width: 40, align: 'center', headerAlign: 'center', className: '!px-2', headerClassName: '!px-2',
       render: (r) => {
         const rowChecked = controlled ? (selectedIds as string[]).includes(r.id) : !!localChecked[r.id];
         return (
@@ -337,9 +337,9 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         );
       },
     },
-    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
+    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500', hideBelow: '2xl' },
     {
-      key: 'name', header: '성명', width: 90, align: 'center',
+      key: 'name', header: '성명', width: 80, align: 'center',
       render: (r) => isRowEditing(r.id)
         ? <input 
             className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
@@ -351,19 +351,19 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         : r.name,
     },
     {
-      key: 'org', header: '단체명', width: 140, align: 'center',
+      key: 'org', header: '단체명', align: 'center',
       render: (r) => {
         const org = (r.org ?? '').trim();
         if (!org || org === '개인') return '-';
-        return <span className="mx-auto block max-w-[160px] truncate" title={org}>{org}</span>;
+        return <span className="block truncate" title={org}>{org}</span>;
       }, // 읽기 전용 - API에서 수정 불가
     },
     {
       key: 'course', header: '코스', width: 120, align: 'center',
-      render: (r) => r.course, // 읽기 전용 - API에서 수정 불가
+      render: (r) => <span className="block truncate" title={r.course}>{r.course}</span>,
     },
     {
-      key: 'gender', header: '성별', width: 56, align: 'center',
+      key: 'gender', header: '성별', width: 56, align: 'center', hideBelow: 'xl',
       render: (r) => isRowEditing(r.id)
         ? <DropdownPortal
             value={String((drafts[r.id]?.gender ?? r.gender))}
@@ -386,16 +386,17 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         : r.birth,
     },
     {
-      key: 'eventName', header: '대회명', width: 220, align: 'center',
+      key: 'eventName', header: '대회명', align: 'center', hideBelow: '2xl',
       render: (r) => r.eventName
-        ? <span className="mx-auto block max-w-[240px] truncate" title={r.eventName}>{r.eventName}</span>
+        ? <span className="block truncate" title={r.eventName}>{r.eventName}</span>
         : '-',
     },
     {
       key: 'regDate',
       header: '신청일시',
-      width: 110,
+      width: 104,
       align: 'center',
+      hideBelow: 'xl',
       render: (r) => {
         const dateOnly = (() => {
           const parsed = new Date(r.regDate);
@@ -414,11 +415,11 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
       },
     },
     {
-      key: 'fee', header: '금액', width: 88, align: 'center',
+      key: 'fee', header: '금액', width: 80, align: 'center',
       render: (r) => r.fee.toLocaleString(), // 읽기 전용 - API에서 수정 불가
     },
     {
-      key: 'memo', header: '메모', width: 200, align: 'left',
+      key: 'memo', header: '메모', align: 'left',
       className: 'border-l border-gray-200',
       render: (r) => isRowEditing(r.id)
         ? <input 
@@ -429,14 +430,14 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
             data-stop-bubble="true"
             placeholder="메모 입력"
           />
-        : <span className="block max-w-[220px] truncate" title={r.memo ?? ''}>{r.memo ?? ''}</span>,
+        : <span className="block truncate" title={r.memo ?? ''}>{r.memo ?? ''}</span>,
     },
     {
       key: 'account',
       header: '입금자명',
-      width: 100,
+      width: 90,
       align: 'center',
-      render: (r) => r.account || '-',
+      render: (r) => <span className="block truncate" title={r.account || undefined}>{r.account || '-'}</span>,
     },
     {
       key: 'paid', header: '입금여부', width: 100, align: 'center',
@@ -632,7 +633,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
             ),
           },
         }}
-        minWidth={1280}
+        fit
         allowTextSelection={true}
       />
     </div>

@@ -113,9 +113,9 @@ function getLineChartAxisIndices(total: number, maxLabels = 12): number[] {
 }
 
 const DATE_FIELD_BOX =
-  'h-10 w-[10.5rem] min-w-[10.5rem] max-w-[10.5rem] shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white';
+  'h-9 w-[10.5rem] min-w-[10.5rem] max-w-[10.5rem] shrink-0 overflow-hidden rounded-md border border-slate-200 bg-white';
 const DATE_INPUT_CLASS =
-  'box-border h-full w-full min-w-full max-w-full appearance-none bg-transparent px-3 text-sm tabular-nums text-slate-900 [color-scheme:light]';
+  'box-border h-full w-full min-w-full max-w-full appearance-none bg-transparent px-3 text-[13px] tabular-nums text-slate-900 [color-scheme:light]';
 const DATE_LABEL_CLASS =
   'flex w-[10.5rem] min-w-[10.5rem] shrink-0 flex-col gap-1 text-xs font-medium text-slate-600';
 
@@ -374,7 +374,7 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
 
   return (
     <section
-      className={`relative rounded-2xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm ${isAlignedLayout ? 'flex min-h-0 flex-col' : ''
+      className={`relative rounded-lg border border-gray-200 bg-white ${isAlignedLayout ? 'flex min-h-0 flex-col' : ''
         }`}
       style={
         isAlignedLayout
@@ -382,15 +382,15 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
           : undefined
       }
     >
-      <div className="absolute -top-3 left-4 z-10 bg-white px-2 py-0 text-sm font-extrabold leading-normal text-slate-800">
-        방문자 현황
+      <div className="shrink-0 border-b border-gray-200 px-4 py-3">
+        <h3 className="text-[15px] font-semibold text-gray-900">방문자 현황</h3>
       </div>
 
       <div
         className={
           isAlignedLayout
-            ? 'flex min-h-0 flex-1 flex-col gap-4 pt-0.5'
-            : 'space-y-4'
+            ? 'flex min-h-0 flex-1 flex-col gap-3 p-4'
+            : 'space-y-3 p-4'
         }
       >
         <div
@@ -455,7 +455,7 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
                 key={preset.label}
                 type="button"
                 onClick={() => applyPreset(preset.days)}
-                className={`h-10 rounded-lg border px-2.5 text-xs font-semibold transition-colors ${activePreset === preset.label
+                className={`h-9 rounded-md border px-2.5 text-xs font-semibold transition-colors ${activePreset === preset.label
                     ? 'border-blue-600 bg-blue-600 text-white'
                     : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100'
                   }`}
@@ -720,16 +720,16 @@ export default function VisitorTrendPanel({ panelHeight }: VisitorTrendPanelProp
                     <div
                       key={item.date}
                       role="row"
-                      className={`flex items-center justify-between gap-4 rounded-xl border px-4 py-2.5 shadow-sm transition-colors ${active
+                      className={`flex items-center justify-between gap-4 rounded-md border px-3 py-2 transition-colors ${active
                           ? 'border-blue-200 bg-blue-50'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
                         }`}
                       onMouseEnter={() => focusTrendItem(item)}
                     >
-                      <span className="text-sm font-medium text-slate-700">
+                      <span className="text-[13px] font-medium text-slate-700">
                         {formatListDate(item.date)}
                       </span>
-                      <span className="shrink-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1 text-sm font-bold tabular-nums text-slate-900">
+                      <span className="shrink-0 text-[13px] font-bold tabular-nums text-slate-900">
                         {item.count.toLocaleString()}
                         <span className="ml-0.5 text-xs font-medium text-slate-500">명</span>
                       </span>

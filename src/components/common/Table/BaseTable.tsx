@@ -13,7 +13,15 @@ export type Column<T> = {
   headerAlign?: "left" | "center" | "right";
   className?: string;
   headerClassName?: string;
+  /** 이 폭 미만에서 열 숨김 */
+  hideBelow?: "lg" | "xl" | "2xl";
   render?: (row: T, index: number) => React.ReactNode;
+};
+
+const HIDE_BELOW: Record<NonNullable<Column<unknown>["hideBelow"]>, string> = {
+  lg: "hidden lg:table-cell",
+  xl: "hidden xl:table-cell",
+  "2xl": "hidden 2xl:table-cell",
 };
 
 type Props<T> = {
@@ -30,6 +38,8 @@ type Props<T> = {
   allowTextSelection?: boolean;
   /** 관리자 카드형 목록: 한 줄 높이, 줄바꿈 없음 */
   dense?: boolean;
+  /** 컨테이너 폭에 맞춤(table-fixed). width 없는 열이 남는 폭을 나눠 가짐 */
+  fit?: boolean;
 };
 
 export default function BaseTable<T>({
@@ -45,6 +55,7 @@ export default function BaseTable<T>({
   hideHeader = false,
   allowTextSelection = false,
   dense = false,
+  fit = false,
 }: Props<T>) {
   const thAlign = (a?: "left" | "center" | "right") =>
     a === "left" ? "text-left" : a === "right" ? "text-right" : "text-center";
@@ -55,8 +66,8 @@ export default function BaseTable<T>({
   return (
     <div className="hidden md:block w-full overflow-x-auto">
       <table
-        className={clsx("w-full", hideTopBorder ? "" : "border-t border-[#E5E7EB]")}
-        style={minWidth ? { minWidth } : undefined}
+        className={clsx("w-full", fit && "table-fixed", hideTopBorder ? "" : "border-t border-[#E5E7EB]")}
+        style={minWidth && !fit ? { minWidth } : undefined}
       >
         <thead className={hideHeader ? "h-0 p-0 m-0" : ""}>
           <tr className={clsx(headRowClassName, hideHeader ? "h-0 p-0 m-0" : "")}>
@@ -73,6 +84,8 @@ export default function BaseTable<T>({
                       : "h-12 px-2.5 lg:px-3.5 font-medium",
                   // ✅ 헤더는 기본 '가운데'. 필요하면 column.headerAlign으로 개별 지정
                   thAlign(c.headerAlign ?? "center"),
+                  fit && "overflow-hidden text-ellipsis",
+                  c.hideBelow && HIDE_BELOW[c.hideBelow],
                   c.headerClassName
                 )}
               >
@@ -130,6 +143,8 @@ export default function BaseTable<T>({
                         : "px-2.5 lg:px-3.5 py-3 text-[14px]",
                       // ✅ 본문은 기본 '왼쪽'. 필요하면 column.align으로 개별 지정
                       tdAlign(c.align ?? "left"),
+                      fit && "overflow-hidden text-ellipsis",
+                      c.hideBelow && HIDE_BELOW[c.hideBelow],
                       c.className
                     )}
                   >
