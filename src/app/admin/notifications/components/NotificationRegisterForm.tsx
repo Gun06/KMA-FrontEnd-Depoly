@@ -122,45 +122,72 @@ export default function NotificationRegisterForm({
   };
 
   return (
-    <div className="w-full">
-      {/* 페이지 헤더 */}
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-gray-900">알림 등록</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          {formData.targetType === "event"
-            ? "대회 신청자에게 알림을 전송합니다."
-            : "전체 유저에게 알림을 전송합니다."}
-        </p>
-      </div>
+    <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="rounded-lg border border-gray-200 bg-white">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-gray-200 px-4 py-3">
+            <h3 className="text-[15px] font-semibold text-gray-900">알림 등록</h3>
+            <p className="text-[13px] text-gray-500">
+              {formData.targetType === "event"
+                ? "대회 신청자에게 알림을 전송합니다."
+                : "전체 유저에게 알림을 전송합니다."}
+            </p>
+          </div>
 
-      {/* 알림 등록 폼 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <NotificationForm
-          formData={formData}
-          onChange={setFormData}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          hideTargetSelection={hideTargetSelection}
-        />
+          <div className="px-4 py-4">
+            <NotificationForm
+              formData={formData}
+              onChange={setFormData}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              hideTargetSelection={hideTargetSelection}
+            />
+          </div>
 
-        {/* 버튼 영역 */}
-        <div className="mt-8 flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
-          <Button
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-            className="px-6 py-2"
-          >
-            취소
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !formData.title || !formData.content}
-            className="px-6 py-2"
-          >
-            {isSubmitting ? "전송 중..." : "알림 전송"}
-          </Button>
-        </div>
+          <div className="flex items-center justify-end gap-2 rounded-b-lg border-t border-gray-200 bg-gray-50/60 px-4 py-3">
+            <Button
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className="!h-9 !px-4 !text-[13px]"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !formData.title || !formData.content}
+              className="!h-9 !px-4 !text-[13px]"
+            >
+              {isSubmitting ? "전송 중..." : "알림 전송"}
+            </Button>
+          </div>
+        </section>
+
+        <aside className="rounded-lg border border-gray-200 bg-white xl:sticky xl:top-16">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <h3 className="text-[15px] font-semibold text-gray-900">푸시 미리보기</h3>
+          </div>
+          <div className="bg-gray-50/60 p-4">
+            <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] text-gray-500">
+                <span className="flex h-4 w-4 items-center justify-center rounded bg-[#1E5EFF] text-[9px] font-bold text-white">
+                  전
+                </span>
+                전마협
+                <span className="ml-auto">지금</span>
+              </div>
+              <p className="truncate text-[13px] font-semibold text-gray-900">
+                {formData.title || "알림 제목"}
+              </p>
+              <p className="mt-0.5 line-clamp-3 whitespace-pre-line text-[12px] leading-[18px] text-gray-600">
+                {formData.content || "알림 내용이 여기에 표시됩니다."}
+              </p>
+            </div>
+            <p className="mt-3 text-[12px] text-gray-500">
+              기기·OS에 따라 제목과 내용이 잘려 보일 수 있습니다.
+            </p>
+          </div>
+        </aside>
       </div>
 
       {/* 성공 모달 */}
@@ -180,6 +207,6 @@ export default function NotificationRegisterForm({
         message={errorModal.message}
         onClose={() => setErrorModal({ isOpen: false, message: "" })}
       />
-    </div>
+    </main>
   );
 }

@@ -60,6 +60,11 @@ export default function NotificationForm({
     []
   );
 
+  const labelCls = "mb-1.5 flex items-center text-[13px] font-medium text-gray-700";
+  const inputCls =
+    "w-full rounded-md border border-gray-300 px-3 text-[13px] placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  const selectCls = "w-full [&>button]:!h-9 [&>button]:!text-[13px]";
+
   const handleChange = (
     field: keyof NotificationFormData,
     value: string | number | undefined
@@ -68,47 +73,46 @@ export default function NotificationForm({
   };
 
   return (
-    <div className="space-y-6">
-      {/* 대상 선택 */}
+    <div className="space-y-4">
       {!hideTargetSelection && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            전송 대상 <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="targetType"
-                value="all"
-                checked={formData.targetType === "all"}
-                onChange={(e) => handleChange("targetType", e.target.value)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">전체 유저</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="targetType"
-                value="event"
-                checked={formData.targetType === "event"}
-                onChange={(e) => handleChange("targetType", e.target.value)}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">대회별 전송</span>
-            </label>
+          <div className={labelCls}>
+            전송 대상 <span className="ml-0.5 text-red-500">*</span>
+          </div>
+          <div className="inline-flex rounded-md border border-gray-200 bg-gray-50 p-0.5" role="radiogroup">
+            {([
+              { value: "all", label: "전체 유저" },
+              { value: "event", label: "대회별 전송" },
+            ] as const).map((opt) => {
+              const active = formData.targetType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => handleChange("targetType", opt.value)}
+                  className={`h-8 rounded px-4 text-[13px] transition-colors ${
+                    active
+                      ? "bg-white font-semibold text-[#1E5EFF] shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* 대회 선택 및 결제 상태 선택 (대회별 전송일 경우) */}
       {formData.targetType === "event" && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              대회 선택 <span className="text-red-500">*</span>
-            </label>
+            <div className={labelCls}>
+              대회 선택 <span className="ml-0.5 text-red-500">*</span>
+            </div>
             <SearchableSelect<string | number>
               value={formData.eventId || null}
               options={eventOptions}
@@ -124,7 +128,7 @@ export default function NotificationForm({
               }
               searchable
               searchPlaceholder="대회명 검색..."
-              className="w-full"
+              className={selectCls}
               onSearchChange={setEventSearchKeyword}
               onLoadMore={() => {
                 void fetchNextPage();
@@ -140,9 +144,7 @@ export default function NotificationForm({
 
           {formData.eventId && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                결제 상태 선택
-              </label>
+              <div className={labelCls}>결제 상태 선택</div>
               <SearchableSelect
                 value={formData.paymentStatus || ""}
                 options={paymentStatusOptions}
@@ -151,9 +153,9 @@ export default function NotificationForm({
                 }
                 placeholder="전체 신청자"
                 searchable={false}
-                className="w-full"
+                className={selectCls}
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-[12px] text-gray-500">
                 결제 상태를 선택하지 않으면 해당 대회의 모든 신청자에게
                 전송됩니다.
               </p>
@@ -164,33 +166,36 @@ export default function NotificationForm({
 
       {/* 제목 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          제목 <span className="text-red-500">*</span>
-        </label>
+        <div className={labelCls}>
+          제목 <span className="ml-0.5 text-red-500">*</span>
+          <span className="ml-auto text-[12px] font-normal text-gray-400">
+            {formData.title.length}/100자
+          </span>
+        </div>
         <input
           type="text"
           value={formData.title}
           onChange={(e) => handleChange("title", e.target.value)}
           placeholder="알림 제목을 입력하세요"
-          className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`${inputCls} h-9`}
           maxLength={100}
         />
-        <p className="mt-1 text-xs text-gray-500">
-          {formData.title.length}/100자
-        </p>
       </div>
 
       {/* 내용 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          내용 <span className="text-red-500">*</span>
-        </label>
+        <div className={labelCls}>
+          내용 <span className="ml-0.5 text-red-500">*</span>
+          <span className="ml-auto text-[12px] font-normal text-gray-400">
+            {formData.content.length}자
+          </span>
+        </div>
         <textarea
           value={formData.content}
           onChange={(e) => handleChange("content", e.target.value)}
           placeholder="알림 내용을 입력하세요"
-          rows={6}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          rows={8}
+          className={`${inputCls} resize-y py-2 leading-5`}
         />
       </div>
     </div>

@@ -28,7 +28,8 @@ const CARD_LIST_ROUTES = [
   /^\/admin\/banners\/(popups|main|closing-marathon|sponsors)$/,
   /^\/admin\/banners\/popups\/(main|events\/[^/]+)$/,
   /^\/admin\/galleries$/,
-  /^\/admin\/notifications(\/all|\/events\/[^/]+)?$/,
+  /^\/admin\/settings\/phone-auth-policy$/,
+  /^\/admin\/notifications(\/all|\/events\/[^/]+)?(\/register)?$/,
 ];
 
 interface AdminLayoutProps {
@@ -221,8 +222,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </>
         )}
-        <div className="w-full border-t border-gray-200" />
-        <AdminFooter />
+        <AdminFooter muted={isCardListRoute} />
       </div>
     </div>
   );
