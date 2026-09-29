@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import type { EventStatisticsResponse } from '../types';
+import { cn } from '@/utils/cn';
 import { formatNumber, formatGenderPercentage, parseCategoryParticipants } from '../utils';
 
 interface StatisticsDisplayProps {
@@ -12,9 +13,12 @@ interface StatisticsDisplayProps {
   distanceData?: EventStatisticsResponse;
   defaultDistanceExpanded?: boolean;
   showSideBanner?: boolean; // 공개 페이지에서만 배너 표시
+  /** 관리자 카드형 레이아웃 */
+  dense?: boolean;
 }
 
-export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false, showSideBanner = false }: StatisticsDisplayProps) {
+export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false, showSideBanner = false, dense = false }: StatisticsDisplayProps) {
+  const cardRound = dense ? 'rounded-lg' : 'rounded-2xl shadow-sm';
   const [isDistanceExpanded, setIsDistanceExpanded] = useState(defaultDistanceExpanded);
   const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
@@ -115,7 +119,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
           return (
             <div
               key={`participant-${index}`}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              className={cn(cardRound, 'border border-slate-200 bg-white p-4')}
             >
               <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
                 <h4 className="text-sm font-semibold text-slate-900">
@@ -196,24 +200,29 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
   };
 
   return (
-    <div className="space-y-5">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-900/10 bg-slate-900 px-5 py-5 text-white shadow-xl shadow-slate-900/10 md:px-6">
+    <div className={dense ? 'space-y-3' : 'space-y-5'}>
+      <div
+        className={cn(
+          'relative overflow-hidden border border-slate-900/10 bg-slate-900 text-white',
+          dense ? 'rounded-lg px-4 py-4' : 'rounded-3xl px-5 py-5 shadow-xl shadow-slate-900/10 md:px-6'
+        )}
+      >
         {/* 콘텐츠 */}
         <div className="relative z-10">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <p className="text-xs font-medium text-slate-300">EVENT OVERVIEW</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+              <h2 className={cn('mt-1 font-semibold tracking-tight', dense ? 'text-xl' : 'text-2xl md:text-3xl')}>
                 {data.eventName || '-'}
               </h2>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className={cn('flex flex-wrap items-center gap-2', dense ? 'mt-3' : 'mt-4')}>
                 {data.todayParticipants && (
-                  <span className="rounded-full bg-blue-500/20 px-4 py-1.5 text-sm font-medium text-blue-200">
+                  <span className={cn('rounded-full bg-blue-500/20 font-medium text-blue-200', dense ? 'px-3 py-1 text-[13px]' : 'px-4 py-1.5 text-sm')}>
                     오늘 참가자 +{formatNumber(data.todayParticipants)}명
                   </span>
                 )}
                 {data.todayRefundRequest && (
-                  <span className="rounded-full bg-purple-500/20 px-4 py-1.5 text-sm font-medium text-purple-200">
+                  <span className={cn('rounded-full bg-purple-500/20 font-medium text-purple-200', dense ? 'px-3 py-1 text-[13px]' : 'px-4 py-1.5 text-sm')}>
                     오늘 환불자 +{formatNumber(data.todayRefundRequest)}명
                   </span>
                 )}
@@ -223,8 +232,8 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-8">
+      <div className={cn('grid grid-cols-1 xl:grid-cols-12', dense ? 'gap-3' : 'gap-4')}>
+        <div className={cn(cardRound, 'border border-slate-200 bg-white p-4', dense ? 'xl:col-span-6' : 'xl:col-span-8')}>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-900">핵심 지표</h3>
             <span className="text-xs text-slate-500">실시간 집계 기준</span>
@@ -275,7 +284,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:col-span-4">
+        <div className={cn(cardRound, 'border border-slate-200 bg-white p-4', dense ? 'xl:col-span-6' : 'xl:col-span-4')}>
           <h3 className="text-sm font-semibold text-slate-900">인사이트</h3>
           <div className="mt-4 space-y-4">
             {/* 사이드 배너 - 인사이트 섹션 상단에 배치 */}
@@ -285,7 +294,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
                 <img
                   src={data.sideBannerImageUrl}
                   alt="이벤트 배너"
-                  className="max-h-40 w-full rounded-lg object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                  className={cn('w-full rounded-lg object-contain cursor-pointer hover:opacity-80 transition-opacity', dense ? 'max-h-56' : 'max-h-40')}
                   onClick={() => setIsBannerModalOpen(true)}
                 />
               </div>
@@ -383,7 +392,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
 
       {/* 종목별 참가자 통계 */}
       {distanceParticipants.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className={cn(cardRound, 'overflow-hidden border border-slate-200 bg-white')}>
           <button
             type="button"
             className="flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800"
@@ -411,7 +420,7 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
 
       {/* 카테고리별 참가자 통계 (기본 접힘) */}
       {data.eventCategoryParticipants && data.eventCategoryParticipants.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className={cn(cardRound, 'overflow-hidden border border-slate-200 bg-white')}>
           <button
             type="button"
             className="flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800"

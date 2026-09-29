@@ -27,36 +27,37 @@ export default function StatisticsClient() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">통계 확인</h1>
-        <p className="text-gray-600 mt-2">
-          대회를 선택하여 신청 내역 통계를 확인하세요.
-        </p>
+    <main className="mx-auto w-full max-w-[1920px] space-y-3 px-4 py-4">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold text-gray-900">통계 확인</h3>
+          <p className="text-[13px] text-gray-500">
+            대회를 선택하여 신청 내역 통계를 확인하세요.
+          </p>
+        </div>
+        <div className="px-4 py-3">
+          <EventSelector
+            selectedEventId={selectedEventId}
+            onSelectEvent={handleSelectEvent}
+          />
+        </div>
       </div>
 
-      <EventSelector
-        selectedEventId={selectedEventId}
-        onSelectEvent={handleSelectEvent}
-      />
-
       {!selectedEventId && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-gray-500">
-            위에서 대회를 선택하면 통계 정보가 표시됩니다.
-          </p>
+        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+          위에서 대회를 선택하면 통계 정보가 표시됩니다.
         </div>
       )}
 
       {selectedEventId && (isLoading || isDistanceLoading) && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500">통계 데이터를 불러오는 중...</div>
+        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+          통계 데이터를 불러오는 중...
         </div>
       )}
 
       {selectedEventId && (error || distanceError) && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="text-red-800 font-medium mb-2">오류 발생</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm">
+          <div className="mb-1 font-medium text-red-800">오류 발생</div>
           <div className="text-red-600">
             통계 데이터를 불러오는 중 오류가 발생했습니다.
             {(error instanceof Error && ` (${error.message})`) ||
@@ -70,8 +71,9 @@ export default function StatisticsClient() {
           data={statisticsData}
           distanceData={distanceStatisticsData}
           showSideBanner={true}
+          dense
         />
       )}
-    </div>
+    </main>
   );
 }

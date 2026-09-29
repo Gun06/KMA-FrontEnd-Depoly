@@ -44,48 +44,43 @@ export default function EventSelector({
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-red-500">
-          대회 목록을 불러오는 중 오류가 발생했습니다.
-        </div>
-      </div>
+      <p className="text-[13px] text-red-500">
+        대회 목록을 불러오는 중 오류가 발생했습니다.
+      </p>
     );
   }
 
   return (
-    <div className="mb-8">
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        대회 선택
-      </label>
-      <div className="w-full max-w-4xl">
-        <SearchableSelect
-          value={selectedEventId || null}
-          options={selectOptions}
-          onChange={(value) => {
-            onSelectEvent(value || '');
-            setSelectedEventLabel(
-              selectOptions.find((o) => o.value === value)?.label ?? null
-            );
-          }}
-          placeholder={
-            eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
-          }
-          searchable
-          searchPlaceholder="대회명 검색..."
-          showPlaceholderColor={false}
-          maxHeight="max-h-96"
-          onSearchChange={setEventSearchKeyword}
-          onLoadMore={() => {
-            void fetchNextPage();
-          }}
-          hasMore={hasMore}
-          isLoadingMore={isLoadingMore}
-          loadMoreLabel={loadMoreLabel}
-          emptyMessage={
-            eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
-          }
-        />
-      </div>
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="shrink-0 text-[13px] font-medium text-gray-700">대회 선택</span>
+      <SearchableSelect
+        className="w-full max-w-[640px] [&>button]:!h-9 [&>button]:!text-[13px]"
+        value={selectedEventId || null}
+        options={selectOptions}
+        onChange={(value) => {
+          onSelectEvent(value || '');
+          setSelectedEventLabel(
+            selectOptions.find((o) => o.value === value)?.label ?? null
+          );
+        }}
+        placeholder={
+          eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
+        }
+        searchable
+        searchPlaceholder="대회명 검색..."
+        showPlaceholderColor={false}
+        maxHeight="max-h-96"
+        onSearchChange={setEventSearchKeyword}
+        onLoadMore={() => {
+          void fetchNextPage();
+        }}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        loadMoreLabel={loadMoreLabel}
+        emptyMessage={
+          eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
+        }
+      />
     </div>
   );
 }

@@ -46,6 +46,14 @@ function userVisibilityOutline(v: string) {
 const USER_MOBILE_REG_BADGE_CLASS =
   'max-md:!rounded-full max-md:!h-7 max-md:!min-h-7 max-md:!w-fit max-md:!min-w-0 max-md:!max-w-full max-md:!px-2.5 max-md:!py-0 max-md:!text-[11px] max-md:!leading-tight';
 
+const SECTION_CARD = 'mb-3 rounded-lg border border-gray-200 bg-white';
+const SECTION_HEAD = 'border-b border-gray-200 px-4 py-3';
+const DATE_BOX = 'rounded-lg border border-gray-200 bg-white px-3 py-2';
+const DATE_BOX_USER =
+  'rounded-lg border border-gray-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md';
+const SECTION_HEAD_USER =
+  'rounded-t-lg border-l-4 border-blue-500 bg-gray-100 px-2.5 py-1.5 sm:px-3 sm:py-2';
+
 export default function Client({
   eventId,
   mode = 'admin',
@@ -186,7 +194,7 @@ export default function Client({
     return (
       <>
         {deleteModals}
-        <main className="mx-auto max-w-[1300px] px-4 py-3">
+        <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
           <div className="mb-2 flex items-center justify-between">
             <h1 className="text-lg font-semibold">지역대회 상세</h1>
             <div className="flex items-center gap-2">
@@ -195,7 +203,7 @@ export default function Client({
               </Button>
             </div>
           </div>
-          <div className="rounded-xl border p-8 text-center text-gray-500">
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
             지역대회 정보를 불러오는 중...
           </div>
         </main>
@@ -224,7 +232,7 @@ export default function Client({
     return (
       <>
         {deleteModals}
-        <main className="mx-auto max-w-[1300px] px-4 py-3">
+        <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
           <div className="mb-2 flex items-center justify-between">
             <h1 className="text-lg font-semibold">지역대회 상세</h1>
             <div className="flex items-center gap-2">
@@ -233,7 +241,7 @@ export default function Client({
               </Button>
             </div>
           </div>
-          <div className="rounded-xl border p-8 text-center text-red-500">
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-red-500">
             지역대회 정보를 불러오는 중 오류가 발생했습니다.
           </div>
         </main>
@@ -261,7 +269,7 @@ export default function Client({
     return (
       <>
         {deleteModals}
-        <main className="mx-auto max-w-[1300px] px-4 py-3">
+        <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
           <div className="mb-2 flex items-center justify-between">
             <h1 className="text-lg font-semibold">지역대회 상세</h1>
             <div className="flex items-center gap-2">
@@ -270,7 +278,7 @@ export default function Client({
               </Button>
             </div>
           </div>
-          <div className="rounded-xl border p-8 text-center text-gray-500">
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500">
             지역대회 정보를 찾을 수 없습니다.
           </div>
         </main>
@@ -309,12 +317,18 @@ export default function Client({
       {deleteModals}
       <div
       className={cn(
-        'mx-auto max-w-[1300px] py-3',
-        isUser ? 'px-2.5 sm:px-4 max-[380px]:px-2' : 'px-4'
+        'mx-auto',
+        isUser
+          ? 'max-w-[1300px] py-3 px-2.5 sm:px-4 max-[380px]:px-2'
+          : 'w-full max-w-[1920px] px-4 py-4'
       )}
     >
       {/* 헤더 */}
-      <div className="mb-4">
+      <div
+        className={
+          isUser ? 'mb-4' : 'mb-3 rounded-lg border border-gray-200 bg-white px-4 py-3'
+        }
+      >
         <div className={isUser ? 'py-2 md:py-3' : ''}>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <button
@@ -322,13 +336,15 @@ export default function Client({
               onClick={goList}
               className={cn(
                 'flex min-w-0 items-center text-left text-gray-600 transition-colors hover:text-gray-800 font-pretendard',
-                isUser && 'max-[380px]:text-sm'
+                isUser ? 'max-[380px]:text-sm' : 'text-[13px]'
               )}
             >
               <svg
                 className={cn(
-                  'mr-1.5 shrink-0 sm:mr-2',
-                  isUser ? 'h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5 sm:h-5 sm:w-5' : 'h-5 w-5'
+                  'shrink-0',
+                  isUser
+                    ? 'mr-1.5 h-4 w-4 max-[380px]:h-3.5 max-[380px]:w-3.5 sm:mr-2 sm:h-5 sm:w-5'
+                    : 'mr-1 h-4 w-4'
                 )}
                 fill="none"
                 stroke="currentColor"
@@ -346,21 +362,21 @@ export default function Client({
             </button>
 
           {mode === 'admin' ? (
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="md"
+                size="sm"
                 onClick={handleDeleteClick}
-                className="text-red-600 border-red-600 hover:bg-red-50 font-pretendard"
+                className="text-red-600 border-red-600 hover:bg-red-50 font-pretendard !h-9 !px-4 !text-[13px]"
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? '삭제 중...' : '삭제'}
               </Button>
               <Button
                 variant="solid"
-                size="md"
+                size="sm"
                 onClick={handleEdit}
-                className="font-pretendard"
+                className="font-pretendard !h-9 !px-4 !text-[13px]"
               >
                 편집
               </Button>
@@ -397,13 +413,13 @@ export default function Client({
           </div>
         </div>
 
-        <div className="mb-3">
+        <div className={isUser ? 'mb-3' : undefined}>
           <h1
             className={cn(
-              'mb-1 font-pretendard font-semibold text-gray-900',
+              'font-pretendard font-semibold text-gray-900',
               isUser
-                ? 'text-lg max-[380px]:text-base sm:text-xl md:text-2xl'
-                : 'text-2xl'
+                ? 'mb-1 text-lg max-[380px]:text-base sm:text-xl md:text-2xl'
+                : 'text-[20px]'
             )}
           >
             {apiData.eventName}
@@ -412,12 +428,12 @@ export default function Client({
       </div>
 
       {/* 대회 기본 정보 */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm mb-6">
-        <div className="bg-gray-100 rounded-t-lg border-l-4 border-blue-500 px-2.5 py-1.5 sm:px-3 sm:py-2">
+      <div className={isUser ? 'mb-6 rounded-lg border border-gray-200 bg-white shadow-sm' : SECTION_CARD}>
+        <div className={isUser ? SECTION_HEAD_USER : SECTION_HEAD}>
           <h2
             className={cn(
               'font-pretendard font-semibold text-gray-900',
-              isUser ? 'text-base md:text-xl' : 'text-xl'
+              isUser ? 'text-base md:text-xl' : 'text-[15px]'
             )}
           >
             대회 기본 정보
@@ -425,8 +441,7 @@ export default function Client({
         </div>
         <div
           className={cn(
-            'space-y-4 sm:space-y-6',
-            isUser ? 'px-4 py-5 md:px-6 md:py-6' : 'px-6 py-6'
+            isUser ? 'space-y-4 px-4 py-5 sm:space-y-6 md:px-6 md:py-6' : 'space-y-4 px-4 py-4'
           )}
         >
           {/* 1. 대회명 | 대회 ID */}
@@ -438,7 +453,7 @@ export default function Client({
               <p
                 className={cn(
                   'text-gray-900 font-pretendard',
-                  isUser ? 'text-sm break-words md:text-lg' : 'text-lg'
+                  isUser ? 'text-sm break-words md:text-lg' : 'text-sm'
                 )}
               >
                 {apiData.eventName}
@@ -468,7 +483,7 @@ export default function Client({
               <p
                 className={cn(
                   'text-gray-900 font-pretendard',
-                  isUser ? 'text-sm break-words md:text-lg' : 'text-lg'
+                  isUser ? 'text-sm break-words md:text-lg' : 'text-sm'
                 )}
               >
                 {apiData.eventCategoryCsv?.trim()
@@ -520,8 +535,8 @@ export default function Client({
               <div className="pt-1">
                 <RegistrationStatusBadge
                   status={toRegStatus(apiData.eventStatus)}
-                  size="smd"
-                  className={isUser ? USER_MOBILE_REG_BADGE_CLASS : undefined}
+                  size={isUser ? 'smd' : 'dense'}
+                  className={isUser ? USER_MOBILE_REG_BADGE_CLASS : '!w-[72px]'}
                 />
               </div>
             </div>
@@ -554,7 +569,7 @@ export default function Client({
                   </>
                 ) : (
                   <span
-                    className={`inline-flex items-center justify-center w-[70px] h-9 rounded-[6px] text-[13px] leading-[22px] font-medium ${
+                    className={`inline-flex items-center justify-center w-[64px] h-7 rounded-[5px] text-[12px] leading-4 font-medium ${
                       apiData.visibleStatus === 'OPEN'
                         ? 'bg-kma-blue text-white'
                         : apiData.visibleStatus === 'TEST'
@@ -583,13 +598,14 @@ export default function Client({
             <h3
               className={cn(
                 'mb-2 flex items-center gap-2 font-semibold text-gray-900 font-pretendard sm:mb-2.5',
-                isUser ? 'text-sm sm:text-base md:text-lg' : 'text-lg'
+                isUser ? 'text-sm sm:text-base md:text-lg' : 'text-sm'
               )}
             >
               <svg
                 className={cn(
                   'shrink-0 text-blue-600',
-                  isUser ? 'h-4 w-4 sm:h-5 sm:w-5' : 'h-5 w-5'
+                  'h-4 w-4',
+                  isUser && 'sm:h-5 sm:w-5'
                 )}
                 fill="none"
                 stroke="currentColor"
@@ -604,15 +620,15 @@ export default function Client({
               </svg>
               날짜 정보
             </h3>
-            <div className="grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md">
-                <span className="mb-1 block text-xs font-medium text-gray-500 font-pretendard sm:mb-2">
+            <div className={cn('grid grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2', !isUser && 'xl:grid-cols-3')}>
+              <div className={isUser ? DATE_BOX_USER : DATE_BOX}>
+                <span className={cn('mb-1 block text-xs font-medium text-gray-500 font-pretendard', isUser && 'sm:mb-2')}>
                   개최일
                 </span>
                 <p
                   className={cn(
                     'font-semibold text-gray-900 font-pretendard',
-                    isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-lg'
+                    isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-sm'
                   )}
                 >
                   {formatDateTime(apiData.eventStartDate)}
@@ -620,14 +636,14 @@ export default function Client({
               </div>
 
               {apiData.registStartDate && (
-                <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md">
-                  <span className="mb-1 block text-xs font-medium text-gray-500 font-pretendard sm:mb-2">
+                <div className={isUser ? DATE_BOX_USER : DATE_BOX}>
+                  <span className={cn('mb-1 block text-xs font-medium text-gray-500 font-pretendard', isUser && 'sm:mb-2')}>
                     신청시작일
                   </span>
                   <p
                     className={cn(
                       'font-semibold text-gray-900 font-pretendard',
-                      isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-lg'
+                      isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-sm'
                     )}
                   >
                     {formatDateTime(apiData.registStartDate)}
@@ -636,14 +652,14 @@ export default function Client({
               )}
 
               {apiData.registDeadline && (
-                <div className="rounded-lg border border-gray-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md">
-                  <span className="mb-1 block text-xs font-medium text-gray-500 font-pretendard sm:mb-2">
+                <div className={isUser ? DATE_BOX_USER : DATE_BOX}>
+                  <span className={cn('mb-1 block text-xs font-medium text-gray-500 font-pretendard', isUser && 'sm:mb-2')}>
                     신청 마감일
                   </span>
                   <p
                     className={cn(
                       'font-semibold text-gray-900 font-pretendard',
-                      isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-lg'
+                      isUser ? 'text-xs leading-snug sm:text-sm md:text-lg' : 'text-sm'
                     )}
                   >
                     {formatDateTime(apiData.registDeadline)}
@@ -657,18 +673,18 @@ export default function Client({
 
       {/* 홍보 배너 */}
       {apiData.promotionBanner && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="rounded-t-lg border-l-4 border-blue-500 bg-gray-100 px-2.5 py-1.5 sm:px-3 sm:py-2">
+        <div className={isUser ? 'mb-6 rounded-lg border border-gray-200 bg-white shadow-sm' : SECTION_CARD}>
+          <div className={isUser ? SECTION_HEAD_USER : SECTION_HEAD}>
             <h2
               className={cn(
                 'font-pretendard font-semibold text-gray-900',
-                isUser ? 'text-base md:text-xl' : 'text-xl'
+                isUser ? 'text-base md:text-xl' : 'text-[15px]'
               )}
             >
               홍보 배너
             </h2>
           </div>
-          <div className="px-2 py-2 sm:px-3 sm:py-3">
+          <div className={isUser ? 'px-2 py-2 sm:px-3 sm:py-3' : 'px-4 py-4'}>
             <div className="flex justify-center">
               <img
                 src={apiData.promotionBanner}
@@ -684,18 +700,18 @@ export default function Client({
       {(mode === 'admin'
         ? apiData.applicantName || apiData.applicantPhNum || apiData.applicantCompany
         : apiData.applicantCompany?.trim()) ? (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="rounded-t-lg border-l-4 border-blue-500 bg-gray-100 px-2.5 py-1.5 sm:px-3 sm:py-2">
+        <div className={isUser ? 'mb-6 rounded-lg border border-gray-200 bg-white shadow-sm' : SECTION_CARD}>
+          <div className={isUser ? SECTION_HEAD_USER : SECTION_HEAD}>
             <h2
               className={cn(
                 'font-pretendard font-semibold text-gray-900',
-                isUser ? 'text-base md:text-xl' : 'text-xl'
+                isUser ? 'text-base md:text-xl' : 'text-[15px]'
               )}
             >
               신청자 정보
             </h2>
           </div>
-          <div className={cn(isUser ? 'px-4 py-5 md:px-6 md:py-6' : 'px-6 py-6')}>
+          <div className={cn(isUser ? 'px-4 py-5 md:px-6 md:py-6' : 'px-4 py-4')}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {mode === 'admin' ? (
                 <>
@@ -703,7 +719,7 @@ export default function Client({
                     <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                       신청자명
                     </span>
-                    <p className="text-lg text-gray-900 font-pretendard">
+                    <p className="text-sm text-gray-900 font-pretendard">
                       {apiData.applicantName?.trim() ? apiData.applicantName : '—'}
                     </p>
                   </div>
@@ -711,7 +727,7 @@ export default function Client({
                     <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                       신청자 번호
                     </span>
-                    <p className="text-lg text-gray-900 font-pretendard">
+                    <p className="text-sm text-gray-900 font-pretendard">
                       {apiData.applicantPhNum?.trim() ? apiData.applicantPhNum : '—'}
                     </p>
                   </div>
@@ -728,7 +744,7 @@ export default function Client({
                 <p
                   className={cn(
                     'text-gray-900 font-pretendard',
-                    isUser ? 'text-sm break-words md:text-lg' : 'text-lg'
+                    isUser ? 'text-sm break-words md:text-lg' : 'text-sm'
                   )}
                 >
                   {apiData.applicantCompany?.trim() ? apiData.applicantCompany : '—'}
@@ -740,18 +756,18 @@ export default function Client({
       ) : null}
 
       {/* 생성/수정 정보 */}
-      <div className="mb-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="rounded-t-lg border-l-4 border-blue-500 bg-gray-100 px-2.5 py-1.5 sm:px-3 sm:py-2">
+      <div className={isUser ? 'mb-6 rounded-lg border border-gray-200 bg-white shadow-sm' : SECTION_CARD}>
+        <div className={isUser ? SECTION_HEAD_USER : SECTION_HEAD}>
           <h2
             className={cn(
               'font-pretendard font-semibold text-gray-900',
-              isUser ? 'text-base md:text-xl' : 'text-xl'
+              isUser ? 'text-base md:text-xl' : 'text-[15px]'
             )}
           >
             생성/수정 정보
           </h2>
         </div>
-        <div className={cn(isUser ? 'px-4 py-5 md:px-6 md:py-6' : 'px-6 py-6')}>
+        <div className={cn(isUser ? 'px-4 py-5 md:px-6 md:py-6' : 'px-4 py-4')}>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1 px-2">
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
@@ -760,7 +776,7 @@ export default function Client({
               <p
                 className={cn(
                   'text-gray-900 font-pretendard',
-                  isUser ? 'text-sm md:text-lg' : 'text-lg'
+                  isUser ? 'text-sm md:text-lg' : 'text-sm'
                 )}
               >
                 {formatDateTime(apiData.createdAt)}
@@ -773,7 +789,7 @@ export default function Client({
               <p
                 className={cn(
                   'text-gray-900 font-pretendard',
-                  isUser ? 'text-sm md:text-lg' : 'text-lg'
+                  isUser ? 'text-sm md:text-lg' : 'text-sm'
                 )}
               >
                 {formatDateTime(apiData.updatedAt)}
