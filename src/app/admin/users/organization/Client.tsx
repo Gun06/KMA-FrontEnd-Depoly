@@ -48,7 +48,7 @@ export default function Client() {
     if (field !== 'org')  p.set('field', field);
     if (member)           p.set('member', member);
     const qs = p.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [router, pathname, page, query, sortBy, field, member]);
 
   useEffect(() => { syncURL(); }, [syncURL]);
@@ -113,8 +113,8 @@ export default function Client() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">단체 회원 조회 중 오류가 발생했습니다: {error.message}</div>
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-red-500">
+        단체 회원 조회 중 오류가 발생했습니다: {error.message}
       </div>
     );
   }

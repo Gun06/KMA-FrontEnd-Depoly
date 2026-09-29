@@ -136,7 +136,9 @@ export default function IndividualUsersTable({
   const Actions = presetProps ? (
     <FilterBar
       {...presetProps}
-      className="!gap-3"
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
       showReset
       initialValues={initialFilterValues}
       initialSearchValue={initialSearchValue}
@@ -155,50 +157,43 @@ export default function IndividualUsersTable({
     />
   ) : null;
 
-  // 처음 로드 시 로딩 메시지 표시 (total이 0이고 데이터가 없을 때만, 페이지 전환 시에는 표시 안 함)
-  if (isLoading && rows.length === 0 && total === 0) {
-    return (
-      <AdminTable<IndividualUserRow>
-        columns={columns}
-        rows={[]}
-        rowKey={(r) => r.id}
-        renderFilters={null}
-        renderSearch={null}
-        renderActions={Actions}
-        pagination={false}
-        minWidth={1240}
-        allowTextSelection={true}
-        loadingMessage="개인회원을 불러오는 중입니다"
-      />
-    );
-  }
-
-  // 빈 상태 처리 (로딩 중이 아닐 때만 표시)
-  if (!isLoading && rows.length === 0 && total === 0) {
-    return (
-      <div className="w-full">
-        <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
-          <div className="shrink-0">{Actions}</div>
-        </div>
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-          <div className="text-gray-500 text-lg mb-2">등록된 회원이 없습니다</div>
-          <div className="text-sm text-gray-400">회원이 등록되면 여기에 표시됩니다</div>
-        </div>
-      </div>
-    );
-  }
+  const isEmpty = rows.length === 0 && total === 0;
+  const selectedCount = controlled ? (selectedIds as string[]).length : Object.values(localChecked).filter(Boolean).length;
 
   return (
-    <AdminTable<IndividualUserRow>
-      columns={columns}
-      rows={rows}
-      rowKey={(r) => r.id}
-      renderFilters={null}
-      renderSearch={null}
-      renderActions={Actions}
-      pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center', bar: { totalTextFormatter: (t) => <><b>{t.toLocaleString()}</b>명의 회원</> } }}
-      minWidth={1240}   // 1200으로 내려도 됨. 컬럼 폭은 1200 안에 들어가게 맞춰둠.
-      allowTextSelection={true}
-    />
+    <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+        <h3 className="text-[15px] font-semibold">개인 회원관리</h3>
+        {selectedCount > 0 && (
+          <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+            {selectedCount}명 선택됨
+          </span>
+        )}
+      </div>
+      <AdminTable<IndividualUserRow>
+        dense
+        contentMinHeight={null}
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.id}
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>명
+          </p>
+        }
+        renderActions={Actions}
+        loadingMessage={isLoading && isEmpty ? '개인회원을 불러오는 중입니다' : undefined}
+        emptyMessage={'등록된 회원이 없습니다.\n회원이 등록되면 여기에 표시됩니다.'}
+        pagination={isLoading && isEmpty ? false : {
+          page,
+          pageSize,
+          total,
+          onChange: onPageChange,
+          bar: { totalTextFormatter: (t) => <>총 <b>{t.toLocaleString()}</b>명의 회원</> },
+        }}
+        minWidth={1000}
+        allowTextSelection={true}
+      />
+    </div>
   );
 }

@@ -272,57 +272,57 @@ export default function InquiryListPage({
   }, [parsedFromUrl]);
 
   const filterControls = preset && (
-    <div className="flex flex-wrap items-center gap-2">
-      <FilterBar
-        key={`filter-${searchParamsString}`}
-        {...preset}
-        className="!gap-3"
-        initialValues={filterInitialValues}
-        initialSearchValue={parsedFromUrl.keyword ?? ""}
-        onFieldChange={(label, value) => {
-          const L = norm(String(label));
-          let nextSearchMode = searchMode;
-          let nextIsAnswered = isAnswered;
-          if (L === "검색키") nextSearchMode = value as SearchMode;
-          if (L === "답변상태") {
-            if (value === "true") nextIsAnswered = true;
-            else if (value === "false") nextIsAnswered = false;
-            else nextIsAnswered = undefined;
-          }
-          setSearchMode(nextSearchMode);
-          setIsAnswered(nextIsAnswered);
-          setPage(1);
-          pushListQueryToUrl({
-            page: 1,
-            keyword: q,
-            searchKey: nextSearchMode,
-            isAnswered: nextIsAnswered,
-          });
-        }}
-        onSearch={(value) => {
-          setQ(value);
-          setPage(1);
-          pushListQueryToUrl({
-            page: 1,
-            keyword: value,
-            searchKey: searchMode,
-            isAnswered,
-          });
-        }}
-        onReset={() => {
-          setQ("");
-          setSearchMode("all");
-          setIsAnswered(undefined);
-          setPage(1);
-          pushListQueryToUrl({
-            page: 1,
-            keyword: "",
-            searchKey: "all",
-            isAnswered: undefined,
-          });
-        }}
-      />
-    </div>
+    <FilterBar
+      key={`filter-${searchParamsString}`}
+      {...preset}
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
+      initialValues={filterInitialValues}
+      initialSearchValue={parsedFromUrl.keyword ?? ""}
+      onFieldChange={(label, value) => {
+        const L = norm(String(label));
+        let nextSearchMode = searchMode;
+        let nextIsAnswered = isAnswered;
+        if (L === "검색키") nextSearchMode = value as SearchMode;
+        if (L === "답변상태") {
+          if (value === "true") nextIsAnswered = true;
+          else if (value === "false") nextIsAnswered = false;
+          else nextIsAnswered = undefined;
+        }
+        setSearchMode(nextSearchMode);
+        setIsAnswered(nextIsAnswered);
+        setPage(1);
+        pushListQueryToUrl({
+          page: 1,
+          keyword: q,
+          searchKey: nextSearchMode,
+          isAnswered: nextIsAnswered,
+        });
+      }}
+      onSearch={(value) => {
+        setQ(value);
+        setPage(1);
+        pushListQueryToUrl({
+          page: 1,
+          keyword: value,
+          searchKey: searchMode,
+          isAnswered,
+        });
+      }}
+      onReset={() => {
+        setQ("");
+        setSearchMode("all");
+        setIsAnswered(undefined);
+        setPage(1);
+        pushListQueryToUrl({
+          page: 1,
+          keyword: "",
+          searchKey: "all",
+          isAnswered: undefined,
+        });
+      }}
+    />
   );
 
   const handleDelete = (id: string) => {
@@ -488,39 +488,31 @@ export default function InquiryListPage({
   }, [linkForRow, page, q, searchMode, isAnswered]);
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 py-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          {title ? <h3 className="text-[16px] font-semibold">{title}</h3> : null}
+    <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          {title ? <h3 className="text-[15px] font-semibold">{title}</h3> : null}
           {titleAddon}
+          {headerButton && (
+            <Button {...headerButton} className="ml-auto !h-9 !px-3 !text-[13px]">
+              {headerButton.label}
+            </Button>
+          )}
         </div>
-        {headerButton && (
-          <Button {...headerButton}>
-            {headerButton.label}
-          </Button>
-        )}
-      </div>
 
-      {filterControls}
-
-      {error ? (
-        <div className="flex items-center justify-center py-8 border border-red-200 rounded-lg bg-red-50">
-          <div className="text-red-500">문의사항을 불러오는데 실패했습니다.</div>
-        </div>
-      ) : (
-        // 개인 회원관리와 동일한 방식: 데이터가 있으면(placeholderData 포함) 테이블 유지
-        // isLoading은 InquiryTable 내부로 전달해 첫 로드 시에만 스켈레톤 표시
         <InquiryTable
-          rows={finalRows}
-          isLoading={isLoading && finalRows.length === 0}
+          rows={error ? [] : finalRows}
+          isLoading={!error && isLoading && finalRows.length === 0}
           linkForRow={composeLinkWithPage}
           showEventNameColumn={showEventName}
-          pagination={{ page, pageSize, total: finalTotal, onChange: handlePageChange, align: "right" }}
+          pagination={{ page, pageSize, total: error ? 0 : finalTotal, onChange: handlePageChange }}
           onDelete={handleDelete}
           onDeleteAnswer={handleDeleteAnswer}
           onResetPassword={handleResetPasswordClick}
+          toolbar={filterControls || null}
+          emptyMessage={error ? "문의사항을 불러오는데 실패했습니다." : undefined}
         />
-      )}
+      </div>
 
       {/* 비밀번호 초기화 확인 모달 */}
       <ConfirmModal

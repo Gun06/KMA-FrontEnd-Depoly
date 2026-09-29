@@ -20,6 +20,11 @@ const CARD_LIST_ROUTES = [
   /^\/admin\/local-events\/(?!register$)[^/]+$/,
   /^\/admin\/events\/statistics$/,
   /^\/admin\/boards\/(notice|faq|inquiry)$/,
+  /^\/admin\/boards\/notice\/(main|events\/[^/]+)$/,
+  /^\/admin\/boards\/inquiry\/(all|main|events\/[^/]+)$/,
+  /^\/admin\/boards\/faq\/(main|events\/[^/]+)$/,
+  /^\/admin\/users\/individual(\/[^/]+(\/detail)?)?$/,
+  /^\/admin\/users\/organization(\/[^/]+)?$/,
   /^\/admin\/banners\/popups$/,
   /^\/admin\/notifications$/,
 ];

@@ -26,9 +26,11 @@ type Props = {
     onChange: (p: number) => void;
     align?: "left" | "center" | "right";
   };
+  toolbar?: React.ReactNode;
+  emptyMessage?: string;
 };
 
-function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteAnswer, onResetPassword, pagination, showEventNameColumn }: Props) {
+function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteAnswer, onResetPassword, pagination, showEventNameColumn, toolbar, emptyMessage }: Props) {
   const data: ViewRow[] = Array.isArray(rows) ? rows : [];
 
   // 페이지 정보는 pagination 객체에서 직접 사용
@@ -46,9 +48,9 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
     {
       key: "no",
       header: "번호",
-      width: 80,
+      width: 64,
       align: "center",
-      render: (r) => <span className="font-medium">{getDisplayNo(r)}</span>,
+      render: (r) => <span className="text-gray-500">{getDisplayNo(r)}</span>,
     },
     {
       key: "title",
@@ -59,25 +61,24 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
 
         // 제목 앞에 [RE]가 이미 있으면 한 번만 보이도록 제거
         const safeTitle = isReply(r) ? r.title.replace(/^\s*\[RE\]\s*/i, "") : r.title;
-        const displayTitle = safeTitle.length > 100 ? safeTitle.slice(0, 80) + '…' : safeTitle;
 
         return (
-          <div className="max-w-[820px]">
-            <div className="flex items-start">
+          <div className="max-w-[640px]">
+            <div className="flex min-w-0 items-center">
               {isReply(r) && (
                 <>
-                  <span className="text-[#1E5EFF] mr-1 mt-0.5">➥</span>
-                  <span className="text-gray-500 mr-2 mt-0.5">[RE]</span>
+                  <span className="text-[#1E5EFF] mr-1 shrink-0">➥</span>
+                  <span className="text-gray-500 mr-2 shrink-0">[RE]</span>
                 </>
               )}
-              {!isReply(r) && r.secret && <Lock className="w-4 h-4 text-gray-500 mr-1 mt-0.5 flex-shrink-0" />}
+              {!isReply(r) && r.secret && <Lock className="w-3.5 h-3.5 text-gray-500 mr-1 flex-shrink-0" />}
               {href ? (
-                <Link href={href} className="hover:underline" title={safeTitle}>
-                  {displayTitle}
+                <Link href={href} className="min-w-0 truncate hover:underline" title={safeTitle}>
+                  {safeTitle}
                 </Link>
               ) : (
-                <span title={safeTitle}>
-                  {displayTitle}
+                <span className="min-w-0 truncate" title={safeTitle}>
+                  {safeTitle}
                 </span>
               )}
             </div>
@@ -96,7 +97,7 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
       render: (r) => (
         isReply(r)
           ? <span className="text-gray-300">—</span>
-          : <span className="truncate block max-w-[250px]">{r.eventName || '-'}</span>
+          : <span className="truncate block max-w-[240px]" title={r.eventName || undefined}>{r.eventName || '-'}</span>
       ),
     });
   }
@@ -105,11 +106,11 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
     {
       key: "author",
       header: "작성자",
-      width: 140,
+      width: 120,
       align: "center",
       render: (r) => (isReply(r) ? <span className="text-gray-700">{r.author}</span> : r.author),
     },
-    { key: "date", header: "작성일", width: 140, align: "center" },
+    { key: "date", header: "작성일", width: 110, align: "center" },
     {
       key: "status",
       header: "상태",
@@ -125,7 +126,7 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
     {
       key: "resetPassword",
       header: "비번 초기화",
-      width: 120,
+      width: 90,
       align: "center",
       render: (r) => {
         if (isReply(r)) {
@@ -134,7 +135,7 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
           // 비밀글인 경우에만 비밀번호 초기화 버튼 표시
           return r.secret ? (
             <button 
-              className="text-blue-600 hover:underline text-sm" 
+              className="text-blue-600 hover:underline" 
               onClick={() => onResetPassword?.(String(r.id))}
             >
               초기화
@@ -148,7 +149,7 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
     {
       key: "delete",
       header: "삭제",
-      width: 90,
+      width: 64,
       align: "center",
       render: (r) => {
         if (isReply(r)) {
@@ -182,19 +183,30 @@ function InquiryTable({ rows, isLoading = false, linkForRow, onDelete, onDeleteA
 
   return (
     <AdminTable<ViewRow>
+      dense
+      contentMinHeight={null}
       columns={columns}
       rows={data}
       rowKey={(r) => (r.__replyOf ? `reply-${r.__replyOf}` : String(r.id))}
-      renderFilters={null}
-      renderSearch={null}
-      renderActions={null}
-      minWidth={1200}
+      renderFilters={
+        <p className="shrink-0 text-sm text-gray-600">
+          검색 결과 총 <b className="text-gray-900">{(pagination?.total ?? data.length).toLocaleString()}</b>건
+        </p>
+      }
+      renderActions={toolbar ?? null}
+      minWidth={1100}
       loadingMessage={isLoading && data.length === 0 ? "문의사항을 불러오는 중입니다" : undefined}
+      emptyMessage={emptyMessage ?? "등록된 문의사항이 없습니다."}
       pagination={showPagination ? {
-        align: "right" as const,
         ...pagination,
+        bar: {
+          totalTextFormatter: (cnt: number) => (
+            <>
+              총 <b>{cnt.toLocaleString()}</b>건
+            </>
+          ),
+        },
       } : false}
-      contentMinHeight={data.length >= (pagination?.pageSize ?? 0) ? "100vh" : "auto"}
     />
   );
 }

@@ -20,6 +20,8 @@ type Props = {
   onDelete?: (id: string) => void;
   pagination?: Pagination;
   isLoading?: boolean;
+  toolbar?: React.ReactNode;
+  emptyMessage?: string;
 };
 
 export default function FaqTable({
@@ -28,6 +30,8 @@ export default function FaqTable({
   onDelete,
   pagination,
   isLoading = false,
+  toolbar,
+  emptyMessage,
 }: Props) {
   const data: Faq[] = Array.isArray(rows) ? rows : [];
 
@@ -50,9 +54,9 @@ export default function FaqTable({
     {
       key: "no",
       header: "번호",
-      width: 80,
+      width: 64,
       align: "center",
-      render: (r) => <span className="font-medium">{getDisplayNo(r)}</span>,
+      render: (r) => <span className="text-gray-500">{getDisplayNo(r)}</span>,
     },
     {
       key: "title",
@@ -70,7 +74,7 @@ export default function FaqTable({
         const displayTitle = stripHtmlTags(r.title);
         const href = (linkForRow ?? defaultLinkForRow)(r)?.trim();
         const text = (
-          <span className="truncate block max-w-full align-middle" title={displayTitle}>
+          <span className="block max-w-[720px] truncate" title={displayTitle}>
             {displayTitle}
           </span>
         );
@@ -86,7 +90,7 @@ export default function FaqTable({
     {
       key: "createdAt",
       header: "작성일",
-      width: 120,
+      width: 110,
       align: "center",
       render: (r) => {
         if (!r.createdAt) return "-";
@@ -101,7 +105,7 @@ export default function FaqTable({
     {
       key: "delete",
       header: "삭제",
-      width: 70,
+      width: 64,
       align: "center",
       render: (r) => (
         <button
@@ -131,15 +135,30 @@ export default function FaqTable({
         </div>
       )}
       <AdminTable<Faq>
+        dense
+        contentMinHeight={null}
         columns={columns}
         rows={data}
         rowKey={(r) => r.id}
-        renderFilters={null}
-        renderSearch={null}
-        renderActions={null}
-        minWidth={960}
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>개
+          </p>
+        }
+        renderActions={toolbar ?? null}
+        minWidth={900}
         loadingMessage={isInitialLoading ? "FAQ를 불러오는 중입니다" : undefined}
-        pagination={showPagination ? { align: "center", ...pagination } : false}
+        emptyMessage={emptyMessage ?? "등록된 FAQ가 없습니다."}
+        pagination={showPagination ? {
+          ...pagination,
+          bar: {
+            totalTextFormatter: (cnt: number) => (
+              <>
+                총 <b>{cnt.toLocaleString()}</b>개
+              </>
+            ),
+          },
+        } : false}
       />
     </div>
   );

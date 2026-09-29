@@ -56,27 +56,26 @@ export default function OrgMembersTable({
 }: Props) {
   // 구성원 화면 기본 컬럼 (신청자관리 스타일)
   const baseCols: Column<OrgMemberRow>[] = [
-    { key: 'id', header: '번호', width: 90, align: 'center', className: 'whitespace-nowrap tabular-nums' },
-    { key: 'name', header: '성명', width: 100, align: 'center' },
-    { key: 'course', header: '코스', width: 170, align: 'center', className: 'whitespace-nowrap text-sm' },
-    { key: 'gender', header: '성별', width: 70, align: 'center' },
-    { key: 'birth', header: '생년월일', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'id', header: '번호', width: 64, align: 'center', className: 'whitespace-nowrap tabular-nums text-gray-500' },
+    { key: 'name', header: '성명', width: 90, align: 'center' },
+    { key: 'course', header: '코스', width: 150, align: 'center', className: 'whitespace-nowrap' },
+    { key: 'gender', header: '성별', width: 56, align: 'center' },
+    { key: 'birth', header: '생년월일', width: 100, align: 'center', className: 'whitespace-nowrap tabular-nums' },
     {
       key: 'eventName',
       header: '대회명',
-      width: 250,
+      width: 220,
       align: 'center',
-      className: 'break-words text-sm leading-tight py-2',
       render: (r) => (
-        <div className="max-w-[250px] break-words whitespace-normal leading-tight">
+        <span className="mx-auto block max-w-[240px] truncate" title={r.eventName || undefined}>
           {r.eventName || '-'}
-        </div>
+        </span>
       ),
     },
     {
       key: 'regDate',
       header: '신청일시',
-      width: 130,
+      width: 110,
       align: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => r.regDate || r.createdAt || '-',
@@ -84,7 +83,7 @@ export default function OrgMembersTable({
     {
       key: 'fee',
       header: '금액',
-      width: 110,
+      width: 96,
       align: 'right',
       className: 'whitespace-nowrap tabular-nums pr-4',
       render: (r) =>
@@ -95,18 +94,21 @@ export default function OrgMembersTable({
     {
       key: 'memo',
       header: '메모',
-      width: 110,
+      width: 160,
       align: 'center',
-      className: 'whitespace-nowrap',
       render: (r) => {
         const text = (r.memo ?? '').trim();
-        return text.length > 6 ? `${text.slice(0, 6)}…` : text || '-';
+        return (
+          <span className="mx-auto block max-w-[180px] truncate" title={text || undefined}>
+            {text || '-'}
+          </span>
+        );
       },
     },
     {
       key: 'account',
       header: '입금자명',
-      width: 130,
+      width: 110,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => {
@@ -117,7 +119,7 @@ export default function OrgMembersTable({
     {
       key: 'payStatus',
       header: '입금여부',
-      width: 130,
+      width: 100,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => <PaymentBadgeApplicants payStatus={r.payStatus} paid={r.paid} />,
@@ -146,7 +148,9 @@ export default function OrgMembersTable({
   const Actions = presetWithoutBackButton ? (
     <FilterBar
       {...presetWithoutBackButton}
-      className="ml-auto !gap-3"
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
       showReset
       onFieldChange={(label, value) => {
         const L = norm(label);
@@ -159,18 +163,34 @@ export default function OrgMembersTable({
   ) : null;
 
   return (
-    <div className="space-y-4">
-      {title ? <div className="text-[15px]">{title}</div> : null}
+    <div className="rounded-lg border border-gray-200 bg-white">
+      {title ? (
+        <div className="border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold text-gray-900">{title}</h3>
+        </div>
+      ) : null}
       <AdminTable<OrgMemberRow>
+        dense
+        contentMinHeight={null}
         columns={cols}
         rows={rows}
         rowKey={(r) => `${r.orgId}-${r.id}`}
         onRowClick={onRowClick}
-        renderFilters={null}
-        renderSearch={null}
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>명
+          </p>
+        }
         renderActions={Actions}
-        pagination={{ page, pageSize, total, onChange: onPageChange, align: 'center' }}
-        minWidth={1160}
+        emptyMessage="단체 구성원이 없습니다."
+        pagination={{
+          page,
+          pageSize,
+          total,
+          onChange: onPageChange,
+          bar: { totalTextFormatter: (t) => <>총 <b>{t.toLocaleString()}</b>명</> },
+        }}
+        minWidth={1150}
         allowTextSelection={true}
       />
     </div>

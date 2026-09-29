@@ -28,16 +28,16 @@ export default function createOrgColumns(
     {
       key: '__no',
       header: '번호',
-      width: 80,
+      width: 72,
       align: 'center',
-      className: 'whitespace-nowrap tabular-nums',
+      className: 'whitespace-nowrap tabular-nums text-gray-500',
       render: (_row, idx) => calculateNumber(idx, opts),
     },
 
     {
       key: 'org',
       header: '단체명',
-      width: 220,
+      width: 180,
       align: 'center',
       className: 'whitespace-nowrap',
 
@@ -45,7 +45,7 @@ export default function createOrgColumns(
         return (
           <Link
             href={`/admin/users/organization/${encodeURIComponent((r as any).orgApiId)}`}
-            className="block max-w-[240px] truncate hover:underline"
+            className="mx-auto block max-w-[200px] truncate hover:underline"
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             data-allow-bubble="true"
@@ -60,12 +60,12 @@ export default function createOrgColumns(
     {
       key: 'eventTitle',
       header: '대회명',
-      width: 260,
+      width: 280,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => (
         <span
-          className="block max-w-[260px] truncate"
+          className="mx-auto block max-w-[300px] truncate"
           title={r.eventTitle || '-'}
         >
           {r.eventTitle || '-'}
@@ -73,12 +73,12 @@ export default function createOrgColumns(
       ),
     },  
 
-    { key: 'owner', header: '대표자명', width: 120, align: 'center', className: 'whitespace-nowrap' },
+    { key: 'owner', header: '대표자명', width: 100, align: 'center', className: 'whitespace-nowrap' },
 
     {
       key: 'ownerId',
       header: '대표자 아이디',
-      width: 140,
+      width: 130,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => <span className="block max-w-[140px] truncate mx-auto">{r.ownerId}</span>,
@@ -87,7 +87,7 @@ export default function createOrgColumns(
     {
       key: 'createdAt',
       header: '등록일',
-      width: 140,
+      width: 110,
       align: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => {
@@ -98,12 +98,12 @@ export default function createOrgColumns(
       },
     },
 
-    { key: 'memberCount', header: '회원수', width: 120, align: 'center', className: 'whitespace-nowrap tabular-nums' },
+    { key: 'memberCount', header: '회원수', width: 80, align: 'center', className: 'whitespace-nowrap tabular-nums' },
 
     {
       key: 'list',
       header: '회원리스트',
-      width: 140,
+      width: 100,
       align: 'center',
       className: 'whitespace-nowrap',
 

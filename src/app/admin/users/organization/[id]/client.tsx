@@ -353,7 +353,7 @@ export default function Client({ orgId }: { orgId: string }) {
   // orgId 유효성 검증
   if (!isValidOrgId) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm">
         <div className="text-red-500">유효하지 않은 단체 ID입니다: {orgId}</div>
       </div>
     );
@@ -361,7 +361,7 @@ export default function Client({ orgId }: { orgId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm">
         <div className="text-gray-500">단체 구성원을 불러오는 중...</div>
       </div>
     );
@@ -373,7 +373,7 @@ export default function Client({ orgId }: { orgId: string }) {
                        error.message?.includes('찾을 수 없') || 
                        error.message?.includes('존재하지 않');
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm">
         <div className="text-red-500">
           {isNotFound 
             ? `조직 정보를 찾을 수 없습니다. (ID: ${orgId}) 존재하지 않거나 삭제된 조직일 수 있습니다.`
@@ -384,20 +384,16 @@ export default function Client({ orgId }: { orgId: string }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-md bg-white shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <div className="text-[20px] md:text-[24px] font-pretendard-extrabold text-gray-900">
-              단체 상세
-            </div>
-            <div className="text-sm text-gray-500">
-              {org?.org ?? `단체 #${numericOrgId}`}
-            </div>
-          </div>
-            <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold text-gray-900">단체 상세</h3>
+          <span className="text-[13px] text-gray-500">
+            {org?.org ?? `단체 #${numericOrgId}`}
+          </span>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <button
-                className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+                className="h-9 px-3 text-[13px] rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
                 onClick={() => router.back()}
               >
                 목록으로
@@ -416,7 +412,7 @@ export default function Client({ orgId }: { orgId: string }) {
                   }
                 }}
                 disabled={!isValidOrgId || isDownloading}
-                className="px-4 py-2 text-sm rounded border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                className="h-9 px-3 text-[13px] rounded border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 <svg
                   className="w-4 h-4"
@@ -437,7 +433,7 @@ export default function Client({ orgId }: { orgId: string }) {
                 onClick={() => {
                   setShowEditModal(true);
                 }}
-                className="px-4 py-2 text-sm rounded border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
+                className="h-9 px-3 text-[13px] rounded border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
               >
                 수정하기
               </button>
@@ -446,25 +442,25 @@ export default function Client({ orgId }: { orgId: string }) {
                   setShowPwdModal(true);
                   setNewPwd('');
                 }}
-                className="px-4 py-2 text-sm rounded border border-red-600 bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap"
+                className="h-9 px-3 text-[13px] rounded border border-red-600 bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap"
               >
                 비밀번호 초기화
               </button>
             </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 p-4 md:grid-cols-3">
           {infoSections.map((section) => (
             <section
               key={section.title}
-              className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 shadow-sm"
+              className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3"
             >
-              <h3 className="text-sm font-semibold text-gray-900">{section.title}</h3>
-              <dl className="mt-3 grid grid-cols-[90px_1fr] gap-y-2 text-sm text-gray-700">
+              <h4 className="text-[13px] font-semibold text-gray-900">{section.title}</h4>
+              <dl className="mt-2 grid grid-cols-[84px_1fr] gap-y-1.5 text-[13px] text-gray-700">
                 {section.items.map(({ label, value }) => (
                   <React.Fragment key={label}>
                     <dt className="text-gray-500">{label}</dt>
-                    <dd className="font-medium text-gray-900">{value}</dd>
+                    <dd className="font-medium text-gray-900 break-words">{value}</dd>
                   </React.Fragment>
                 ))}
               </dl>
@@ -493,7 +489,7 @@ export default function Client({ orgId }: { orgId: string }) {
           setPage(1);
         }}
         onClickBack={() => router.push('/admin/users/organization')}
-        title={<span className="text-gray-700">단체 구성원 목록</span>}
+        title="단체 구성원 목록"
         onRowClick={handleRowClick}
       />
 

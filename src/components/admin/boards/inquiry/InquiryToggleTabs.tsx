@@ -22,7 +22,7 @@ export function InquiryToggleTabs({ active, onSelect, className }: InquiryToggle
   return (
     <div
       className={cn(
-        'inline-flex w-fit max-w-full flex-wrap items-center gap-1 self-start rounded-full border border-[#E5E7EB] bg-white p-1 shadow-sm',
+        'inline-flex w-fit max-w-full flex-wrap items-center gap-1 self-start rounded-full border border-[#E5E7EB] bg-white p-0.5',
         className
       )}
     >
@@ -35,7 +35,7 @@ export function InquiryToggleTabs({ active, onSelect, className }: InquiryToggle
             aria-pressed={isActive}
             onClick={isActive ? undefined : () => onSelect(key)}
             className={cn(
-              'h-9 px-3 sm:px-4 rounded-full text-sm font-semibold transition-colors whitespace-nowrap',
+              'h-8 px-3.5 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap',
               isActive
                 ? 'bg-[#111827] text-white shadow'
                 : 'bg-white text-[#1F2937] hover:bg-gray-100'

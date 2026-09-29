@@ -230,114 +230,74 @@ export default function Client() {
     }
   };
 
-  // 로딩 상태 처리
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold">
-            선택대회:{' '}
-            <Link className="text-[#1E5EFF] hover:underline" href={`/admin/boards/notice/events/${eventId}`}>
-              {eventName}
-            </Link>
-          </h3>
-          <Link href="/admin/boards/notice/main">
-            <Button size="sm" tone="primary">전마협 메인 공지사항 관리하기 &gt;</Button>
-          </Link>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-gray-500">공지사항을 불러오는 중...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 에러 상태 처리
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold">
-            선택대회:{' '}
-            <Link className="text-[#1E5EFF] hover:underline" href={`/admin/boards/notice/events/${eventId}`}>
-              {eventName}
-            </Link>
-          </h3>
-          <Link href="/admin/boards/notice/main">
-            <Button size="sm" tone="primary">전마협 메인 공지사항 관리하기 &gt;</Button>
-          </Link>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="text-red-500">공지사항을 불러오는데 실패했습니다.</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold">
-          선택대회:{' '}
-          <Link className="text-[#1E5EFF] hover:underline" href={`/admin/boards/notice/events/${eventId}`}>
-            {eventName}
-          </Link>
-        </h3>
-
-        <Link href="/admin/boards/notice/main">
-          <Button size="sm" tone="primary">전마협 메인 공지사항 관리하기 &gt;</Button>
-        </Link>
-      </div>
-
-      {/* 필터 바 */}
-        <FilterBar
-        buttonTextMode="current"
-        fields={[
-          {
-            label: "정렬",
-            options: [
-              { label: "최신순", value: "new" },
-              { label: "조회수순", value: "hit" },
-            ],
-          },
-          {
-            label: "유형",
-            options: [
-              { label: "전체", value: "" },
-              ...(categories || []).map((cat) => ({
-                label: cat.name,
-                value: cat.id,
-              })),
-            ],
-          },
-        ]}
-        initialValues={[sort, categoryId || ""]}
-        initialSearchValue={q}
-        searchPlaceholder="검색어를 입력해주세요."
-          buttons={[
-            { label: '검색', tone: 'dark' },
-            { label: '등록하기', tone: 'primary' },
-          ]}
-          showReset
-        className="ml-auto !gap-3"
-          onFieldChange={(label, value) => {
-            const L = norm(String(label));
-            if (L === '정렬') setSort(value as Sort);
-          else if (L === '유형') setCategoryId(value || undefined);
-            setPage(1);
-          }}
-          onSearch={(value) => { setQ(value); setPage(1); }}
-          onActionClick={(label) => {
-            if (label === '등록하기') router.push(`/admin/boards/notice/events/${eventId}/write`);
-          }}
-        onReset={() => { setSort('new'); setCategoryId(undefined); setQ(''); setPage(1); }}
-        />
-
+    <div>
       <NoticeEventTable
         rows={rows}
         eventId={String(eventId)}
         pagination={{ page, pageSize, total, onChange: setPage, align: 'center' }}
         onDelete={handleDelete}
+        title={
+          <>
+            선택대회:{' '}
+            <Link className="text-[#1E5EFF] hover:underline" href={`/admin/boards/notice/events/${eventId}`}>
+              {eventName}
+            </Link>
+          </>
+        }
+        headerAction={
+          <Link href="/admin/boards/notice/main">
+            <Button size="sm" tone="primary" className="!h-9 !px-3 !text-[13px]">전마협 메인 공지사항 관리하기 &gt;</Button>
+          </Link>
+        }
+        toolbar={
+          <FilterBar
+            buttonTextMode="current"
+            fields={[
+              {
+                label: "정렬",
+                options: [
+                  { label: "최신순", value: "new" },
+                  { label: "조회수순", value: "hit" },
+                ],
+              },
+              {
+                label: "유형",
+                options: [
+                  { label: "전체", value: "" },
+                  ...(categories || []).map((cat) => ({
+                    label: cat.name,
+                    value: cat.id,
+                  })),
+                ],
+              },
+            ]}
+            initialValues={[sort, categoryId || ""]}
+            initialSearchValue={q}
+            searchPlaceholder="검색어를 입력해주세요."
+            buttons={[
+              { label: '검색', tone: 'dark' },
+              { label: '등록하기', tone: 'primary' },
+            ]}
+            showReset
+            dense
+            searchWidth={240}
+            className="!items-center !gap-2 flex-wrap justify-end"
+            onFieldChange={(label, value) => {
+              const L = norm(String(label));
+              if (L === '정렬') setSort(value as Sort);
+              else if (L === '유형') setCategoryId(value || undefined);
+              setPage(1);
+            }}
+            onSearch={(value) => { setQ(value); setPage(1); }}
+            onActionClick={(label) => {
+              if (label === '등록하기') router.push(`/admin/boards/notice/events/${eventId}/write`);
+            }}
+            onReset={() => { setSort('new'); setCategoryId(undefined); setQ(''); setPage(1); }}
+          />
+        }
+        loadingMessage={isLoading ? '공지사항을 불러오는 중...' : undefined}
+        emptyMessage={error ? '공지사항을 불러오는데 실패했습니다.' : undefined}
       />
 
       {/* 삭제 확인 모달 */}

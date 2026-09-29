@@ -20,7 +20,7 @@ export default function Page() {
       apiType="event"
       eventId={eventId}
       titleAddon={
-        <div className="flex w-full min-w-0 flex-col items-start gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
           <InquiryToggleTabs
             active="event"
             onSelect={(value) => {
@@ -28,7 +28,7 @@ export default function Page() {
               if (value === 'main') router.push('/admin/boards/inquiry/main');
             }}
           />
-          <h3 className="w-full min-w-0 text-[16px] font-semibold">
+          <h3 className="min-w-0 text-[15px] font-semibold">
             <span>
               선택대회 : <span className="text-[#1E5EFF]">{eventTitle}</span> 문의사항
             </span>

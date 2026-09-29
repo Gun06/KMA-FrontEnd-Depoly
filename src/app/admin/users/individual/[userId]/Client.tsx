@@ -318,48 +318,44 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
 
   if (loadingRegs) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">상세 정보를 불러오는 중...</div>
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+        상세 정보를 불러오는 중...
       </div>
     );
   }
 
   if (errorRegs) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">
-          데이터를 불러오는 중 오류가 발생했습니다: {errorRegs.message}
-        </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-red-500">
+        데이터를 불러오는 중 오류가 발생했습니다: {errorRegs.message}
       </div>
     );
   }
 
   if (!detail) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">사용자 정보를 찾을 수 없습니다.</div>
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+        사용자 정보를 찾을 수 없습니다.
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-xl bg-white shadow border border-gray-200 p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-sm text-gray-500">개인 회원</p>
-            <h1 className="font-pretendard-extrabold text-[20px] md:text-[24px] text-gray-900">사용자 상세</h1>
-          </div>
-          <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold text-gray-900">사용자 상세</h3>
+          <span className="text-[13px] text-gray-500">개인 회원</span>
+          <div className="ml-auto flex items-center gap-2">
             <button
-              className="px-4 py-2 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              className="h-9 px-3 text-[13px] rounded border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors whitespace-nowrap"
               onClick={() => router.back()}
             >
               목록으로
             </button>
             {detailAuth === 'USER' && (
               <button
-                className="px-4 py-2 text-sm rounded border border-red-600 bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 px-3 text-[13px] rounded border border-red-600 bg-red-600 text-white hover:bg-red-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={() => setShowWithdrawModal(true)}
                 disabled={withdrawing}
               >
@@ -368,11 +364,11 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
             )}
           </div>
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 p-4 md:grid-cols-3">
           {infoSections.map((section) => (
-            <section key={section.title} className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-900">{section.title}</h3>
-              <dl className="mt-3 grid grid-cols-[88px_1fr] gap-y-2 text-sm">
+            <section key={section.title} className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+              <h4 className="text-[13px] font-semibold text-gray-900">{section.title}</h4>
+              <dl className="mt-2 grid grid-cols-[80px_1fr] gap-y-1.5 text-[13px]">
                 {section.items.map(({ label, value }) => (
                   <React.Fragment key={label}>
                     <dt className="text-gray-500">{label}</dt>
@@ -385,52 +381,55 @@ const paymentStatusToKorean = (status?: string): '미결제' | '결제완료' | 
         </div>
       </div>
 
-      <div className="rounded-xl bg-white shadow border border-gray-200 p-6">
-        <h2 className="font-pretendard-extrabold text-[18px] md:text-[20px] text-gray-900">신청 대회</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-sm">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold text-gray-900">신청 대회</h3>
+          <span className="text-[13px] text-gray-500">{registrationRows.length.toLocaleString()}건</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-[13px]">
             <thead>
-              <tr className="text-gray-500 border-b border-gray-200">
-                <th className="px-3 py-2 text-left">대회명</th>
-                <th className="px-3 py-2 text-center">개최일</th>
-                <th className="px-3 py-2 text-center">신청일시</th>
-                <th className="px-3 py-2 text-center">금액</th>
-                <th className="px-3 py-2 text-center">입금자명</th>
-                <th className="px-3 py-2 text-center">입금여부</th>
-                <th className="px-3 py-2 text-center">비밀번호 초기화</th>
+              <tr className="h-11 bg-gray-50 text-gray-600 border-b border-gray-200 [&>th]:font-medium [&>th]:whitespace-nowrap">
+                <th className="px-4 text-left">대회명</th>
+                <th className="px-3 text-center">개최일</th>
+                <th className="px-3 text-center">신청일시</th>
+                <th className="px-3 text-center">금액</th>
+                <th className="px-3 text-center">입금자명</th>
+                <th className="px-3 text-center">입금여부</th>
+                <th className="px-3 text-center">비밀번호 초기화</th>
               </tr>
             </thead>
             <tbody>
               {registrationRows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500">신청 내역이 없습니다.</td>
+                  <td colSpan={7} className="px-3 py-10 text-center text-gray-500">신청 내역이 없습니다.</td>
                 </tr>
               ) : (
                 registrationRows.map((row, index) => (
                   <tr
                     key={`${row.eventId ?? index}-${row.registrationId ?? row.registeredAt ?? index}`}
-                    className="border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="border-b border-gray-100 last:border-b-0 hover:bg-[#F8FAFF] transition-colors cursor-pointer"
                     onClick={() => handleShowDetail(row, row.registrationId)}
                   >
-                    <td className="px-3 py-3">{row.eventName || '-'}</td>
-                    <td className="px-3 py-3 text-center tabular-nums">{formatDate(row.eventStartDate)}</td>
-                    <td className="px-3 py-3 text-center tabular-nums">{formatDateTime(row.registeredAt)}</td>
-                    <td className="px-3 py-3 text-center tabular-nums">
+                    <td className="px-4 py-3"><span className="block max-w-[360px] truncate" title={row.eventName || undefined}>{row.eventName || '-'}</span></td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center tabular-nums">{formatDate(row.eventStartDate)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center tabular-nums">{formatDateTime(row.registeredAt)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center tabular-nums">
                       {typeof row.amount === 'number' ? `${row.amount.toLocaleString()}원` : '-'}
                     </td>
-                    <td className="px-3 py-3 text-center">{row.paymenterName || '-'}</td>
-                    <td className="px-3 py-3 text-center">
+                    <td className="px-3 py-3 whitespace-nowrap text-center">{row.paymenterName || '-'}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center">
                       <div className="flex justify-center">
                         <PaymentBadgeApplicants payStatus={paymentStatusToKorean(row.paymentStatus)} />
                       </div>
                     </td>
-                    <td className="px-3 py-3 text-center">
+                    <td className="px-3 py-3 whitespace-nowrap text-center">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePasswordReset(row, row.registrationId);
                         }}
-                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
+                        className="text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
                       >
                         비밀번호 초기화
                       </button>

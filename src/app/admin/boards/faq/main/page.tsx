@@ -126,14 +126,6 @@ export default function Page() {
     };
   }, [typedFaqData, searchParams.keyword, handleSearch]);
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 py-6">
-        <div className="text-center text-red-500">FAQ 목록을 불러오는데 실패했습니다.</div>
-      </div>
-    );
-  }
-
   return (
     <>
       <FaqListPage
@@ -153,6 +145,7 @@ export default function Page() {
         currentPage={searchParams.page}
         createHref={`/admin/boards/faq/main/write`}
         isLoading={isLoading}
+        errorMessage={error ? "FAQ 목록을 불러오는데 실패했습니다." : undefined}
       />
 
       {/* 삭제 확인 모달 */}

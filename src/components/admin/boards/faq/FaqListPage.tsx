@@ -34,6 +34,7 @@ type Props = {
   presetKey?: keyof typeof PRESETS;
   pageSize?: number;
   createHref?: string;
+  errorMessage?: string;
 };
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -52,6 +53,7 @@ export default function FaqListPage({
   presetKey = "관리자 / FAQ",
   pageSize = DEFAULT_PAGE_SIZE,
   createHref,
+  errorMessage,
 }: Props) {
   const router = useRouter();
   const [page, setPage] = React.useState(1);
@@ -86,62 +88,64 @@ export default function FaqListPage({
   };
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold">{title}</h3>
-        {headerButton && <Button {...headerButton}>{headerButton.label}</Button>}
-      </div>
-
-      {preset && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <FilterBar
-            {...preset}
-            className="!gap-3"
-            onFieldChange={(label, value) => {
-              const L = norm(String(label));
-              if (L === "정렬") setSort(value as Sort);
-              if (L === "이름") setSearchMode(value as SearchMode);
-              setPage(1);
-            }}
-            onSearch={(value) => {
-              setQ(value);
-              setPage(1);
-              setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
-              onSearch?.(value, searchMode);
-            }}
-            onReset={() => {
-              setQ("");
-              setSort("new");
-              setSearchMode("post");
-              setPage(1);
-              setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
-              onReset?.();
-            }}
-          />
-
-          {createHref && (
-            <Button
-              size="sm"
-              tone="primary"
-              widthType="pager"
-              onClick={() => router.push(createHref)}
-            >
-              등록하기
+    <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="min-w-0 text-[15px] font-semibold">{title}</h3>
+          {headerButton && (
+            <Button {...headerButton} className="ml-auto !h-9 !px-3 !text-[13px]">
+              {headerButton.label}
             </Button>
           )}
         </div>
-      )}
 
-      <FaqTable
-        rows={rows}
-        linkForRow={linkForRow}
-        pagination={{ page: currentPage || page, pageSize, total, onChange: (newPage) => {
-          setPage(newPage);
-          onPageChange?.(newPage);
-        }, align: "center" }}
-        onDelete={handleDelete}
-        isLoading={isLoading}
-      />
+        <FaqTable
+          rows={rows}
+          linkForRow={linkForRow}
+          pagination={{ page: currentPage || page, pageSize, total, onChange: (newPage) => {
+            setPage(newPage);
+            onPageChange?.(newPage);
+          } }}
+          onDelete={handleDelete}
+          isLoading={isLoading}
+          emptyMessage={errorMessage}
+          toolbar={preset && (
+            <FilterBar
+              {...preset}
+              dense
+              searchWidth={240}
+              className="!items-center !gap-2 flex-wrap justify-end"
+              buttons={[
+                ...(preset.buttons ?? []),
+                ...(createHref ? [{ label: "등록하기", tone: "primary" as const }] : []),
+              ]}
+              onActionClick={(label) => {
+                if (label === "등록하기" && createHref) router.push(createHref);
+              }}
+              onFieldChange={(label, value) => {
+                const L = norm(String(label));
+                if (L === "정렬") setSort(value as Sort);
+                if (L === "이름") setSearchMode(value as SearchMode);
+                setPage(1);
+              }}
+              onSearch={(value) => {
+                setQ(value);
+                setPage(1);
+                setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
+                onSearch?.(value, searchMode);
+              }}
+              onReset={() => {
+                setQ("");
+                setSort("new");
+                setSearchMode("post");
+                setPage(1);
+                setRev((v) => v + 1); // provider 함수 재호출을 위한 리비전 증가
+                onReset?.();
+              }}
+            />
+          )}
+        />
+      </div>
     </div>
   );
 }

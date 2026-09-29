@@ -26,7 +26,7 @@ export function Columns(
 ): Column<IndividualUserRow>[] {
   const cols: Column<IndividualUserRow>[] = [];
 
-  // ✅ 선택 체크박스 (52)
+  // ✅ 선택 체크박스
   if (hooks?.headCheckbox && hooks?.rowCheckbox) {
     cols.push({
       key: '__sel',
@@ -35,7 +35,7 @@ export function Columns(
           {hooks.headCheckbox}
         </div>
       ),
-      width: 52,
+      width: 40,
       align: 'center',
       headerAlign: 'center',
       render: (r) => hooks.rowCheckbox!(r),
@@ -44,15 +44,14 @@ export function Columns(
 
   const fmtBirth = (s?: string) => (s ? s.replaceAll('-', '.') : '-');
 
-  // ✅ 1300 안에 들어오도록 총합 슬림화 (선택 컬럼 포함해도 ~1,258px + 여유)
   cols.push(
     {
       key: '__no',
       header: '번호',
-      width: 80,
+      width: 72,
       align: 'center',
       headerAlign: 'center',
-      className: 'whitespace-nowrap tabular-nums',
+      className: 'whitespace-nowrap tabular-nums text-gray-500',
       render: (_row, idx) => {
         const baseIndex = (opts?.rowIndexOffset ?? 0) + idx;
         if (opts?.descendingNumbering && typeof opts.totalCount === 'number') {
@@ -64,17 +63,17 @@ export function Columns(
     {
       key: 'isMember',
       header: '회원여부',
-      width: 96,
+      width: 80,
       align: 'center',
       headerAlign: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => <MemberBadge isMember={r.isMember} />,
     },
-    { key: 'userId', header: '아이디', width: 110, align: 'center' },
+    { key: 'userId', header: '아이디', width: 130, align: 'center' },
     {
       key: 'name',
       header: '이름',
-      width: 100,
+      width: 90,
       align: 'center',
       render: (r) => {
         if (!opts?.makeNameClickable) return r.name;
@@ -107,7 +106,7 @@ export function Columns(
       }    
     },
     {
-      key: 'birth',     header: '생년월일', width: 110, align: 'center',
+      key: 'birth',     header: '생년월일', width: 100, align: 'center',
       className: 'whitespace-nowrap tabular-nums',
       render: (r) => fmtBirth(r.birth),
     },
@@ -120,7 +119,7 @@ export function Columns(
     cols.push({
       key: 'list',
       header: '상세',
-      width: 88,
+      width: 80,
       align: 'center',
       className: 'whitespace-nowrap',
       render: (r) => (

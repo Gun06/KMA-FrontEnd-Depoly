@@ -77,7 +77,7 @@ export default function Client() {
     if (memberFilter) p.set('member', memberFilter);
 
     const next = p.toString() ? `${pathname}?${p.toString()}` : pathname;
-    router.replace(next);
+    router.replace(next, { scroll: false });
   }, [router, pathname, page, query, sortKey, memberFilter]);
 
   useEffect(() => {
@@ -111,10 +111,8 @@ export default function Client() {
   // 에러 상태 처리
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">
-          회원 목록을 불러오는 중 오류가 발생했습니다: {error.message}
-        </div>
+      <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-red-500">
+        회원 목록을 불러오는 중 오류가 발생했습니다: {error.message}
       </div>
     );
   }
