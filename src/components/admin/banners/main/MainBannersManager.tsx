@@ -350,126 +350,132 @@ export default function MainBannersManager() {
   // 로딩 상태
   if (isApiLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">메인 배너 데이터를 불러오는 중...</div>
+      <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+          메인 배너 데이터를 불러오는 중...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4">
-      {/* 헤더: 모드 토글 + 저장 */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="rounded-lg border bg-white p-1 inline-flex gap-1">
-          <button
-            type="button"
-            onClick={() => setMode('manage')}
-            className={`px-3 h-9 rounded-md text-sm ${mode === 'manage' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
-          >
-            관리
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('preview')}
-            className={`px-3 h-9 rounded-md text-sm ${mode === 'preview' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
-          >
-            미리보기
-          </button>
-        </div>
-        {mode === 'manage' ? (
-          <div className="flex gap-2">
-            <Link
-              href="/admin/banners/closing-marathon"
-              className="inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-3 text-[15px] font-medium leading-[22px] text-gray-700 hover:bg-gray-50"
+    <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold">메인 배너</h3>
+          <div className="inline-flex gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode('manage')}
+              className={`px-3 h-8 rounded-md text-[13px] ${mode === 'manage' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
             >
-              마감임박 대회 지정
-            </Link>
-            <Button size="sm" tone="neutral" widthType="pager" onClick={handleAdd}>
-              새 배너 추가
-            </Button>
-            <div className="relative group">
-              <Button 
-                size="sm" 
-                tone="primary" 
-                widthType="pager" 
-                onClick={handleSave}
-                disabled={isLoading}
+              관리
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('preview')}
+              className={`px-3 h-8 rounded-md text-[13px] ${mode === 'preview' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
+            >
+              미리보기
+            </button>
+          </div>
+          {mode === 'manage' ? (
+            <div className="ml-auto flex gap-2">
+              <Link
+                href="/admin/banners/closing-marathon"
+                className="inline-flex h-9 items-center rounded-md border border-gray-300 bg-white px-3 text-[13px] font-medium text-gray-700 hover:bg-gray-50"
               >
-                {isLoading ? '저장 중...' : '저장하기'}
+                마감임박 대회 지정
+              </Link>
+              <Button size="sm" tone="neutral" onClick={handleAdd} className="!h-9 !px-3 !text-[13px]">
+                새 배너 추가
               </Button>
-              {/* 툴팁 */}
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
-                <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
-                  <div className="font-semibold mb-2 text-sm">저장하기</div>
-                  <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
-                    목록에 추가하거나 수정한 배너 정보를 서버에 저장합니다. 저장하기 전에 모든 정보를 확인해주세요.
+              <div className="relative group">
+                <Button 
+                  size="sm" 
+                  tone="primary" 
+                  onClick={handleSave}
+                  className="!h-9 !px-3 !text-[13px]"
+                  disabled={isLoading}
+                >
+                  {isLoading ? '저장 중...' : '저장하기'}
+                </Button>
+                {/* 툴팁 */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 hidden group-hover:block z-[100] pointer-events-none" style={{ width: 'max-content', maxWidth: '320px' }}>
+                  <div className="bg-gray-900 text-white rounded-lg py-3 px-4 shadow-xl" style={{ minWidth: '280px', width: 'max-content' }}>
+                    <div className="font-semibold mb-2 text-sm">저장하기</div>
+                    <div className="text-xs text-gray-300 leading-relaxed" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+                      목록에 추가하거나 수정한 배너 정보를 서버에 저장합니다. 저장하기 전에 모든 정보를 확인해주세요.
+                    </div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
                   </div>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-transparent border-t-gray-900"></div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : <div />}
-      </div>
+          ) : null}
+        </div>
 
-      {mode === 'manage' ? (
-        <>
-          {gridItems.length === 0 ? (
-            <div className="max-w-[1300px] mx-auto w-full">
-              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-                <div className="text-gray-500 text-lg mb-2">등록된 배너가 없습니다</div>
-                <div className="text-sm text-gray-400 mb-6">첫 번째 배너를 등록해보세요</div>
-                <button
-                  onClick={handleAdd}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  배너 등록하기
-                </button>
+        {mode === 'manage' ? (
+          <>
+            {gridItems.length === 0 ? (
+              <div className="px-4 py-4">
+                <div className="flex flex-col items-center justify-center py-16">
+                  <div className="text-gray-500 text-base mb-2">등록된 배너가 없습니다</div>
+                  <div className="text-sm text-gray-400 mb-6">첫 번째 배너를 등록해보세요</div>
+                  <button
+                    onClick={handleAdd}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    배너 등록하기
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="max-w-[1300px] mx-auto w-full" style={{ overflow: 'visible' }}>
-              <MainBannerGrid
-                items={gridItems}
-                onItemClick={(id) => {
-                  const banner = rows.find(r => r.id === id);
-                  if (banner?.draft) {
-                    handleOpenEdit(id);
-                  } else {
-                    handleOpenView(id);
-                  }
-                }}
-                onReorder={handleReorder}
+            ) : (
+              <div className="px-4 py-4" style={{ overflow: 'visible' }}>
+                <MainBannerGrid
+                  items={gridItems}
+                  onItemClick={(id) => {
+                    const banner = rows.find(r => r.id === id);
+                    if (banner?.draft) {
+                      handleOpenEdit(id);
+                    } else {
+                      handleOpenView(id);
+                    }
+                  }}
+                  onReorder={handleReorder}
+                />
+              </div>
+            )}
+
+            <div className="rounded-b-lg border-t border-gray-200 bg-gray-50/60 px-4 py-3">
+              <NoticeMessage
+                items={[
+                  { text: '※ 새 배너를 추가하려면 "새 배너 추가" 버튼을 클릭하여 등록한 후, 반드시 "저장하기" 버튼을 눌러주세요.' },
+                  { text: '※ 배너 왼쪽 상단의 드래그 핸들(⋮⋮)을 잡고 드래그하여 순서를 변경할 수 있습니다. 변경 후 "저장하기" 버튼을 눌러주세요.' },
+                  { text: '※ 이미지를 클릭하면 수정할 수 있습니다.' },
+                  { text: '※ 이미지는 JPG/PNG 권장, 가로 1600px 이상, 20MB 이하.' },
+                  { text: '※ 저장 전 항목은 목록에서 바로 수정 가능하며, 저장 후에는 이미지를 클릭하여 수정하세요.' },
+                ]}
               />
             </div>
-          )}
-
-          <div className="mt-8 pt-4 pb-16">
-            <NoticeMessage
-              items={[
-                { text: '※ 새 배너를 추가하려면 "새 배너 추가" 버튼을 클릭하여 등록한 후, 반드시 "저장하기" 버튼을 눌러주세요.' },
-                { text: '※ 배너 왼쪽 상단의 드래그 핸들(⋮⋮)을 잡고 드래그하여 순서를 변경할 수 있습니다. 변경 후 "저장하기" 버튼을 눌러주세요.' },
-                { text: '※ 이미지를 클릭하면 수정할 수 있습니다.' },
-                { text: '※ 이미지는 JPG/PNG 권장, 가로 1600px 이상, 20MB 이하.' },
-                { text: '※ 저장 전 항목은 목록에서 바로 수정 가능하며, 저장 후에는 이미지를 클릭하여 수정하세요.' },
-              ]}
+          </>
+        ) : (
+          <div className="p-4">
+            <MainBannersPreview
+              rows={rows.map((r) => ({
+                id: r.id,
+                visible: r.visible,
+                image: r.image,
+                badge: '대회 안내',
+                title: r.title,
+                subtitle: r.subtitle,
+                date: r.date,
+                eventId: r.eventId,
+              }))}
             />
           </div>
-        </>
-      ) : (
-        <MainBannersPreview
-          rows={rows.map((r) => ({
-            id: r.id,
-            visible: r.visible,
-            image: r.image,
-            badge: '대회 안내',
-            title: r.title,
-            subtitle: r.subtitle,
-            date: r.date,
-            eventId: r.eventId,
-          }))}
-        />
-      )}
+        )}
+      </div>
 
       {/* 모달 */}
       {selectedBannerId !== null && (

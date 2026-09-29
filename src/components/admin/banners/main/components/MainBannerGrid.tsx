@@ -63,14 +63,14 @@ function SortableBannerItem({
   const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f3f4f6' width='400' height='200'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E이미지 없음%3C/text%3E%3C/svg%3E";
 
   return (
-    <li ref={setNodeRef} style={style} className="shrink-0 transition-transform duration-200 ease-out relative">
+    <li ref={setNodeRef} style={style} className="min-w-0 transition-transform duration-200 ease-out relative">
       <div className="relative overflow-visible">
         <button
           type="button"
           onClick={onItemClick ? () => onItemClick(item.id) : undefined}
           className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group w-full overflow-visible"
         >
-          <div className={`relative w-[300px] md:w-[400px] aspect-[2/1] overflow-visible rounded-lg border-2 ${
+          <div className={`relative w-full aspect-[2/1] overflow-visible rounded-lg border-2 ${
             isDragging ? 'border-blue-500 shadow-lg' : 'border-gray-200'
           } bg-white group-hover:border-blue-400 transition-colors`}>
             <div className="absolute inset-0 overflow-hidden rounded-lg">
@@ -78,7 +78,7 @@ function SortableBannerItem({
                 src={item.imageUrl || defaultImageUrl}
                 alt={item.title || "메인 배너 이미지"}
                 fill
-                sizes="(max-width: 768px) 300px, 400px"
+                sizes="(max-width: 640px) 100vw, (max-width: 1536px) 33vw, 25vw"
                 unoptimized
                 style={{ objectFit: 'cover' }}
                 priority={false}
@@ -173,12 +173,12 @@ export default function MainBannerGrid({ items, onItemClick, onReorder }: MainBa
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <div className="w-full py-6 overflow-visible">
+      <div className="w-full overflow-visible">
         <SortableContext
           items={items.map((item) => String(item.id))}
           strategy={rectSortingStrategy}
         >
-          <ul className="flex flex-wrap items-start gap-4 md:gap-6 overflow-visible">
+          <ul className="grid grid-cols-1 gap-4 overflow-visible sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {items.map((item) => (
               <SortableBannerItem
                 key={item.id}

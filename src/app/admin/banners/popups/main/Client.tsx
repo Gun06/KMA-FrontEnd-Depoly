@@ -7,14 +7,17 @@ import PopupListManager from '@/components/admin/banners/popups/components/Popup
 
 export default function Client() {
   return (
-    <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold">전마협 메인 팝업</h3>
-        <Link href="/admin/banners/popups">
-          <Button size="sm" tone="competition">대회사이트 팝업 관리하기 &gt;</Button>
-        </Link>
-      </div>
-      <PopupListManager />
-    </div>
+    <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
+      <PopupListManager
+        title="전마협 메인 팝업"
+        headerAction={
+          <Link href="/admin/banners/popups">
+            <Button size="sm" tone="competition" className="!h-9 !px-3 !text-[13px]">
+              대회사이트 팝업 관리하기 &gt;
+            </Button>
+          </Link>
+        }
+      />
+    </main>
   );
 }

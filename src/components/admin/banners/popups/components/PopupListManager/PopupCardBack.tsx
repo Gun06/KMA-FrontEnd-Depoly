@@ -3,13 +3,17 @@ import { Pencil } from 'lucide-react';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { PopupRow } from '../../types';
 import { popupDatetimeForApi } from '../../utils/helpers';
-import { inputCls, smallInputCls } from '../../utils/styles';
 import { CircleBtn } from '../shared/CircleBtn';
 import { useApiMutation } from '@/hooks/useFetch';
 import { POPUP_API_ENDPOINTS } from '../../api';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PopupUpdateRequest } from '@/types/popup';
 import { toast } from 'react-toastify';
+
+const FIELD_CLS =
+  'w-full h-8 px-2.5 rounded-md bg-white border border-slate-200 hover:border-slate-300 ' +
+  'focus:border-[#BFD7FF] outline-none ring-0 text-[13px] transition-colors shadow-none';
+const LABEL_CLS = 'block text-[12px] font-medium text-slate-500 mb-1';
 
 interface PopupCardBackProps {
   row: PopupRow;
@@ -133,7 +137,7 @@ export default function PopupCardBack({
 
   return (
     <div
-      className="absolute inset-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-4 overflow-y-auto"
+      className="absolute inset-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-3 overflow-y-auto"
       style={{
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -143,17 +147,18 @@ export default function PopupCardBack({
       onClick={handleBackClick}
     >
       <div 
-        className="space-y-4"
+        className="space-y-2.5"
         onClick={handleInnerClick}
       >
         {/* 액션 버튼들 */}
         <div 
-          className="flex items-center justify-between pb-3 border-b border-slate-100"
+          className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <CircleBtn
               kind="up"
+              compact
               onClick={(e) => {
                 e.stopPropagation();
                 onMove(-1);
@@ -161,6 +166,7 @@ export default function PopupCardBack({
             />
             <CircleBtn
               kind="down"
+              compact
               onClick={(e) => {
                 e.stopPropagation();
                 onMove(+1);
@@ -168,6 +174,7 @@ export default function PopupCardBack({
             />
             <CircleBtn
               kind="plus"
+              compact
               onClick={(e) => {
                 e.stopPropagation();
                 onAddAfter();
@@ -175,6 +182,7 @@ export default function PopupCardBack({
             />
             <CircleBtn
               kind="minus"
+              compact
               onClick={(e) => {
                 e.stopPropagation();
                 onRemove();
@@ -189,7 +197,7 @@ export default function PopupCardBack({
                 e.stopPropagation();
                 onBatchSave?.();
               }}
-              className="inline-flex items-center gap-1.5 text-sm px-3 h-8 rounded-lg border border-[#1E5EFF] bg-[#1E5EFF] text-white hover:bg-[#1E5EFF]/90 transition-colors"
+              className="inline-flex shrink-0 items-center gap-1 text-[12px] px-2.5 h-7 rounded-md border border-[#1E5EFF] bg-[#1E5EFF] text-white hover:bg-[#1E5EFF]/90 transition-colors"
               title="저장하기"
             >
               저장하기
@@ -207,18 +215,18 @@ export default function PopupCardBack({
                   onToggleEdit();
                 }
               }}
-              className="inline-flex items-center gap-1.5 text-sm px-3 h-8 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex shrink-0 items-center gap-1 text-[12px] px-2.5 h-7 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title={isEditing ? '수정 완료' : '수정'}
               disabled={updateMutation.isPending}
             >
-              <Pencil size={14} /> {isEditing ? (updateMutation.isPending ? '저장 중...' : '수정 완료') : '수정'}
+              <Pencil size={12} /> {isEditing ? (updateMutation.isPending ? '저장 중...' : '수정 완료') : '수정'}
             </button>
           )}
         </div>
 
         {/* 이미지 업로더 */}
         <div data-stop-bubble={(row.draft || isEditing) ? "true" : undefined}>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">이미지 변경</label>
+          <label className={LABEL_CLS}>이미지 변경</label>
           <SponsorUploader
             label="이미지 선택"
             accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -226,69 +234,70 @@ export default function PopupCardBack({
             value={row.image ? [row.image] : []}
             readOnly={!row.draft && !isEditing}
             onChange={(files) => (row.draft || isEditing) && onUpdate({ image: files?.[0] ?? null })}
-            buttonClassName="h-9 px-4"
+            buttonClassName="h-8 px-3 text-[13px]"
+            className="[&_span.truncate]:text-[13px]"
             emptyText="이미지 없음"
           />
         </div>
 
         {/* 링크 URL */}
         <div data-stop-bubble={(row.draft || isEditing) ? "true" : undefined}>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">링크 URL</label>
+          <label className={LABEL_CLS}>링크 URL</label>
           <input
             value={row.url}
             onChange={(e) => (row.draft || isEditing) && onUpdate({ url: e.target.value })}
             readOnly={!row.draft && !isEditing}
             placeholder="https://example.com"
-            className={inputCls}
+            className={FIELD_CLS}
           />
         </div>
 
         {/* 디바이스 */}
         <div data-stop-bubble={(row.draft || isEditing) ? "true" : undefined}>
-          <label className="block text-sm font-semibold text-slate-700 mb-2">디바이스</label>
+          <label className={LABEL_CLS}>디바이스</label>
           {(row.draft || isEditing) ? (
             <select
               value={row.device}
               onChange={(e) => onUpdate({ device: e.target.value as PopupRow['device'] })}
-              className="h-10 px-3 rounded-md border border-slate-200 hover:border-slate-300 focus:border-[#BFD7FF] outline-none ring-0 transition-colors shadow-none text-sm w-full"
+              className={FIELD_CLS}
             >
               <option value="BOTH">전체</option>
               <option value="PC">PC</option>
               <option value="MOBILE">모바일</option>
             </select>
           ) : (
-            <div className="h-10 px-3 rounded-md border border-slate-200 bg-slate-50 flex items-center text-sm text-gray-700">
+            <div className="h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 flex items-center text-[13px] text-gray-700">
               {row.device === 'BOTH' ? '전체' : row.device === 'PC' ? 'PC' : '모바일'}
             </div>
           )}
         </div>
 
         {/* 시작/종료 일시 */}
-        <div className="grid grid-cols-1 gap-4" data-stop-bubble={(row.draft || isEditing) ? "true" : undefined}>
+        <div className="grid grid-cols-1 gap-2.5" data-stop-bubble={(row.draft || isEditing) ? "true" : undefined}>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">시작일시</label>
+            <label className={LABEL_CLS}>시작일시</label>
             <input
               type="datetime-local"
               value={row.startAt || ''}
               onChange={(e) => (row.draft || isEditing) && onUpdate({ startAt: e.target.value })}
               readOnly={!row.draft && !isEditing}
-              className={smallInputCls}
+              className={FIELD_CLS}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">종료일시</label>
+            <label className={LABEL_CLS}>종료일시</label>
             <input
               type="datetime-local"
               value={row.endAt || ''}
               onChange={(e) => (row.draft || isEditing) && onUpdate({ endAt: e.target.value })}
               readOnly={!row.draft && !isEditing}
-              className={smallInputCls}
+              className={FIELD_CLS}
             />
           </div>
         </div>
 
         {/* 뒤집기 힌트 */}
-        <div className="pt-2 text-center">
+        <div className="pt-1 text-center">
           <button
             type="button"
             onClick={(e) => {

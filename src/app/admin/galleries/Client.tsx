@@ -248,12 +248,18 @@ export default function Client() {
 
   return (
     <>
-      <div className="px-4">
-        {/* 상단: 검색 및 필터 바 */}
-        <div className="max-w-[1300px] mx-auto w-full mb-6">
-          <div className="flex items-center">
+      <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
+        <section className="rounded-lg border border-gray-200 bg-white">
+          <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+            <h3 className="text-[15px] font-semibold text-gray-900">갤러리 등록</h3>
+            <p className="shrink-0 text-sm text-gray-600">
+              총 <b className="text-gray-900">{gridItems.length}</b>개
+            </p>
             <FilterBar
               {...preset}
+              dense
+              searchWidth={240}
+              className="ml-auto !items-center !gap-2 flex-wrap justify-end"
               onFieldChange={(label, value) => {
                 const L = String(label).replace(/\s/g, "");
                 if (L === "정렬") {
@@ -275,35 +281,28 @@ export default function Client() {
               }}
             />
           </div>
-        </div>
 
-        {/* 카드 그리드 */}
-        {isLoadingList ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-gray-500">로딩 중...</div>
-          </div>
-        ) : gridItems.length === 0 ? (
-          <div className="max-w-[1300px] mx-auto w-full">
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-              <div className="text-gray-500 text-lg mb-2">등록된 갤러리가 없습니다</div>
-              <div className="text-sm text-gray-400 mb-6">첫 번째 갤러리를 등록해보세요</div>
+          {isLoadingList ? (
+            <div className="py-16 text-center text-sm text-gray-500">로딩 중...</div>
+          ) : gridItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="mb-1 text-[15px] text-gray-600">등록된 갤러리가 없습니다</div>
+              <div className="mb-4 text-[13px] text-gray-400">첫 번째 갤러리를 등록해보세요</div>
               <button
                 onClick={handleOpenCreate}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="h-9 rounded-md bg-blue-600 px-4 text-[13px] text-white transition-colors hover:bg-blue-700"
               >
                 갤러리 등록하기
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="max-w-[1300px] mx-auto w-full">
+          ) : (
             <GalleryGrid
               items={gridItems}
               onItemClick={(id) => handleOpenView(id)}
             />
-          </div>
-        )}
-      </div>
+          )}
+        </section>
+      </main>
 
       {value && (mode === "create" || selectedEventId) && (
         <GalleryModal

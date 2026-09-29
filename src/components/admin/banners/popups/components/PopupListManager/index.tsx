@@ -12,8 +12,11 @@ import PopupCard from './PopupCard';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
 
-const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: string }>(
-  ({ eventId }, ref) => {
+const PopupListManager = React.forwardRef<
+  PopupListManagerRef,
+  { eventId?: string; title?: React.ReactNode; headerAction?: React.ReactNode }
+>(
+  ({ eventId, title, headerAction }, ref) => {
   const mounted = useMounted();
   const [mode, setMode] = React.useState<'manage' | 'preview'>('manage');
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set());
@@ -137,8 +140,10 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
   if (!mounted) return null;
 
   return (
-    <div>
+    <div className="rounded-lg border border-gray-200 bg-white">
       <PopupListManagerHeader
+        title={title}
+        headerAction={headerAction}
         mode={mode}
         eventId={eventId}
         onModeChange={setMode}
@@ -149,10 +154,10 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
       {mode === 'manage' ? (
         <>
           {/* 그리드 형태의 팝업 목록 (한 열에 3개) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {rows.length === 0 ? (
-              <div className="col-span-full bg-white border border-slate-200 rounded-xl shadow-sm p-12 text-center">
-                <p className="text-slate-500 text-lg mb-2">등록된 팝업이 없습니다</p>
+              <div className="col-span-full p-12 text-center">
+                <p className="text-slate-500 text-base mb-2">등록된 팝업이 없습니다</p>
                 <p className="text-slate-400 text-sm mb-4">위의 &quot;추가하기&quot; 버튼을 클릭하여 팝업을 추가하세요.</p>
               </div>
             ) : (
@@ -177,7 +182,7 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
             )}
           </div>
 
-          <div className="mt-8 pt-4 pb-16">
+          <div className="rounded-b-lg border-t border-gray-200 bg-gray-50/60 px-4 py-3">
             <NoticeMessage
               items={[
                 { text: '※ 카드를 클릭하여 뒤집으면 상세 정보를 확인할 수 있습니다.' },
@@ -190,7 +195,7 @@ const PopupListManager = React.forwardRef<PopupListManagerRef, { eventId?: strin
           </div>
         </>
       ) : (
-        <div className="pb-56">
+        <div className="p-4 pb-56">
           <PopupPreview rows={rows} showControls ignorePeriod/>
         </div>
       )}

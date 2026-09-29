@@ -23,21 +23,21 @@ export default function SponsorGrid({ items, onItemClick }: SponsorGridProps) {
   const defaultImageUrl = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23f3f4f6' width='400' height='200'/%3E%3Ctext fill='%239ca3af' font-family='sans-serif' font-size='14' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E이미지 없음%3C/text%3E%3C/svg%3E";
 
   return (
-    <div className="w-full py-6">
-      <ul className="flex flex-wrap items-start gap-4 md:gap-6">
+    <div className="w-full">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {items.map((item) => (
-          <li key={item.id} className="shrink-0">
+          <li key={item.id} className="min-w-0">
             <button
               type="button"
               onClick={onItemClick ? () => onItemClick(item.id) : undefined}
-              className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group"
+              className="focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group w-full"
             >
-              <div className="relative w-[300px] md:w-[400px] aspect-[2/1] overflow-hidden rounded-lg border-2 border-gray-200 bg-white group-hover:border-blue-400 transition-colors">
+              <div className="relative w-full aspect-[2/1] overflow-hidden rounded-lg border-2 border-gray-200 bg-white group-hover:border-blue-400 transition-colors">
                 <Image
                   src={item.imageUrl || defaultImageUrl}
                   alt={item.url || "스폰서 이미지"}
                   fill
-                  sizes="(max-width: 768px) 300px, 400px"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1536px) 33vw, 25vw"
                   unoptimized
                   style={{ objectFit: 'cover' }}
                   priority={false}

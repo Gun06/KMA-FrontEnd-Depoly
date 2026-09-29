@@ -25,8 +25,10 @@ const CARD_LIST_ROUTES = [
   /^\/admin\/boards\/faq\/(main|events\/[^/]+)$/,
   /^\/admin\/users\/individual(\/[^/]+(\/detail)?)?$/,
   /^\/admin\/users\/organization(\/[^/]+)?$/,
-  /^\/admin\/banners\/popups$/,
-  /^\/admin\/notifications$/,
+  /^\/admin\/banners\/(popups|main|closing-marathon|sponsors)$/,
+  /^\/admin\/banners\/popups\/(main|events\/[^/]+)$/,
+  /^\/admin\/galleries$/,
+  /^\/admin\/notifications(\/all|\/events\/[^/]+)?$/,
 ];
 
 interface AdminLayoutProps {
@@ -148,7 +150,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         className="min-h-screen flex flex-col relative transition-[padding] duration-200"
         style={{ paddingLeft: sidebarOffset }}
       >
-        <header className="sticky top-0 z-[100] flex h-12 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3">
+        <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3">
           <button
             type="button"
             onClick={() => setSidebarOpen((v) => !v)}

@@ -7,6 +7,8 @@ interface PopupListManagerHeaderProps {
   onModeChange: (mode: 'manage' | 'preview') => void;
   onAddNew: () => void;
   onSave: () => void;
+  title?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 
 /**
@@ -18,31 +20,34 @@ export default function PopupListManagerHeader({
   onModeChange,
   onAddNew,
   onSave,
+  title,
+  headerAction,
 }: PopupListManagerHeaderProps) {
   return (
-    <div className="mb-4 flex items-center justify-between">
-      <div className="rounded-lg border bg-white p-1 inline-flex gap-1">
+    <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+      {title ? <h3 className="min-w-0 text-[15px] font-semibold">{title}</h3> : null}
+      <div className="inline-flex gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
         <button
           type="button"
           onClick={() => onModeChange('manage')}
-          className={`px-3 h-9 rounded-md text-sm ${mode === 'manage' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
+          className={`px-3 h-8 rounded-md text-[13px] ${mode === 'manage' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
         >
           관리
         </button>
         <button
           type="button"
           onClick={() => onModeChange('preview')}
-          className={`px-3 h-9 rounded-md text-sm ${mode === 'preview' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
+          className={`px-3 h-8 rounded-md text-[13px] ${mode === 'preview' ? 'bg-[#1E5EFF] text-white' : 'text-gray-700'}`}
         >
           미리보기
         </button>
       </div>
-      <div className="flex gap-2">
+      <div className="ml-auto flex flex-wrap gap-2">
         <Button
           size="sm"
           tone="outlineDark"
           variant="outline"
-          widthType="pager"
+          className="!h-9 !px-3 !text-[13px]"
           onClick={() => {
             if (eventId) {
               window.history.back();
@@ -58,7 +63,7 @@ export default function PopupListManagerHeader({
             <Button
               size="sm"
               tone="neutral"
-              widthType="pager"
+              className="!h-9 !px-3 !text-[13px]"
               onClick={onAddNew}
             >
               추가하기
@@ -66,13 +71,14 @@ export default function PopupListManagerHeader({
             <Button
               size="sm"
               tone="primary"
-              widthType="pager"
+              className="!h-9 !px-3 !text-[13px]"
               onClick={onSave}
             >
               저장하기
             </Button>
           </>
         )}
+        {headerAction}
       </div>
     </div>
   );

@@ -115,7 +115,7 @@ function TypeToggleTabs({
 }) {
   return (
     <div
-      className="inline-flex gap-1 rounded-lg border bg-white p-1"
+      className="inline-flex gap-1 rounded-lg border border-gray-200 bg-white p-0.5"
       role="tablist"
       aria-label="마감임박 기준 선택"
     >
@@ -129,7 +129,7 @@ function TypeToggleTabs({
             aria-selected={selected}
             onClick={() => onChange(type)}
             className={cn(
-              'h-9 rounded-md px-3 text-sm transition-colors',
+              'h-8 rounded-md px-3 text-[13px] transition-colors',
               selected
                 ? 'bg-[#1E5EFF] text-white'
                 : 'text-gray-700 hover:bg-gray-50'
@@ -207,7 +207,7 @@ function DesignatedStatusCard({
   return (
     <div
       className={cn(
-        'flex h-full flex-col rounded-lg border p-5 shadow-sm',
+        'flex h-full flex-col rounded-lg border p-4',
         !isTarget
           ? 'border-gray-200 bg-gradient-to-b from-gray-50/80 to-white'
           : isManual
@@ -303,7 +303,7 @@ function DisplayPreviewCard({
   return (
     <div
       className={cn(
-        'flex h-full flex-col rounded-lg border bg-white p-5 shadow-sm',
+        'flex h-full flex-col rounded-lg border bg-white p-4',
         !isTarget
           ? 'border-gray-200'
           : tone === 'warn'
@@ -592,40 +592,41 @@ export default function ClosingMarathonManager() {
   }, [criteria, isTarget]);
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-6 px-4 py-2">
-      <div className="space-y-1">
-        <h2 className="text-[18px] font-semibold text-gray-900">
-          마감임박 대회 지정
-        </h2>
-        <p className="text-[13px] text-gray-500">
-          메인 화면 좌측 마감임박 영역에 노출할 대회를 지정합니다. 배너
-          이미지는 대회 등록/수정에서 관리합니다.
-        </p>
+    <div className="mx-auto w-full max-w-[1920px] space-y-3 px-4 py-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-semibold text-gray-900">마감임박 대회 지정</h3>
+          <p className="text-[13px] text-gray-500">
+            메인 화면 좌측 마감임박 영역에 노출할 대회를 지정합니다. 배너
+            이미지는 대회 등록/수정에서 관리합니다.
+          </p>
+        </div>
+        <div className="ml-auto">
+          <TypeToggleTabs value={currentType} onChange={handleTypeChange} />
+        </div>
       </div>
 
-      <TypeToggleTabs value={currentType} onChange={handleTypeChange} />
-
-      {isLoading ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-[13px] text-gray-500">
-          불러오는 중…
-        </div>
-      ) : isError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <p className="text-[13px] text-red-600">
-            마감임박 대회 정보를 불러오지 못했습니다.
-          </p>
-          <Button
-            size="sm"
-            tone="neutral"
-            className="mt-3"
-            onClick={() => void refetch()}
-          >
-            다시 시도
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="grid items-stretch gap-4 md:grid-cols-2">
+      <div className="grid items-stretch gap-3 lg:grid-cols-2 xl:grid-cols-3">
+        {isLoading ? (
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-[13px] text-gray-500 lg:col-span-2">
+            불러오는 중…
+          </div>
+        ) : isError ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center lg:col-span-2">
+            <p className="text-[13px] text-red-600">
+              마감임박 대회 정보를 불러오지 못했습니다.
+            </p>
+            <Button
+              size="sm"
+              tone="neutral"
+              className="mt-3"
+              onClick={() => void refetch()}
+            >
+              다시 시도
+            </Button>
+          </div>
+        ) : (
+          <>
             <DesignatedStatusCard
               eventId={designatedId}
               eventName={designatedName}
@@ -642,80 +643,84 @@ export default function ClosingMarathonManager() {
               hideEventMeta={Boolean(designatedId)}
               isTarget={isTarget}
             />
-          </div>
+          </>
+        )}
 
-          {displayMismatch && (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
-              지정한 대회의 {criteria}이 지나 메인에는 다른 대회가 자동
-              노출됩니다. 지정을 변경하거나 해제할 수 있습니다.
+        <div className="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-4 lg:col-span-2 xl:col-span-1">
+          <h3 className="text-[13px] font-semibold text-gray-500">
+            대회 지정 / 변경
+          </h3>
+          <div className="mt-3 space-y-3">
+            <div>
+              <label className="mb-1.5 block text-[13px] font-medium text-gray-700">
+                대회 선택 (접수중·접수마감)
+              </label>
+              <SearchableSelect
+                value={selectedEventId ?? undefined}
+                options={eventOptions}
+                onChange={(v) => {
+                  setSelectedEventId(v);
+                  setSelectedEventLabel(
+                    eventOptions.find((o) => o.value === v)?.label ?? null
+                  );
+                }}
+                placeholder={
+                  eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
+                }
+                searchable
+                searchPlaceholder="대회명 검색"
+                variant="compact"
+                showPlaceholderColor
+                maxHeight="max-h-80"
+                onSearchChange={setEventSearchKeyword}
+                onLoadMore={() => {
+                  void fetchMoreEvents();
+                }}
+                hasMore={hasMoreEvents}
+                isLoadingMore={isLoadingMoreEvents}
+                loadMoreLabel={loadMoreLabel}
+                emptyMessage={
+                  eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
+                }
+              />
             </div>
-          )}
-        </>
-      )}
 
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 className="text-[14px] font-semibold text-gray-900">
-          대회 지정 / 변경
-        </h3>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="mb-2 block text-[13px] font-medium text-gray-700">
-              대회 선택 (접수중·접수마감)
-            </label>
-            <SearchableSelect
-              value={selectedEventId ?? undefined}
-              options={eventOptions}
-              onChange={(v) => {
-                setSelectedEventId(v);
-                setSelectedEventLabel(
-                  eventOptions.find((o) => o.value === v)?.label ?? null
-                );
-              }}
-              placeholder={
-                eventsLoading ? '대회 목록 불러오는 중…' : '대회를 선택하세요'
-              }
-              searchable
-              searchPlaceholder="대회명 검색"
-              variant="compact"
-              showPlaceholderColor
-              maxHeight="max-h-80"
-              onSearchChange={setEventSearchKeyword}
-              onLoadMore={() => {
-                void fetchMoreEvents();
-              }}
-              hasMore={hasMoreEvents}
-              isLoadingMore={isLoadingMoreEvents}
-              loadMoreLabel={loadMoreLabel}
-              emptyMessage={
-                eventsLoading ? '불러오는 중…' : '검색 결과가 없습니다.'
-              }
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="md"
-              tone="primary"
-              onClick={handleSaveDesignation}
-              disabled={isSaving || isLoading}
-            >
-              {isSaving ? '저장 중…' : '지정 저장'}
-            </Button>
-            {isTarget && hasDesignated(data) && (
+            <div className="flex flex-wrap gap-2">
               <Button
-                size="md"
-                tone="neutral"
-                onClick={handleClearDesignation}
+                size="sm"
+                tone="primary"
+                onClick={handleSaveDesignation}
                 disabled={isSaving || isLoading}
+                className="!h-9 !px-4 !text-[13px]"
               >
-                지정 해제 (자동 모드)
+                {isSaving ? '저장 중…' : '지정 저장'}
               </Button>
-            )}
+              {isTarget && hasDesignated(data) && (
+                <Button
+                  size="sm"
+                  tone="neutral"
+                  onClick={handleClearDesignation}
+                  disabled={isSaving || isLoading}
+                  className="!h-9 !px-4 !text-[13px]"
+                >
+                  지정 해제 (자동 모드)
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <NoticeMessage items={noticeItems} />
+      {!isLoading && !isError && displayMismatch && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] leading-relaxed text-amber-900">
+          지정한 대회의 {criteria}이 지나 메인에는 다른 대회가 자동
+          노출됩니다. 지정을 변경하거나 해제할 수 있습니다.
+        </div>
+      )}
+
+      <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <NoticeMessage items={noticeItems} />
+      </div>
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import GalleryCard from './GalleryCard';
+import GalleryCard from '@/components/common/GalleryCard';
+import { formatDate } from '../utils';
 import type { GalleryItem } from '../types';
 
 interface GalleryGridProps {
@@ -33,11 +34,15 @@ export default function GalleryGrid({
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 justify-items-center items-start">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-start">
         {items.map((item, index) => (
-          <div key={`${item.eventName}-${item.eventStartDate}-${index}`} className="w-full flex justify-center">
+          <div key={`${item.eventName}-${item.eventStartDate}-${index}`} className="min-w-0">
             <GalleryCard
-              item={item}
+              imageSrc={item.thumbnailUrl}
+              imageAlt={item.eventName}
+              tagName={item.tagName}
+              title={item.eventName}
+              date={formatDate(item.eventStartDate)}
               onClick={() => onItemClick?.(item)}
             />
           </div>

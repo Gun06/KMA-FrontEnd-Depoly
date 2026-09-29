@@ -2,6 +2,7 @@
 
 import React from "react";
 import FormRow from "@/components/admin/Form/FormRow";
+import { FormLayoutProvider } from "@/components/admin/Form/FormLayoutContext";
 import TextField from "@/components/common/TextField/TextField";
 import BirthDateInput from "@/components/common/FormField/BirthDateInput";
 import NoticeMessage from "@/components/admin/Form/NoticeMessage";
@@ -63,7 +64,7 @@ export default function GalleryForm({
     // 16:9 비율 (1200px × 675px 기준)
     // 미리보기 크기: 약 400px × 225px (비율 유지)
     return (
-      <div className="relative h-[225px] w-[400px] overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0">
+      <div className={`relative aspect-video w-full ${dense ? "max-w-[280px]" : "max-w-[400px]"} overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0`}>
         {previewUrl ? (
           <Image
             src={previewUrl}
@@ -82,7 +83,7 @@ export default function GalleryForm({
     );
   };
 
-  return (
+  const form = (
     <div className={`max-w-[1300px] mx-auto w-full ${className ?? ""}`}>
       <div className="border-t border-r border-b border-[#E5E7EB]">
         <div className="divide-y divide-[#E5E7EB]">
@@ -150,9 +151,9 @@ export default function GalleryForm({
                   </div>
                 </div>
               }
-              contentClassName="items-start py-4 pl-4"
+              contentClassName={dense ? "items-start py-3 pl-3" : "items-start py-4 pl-4"}
             >
-              <div className="w-full space-y-4">
+              <div className={`w-full ${dense ? "space-y-3" : "space-y-4"}`}>
                 {/* 업로드 버튼과 안내문 - 상단 */}
                 {!readOnly && (
                   <div className="flex items-center gap-3 flex-wrap">
@@ -224,7 +225,7 @@ export default function GalleryForm({
       </div>
 
       {/* 하단 노티스 */}
-      <div className="flex mx-auto px-4 mt-10 mb-10">
+      <div className={dense ? "mt-3 flex rounded-md bg-gray-50 px-3 py-2.5" : "flex mx-auto px-4 mt-10 mb-10"}>
         <NoticeMessage
           items={[
             { text: "※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다." },
@@ -238,5 +239,13 @@ export default function GalleryForm({
         />
       </div>
     </div>
+  );
+
+  return dense ? (
+    <FormLayoutProvider labelWidth={140} tightRows>
+      {form}
+    </FormLayoutProvider>
+  ) : (
+    form
   );
 }

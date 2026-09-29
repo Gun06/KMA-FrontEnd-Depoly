@@ -42,7 +42,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-[120] bg-black/40 lg:hidden"
+          className="fixed inset-0 z-[35] bg-black/40 lg:hidden"
           onClick={onClose}
           aria-hidden
         />
@@ -50,7 +50,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
 
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-[130] flex flex-col bg-[#1F242D] text-white transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-40 flex flex-col bg-[#1F242D] text-white transition-transform duration-200',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{ width: ADMIN_SIDEBAR_WIDTH }}

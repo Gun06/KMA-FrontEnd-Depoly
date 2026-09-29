@@ -3,12 +3,14 @@ import { ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
 
 export function CircleBtn({ 
   kind, 
-  onClick 
+  onClick,
+  compact = false,
 }: { 
   kind: 'up' | 'down' | 'plus' | 'minus'; 
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  compact?: boolean;
 }) {
-  const base = 'inline-flex items-center justify-center h-9 w-9 rounded-lg select-none transition-all hover:scale-105 active:scale-95';
+  const base = `inline-flex items-center justify-center ${compact ? 'h-7 w-7 rounded-md' : 'h-9 w-9 rounded-lg'} select-none transition-all hover:scale-105 active:scale-95`;
   const isMove = kind === 'up' || kind === 'down';
   const cls = isMove 
     ? `${base} border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-400` 
