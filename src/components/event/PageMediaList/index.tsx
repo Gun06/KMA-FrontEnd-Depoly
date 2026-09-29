@@ -9,6 +9,7 @@ import { extractMediaUrl } from "@/utils/pageMedia";
 import {
   getYoutubeThumbnailUrl,
   isVideoLinkMedia,
+  isYoutubeShorts,
   toYoutubeEmbedUrl,
 } from "@/utils/youtube";
 
@@ -25,6 +26,7 @@ type ResolvedMedia = {
   thumbnailUrl: string;
   embedUrl: string | null;
   isDirectVideo: boolean;
+  isShorts: boolean;
 };
 
 const MAX_VISIBLE = 3;
@@ -41,7 +43,11 @@ function isDirectVideoUrl(url: string): boolean {
 function resolveMedia(item: PageMediaItem): ResolvedMedia {
   const url = extractMediaUrl(item) || item.imageUrl;
   const isVideo = isVideoLinkMedia(item.mediaType, url);
-  const embedUrl = toYoutubeEmbedUrl(url);
+  const isShorts = isYoutubeShorts(url);
+  const embedUrl = toYoutubeEmbedUrl(url, {
+    mute: true,
+    controls: isShorts ? false : undefined,
+  });
   const thumbnailUrl =
     (isVideo ? getYoutubeThumbnailUrl(url) : null) || url;
 
@@ -51,6 +57,7 @@ function resolveMedia(item: PageMediaItem): ResolvedMedia {
     thumbnailUrl,
     embedUrl,
     isDirectVideo: isVideo && isDirectVideoUrl(url),
+    isShorts,
   };
 }
 
@@ -78,17 +85,29 @@ function StackedMediaItem({
   const loopingEmbedUrl = toYoutubeEmbedUrl(item.url, {
     autoplay: true,
     loop: true,
+    mute: true,
+    controls: item.isShorts ? false : undefined,
   });
 
   if (loopingEmbedUrl) {
     return (
-      <div className="w-full max-w-[800px] aspect-video bg-black">
+      <div
+        className={cn(
+          "overflow-hidden bg-black",
+          item.isShorts
+            ? "w-full max-w-[800px] aspect-[9/16]"
+            : "w-full max-w-[800px] aspect-video"
+        )}
+      >
         <iframe
           src={loopingEmbedUrl}
           title={`${altPrefix} 영상 ${index + 1}`}
-          className="w-full h-full border-0"
+          className={cn(
+            "w-full h-full border-0",
+            item.isShorts && "pointer-events-none"
+          )}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
+          allowFullScreen={!item.isShorts}
           referrerPolicy="strict-origin-when-cross-origin"
         />
       </div>
@@ -101,6 +120,7 @@ function StackedMediaItem({
         src={item.url}
         autoPlay
         loop
+        muted
         playsInline
         controls
         className="w-full max-w-[800px] h-auto bg-black"
@@ -116,6 +136,7 @@ function StackedMediaItem({
       );
       parsed.searchParams.set("autoplay", "1");
       parsed.searchParams.set("loop", "1");
+      parsed.searchParams.set("mute", "1");
       src = parsed.toString();
     } catch {
       // URL 파싱 실패 시 원본 사용

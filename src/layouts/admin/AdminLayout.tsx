@@ -2,13 +2,26 @@
 
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ArrowRight, X, AlertCircle } from 'lucide-react';
-import AdminHeader from '@/components/admin/Header';
+import Link from 'next/link';
+import { ArrowRight, X, AlertCircle, PanelLeft } from 'lucide-react';
+import AdminSidebar, { ADMIN_SIDEBAR_WIDTH } from '@/components/admin/Sidebar';
+import UtilityIcons from '@/components/admin/Header/UtilityIcons';
 import AdminNavigation from '@/components/admin/Navigation';
 import AdminFooter from '@/components/admin/Footer';
 import { useAdminAuthStore } from '@/stores';
 import { tokenService } from '@/utils/tokenService';
 import { navigationGuard } from '@/utils/navigationGuard';
+
+const CARD_LIST_ROUTES = [
+  /^\/admin\/applications\/management(\/[^/]+)?$/,
+  /^\/admin\/applications\/cash-receipt$/,
+  /^\/admin\/events\/management$/,
+  /^\/admin\/events\/(?!management$|register$|statistics$)[^/]+$/,
+  /^\/admin\/local-events\/management$/,
+  /^\/admin\/boards\/(notice|faq|inquiry)$/,
+  /^\/admin\/banners\/popups$/,
+  /^\/admin\/notifications$/,
+];
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -20,6 +33,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
 
   const isLoginRoute = pathname === '/admin/login';
+  // 카드형 목록으로 바꾼 라우트만 회색 바탕
+  const isCardListRoute = CARD_LIST_ROUTES.some((re) => re.test(pathname ?? ''));
   const roles = user?.roles || [];
   const primaryRole = user?.role || '';
   const allRoles = Array.from(
@@ -39,6 +54,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   React.useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const [isDesktop, setIsDesktop] = React.useState(true);
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const sync = () => {
+      setIsDesktop(mq.matches);
+      setSidebarOpen(mq.matches);
+    };
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  const sidebarOffset = isDesktop && sidebarOpen ? ADMIN_SIDEBAR_WIDTH : 0;
 
   // 인증 상태 확인: accessToken 변경을 즉시 반영
   // 로그아웃 시 즉시 반영되도록 accessToken을 우선 확인
@@ -102,11 +133,37 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (isLoginRoute) return <>{children}</>;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white relative">
-      <AdminHeader />
-      <div className="pt-16 flex-1 flex flex-col relative">
-        <AdminNavigation />
-        <main className={`flex-1 bg-white pt-6 transition-all duration-300 ${showBlurOverlay ? 'blur-sm pointer-events-none' : ''}`}>
+    <div
+      className="min-h-screen bg-white relative"
+      style={{ '--admin-sidebar-w': `${sidebarOffset}px` } as React.CSSProperties}
+    >
+      <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div
+        className="min-h-screen flex flex-col relative transition-[padding] duration-200"
+        style={{ paddingLeft: sidebarOffset }}
+      >
+        <header className="sticky top-0 z-[100] flex h-12 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+            aria-label={sidebarOpen ? '메뉴 닫기' : '메뉴 열기'}
+            aria-expanded={sidebarOpen}
+          >
+            <PanelLeft className="h-[18px] w-[18px]" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <AdminNavigation />
+          </div>
+          <Link
+            href="/"
+            className="hidden sm:flex h-8 shrink-0 items-center rounded-md border border-gray-300 px-2.5 text-[13px] text-gray-700 hover:bg-gray-50"
+          >
+            전마협 바로가기
+          </Link>
+          <UtilityIcons tone="light" />
+        </header>
+        <main className={`flex-1 transition-all duration-300 ${isCardListRoute ? 'bg-[#F4F5F7]' : 'bg-white pt-6'} ${showBlurOverlay ? 'blur-sm pointer-events-none' : ''}`}>
           {children}
         </main>
         
@@ -114,7 +171,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {showBlurOverlay && (
           <>
             {/* 권한 오류 메시지 배너 - 헤더 아래 */}
-            <div className="fixed top-16 left-0 right-0 z-[200] bg-red-600 text-white px-4 py-3 shadow-lg">
+            <div
+              className="fixed top-12 right-0 z-[200] bg-red-600 text-white px-4 py-3 shadow-lg"
+              style={{ left: sidebarOffset }}
+            >
               <div className="max-w-[1920px] mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -131,7 +191,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             
             {/* 검은색 반투명 오버레이 및 로그인 버튼 */}
-            <div className="fixed inset-0 top-16 flex items-center justify-center bg-black/50 z-[150] pt-12">
+            <div
+              className="fixed bottom-0 right-0 top-12 flex items-center justify-center bg-black/50 z-[150] pt-12"
+              style={{ left: sidebarOffset }}
+            >
               <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
                   로그인이 필요합니다
@@ -150,10 +213,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </>
         )}
+        <div className="w-full border-t border-gray-200" />
+        <AdminFooter />
       </div>
-      {/* Footer 상단 구분선 및 Admin Footer 렌더 */}
-      <div className="w-full border-t border-gray-200" />
-      <AdminFooter />
     </div>
   );
 }

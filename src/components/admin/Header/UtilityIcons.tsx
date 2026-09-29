@@ -10,7 +10,8 @@ import { authService } from '@/services/auth';
 import { navigationGuard } from '@/utils/navigationGuard';
 import { tokenService } from '@/utils/tokenService';
 
-export default function UtilityIcons() {
+export default function UtilityIcons({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
+  const isLight = tone === 'light';
   const { isLoggedIn, user, accessToken, hasHydrated } = useAdminAuthStore();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -72,22 +73,26 @@ export default function UtilityIcons() {
 
   return (
     <>
-      <div className="flex items-center space-x-8 text-white">
+      <div className={`flex items-center space-x-8 ${isLight ? 'text-gray-800' : 'text-white'}`}>
         {actualIsLoggedIn ? (
           // 로그인된 상태 - 드롭다운 메뉴
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={toggleDropdown}
-              className="flex items-center space-x-2 p-2 hover:bg-white/10 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`flex items-center transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isLight
+                  ? 'gap-1.5 h-8 px-2 rounded-md hover:bg-gray-100'
+                  : 'space-x-2 p-2 rounded-full hover:bg-white/10'
+              }`}
             >
               <Image
                 src={userIcon}
                 alt="사용자"
                 width={20}
                 height={20}
-                className="w-5 h-5 invert"
+                className={isLight ? 'w-4 h-4' : 'w-5 h-5 invert'}
               />
-              <span className="font-pretendard text-sm whitespace-nowrap">
+              <span className={`font-pretendard whitespace-nowrap ${isLight ? 'text-[13px]' : 'text-sm'}`}>
                 {user?.role || '관리자'}님
               </span>
               <svg
@@ -171,14 +176,16 @@ export default function UtilityIcons() {
           // 로그인되지 않은 상태
           <Link
             href="/admin/login"
-            className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
+            className={`flex items-center space-x-1 transition-colors ${
+              isLight ? 'text-gray-800 hover:text-gray-600' : 'text-white hover:text-gray-200'
+            }`}
           >
             <Image
               src={userIcon}
               alt="사용자"
               width={20}
               height={20}
-              className="w-5 h-5 invert"
+              className={isLight ? 'w-4 h-4' : 'w-5 h-5 invert'}
             />
             <span className="font-pretendard text-sm">로그인</span>
           </Link>

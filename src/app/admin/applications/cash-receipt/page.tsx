@@ -9,7 +9,7 @@ export default function Page({
   const pageSize = 20;
 
   return (
-    <main className="mx-auto max-w-[1300px] px-4 py-6">
+    <main className="mx-auto w-full max-w-[1920px] px-4 py-4">
       <Client initialPage={initialPage} pageSize={pageSize} />
     </main>
   );

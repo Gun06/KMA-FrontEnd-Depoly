@@ -3,7 +3,7 @@ import Badge from "./Badge";
 import { cn } from "@/utils/cn";
 
 export type RegStatus = "접수중" | "비접수" | "접수마감" | "최종마감" | "업로드신청";
-export type BadgeSize = "sm" | "xs" | "smd" | "md";
+export type BadgeSize = "sm" | "xs" | "smd" | "md" | "dense";
 
 const TONE: Record<RegStatus, "primary" | "danger" | "success" | "warning"> = {
   접수중: "primary",

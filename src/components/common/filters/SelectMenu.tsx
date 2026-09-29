@@ -19,6 +19,8 @@ type Props = {
   fullWidth?: boolean;
   /** 좁은 화면: 조금 더 작은 타이포·패딩 (여전히 터치하기 쉬운 높이) */
   compact?: boolean;
+  /** 관리자 목록 툴바: h-9, 13px */
+  dense?: boolean;
 };
 
 export default function SelectMenu({
@@ -33,6 +35,7 @@ export default function SelectMenu({
   autoCloseOnScrollOut = true,
   fullWidth = false,
   compact = false,
+  dense = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ left: number; top: number; width: number; maxH: number }>({
@@ -123,7 +126,11 @@ export default function SelectMenu({
         className={cn(
           "rounded-[5px] border bg-white inline-flex items-center justify-between gap-2",
           "outline-none focus:outline-none focus-visible:outline-none ring-0 focus:ring-0 [-webkit-tap-highlight-color:transparent]",
-          compact ? "min-h-[44px] h-11 px-2.5 w-full" : "h-10 min-w-[120px] px-3",
+          compact
+            ? "min-h-[44px] h-11 px-2.5 w-full"
+            : dense
+              ? "h-9 min-w-[100px] px-2.5"
+              : "h-10 min-w-[120px] px-3",
           fullWidth && "w-full min-w-0",
           compact
             ? "border-[#CDD1D5]"
@@ -138,14 +145,18 @@ export default function SelectMenu({
         <span
           className={cn(
             "text-[#1E2124] truncate text-left min-w-0 flex-1",
-            compact ? "text-[13px] leading-tight font-medium" : "text-[15px] leading-[26px] whitespace-nowrap"
+            compact
+              ? "text-[13px] leading-tight font-medium"
+              : dense
+                ? "text-[13px] leading-5 whitespace-nowrap"
+                : "text-[15px] leading-[26px] whitespace-nowrap"
           )}
         >
           {buttonText}
         </span>
         <ChevronDown
           className={cn(
-            compact ? "w-4 h-4 shrink-0" : "w-5 h-5 shrink-0",
+            compact || dense ? "w-4 h-4 shrink-0" : "w-5 h-5 shrink-0",
             "text-[#33363D] transition-transform",
             open && "rotate-180"
           )}
@@ -182,7 +193,9 @@ export default function SelectMenu({
                     "w-full rounded-md px-2 text-left text-[#1E2124]",
                     compact
                       ? "py-2.5 text-[13px] leading-snug min-h-[44px]"
-                      : "py-2 text-[15px] leading-[26px]",
+                      : dense
+                        ? "py-1.5 text-[13px] leading-5"
+                        : "py-2 text-[15px] leading-[26px]",
                     active ? "bg-[#EEF2F7]" : "hover:bg-gray-50"
                   )}
                 >

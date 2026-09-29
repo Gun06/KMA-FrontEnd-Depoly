@@ -115,7 +115,7 @@ export default function DetailClient({
   // 로딩 상태 처리
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1300px] px-4 py-6">
+      <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -131,7 +131,7 @@ export default function DetailClient({
   // 데이터가 없을 때 처리
   if (!eventData) {
     return (
-      <div className="mx-auto max-w-[1300px] px-4 py-6">
+      <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="text-gray-400 text-6xl mb-4">📋</div>
@@ -160,7 +160,7 @@ export default function DetailClient({
   // 에러 상태 처리
   if (error) {
     return (
-      <div className="mx-auto max-w-[1300px] px-4 py-6">
+      <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>

@@ -41,10 +41,10 @@ export default function CashReceiptBatchList({
     processingBatchId === batchId && processingAction === action;
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-gray-50/60">
-      <div className="border-b border-gray-200 px-4 py-3">
-        <h4 className="text-sm font-semibold text-gray-900">영수증 처리 대기 큐</h4>
-        <p className="mt-0.5 text-xs text-gray-500">
+    <section className="border-b border-gray-200 bg-gray-50/60">
+      <div className="border-b border-gray-200 px-4 py-2.5">
+        <h4 className="text-[13px] font-semibold text-gray-900">영수증 처리 대기 큐</h4>
+        <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
           다운로드 버튼을 누르면 처리 대기 건이 엑셀로 내려받아지고, 영수증 처리 대기 큐에 추가됩니다.
           항목을 선택한 뒤 다운로드하면 선택한 건만 처리됩니다.
           토스에서 실제 발급을 마친 뒤 발급 완료 버튼을 눌러주세요. 잘못 다운로드한 경우 되돌리기 버튼을 사용할 수 있습니다.
@@ -65,18 +65,18 @@ export default function CashReceiptBatchList({
             return (
               <li
                 key={batch.batchId}
-                className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="min-w-0 space-y-1">
+                <div className="min-w-0 space-y-0.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-[13px] font-medium text-gray-900">
                       {formatDateTime(batch.createdAt)} 다운로드
                     </span>
-                    <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-[#E6A400]">
+                    <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-px text-[11px] font-semibold text-[#E6A400]">
                       발급 대기
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-[13px] text-gray-600">
                     총 <span className="font-semibold text-gray-900">{batch.totalCount.toLocaleString()}</span>건
                     <span className="mx-2 text-gray-300">|</span>
                     신청 기간 {formatDateRange(batch.oldestRequestedAt, batch.latestRequestedAt)}
@@ -86,7 +86,7 @@ export default function CashReceiptBatchList({
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
-                    className="rounded-md border border-blue-600 bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border border-blue-600 bg-blue-600 px-3 h-8 text-[13px] text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
                     onClick={() => onComplete(batch.batchId, batch.totalCount)}
                   >
@@ -94,7 +94,7 @@ export default function CashReceiptBatchList({
                   </button>
                   <button
                     type="button"
-                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border border-gray-300 bg-white px-3 h-8 text-[13px] text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={disabled}
                     onClick={() => onCancel(batch.batchId, batch.totalCount)}
                   >

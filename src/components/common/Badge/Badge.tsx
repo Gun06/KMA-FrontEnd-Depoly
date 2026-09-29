@@ -29,6 +29,7 @@ const styles = cva(
         sm:   "w-[80px] h-10 text-[17px] leading-[26px]",
         smd:  "w-[70px] h-9 text-[13px] leading-[22px]",
         md:   "w-[65px] h-[32px] text-[14px] leading-[20px]",
+        dense: "w-[64px] h-7 text-[12px] leading-4 rounded-[5px]",
         pill: "h-6 w-[50px] px-2.5 text-[12px] leading-[16px] rounded-full",
         applicationPill: "h-6 w-[70px] px-2.5 text-[12px] leading-[16px] rounded-full",
       },

@@ -42,8 +42,6 @@ const mapPublic = (v: string): PublicFilter => {
 
 const mapYear = (v: string) => v;
 
-const shorten = (s: string, max = 56) => (s.length > max ? s.slice(0, max - 1) + '…' : s);
-
 interface BoardEventListProps {
   title?: React.ReactNode;
   tableCtaLabel?: string;
@@ -198,14 +196,14 @@ export const BoardEventList = ({
   };
 
   const columns: Column<BoardEventRow>[] = [
-    { key: 'no', header: '번호', width: 80, align: 'center' },
+    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
     {
       key: 'date',
       header: '대회날짜',
-      width: 120,
+      width: 110,
       align: 'center',
       className: 'text-[#6B7280] whitespace-nowrap',
-      render: (r) => `[${r.date.replaceAll('-', '.')}]`,
+      render: (r) => r.date.replaceAll('-', '.'),
     },
     {
       key: 'title',
@@ -215,7 +213,7 @@ export const BoardEventList = ({
       render: (r) => (
         <button
           type="button"
-          className="truncate hover:underline cursor-pointer text-left"
+          className="block max-w-[440px] truncate hover:underline cursor-pointer text-left"
           title={r.title}
           onClick={(e) => { e.stopPropagation(); onRowTitleClick(r); }}
           onKeyDown={(e) => {
@@ -232,14 +230,14 @@ export const BoardEventList = ({
     {
       key: 'applyStatus',
       header: '신청상태',
-      width: 110,
+      width: 90,
       align: 'center',
-      render: (r) => <RegistrationStatusBadge status={r.applyStatus} size="smd" />,
+      render: (r) => <RegistrationStatusBadge status={r.applyStatus} size="dense" />,
     },
     {
       key: 'isPublic',
       header: '공개여부',
-      width: 100,
+      width: 80,
       align: 'center',
       render: (r) => {
         if (r.isPublic === 'OPEN') {
@@ -254,21 +252,19 @@ export const BoardEventList = ({
     {
       key: 'url',
       header: 'URL',
-      width: 320,
-      align: 'center',
-      className: 'w-[320px]',
+      width: 420,
+      align: 'left',
       render: (r) => (
-        <div className="w-[320px] overflow-hidden text-ellipsis whitespace-nowrap">
-          <a
-            href={r.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block hover:underline"
-            title={r.url}
-          >
-            {shorten(r.url)}
-          </a>
-        </div>
+        <a
+          href={r.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block max-w-[420px] truncate text-gray-600 hover:underline"
+          title={r.url}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {r.url}
+        </a>
       ),
     },
   ];
@@ -318,112 +314,93 @@ export const BoardEventList = ({
     };
   }, [originalPreset, availableYears]);
 
-  const filterControls = (preset || tableCtaLabel) && (
-    <div className="flex flex-wrap items-center gap-2">
-      {preset && (
-        <FilterBar
-          {...preset}
-          className="!gap-3"
-          buttons={[{ label: '검색', tone: 'dark' }]}
-          showReset
-          onFieldChange={(label, value) => {
-            const L = norm(String(label));
-            if (L === '신청상태') setStatus(mapStatus(String(value)));
-            else if (L === '공개여부') setPub(mapPublic(String(value)));
-            else if (L === '년도') setYear(mapYear(String(value)));
-            setPage(1);
-          }}
-          onSearch={(value) => {
-            setQ(value);
-            setPage(1);
-          }}
-          onReset={() => {
-            setQ('');
-            setStatus('');
-            setPub('');
-            setYear('');
-            setPage(1);
-          }}
-        />
-      )}
-      {tableCtaLabel && (
-        <Button
-          size="sm"
-          tone="primary"
-          onClick={tableCtaOnClick ?? (() => tableCtaHref && router.push(tableCtaHref))}
-        >
-          {tableCtaLabel}
-        </Button>
-      )}
-    </div>
+  const filterControls = preset && (
+    <FilterBar
+      {...preset}
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
+      buttons={[{ label: '검색', tone: 'dark' }]}
+      showReset
+      onFieldChange={(label, value) => {
+        const L = norm(String(label));
+        if (L === '신청상태') setStatus(mapStatus(String(value)));
+        else if (L === '공개여부') setPub(mapPublic(String(value)));
+        else if (L === '년도') setYear(mapYear(String(value)));
+        setPage(1);
+      }}
+      onSearch={(value) => {
+        setQ(value);
+        setPage(1);
+      }}
+      onReset={() => {
+        setQ('');
+        setStatus('');
+        setPub('');
+        setYear('');
+        setPage(1);
+      }}
+    />
   );
 
-  const renderHeader = () => {
-    if (!title && !titleAddon) return null;
-    return (
-      <div className="flex flex-wrap items-center gap-2">
-        {title ? <h3 className="text-[16px] font-semibold">{title}</h3> : null}
-        {titleAddon}
-      </div>
-    );
-  };
-
-  // 초기 로딩 상태 처리 (데이터가 없을 때만)
-  if (isLoading && rows.length === 0) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {renderHeader()}
-        {filterControls}
-        <div className="flex items-center justify-center py-8">
-          <div className="text-gray-500">대회 목록을 불러오는 중...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 에러 상태 처리 (데이터가 없을 때만 에러 메시지 표시)
-  if (error && rows.length === 0) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {renderHeader()}
-        {filterControls}
-        <div className="flex items-center justify-center py-8">
-          <div className="text-red-500">대회 목록을 불러오는데 실패했습니다.</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 빈 상태 처리 (로딩 중이 아니고 데이터가 없을 때만)
-  if (rows.length === 0 && totalCount === 0 && !isLoading) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {renderHeader()}
-        {filterControls}
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
-          <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
-        </div>
-      </div>
-    );
-  }
+  const hasHeader = !!(title || titleAddon || tableCtaLabel);
+  const isFirstLoading = isLoading && rows.length === 0;
+  const failed = !!error && rows.length === 0;
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-      {renderHeader()}
-      {filterControls}
+    <div className="mx-auto w-full max-w-[1920px]">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        {hasHeader && (
+          <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+            {title ? <h3 className="text-[15px] font-semibold">{title}</h3> : null}
+            {titleAddon}
+            {tableCtaLabel && (
+              <Button
+                size="sm"
+                tone="primary"
+                className="ml-auto !h-9 !px-3 !text-[13px]"
+                onClick={tableCtaOnClick ?? (() => tableCtaHref && router.push(tableCtaHref))}
+              >
+                {tableCtaLabel}
+              </Button>
+            )}
+          </div>
+        )}
 
-      <AdminTable<BoardEventRow>
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        renderFilters={null}
-        renderSearch={null}
-        renderActions={null}
-        pagination={{ page, pageSize, total: totalCount, onChange: setPage, align: 'right' }}
-        minWidth={1200}
-        contentMinHeight={rows.length >= pageSize ? '100vh' : 'auto'}
-      />
+        <AdminTable<BoardEventRow>
+          dense
+          contentMinHeight={null}
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.id}
+          renderFilters={
+            <p className="shrink-0 text-sm text-gray-600">
+              검색 결과 총 <b className="text-gray-900">{totalCount.toLocaleString()}</b>개
+            </p>
+          }
+          renderActions={filterControls || null}
+          loadingMessage={isFirstLoading ? '대회 목록을 불러오는 중...' : undefined}
+          emptyMessage={
+            failed
+              ? '대회 목록을 불러오는데 실패했습니다.'
+              : '등록된 대회가 없습니다.\n대회를 등록하면 여기에 표시됩니다.'
+          }
+          pagination={{
+            page,
+            pageSize,
+            total: totalCount,
+            onChange: setPage,
+            bar: {
+              totalTextFormatter: (cnt) => (
+                <>
+                  총 <b>{cnt.toLocaleString()}</b>개 대회
+                </>
+              ),
+            },
+          }}
+          minWidth={1000}
+        />
+      </div>
     </div>
   );
 };

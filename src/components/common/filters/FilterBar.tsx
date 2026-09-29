@@ -53,7 +53,14 @@ export type FilterBarProps = {
   onActionClick?: (labelOrValue: string) => void; // 메뉴 value도 전달
   onReset?: () => void;
   renderAfterReset?: ReactNode; // 초기화 버튼 뒤에 렌더할 컴포넌트
+  /** 관리자 목록 툴바: 컨트롤 h-9, 13px, 버튼 폭은 글자에 맞춤 */
+  dense?: boolean;
 };
+
+// Button의 cn은 클래스 충돌을 정리하지 않아 ! 로 덮는다
+const DENSE_BTN = "!h-9 !text-[13px] !leading-5";
+const DENSE_TEXT_BTN = `${DENSE_BTN} !w-auto !min-w-0 !px-3`;
+const DENSE_ICON_BTN = `${DENSE_BTN} !w-9`;
 
 export default function FilterBar({
   fields = [],
@@ -72,6 +79,7 @@ export default function FilterBar({
   onActionClick,
   onReset,
   renderAfterReset,
+  dense = false,
 }: FilterBarProps) {
   const [values, setValues] = useState<string[]>(
     initialValues && initialValues.length === fields.length
@@ -123,7 +131,11 @@ export default function FilterBar({
       aria-label="초기화"
       title="초기화"
       onClick={handleReset}
-      className={isResetIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
+      className={
+        isResetIconOnly
+          ? `shrink-0 !min-w-0 !px-0 !gap-0 ${dense ? DENSE_ICON_BTN : "!w-10"}`
+          : `shrink-0 ${dense ? DENSE_TEXT_BTN : ""}`
+      }
     >
       {isResetIconOnly ? "" : "초기화"}
     </Button>
@@ -145,6 +157,7 @@ export default function FilterBar({
             menuMaxHeight={f.menuMaxHeight}
             fullWidth={!!f.fullWidth}
             className={f.fieldClassName}
+            dense={dense}
           />
         </div>
       ))}
@@ -156,6 +169,7 @@ export default function FilterBar({
         onEnter={(v) => onSearch?.(v)}
         placeholder={searchPlaceholder}
         flexGrow={searchFlexGrow}
+        dense={dense}
         {...(searchFlexGrow ? {} : searchWidth != null ? { width: searchWidth } : {})}
       />
 
@@ -173,7 +187,7 @@ export default function FilterBar({
               size="sm"
               widthType="pager"
               iconLeft={<Loader2 className="h-[18px] w-[18px] shrink-0 animate-spin" aria-hidden />}
-              className="shrink-0 !justify-start !px-2 [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate"
+              className={`shrink-0 !justify-start !px-2 [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate ${dense ? DENSE_BTN : ""}`}
               disabled
               aria-busy="true"
               aria-live="polite"
@@ -217,7 +231,11 @@ export default function FilterBar({
                         else onActionClick?.(b.actionValue ?? b.label);
                       }
                 }
-                className={isIconOnly ? "shrink-0 !min-w-0 !w-10 !px-0 !gap-0" : "shrink-0"}
+                className={
+                  isIconOnly
+                    ? `shrink-0 !min-w-0 !px-0 !gap-0 ${dense ? DENSE_ICON_BTN : "!w-10"}`
+                    : `shrink-0 ${dense ? DENSE_TEXT_BTN : ""}`
+                }
               >
                 {isIconOnly ? "" : b.label}
               </Button>
@@ -239,7 +257,7 @@ export default function FilterBar({
                 size="sm"
                 widthType="pager"
                 iconRight     // “Excel >” 유지
-                className="shrink-0"
+                className={`shrink-0 ${dense ? DENSE_TEXT_BTN : ""}`}
                 disabled={b.disabled}
               >
                 {b.label}

@@ -239,7 +239,7 @@ export default function EventsClient({
           aria-label="현재 페이지 전체 선택"
         />
       ),
-      width: 44,
+      width: 40,
       align: 'center',
       render: (r) => (
         <input
@@ -251,11 +251,11 @@ export default function EventsClient({
         />
       ),
     },
-    { key: 'no', header: '번호', width: 80, align: 'center' },
+    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
     {
       key: 'date',
       header: '개최일',
-      width: 120,
+      width: 100,
       align: 'center',
       className: 'text-[#6B7280] whitespace-nowrap',
     },
@@ -266,7 +266,7 @@ export default function EventsClient({
       className: 'text-left',
       render: (r) => (
         <span
-          className="truncate hover:underline cursor-pointer"
+          className="block max-w-[440px] truncate hover:underline cursor-pointer"
           title={r.title}
           onClick={() => router.push(`/admin/events/${r.id}`)}
         >
@@ -274,21 +274,33 @@ export default function EventsClient({
         </span>
       ),
     },
-    { key: 'place', header: '개최지', width: 200, align: 'center' },
-    { key: 'host', header: '주최', width: 140, align: 'center' },
+    {
+      key: 'place',
+      header: '개최지',
+      width: 180,
+      align: 'center',
+      render: (r) => <span className="mx-auto block max-w-[200px] truncate" title={r.place}>{r.place}</span>,
+    },
+    {
+      key: 'host',
+      header: '주최',
+      width: 160,
+      align: 'center',
+      render: (r) => <span className="mx-auto block max-w-[180px] truncate" title={r.host}>{r.host}</span>,
+    },
     {
       key: 'applyStatus',
       header: '신청상태',
-      width: 110,
+      width: 90,
       align: 'center',
       render: (r) => (
-        <RegistrationStatusBadge status={r.applyStatus} size="smd" />
+        <RegistrationStatusBadge status={r.applyStatus} size="dense" />
       ),
     },
     {
       key: 'isPublic',
       header: '공개여부',
-      width: 100,
+      width: 80,
       align: 'center',
       render: (r) => {
         // boolean 레거시 처리
@@ -326,7 +338,7 @@ export default function EventsClient({
       weight="semibold"
       iconLeft={<Smartphone className="h-4 w-4" aria-hidden />}
       onClick={() => setIsBulkModalOpen(true)}
-      className="shrink-0 border border-[#256EF4] text-[#256EF4] shadow-sm transition-colors hover:bg-blue-50 hover:brightness-100"
+      className="ml-auto shrink-0 border border-[#256EF4] text-[#256EF4] transition-colors hover:bg-blue-50 hover:brightness-100 !h-9 !px-3 !text-[13px]"
     >
       휴대폰 인증 일괄변경
     </Button>
@@ -335,7 +347,9 @@ export default function EventsClient({
   const filterControls = preset && (
     <FilterBar
       {...preset}
-      className="!gap-3"
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
       buttons={[
         { label: '검색', tone: 'dark' },
         { label: '대회등록', tone: 'primary', iconRight: true },
@@ -370,72 +384,56 @@ export default function EventsClient({
     />
   );
 
-  const pageHeader = (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-end gap-2 pb-2">
-        {selectedIds.length > 0 && (
-          <span className="mr-auto shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 font-pretendard">
-            {selectedIds.length}개 대회 선택됨
-          </span>
-        )}
-        {bulkPhoneAuthButton}
-      </div>
-      {filterControls}
-    </div>
-  );
-
-  // 초기 로딩 상태 처리 (데이터가 없을 때만)
-  if (isLoading && rows.length === 0) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {pageHeader}
-        <div className="flex items-center justify-center py-8">
-          <div className="text-gray-500">대회 목록을 불러오는 중...</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 에러 상태 처리 (데이터가 없을 때만 에러 메시지 표시)
-  if (error && rows.length === 0) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {pageHeader}
-        <div className="flex items-center justify-center py-8">
-          <div className="text-red-500">대회 목록을 불러오는데 실패했습니다.</div>
-        </div>
-      </div>
-    );
-  }
-
-  // 빈 상태 처리 (로딩 중이 아니고 데이터가 없을 때만)
-  if (rows.length === 0 && totalCount === 0 && !isLoading) {
-    return (
-      <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-        {pageHeader}
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-          <div className="text-gray-500 text-lg mb-2">등록된 대회가 없습니다</div>
-          <div className="text-sm text-gray-400">대회를 등록하면 여기에 표시됩니다</div>
-        </div>
-      </div>
-    );
-  }
+  const isFirstLoading = isLoading && rows.length === 0;
+  const failed = !!error && rows.length === 0;
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 space-y-4">
-      {pageHeader}
+    <div className="mx-auto w-full max-w-[1920px]">
+      <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-[15px] font-semibold">대회 관리</h3>
+          {selectedIds.length > 0 && (
+            <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 font-pretendard">
+              {selectedIds.length}개 대회 선택됨
+            </span>
+          )}
+          {bulkPhoneAuthButton}
+        </div>
 
-      <AdminTable<EventRow>
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        renderFilters={null}
-        renderSearch={null}
-        renderActions={null}
-        pagination={{ page, pageSize, total: totalCount, onChange: setPage, align: 'right' }}
-        minWidth={1200}
-        contentMinHeight={rows.length >= pageSize ? '100vh' : 'auto'}
-      />
+        <AdminTable<EventRow>
+          dense
+          contentMinHeight={null}
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.id}
+          renderFilters={
+            <p className="shrink-0 text-sm text-gray-600">
+              검색 결과 총 <b className="text-gray-900">{totalCount.toLocaleString()}</b>개
+            </p>
+          }
+          renderActions={filterControls || null}
+          loadingMessage={isFirstLoading ? '대회 목록을 불러오는 중...' : undefined}
+          emptyMessage={
+            failed
+              ? '대회 목록을 불러오는데 실패했습니다.'
+              : '등록된 대회가 없습니다.\n대회를 등록하면 여기에 표시됩니다.'
+          }
+          pagination={{
+            page,
+            pageSize,
+            total: totalCount,
+            onChange: setPage,
+            bar: {
+              totalTextFormatter: (cnt) => (
+                <>
+                  총 <b>{cnt.toLocaleString()}</b>개 대회
+                </>
+              ),
+            },
+          }}
+          minWidth={1100}
+        />
+      </div>
 
       <PhoneAuthBulkModal
         isOpen={isBulkModalOpen}

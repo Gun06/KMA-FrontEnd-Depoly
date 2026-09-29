@@ -43,12 +43,42 @@ export function getYoutubeVideoId(url: string | undefined | null): string | null
   }
 }
 
+export function isYoutubeShorts(url: string | undefined | null): boolean {
+  if (!url) return false;
+
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+
+  try {
+    const withProtocol = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+    const isYoutubeHost =
+      host === 'youtube.com' ||
+      host === 'm.youtube.com' ||
+      host === 'music.youtube.com' ||
+      host === 'youtube-nocookie.com';
+
+    const isShortsPath = isYoutubeHost && parsed.pathname.startsWith('/shorts/');
+    const isShortsQuery =
+      (isYoutubeHost || host === 'youtu.be') &&
+      parsed.searchParams.get('feature') === 'shorts';
+
+    return isShortsPath || isShortsQuery;
+  } catch {
+    return false;
+  }
+}
+
 export function toYoutubeEmbedUrl(
   url: string | undefined | null,
   options?: {
     autoplay?: boolean;
     loop?: boolean;
     mute?: boolean;
+    controls?: boolean;
   }
 ): string | null {
   const videoId = getYoutubeVideoId(url);
@@ -68,6 +98,12 @@ export function toYoutubeEmbedUrl(
   if (loop) {
     embedUrl.searchParams.set('loop', '1');
     embedUrl.searchParams.set('playlist', videoId);
+  }
+  if (options?.controls === false) {
+    embedUrl.searchParams.set('controls', '0');
+    embedUrl.searchParams.set('fs', '0');
+    embedUrl.searchParams.set('disablekb', '1');
+    embedUrl.searchParams.set('iv_load_policy', '3');
   }
 
   return embedUrl.toString();

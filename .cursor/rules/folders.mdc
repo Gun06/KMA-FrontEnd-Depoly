@@ -1,0 +1,29 @@
+---
+description: coming-soon / main / admin 세 영역으로 폴더를 나눈다
+alwaysApply: true
+---
+
+# 폴더
+
+영역은 **커밍순 / 메인 / 관리자** 세 곳. 파일이 어느 사이트인지 경로만 봐도 알게 둔다.
+
+| 영역 | 라우트 | UI | 그 밖에 |
+|------|--------|----|---------|
+| 커밍순 | `src/app/page.tsx` (모드 분기) | `src/components/coming-soon/` | 커밍순 전용 CSS·에셋만 |
+| 메인 | `src/app/(main)/` | `src/components/main/` | 공개 페이지, `main.css` |
+| 관리자 | `src/app/admin/` | `src/components/admin/` | `layouts/admin`, `lib/admin`, `services/admin` |
+
+```
+src/app/admin/boards/faq/page.tsx
+src/components/admin/boards/faq/FaqListPage.tsx
+src/services/admin/faqs.ts
+```
+
+```
+src/components/main/faq/FaqPage.tsx
+src/app/(main)/faq/page.tsx
+```
+
+- 공통 상수·타입만 `src/lib/` 루트 (`event`, `legal`, `mode`, `register`).
+- 관리자 게시판은 KMA처럼 `boards/{notice,inquiry,faq}`. 약관은 `admin/legal`.
+- 메인 UI를 관리자에 복사하지 않는다. 반대도 같다.

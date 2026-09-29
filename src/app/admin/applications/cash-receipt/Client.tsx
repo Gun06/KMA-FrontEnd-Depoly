@@ -131,7 +131,7 @@ export default function Client({ initialPage, pageSize }: Props) {
     if (status) qs.set('status', status);
     if (keyword.trim()) qs.set('q', keyword.trim());
     if (drawerOpen && selectedId) qs.set('id', selectedId);
-    router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname);
+    router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname, { scroll: false });
   }, [router, pathname, page, eventId, status, keyword, drawerOpen, selectedId]);
 
   const { data: eventData } = useEventList(1, 200) as { data: EventListResponse | undefined };
@@ -164,7 +164,9 @@ export default function Client({ initialPage, pageSize }: Props) {
     return {
       ...presetBase,
       fields: presetBase.fields?.map((f) =>
-        f.label === '대회' ? { ...f, options: eventOptions } : f
+        f.label === '대회'
+          ? { ...f, options: eventOptions, fieldClassName: 'w-[300px] [&>button]:w-full' }
+          : f
       ),
       initialValues: [eventId, status],
       initialSearchValue: keyword,
@@ -254,7 +256,7 @@ export default function Client({ initialPage, pageSize }: Props) {
             />
           </div>
         ),
-        width: 56,
+        width: 40,
         align: 'center',
         headerAlign: 'center',
         render: (row) => (
@@ -267,13 +269,24 @@ export default function Client({ initialPage, pageSize }: Props) {
           />
         ),
       },
-      { key: 'no', header: '번호', width: 90, align: 'center' },
-      { key: 'eventName', header: '대회명', align: 'left', headerAlign: 'center', className: 'text-left' },
-      { key: 'requesterName', header: '신청자명', width: 230, align: 'center' },
+      { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
+      {
+        key: 'eventName',
+        header: '대회명',
+        align: 'left',
+        headerAlign: 'center',
+        className: 'text-left',
+        render: (row) => (
+          <span className="block max-w-[520px] truncate" title={row.eventName}>
+            {row.eventName}
+          </span>
+        ),
+      },
+      { key: 'requesterName', header: '신청자명', width: 120, align: 'center' },
       {
         key: 'status',
         header: '처리상태',
-        width: 140,
+        width: 90,
         align: 'center',
         render: (row) => (
           <span className={`font-semibold ${STATUS_CLASS[row.status] ?? 'text-gray-700'}`}>
@@ -284,12 +297,12 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'id',
         header: '환불 ID',
-        width: 250,
+        width: 300,
         align: 'left',
         headerAlign: 'center',
-        className: 'text-left text-xs font-mono text-gray-600 truncate max-w-[250px]',
+        className: 'text-left text-xs font-mono text-gray-600',
         render: (row) => (
-          <div className="truncate" title={row.id}>
+          <div className="max-w-[300px] truncate" title={row.id}>
             {row.id}
           </div>
         ),
@@ -403,71 +416,41 @@ export default function Client({ initialPage, pageSize }: Props) {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex w-full min-w-0 items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 className="text-[16px] font-semibold">현금영수증 관리</h3>
-          {selectedIds.length > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 font-pretendard">
-                {selectedIds.length.toLocaleString()}개 선택됨
-              </span>
-              <button
-                type="button"
-                className="text-xs text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
-                onClick={handleClearSelection}
-              >
-                선택 해제
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end">
-          <div data-stop-bubble="true" className="flex flex-wrap items-center gap-2">
-            <SearchableSelect
-              value={bulkTargetStatus}
-              options={CASH_RECEIPT_STATUS_SELECT_OPTIONS}
-              variant="compact"
-              onChange={(v) => setBulkTargetStatus(v as CashReceiptAdminStatus)}
-              className="w-[120px]"
-            />
+    <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
+        <h3 className="text-[15px] font-semibold">현금영수증 관리</h3>
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 font-pretendard">
+              {selectedIds.length.toLocaleString()}개 선택됨
+            </span>
             <button
               type="button"
-              className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={selectedIds.length === 0 || isBulkStatusUpdating}
-              onClick={() => void handleBulkStatusApply()}
+              className="text-xs text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
+              onClick={handleClearSelection}
             >
-              {isBulkStatusUpdating ? '처리 중...' : '선택 항목에 적용'}
+              선택 해제
             </button>
           </div>
+        )}
+        <div data-stop-bubble="true" className="ml-auto flex flex-wrap items-center gap-2">
+          <SearchableSelect
+            value={bulkTargetStatus}
+            options={CASH_RECEIPT_STATUS_SELECT_OPTIONS}
+            variant="compact"
+            onChange={(v) => setBulkTargetStatus(v as CashReceiptAdminStatus)}
+            className="w-[120px] [&>button]:!h-9 [&>button]:!text-[13px]"
+          />
+          <button
+            type="button"
+            className="rounded-md border border-blue-600 px-3 h-9 text-[13px] text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={selectedIds.length === 0 || isBulkStatusUpdating}
+            onClick={() => void handleBulkStatusApply()}
+          >
+            {isBulkStatusUpdating ? '처리 중...' : '선택 항목에 적용'}
+          </button>
         </div>
       </div>
-
-      {preset && (
-        <div className="w-full min-w-0">
-          <FilterBar
-            {...preset}
-            searchFlexGrow
-            className="!gap-3"
-            buttons={filterBarButtons}
-            onFieldChange={(label, value) => {
-              if (label === '대회') setEventId(value || 'ALL');
-              if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
-              setPage(1);
-            }}
-            onSearch={(q) => {
-              setKeyword(q);
-              setPage(1);
-            }}
-            onReset={() => {
-              setEventId('ALL');
-              setStatus('');
-              setKeyword('');
-              setPage(1);
-            }}
-          />
-        </div>
-      )}
 
       {batches.length > 0 && (
         <CashReceiptBatchList
@@ -481,11 +464,56 @@ export default function Client({ initialPage, pageSize }: Props) {
       )}
 
       <AdminTable<CashReceiptSearchItem>
+        dense
+        contentMinHeight={null}
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>건
+          </p>
+        }
+        renderActions={
+          preset ? (
+            <FilterBar
+              {...preset}
+              dense
+              searchWidth={260}
+              className="!items-center !gap-2 flex-wrap justify-end"
+              buttons={filterBarButtons}
+              onFieldChange={(label, value) => {
+                if (label === '대회') setEventId(value || 'ALL');
+                if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
+                setPage(1);
+              }}
+              onSearch={(q) => {
+                setKeyword(q);
+                setPage(1);
+              }}
+              onReset={() => {
+                setEventId('ALL');
+                setStatus('');
+                setKeyword('');
+                setPage(1);
+              }}
+            />
+          ) : null
+        }
         columns={columns}
         rows={rows}
         rowKey={(r) => r.id}
-        pagination={{ page, pageSize, total, onChange: setPage, align: 'center' }}
-        minWidth={1256}
+        pagination={{
+          page,
+          pageSize,
+          total,
+          onChange: setPage,
+          bar: {
+            totalTextFormatter: (cnt) => (
+              <>
+                총 <b>{cnt.toLocaleString()}</b>건
+              </>
+            ),
+          },
+        }}
+        minWidth={1100}
         loadingMessage={isLoading ? '현금영수증 목록을 불러오는 중입니다.' : undefined}
         emptyMessage={
           !isLoading && rows.length === 0
@@ -507,7 +535,7 @@ export default function Client({ initialPage, pageSize }: Props) {
           autoOpenedFromQueryRef.current = false;
           const qs = new URLSearchParams(sp.toString());
           qs.delete('id');
-          router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname);
+          router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname, { scroll: false });
         }}
         onUpdated={() => { void invalidateCashReceiptQueries(); }}
       />

@@ -7,6 +7,8 @@ type Props = {
   /** 부모가 flex row일 때 남는 가로를 채움 */
   flexGrow?: boolean;
   wrapperClassName?: string;
+  /** 관리자 목록 툴바: h-9, 13px */
+  dense?: boolean;
 };
 
 export default function SearchBox({
@@ -17,10 +19,11 @@ export default function SearchBox({
   width = 368,
   flexGrow = false,
   wrapperClassName = '',
+  dense = false,
 }: Props) {
   return (
     <div
-      className={`h-10 rounded-[5px] border border-[#898989] px-[15px] py-3 flex items-center justify-between ${
+      className={`${dense ? 'h-9 px-3' : 'h-10 px-[15px] py-3'} rounded-[5px] border border-[#898989] flex items-center justify-between ${
         flexGrow ? 'min-w-0 flex-1' : ''
       } ${wrapperClassName}`.trim()}
       style={flexGrow ? undefined : { width }}
@@ -33,7 +36,7 @@ export default function SearchBox({
           if (e.key === "Enter") onEnter?.(value ?? "");
         }}
         placeholder={placeholder}
-        className="text-[15px] font-semibold tracking-[-0.08px] outline-none w-full pr-2"
+        className={`${dense ? 'text-[13px]' : 'text-[15px] font-semibold tracking-[-0.08px]'} outline-none w-full pr-2`}
       />
     </div>
   );

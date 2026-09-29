@@ -47,7 +47,7 @@ type Props = {
   instantActive?: boolean;
 };
 
-const HEADER_HEIGHT = 64;
+const HEADER_HEIGHT = 48;
 export const EDIT_SIDEBAR_WIDTH = 240;
 
 export default function EditStepNav({
@@ -179,8 +179,9 @@ export const StickyEditStepNav = React.forwardRef<EditStepNavHandle, StickyProps
         />
         <aside
           ref={asideRef}
-          className="hidden md:flex flex-col fixed left-0 z-20 overflow-y-auto bg-[#2B3038]"
+          className="hidden md:flex flex-col fixed z-20 overflow-y-auto bg-[#2B3038]"
           style={{
+            left: 'var(--admin-sidebar-w, 0px)',
             top: HEADER_HEIGHT,
             bottom: 0,
             width: EDIT_SIDEBAR_WIDTH,

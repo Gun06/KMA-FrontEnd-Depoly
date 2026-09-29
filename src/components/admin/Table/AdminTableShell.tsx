@@ -4,6 +4,7 @@ import React from 'react';
 import clsx from 'clsx';
 import BaseTable, { type Column } from '@/components/common/Table/BaseTable';
 import Pagination from '@/components/common/Pagination/PaginationFull';
+import PaginationBar from '@/components/common/Pagination/PaginationBar';
 
 type PaginationProps = React.ComponentProps<typeof Pagination>;
 
@@ -28,6 +29,8 @@ type Props<T> = {
   allowTextSelection?: boolean;
   loadingMessage?: string;
   emptyMessage?: string;
+  /** 흰 카드 안에 들어가는 조밀한 목록. 페이지 번호는 하단 한 줄 */
+  dense?: boolean;
 };
 
 export default function AdminTableShell<T>({
@@ -48,6 +51,7 @@ export default function AdminTableShell<T>({
   allowTextSelection = false,
   loadingMessage,
   emptyMessage,
+  dense = false,
 }: Props<T>) {
   const minH = contentMinHeight 
     ? (typeof contentMinHeight === 'number' ? `${contentMinHeight}px` : contentMinHeight)
@@ -60,7 +64,15 @@ export default function AdminTableShell<T>({
     >
       {title ? <h2 className="mb-3 text-xl font-semibold">{title}</h2> : null}
 
-      {(renderFilters || renderSearch || renderActions) && (
+      {dense && (renderFilters || renderSearch || renderActions) && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-3">
+          {renderFilters}
+          {renderSearch}
+          <div className="ml-auto min-w-0 max-w-full">{renderActions}</div>
+        </div>
+      )}
+
+      {!dense && (renderFilters || renderSearch || renderActions) && (
         <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
           <div className="flex-1 min-w-[220px]">{renderFilters}</div>
           <div className="flex-1 min-w-[240px]">{renderSearch}</div>
@@ -97,6 +109,8 @@ export default function AdminTableShell<T>({
           )}
           zebra={false}
           allowTextSelection={allowTextSelection}
+          dense={dense}
+          hideTopBorder={dense}
           {...(minWidth ? { minWidth } : {})}
         />
         {loadingMessage && rows.length === 0 && (
@@ -111,7 +125,19 @@ export default function AdminTableShell<T>({
         )}
       </div>
 
-      {pagination && (
+      {pagination && dense && (
+        <PaginationBar
+          className="px-4 [&>div:first-child]:hidden"
+          page={pagination.page}
+          total={pagination.total}
+          pageSize={pagination.pageSize}
+          onChange={pagination.onChange}
+          showNumbersInBar
+          {...pagination.bar}
+        />
+      )}
+
+      {pagination && !dense && (
         <div
           className={clsx('mt-4', {
             'flex justify-start': pagination.align === 'left',

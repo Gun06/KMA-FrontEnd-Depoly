@@ -28,6 +28,8 @@ type Props<T> = {
   hideTopBorder?: boolean;
   hideHeader?: boolean;
   allowTextSelection?: boolean;
+  /** 관리자 카드형 목록: 한 줄 높이, 줄바꿈 없음 */
+  dense?: boolean;
 };
 
 export default function BaseTable<T>({
@@ -42,6 +44,7 @@ export default function BaseTable<T>({
   hideTopBorder = false,
   hideHeader = false,
   allowTextSelection = false,
+  dense = false,
 }: Props<T>) {
   const thAlign = (a?: "left" | "center" | "right") =>
     a === "left" ? "text-left" : a === "right" ? "text-right" : "text-center";
@@ -63,7 +66,11 @@ export default function BaseTable<T>({
                 scope="col"
                 style={{ width: c.width, ...(hideHeader ? { height: 0, padding: 0, margin: 0, border: 0, lineHeight: 0 } : {}) }}
                 className={clsx(
-                  hideHeader ? "h-0 p-0 m-0 border-0" : "h-12 px-2.5 lg:px-3.5 font-medium",
+                  hideHeader
+                    ? "h-0 p-0 m-0 border-0"
+                    : dense
+                      ? "h-11 px-3 text-[13px] font-medium whitespace-nowrap"
+                      : "h-12 px-2.5 lg:px-3.5 font-medium",
                   // ✅ 헤더는 기본 '가운데'. 필요하면 column.headerAlign으로 개별 지정
                   thAlign(c.headerAlign ?? "center"),
                   c.headerClassName
@@ -118,7 +125,9 @@ export default function BaseTable<T>({
                   <td
                     key={String(c.key) + ci}
                     className={clsx(
-                      "px-2.5 lg:px-3.5 py-3 text-[14px]",
+                      dense
+                        ? "px-3 py-3 text-[13px] whitespace-nowrap"
+                        : "px-2.5 lg:px-3.5 py-3 text-[14px]",
                       // ✅ 본문은 기본 '왼쪽'. 필요하면 column.align으로 개별 지정
                       tdAlign(c.align ?? "left"),
                       c.className

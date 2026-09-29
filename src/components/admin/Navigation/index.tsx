@@ -4,8 +4,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Users, FileText, Calendar, Image, Database, ChevronDown, LucideIcon, Bell } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import clsx from 'clsx';
+import { ADMIN_NAV_ITEMS as NAV_ITEMS } from '@/lib/admin/navItems';
 
 // 기존 데이터 소스
 import { listOrganizations, getOrganizationById } from '@/data/users/organization';
@@ -28,43 +29,6 @@ import { getMainInquiries } from '@/components/common/Inquiry/main';
 
 // FAQ 소스 (이벤트/메인)
 import { getEventFaqs, getHomepageFaqs } from '@/services/admin/faqs';
-
-type Child = { name: string; href: string };
-type Item = { name: string; base: string; icon: LucideIcon; children: Child[] };
-
-const NAV_ITEMS: Item[] = [
-  { name: '참가신청', base: '/admin/applications', icon: Users, children: [
-    { name: '신청자 관리', href: '/admin/applications/management' },
-    { name: '현금영수증 관리', href: '/admin/applications/cash-receipt' },
-    { name: '기록관리', href: '/admin/applications/records' },
-  ]},
-  { name: '대회관리', base: '/admin/events', icon: Calendar, children: [
-    { name: '대회관리', href: '/admin/events/management' },
-    { name: '지역대회관리', href: '/admin/local-events/management' },
-    { name: '통계확인', href: '/admin/events/statistics' },
-  ]},
-  { name: '게시판관리', base: '/admin/boards', icon: FileText, children: [
-    { name: '공지사항', href: '/admin/boards/notice' },
-    { name: '문의사항', href: '/admin/boards/inquiry' },
-    { name: 'FAQ', href: '/admin/boards/faq' },
-  ]},
-  { name: '회원관리', base: '/admin/users', icon: Users, children: [
-    { name: '개인 회원관리', href: '/admin/users/individual' },
-    { name: '단체 회원관리', href: '/admin/users/organization' },
-  ]},
-  { name: '콘텐츠관리', base: '/admin/banners', icon: Database, children: [
-    { name: '메인 배너등록',    href: '/admin/banners/main' },
-    { name: '마감임박 대회 지정', href: '/admin/banners/closing-marathon' },
-    { name: '스폰서 배너등록',  href: '/admin/banners/sponsors' },
-    { name: '팝업 등록',  href: '/admin/banners/popups' },
-    { name: '갤러리 등록', href: '/admin/galleries' },
-    ]},
-  { name: '알림관리', base: '/admin/notifications', icon: Bell, children: [
-    { name: '알림관리', href: '/admin/notifications' },
-    { name: '알림등록', href: '/admin/notifications/all/register' },
-    { name: '전화번호인증정책', href: '/admin/settings/phone-auth-policy' },
-  ]},
-];
 
 export default function AdminNavigation() {
   const router = useRouter();
@@ -623,13 +587,12 @@ export default function AdminNavigation() {
   })();
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center space-x-4 py-4 min-h-[56px]">
+    <nav className="min-w-0" aria-label="현재 위치">
+      <div>
+        <div className="flex items-center gap-1.5">
           {/* 1) 섹션 */}
-          <div className="flex items-center gap-6 text-gray-600 mx-5">
-            <safeMenu.icon className="w-5 h-5" />
-            <span className="font-medium">{safeMenu.name}</span>
+          <div className="flex items-center gap-2 px-1 text-[13px] text-gray-500">
+            <span>{safeMenu.name}</span>
           </div>
 
           {isApplicationsMgmt || isApplicationsList ? (
@@ -641,7 +604,7 @@ export default function AdminNavigation() {
                   <div className="relative" ref={entRef}>
                     <button
                       onClick={toggleEntity}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                      className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                       aria-haspopup="listbox"
                       aria-expanded={openEntity}
                       title={thirdLabel}
@@ -690,7 +653,7 @@ export default function AdminNavigation() {
               <div className="relative" ref={subRef}>
                 <button
                   onClick={toggleSub}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                   aria-haspopup="menu"
                   aria-expanded={openSub}
                 >
@@ -731,7 +694,7 @@ export default function AdminNavigation() {
           <div className="relative" ref={subRef}>
             <button
               onClick={toggleSub}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
               aria-haspopup="menu"
               aria-expanded={openSub}
             >
@@ -773,7 +736,7 @@ export default function AdminNavigation() {
                 <div className="relative" ref={entRef}>
                   <button
                     onClick={toggleEntity}
-                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                    className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                     aria-haspopup="listbox"
                     aria-expanded={openEntity}
                     title={thirdLabel}
@@ -815,7 +778,7 @@ export default function AdminNavigation() {
                   )}
                 </div>
               ) : (
-                <div className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-md">
+                <div className="px-2 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-md">
                   {thirdLabel}
                 </div>
                   )}
@@ -832,7 +795,7 @@ export default function AdminNavigation() {
               <div className="relative" ref={fourthRef}>
                 <button
                   onClick={toggleFourth}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                   aria-haspopup="listbox"
                   aria-expanded={openFourth}
                   title={fourthLabel}

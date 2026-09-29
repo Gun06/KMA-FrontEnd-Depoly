@@ -562,14 +562,49 @@ export default function Client({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-lg border border-gray-200 bg-white">
       {/* 대회 다중 선택 드롭다운 */}
-      <div className="mb-4 space-y-3" ref={eventDropdownRef}>
-        <div className="relative w-full">
+      <div className="relative border-b border-gray-200 px-4 py-3" ref={eventDropdownRef}>
+        <div className="flex w-full items-center gap-3">
+          {/* 드롭다운 버튼 */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsEventDropdownOpen((open) => {
+                if (open) {
+                  setEventSearchQuery('');
+                  setEventYear(undefined);
+                }
+                return !open;
+              });
+            }}
+            className={clsx(
+              'flex shrink-0 items-center justify-between min-w-[260px] h-9 px-3 text-[13px] font-medium',
+              'bg-white border border-gray-300 rounded-md',
+              'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              'transition-colors'
+            )}
+            aria-haspopup="listbox"
+            aria-expanded={isEventDropdownOpen}
+          >
+            <span className="text-left">
+              {selectedEvents.length > 0
+                ? `${selectedEvents.length}개 대회의 신청자를 조회 중입니다.`
+                : '대회를 선택하세요'}
+            </span>
+            <ChevronDown
+              className={clsx(
+                'ml-2 h-4 w-4 text-gray-500 transition-transform flex-shrink-0',
+                isEventDropdownOpen && 'rotate-180'
+              )}
+            />
+          </button>
+
           {/* 선택된 대회 태그들 */}
+          <div className="min-w-0 flex-1">
           {selectedEvents.length > 0 && (
             <div 
-              className="mb-2 flex gap-2 overflow-x-auto pb-1 w-full no-scrollbar"
+              className="flex gap-2 overflow-x-auto no-scrollbar"
               onWheel={(e) => {
                 e.currentTarget.scrollLeft += e.deltaY;
                 e.preventDefault();
@@ -611,7 +646,7 @@ export default function Client({
                 <span
                   key={event.id}
                   className={clsx(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium flex-shrink-0',
+                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[13px] font-medium flex-shrink-0',
                     'bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap'
                   )}
                 >
@@ -635,47 +670,13 @@ export default function Client({
               ))}
             </div>
           )}
-          
-          <div className="flex w-full items-center gap-2">
-            {/* 드롭다운 버튼 */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsEventDropdownOpen((open) => {
-                  if (open) {
-                    setEventSearchQuery('');
-                    setEventYear(undefined);
-                  }
-                  return !open;
-                });
-              }}
-              className={clsx(
-                'flex items-center justify-between w-auto min-w-[400px] max-w-[800px] px-4 py-2.5 text-sm font-medium',
-                'bg-white border border-gray-300 rounded-md shadow-sm',
-                'hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
-                'transition-colors'
-              )}
-              aria-haspopup="listbox"
-              aria-expanded={isEventDropdownOpen}
-            >
-              <span className="text-left">
-                {selectedEvents.length > 0 
-                  ? `${selectedEvents.length}개 대회의 신청자를 조회 중입니다.` 
-                  : '대회를 선택하세요'}
-              </span>
-              <ChevronDown
-                className={clsx(
-                  'ml-2 h-4 w-4 text-gray-500 transition-transform flex-shrink-0',
-                  isEventDropdownOpen && 'rotate-180'
-                )}
-              />
-            </button>
+          </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               {!isTableEditing ? (
                 <button
                   type="button"
-                  className="rounded-md border border-blue-600 px-4 h-10 text-sm text-blue-600 hover:bg-blue-50"
+                  className="rounded-md border border-blue-600 px-3 h-9 text-[13px] text-blue-600 hover:bg-blue-50"
                   onClick={() => tableRef.current?.enterEdit()}
                 >
                   수정하기
@@ -684,14 +685,14 @@ export default function Client({
                 <>
                   <button
                     type="button"
-                    className="rounded-md border border-blue-600 px-4 h-10 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                    className="rounded-md border border-blue-600 px-3 h-9 text-[13px] font-medium text-blue-600 hover:bg-blue-50"
                     onClick={() => tableRef.current?.saveEdit()}
                   >
                     저장
                   </button>
                   <button
                     type="button"
-                    className="rounded-md border px-4 h-10 text-sm hover:bg-gray-50"
+                    className="rounded-md border px-3 h-9 text-[13px] hover:bg-gray-50"
                     onClick={() => tableRef.current?.cancelEdit()}
                   >
                     취소
@@ -822,12 +823,11 @@ export default function Client({
               </div>
             </div>
           )}
-        </div>
       </div>
 
       {/* 데이터가 없을 때 안내 메시지 */}
       {!isLoading && rows.length === 0 && total === 0 && (
-        <div className="p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+        <div className="border-b border-gray-200 px-4 py-10 text-center">
           <p className="text-gray-600 mb-2">신청자가 없습니다.</p>
           <p className="text-sm text-gray-500">
             선택된 대회({selectedEvents.map((e) => getEventLabel(e)).join(', ')})에 등록된 신청자가 없습니다.

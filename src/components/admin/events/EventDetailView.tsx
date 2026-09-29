@@ -295,16 +295,16 @@ export default function EventDetailView({
   };
 
   return (
-    <div className="mx-auto max-w-[1300px] px-4 py-4">
+    <div className="mx-auto w-full max-w-[1920px] px-4 py-4">
       {/* 헤더 */}
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 rounded-lg border border-gray-200 bg-white px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
           <button
             onClick={handleBack}
-            className="flex items-center text-gray-600 hover:text-gray-800 transition-colors font-pretendard"
+            className="flex items-center text-[13px] text-gray-600 hover:text-gray-800 transition-colors font-pretendard"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-4 h-4 mr-1"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -319,33 +319,33 @@ export default function EventDetailView({
             대회 목록으로 돌아가기
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <Button
               variant="outline"
-              size="md"
+              size="sm"
               onClick={handleDeleteClick}
-              className="text-red-600 border-red-600 hover:bg-red-50 font-pretendard"
+              className="text-red-600 border-red-600 hover:bg-red-50 font-pretendard !h-9 !px-4 !text-[13px]"
               disabled={isDeleting}
             >
               {isDeleting ? '삭제 중...' : '삭제'}
             </Button>
             <Button
               variant="solid"
-              size="md"
+              size="sm"
               onClick={handleEdit}
-              className="font-pretendard"
+              className="font-pretendard !h-9 !px-4 !text-[13px]"
             >
               편집
             </Button>
           </div>
         </div>
 
-        <div className="mb-4">
-          <h1 className="text-2xl font-pretendard font-semibold text-gray-900 mb-1">
+        <div>
+          <h1 className="text-[20px] font-pretendard font-semibold text-gray-900 mb-0.5">
             {eventData.nameKr}
           </h1>
           {eventData.nameEng && (
-            <p className="text-base text-gray-600 font-pretendard">
+            <p className="text-[13px] text-gray-500 font-pretendard">
               {eventData.nameEng}
             </p>
           )}
@@ -353,20 +353,20 @@ export default function EventDetailView({
       </div>
 
       {/* 대회 기본 정보 */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-4">
-        <div className="bg-gray-100 rounded-t-lg px-5 py-3 border-l-4 border-blue-500">
-          <h2 className="text-lg font-pretendard font-semibold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 mb-3">
+        <div className="border-b border-gray-200 px-4 py-3">
+          <h2 className="text-[15px] font-pretendard font-semibold text-gray-900">
             대회 기본 정보
           </h2>
         </div>
-        <div className="px-5 py-4 space-y-4">
+        <div className="grid grid-cols-1 gap-x-10 gap-y-4 px-4 py-4 xl:grid-cols-2">
           {/* 1. 대회명 | 영문명 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 대회명
               </span>
-              <p className="text-base font-semibold text-gray-900 font-pretendard">
+              <p className="text-sm font-semibold text-gray-900 font-pretendard">
                 {eventData.nameKr}
               </p>
             </div>
@@ -376,7 +376,7 @@ export default function EventDetailView({
                 <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                   영문명
                 </span>
-                <p className="text-base font-semibold text-gray-900 font-pretendard">
+                <p className="text-sm font-semibold text-gray-900 font-pretendard">
                   {eventData.nameEng}
                 </p>
               </div>
@@ -389,7 +389,7 @@ export default function EventDetailView({
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 개최지
               </span>
-              <p className="text-base text-gray-900 font-pretendard">
+              <p className="text-sm text-gray-900 font-pretendard">
                 {eventData.region}
               </p>
             </div>
@@ -398,7 +398,7 @@ export default function EventDetailView({
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 참가인원
               </span>
-              <p className="text-base text-gray-900 font-pretendard">
+              <p className="text-sm text-gray-900 font-pretendard">
                 {eventData.registMaximum
                   ? eventData.registMaximum.toLocaleString()
                   : 0}
@@ -413,7 +413,7 @@ export default function EventDetailView({
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 주최
               </span>
-              <p className="text-base text-gray-900 font-pretendard">
+              <p className="text-sm text-gray-900 font-pretendard">
                 {eventData.host}
               </p>
             </div>
@@ -422,7 +422,7 @@ export default function EventDetailView({
               <span className="text-xs font-medium text-gray-500 font-pretendard uppercase tracking-wide">
                 주관
               </span>
-              <p className="text-base text-gray-900 font-pretendard">
+              <p className="text-sm text-gray-900 font-pretendard">
                 {eventData.organizer}
               </p>
             </div>
@@ -437,7 +437,7 @@ export default function EventDetailView({
               <div className="pt-1">
                 <RegistrationStatusBadge
                   status={toRegStatus(eventData.eventStatus)}
-                  size="smd"
+                  size="dense"
                 />
               </div>
             </div>
@@ -448,7 +448,7 @@ export default function EventDetailView({
               </span>
               <div className="pt-1">
                 <span
-                  className={`inline-flex items-center justify-center w-[70px] h-9 rounded-[6px] text-[13px] leading-[22px] font-medium ${
+                  className={`inline-flex items-center justify-center w-[64px] h-7 rounded-[5px] text-[12px] leading-4 font-medium ${
                     eventData.visibleStatus === 'OPEN'
                       ? 'bg-kma-blue text-white'
                       : eventData.visibleStatus === 'TEST'
@@ -670,8 +670,8 @@ export default function EventDetailView({
 
           {/* 결제 정보 - 맨 아래 */}
           {(bankName || accountNumber || eventData.accountHolderName != null) && (
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 xl:col-span-2">
+              <h3 className="text-sm font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
                 <svg
                   className="w-5 h-5 text-blue-600"
                   fill="none"
@@ -690,29 +690,29 @@ export default function EventDetailView({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {bankName && (
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                       은행
                     </span>
-                    <p className="text-base font-semibold text-gray-900 font-pretendard">
+                    <p className="text-sm font-semibold text-gray-900 font-pretendard">
                       {bankName}
                     </p>
                   </div>
                 )}
                 {accountNumber && (
                   <div className="bg-white rounded-lg p-3 border border-gray-200">
-                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                    <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                       계좌번호
                     </span>
-                    <p className="text-base font-semibold font-mono text-gray-900 font-pretendard">
+                    <p className="text-sm font-semibold font-mono text-gray-900 font-pretendard">
                       {accountNumber}
                     </p>
                   </div>
                 )}
                 <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                     예금주명
                   </span>
-                  <p className="text-base font-semibold text-gray-900 font-pretendard">
+                  <p className="text-sm font-semibold text-gray-900 font-pretendard">
                     {accountHolderName || '없음'}
                   </p>
                 </div>
@@ -721,8 +721,8 @@ export default function EventDetailView({
           )}
 
           {/* 7. 날짜 정보 - 맨 아래 */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 xl:col-span-2">
+            <h3 className="text-sm font-semibold text-gray-900 font-pretendard mb-3 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-blue-600"
                 fill="none"
@@ -738,22 +738,22 @@ export default function EventDetailView({
               </svg>
               날짜 정보
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
               <div className="bg-white rounded-lg p-3 border border-gray-200">
-                <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                   개최일
                 </span>
-                <p className="text-base font-semibold text-gray-900 font-pretendard">
+                <p className="text-sm font-semibold text-gray-900 font-pretendard">
                   {formatDate(eventData.startDate)}
                 </p>
               </div>
 
               {eventData.registStartDate && (
                 <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                     신청시작일
                   </span>
-                  <p className="text-base font-semibold text-gray-900 font-pretendard">
+                  <p className="text-sm font-semibold text-gray-900 font-pretendard">
                     {formatDate(eventData.registStartDate)}
                   </p>
                 </div>
@@ -761,10 +761,10 @@ export default function EventDetailView({
 
               {eventData.registDeadline && (
                 <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                     접수마감
                   </span>
-                  <p className="text-base font-semibold text-gray-900 font-pretendard">
+                  <p className="text-sm font-semibold text-gray-900 font-pretendard">
                     {formatDate(eventData.registDeadline)}
                   </p>
                 </div>
@@ -772,10 +772,10 @@ export default function EventDetailView({
 
               {eventData.paymentDeadline && (
                 <div className="bg-white rounded-lg p-3 border border-gray-200">
-                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-2">
+                  <span className="text-xs font-medium text-gray-500 font-pretendard block mb-1">
                     입금마감
                   </span>
-                  <p className="text-base font-semibold text-gray-900 font-pretendard">
+                  <p className="text-sm font-semibold text-gray-900 font-pretendard">
                     {formatDate(eventData.paymentDeadline)}
                   </p>
                 </div>
@@ -784,8 +784,8 @@ export default function EventDetailView({
           </div>
 
           {/* 8. 약관 정보 (날짜 정보 바로 아래) */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h3 className="text-base font-semibold text-gray-900 font-pretendard mb-1 flex items-center gap-2">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 xl:col-span-2">
+            <h3 className="text-sm font-semibold text-gray-900 font-pretendard mb-1 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-blue-600"
                 fill="none"
@@ -861,14 +861,14 @@ export default function EventDetailView({
 
       {/* 대회 카테고리 및 참가비 */}
       {eventData.eventCategories && eventData.eventCategories.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 mb-4">
-          <div className="bg-gray-100 rounded-t-lg px-5 py-3 border-l-4 border-blue-500">
-            <h2 className="text-lg font-pretendard font-semibold text-gray-900">
+        <div className="bg-white rounded-lg border border-gray-200 mb-3">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <h2 className="text-[15px] font-pretendard font-semibold text-gray-900">
               대회 카테고리 및 참가비
             </h2>
           </div>
-          <div className="px-5 py-4">
-            <div className="space-y-3">
+          <div className="px-4 py-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {eventData.eventCategories.map(category => {
                 const isCategoryActive = category.isActive !== false; // 기본값은 true
                 return (
@@ -881,7 +881,7 @@ export default function EventDetailView({
                   >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-pretendard font-medium text-gray-900">
+                      <h3 className="text-sm font-pretendard font-medium text-gray-900">
                         {category.name}
                       </h3>
                       {!isCategoryActive && (
@@ -944,13 +944,13 @@ export default function EventDetailView({
 
       {/* 배너 이미지들 */}
       {eventData.eventBanners && eventData.eventBanners.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 mb-4">
-          <div className="bg-gray-100 rounded-t-lg px-5 py-3 border-l-4 border-blue-500">
-            <h2 className="text-lg font-pretendard font-semibold text-gray-900">
+        <div className="bg-white rounded-lg border border-gray-200 mb-3">
+          <div className="border-b border-gray-200 px-4 py-3">
+            <h2 className="text-[15px] font-pretendard font-semibold text-gray-900">
               배너 이미지
             </h2>
           </div>
-          <div className="px-5 py-4">
+          <div className="px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {eventData.eventBanners.map((banner, index) => (
                 <div
@@ -1086,18 +1086,18 @@ export default function EventDetailView({
       )}
 
       {/* 대회 이미지들 */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-4">
-        <div className="bg-gray-100 rounded-t-lg px-5 py-3 border-l-4 border-blue-500">
-          <h2 className="text-lg font-pretendard font-semibold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 mb-3">
+        <div className="border-b border-gray-200 px-4 py-3">
+          <h2 className="text-[15px] font-pretendard font-semibold text-gray-900">
             대회 이미지
           </h2>
         </div>
-        <div className="px-5 py-4">
+        <div className="px-4 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {/* 대회 메인배너(데스크탑) */}
             {eventData.mainBannerPcImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회 메인배너(데스크탑)
                 </h3>
                 <img
@@ -1118,7 +1118,7 @@ export default function EventDetailView({
             {/* 대회 메인배너(모바일) */}
             {eventData.mainBannerMobileImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회 메인배너(모바일)
                 </h3>
                 <img
@@ -1139,7 +1139,7 @@ export default function EventDetailView({
             {/* 대회 중간배너(데스크탑) */}
             {eventData.mainOutlinePcImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회 중간배너(데스크탑)
                 </h3>
                 <img
@@ -1160,7 +1160,7 @@ export default function EventDetailView({
             {/* 대회 중간배너(모바일) */}
             {eventData.mainOutlineMobileImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회 중간배너(모바일)
                 </h3>
                 <img
@@ -1181,7 +1181,7 @@ export default function EventDetailView({
             {/* 인스타배너(홍보용) */}
             {eventData.promotionBanner && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   인스타배너(홍보용)
                 </h3>
                 <img
@@ -1200,7 +1200,7 @@ export default function EventDetailView({
             {/* 사이드 메뉴배너 */}
             {eventData.sideMenuBannerImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   사이드 메뉴배너
                 </h3>
                 <img
@@ -1221,7 +1221,7 @@ export default function EventDetailView({
             {/* 사이드 광고 배너 */}
             {eventData.eventAdvertiseBannerUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   사이드 광고 배너
                 </h3>
                 <img
@@ -1244,7 +1244,7 @@ export default function EventDetailView({
             {/* 인증서 배경 이미지 */}
             {eventData.resultImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   인증서 배경 이미지
                 </h3>
                 <img
@@ -1263,7 +1263,7 @@ export default function EventDetailView({
             {/* 이벤트 아웃라인 페이지 */}
             {eventData.eventOutlinePageImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회요강 페이지
                 </h3>
                 <img
@@ -1284,7 +1284,7 @@ export default function EventDetailView({
             {/* 공지사항 페이지 */}
             {eventData.noticePageImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   대회 유의사항 페이지
                 </h3>
                 <img
@@ -1303,7 +1303,7 @@ export default function EventDetailView({
             {/* 기념품 페이지 */}
             {eventData.souvenirPageImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   기념품 페이지
                 </h3>
                 <img
@@ -1324,7 +1324,7 @@ export default function EventDetailView({
             {/* 집합장소 페이지 */}
             {eventData.meetingPlacePageImageUrl && (
               <div className="space-y-2">
-                <h3 className="text-base font-pretendard font-medium text-gray-900">
+                <h3 className="text-sm font-pretendard font-medium text-gray-900">
                   집합장소 페이지
                 </h3>
                 <img
@@ -1363,7 +1363,7 @@ export default function EventDetailView({
 
               return (
                 <div className="space-y-2">
-                  <h3 className="text-base font-pretendard font-medium text-gray-900">
+                  <h3 className="text-sm font-pretendard font-medium text-gray-900">
                     대회코스 페이지
                   </h3>
                   <PageMediaList

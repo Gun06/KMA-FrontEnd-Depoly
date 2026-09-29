@@ -82,11 +82,11 @@ export default function LocalEventTable({
   isLoading = false,
 }: Props) {
   const columns: Column<LocalEventRow>[] = [
-    { key: 'no', header: '번호', width: 80, align: 'center' },
+    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
     {
       key: 'date',
       header: '개최일',
-      width: 120,
+      width: 100,
       align: 'center',
       className: 'text-[#6B7280] whitespace-nowrap',
     },
@@ -97,7 +97,7 @@ export default function LocalEventTable({
       className: 'text-left',
       render: r => (
         <span
-          className="truncate hover:underline cursor-pointer"
+          className="block max-w-[440px] truncate hover:underline cursor-pointer"
           title={r.title}
           onClick={() => onTitleClick?.(r)}
         >
@@ -108,13 +108,13 @@ export default function LocalEventTable({
     {
       key: 'applicantCompany',
       header: '신청회사',
-      width: 160,
+      width: 180,
       align: 'left',
       className: 'text-left text-[#374151]',
       render: r => {
         const v = r.applicantCompany?.trim();
         return (
-          <span className="block max-w-[220px] truncate" title={v || undefined}>
+          <span className="block max-w-[200px] truncate" title={v || undefined}>
             {v ? v : '—'}
           </span>
         );
@@ -123,16 +123,16 @@ export default function LocalEventTable({
     {
       key: 'applyStatus',
       header: '신청상태',
-      width: 110,
+      width: 90,
       align: 'center',
       render: r => (
-        <RegistrationStatusBadge status={r.applyStatus} size="smd" />
+        <RegistrationStatusBadge status={r.applyStatus} size="dense" className="!w-[72px]" />
       ),
     },
     {
       key: 'isPublic',
       header: '공개여부',
-      width: 100,
+      width: 80,
       align: 'center',
       render: r => {
         if (r.isPublic === 'OPEN') {
@@ -188,7 +188,9 @@ export default function LocalEventTable({
   const RightControls = preset ? (
     <FilterBar
       {...preset}
-      className="!gap-3" // 왼쪽 정렬
+      dense
+      searchWidth={240}
+      className="!items-center !gap-2 flex-wrap justify-end"
       initialValues={filterInitialValues}
       initialSearchValue={searchInitialValue}
       buttons={[
@@ -209,69 +211,53 @@ export default function LocalEventTable({
     />
   ) : null;
 
-  // 빈 상태 처리
-  if (rows.length === 0 && total === 0) {
-    return (
-      <section className="w-full flex flex-col">
-        <h2 className="mb-3 text-xl font-semibold">지역대회 관리</h2>
-        {RightControls && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 md:gap-3">
-            <div className="flex-1 min-w-[220px]">{null}</div>
-            <div className="flex-1 min-w-[240px]">{null}</div>
-            <div className="shrink-0">{RightControls}</div>
-          </div>
-        )}
-        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
-          {hasActiveFilters ? (
-            <>
-              <div className="text-gray-500 text-lg mb-2">검색 결과가 없습니다</div>
-              <div className="text-sm text-gray-400 mb-6">다른 검색 조건으로 다시 검색해주세요</div>
-            </>
-          ) : (
-            <>
-              <div className="text-gray-500 text-lg mb-2">등록된 지역대회가 없습니다</div>
-              <div className="text-sm text-gray-400 mb-6">첫 번째 지역대회를 등록해보세요</div>
-              {onClickRegister && (
-                <button
-                  onClick={onClickRegister}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  지역대회 등록하기
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-    );
-  }
+  const isEmpty = rows.length === 0 && total === 0;
 
   return (
-    <div className="relative">
-      {isLoading && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+    <div className="relative rounded-lg border border-gray-200 bg-white">
+      {isLoading && !isEmpty && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/50 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <span className="text-sm text-gray-600">로딩 중...</span>
           </div>
         </div>
       )}
+      <div className="border-b border-gray-200 px-4 py-3">
+        <h3 className="text-[15px] font-semibold">지역대회 관리</h3>
+      </div>
       <AdminTable<LocalEventRow>
-        title="지역대회 관리"
+        dense
+        contentMinHeight={null}
         columns={columns}
         rows={rows}
         rowKey={r => r.id}
-        renderFilters={null}
-        renderSearch={null}
-        renderActions={RightControls} // 오른쪽 툴바 슬롯
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>개
+          </p>
+        }
+        renderActions={RightControls}
+        loadingMessage={isLoading && isEmpty ? '지역대회 목록을 불러오는 중...' : undefined}
+        emptyMessage={
+          hasActiveFilters
+            ? '검색 결과가 없습니다.\n다른 검색 조건으로 다시 검색해주세요.'
+            : '등록된 지역대회가 없습니다.\n지역대회를 등록하면 여기에 표시됩니다.'
+        }
         pagination={{
           page,
           pageSize,
           total,
           onChange: onPageChange,
-          align: 'center',
+          bar: {
+            totalTextFormatter: cnt => (
+              <>
+                총 <b>{cnt.toLocaleString()}</b>개 대회
+              </>
+            ),
+          },
         }}
-        minWidth={1240}
+        minWidth={1000}
       />
     </div>
   );

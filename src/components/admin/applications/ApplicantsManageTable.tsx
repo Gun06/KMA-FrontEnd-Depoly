@@ -304,11 +304,6 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
 
   const isRowEditing = (id: string) => editing && editableIdsRef.current.has(id);
 
-  const shorten = (s?: string, n = 6) => {
-    const text = (s ?? '').trim();
-    return text.length > n ? `${text.slice(0, n)}…` : text;
-  };
-
   const columns: Column<ApplicantManageRow>[] = [
     {
       key: '__sel',
@@ -324,7 +319,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
           />
         </div>
       ),
-      width: 56, align: 'center', headerAlign: 'center',
+      width: 40, align: 'center', headerAlign: 'center',
       render: (r) => {
         const rowChecked = controlled ? (selectedIds as string[]).includes(r.id) : !!localChecked[r.id];
         return (
@@ -342,9 +337,9 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         );
       },
     },
-    { key: 'no', header: '번호', width: 80, align: 'center' },
+    { key: 'no', header: '번호', width: 64, align: 'center', className: 'text-gray-500' },
     {
-      key: 'name', header: '성명', width: 120, align: 'center',
+      key: 'name', header: '성명', width: 90, align: 'center',
       render: (r) => isRowEditing(r.id)
         ? <input 
             className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
@@ -356,19 +351,19 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         : r.name,
     },
     {
-      key: 'org', header: '단체명', width: 160, align: 'center',
+      key: 'org', header: '단체명', width: 140, align: 'center',
       render: (r) => {
         const org = (r.org ?? '').trim();
         if (!org || org === '개인') return '-';
-        return org;
+        return <span className="mx-auto block max-w-[160px] truncate" title={org}>{org}</span>;
       }, // 읽기 전용 - API에서 수정 불가
     },
     {
-      key: 'course', header: '코스', width: 150, align: 'center',
+      key: 'course', header: '코스', width: 120, align: 'center',
       render: (r) => r.course, // 읽기 전용 - API에서 수정 불가
     },
     {
-      key: 'gender', header: '성별', width: 100, align: 'center',
+      key: 'gender', header: '성별', width: 56, align: 'center',
       render: (r) => isRowEditing(r.id)
         ? <DropdownPortal
             value={String((drafts[r.id]?.gender ?? r.gender))}
@@ -378,7 +373,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         : r.gender,
     },
     {
-      key: 'birth', header: '생년월일', width: 140, align: 'center',
+      key: 'birth', header: '생년월일', width: 100, align: 'center',
       render: (r) => isRowEditing(r.id)
         ? <input 
             className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
@@ -391,13 +386,15 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
         : r.birth,
     },
     {
-      key: 'eventName', header: '대회명', width: 180, align: 'center',
-      render: (r) => r.eventName || '-',
+      key: 'eventName', header: '대회명', width: 220, align: 'center',
+      render: (r) => r.eventName
+        ? <span className="mx-auto block max-w-[240px] truncate" title={r.eventName}>{r.eventName}</span>
+        : '-',
     },
     {
       key: 'regDate',
       header: '신청일시',
-      width: 180,
+      width: 110,
       align: 'center',
       render: (r) => {
         const dateOnly = (() => {
@@ -417,11 +414,11 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
       },
     },
     {
-      key: 'fee', header: '금액', width: 120, align: 'center',
+      key: 'fee', header: '금액', width: 88, align: 'center',
       render: (r) => r.fee.toLocaleString(), // 읽기 전용 - API에서 수정 불가
     },
     {
-      key: 'memo', header: '메모', width: 160, align: 'left',
+      key: 'memo', header: '메모', width: 200, align: 'left',
       className: 'border-l border-gray-200',
       render: (r) => isRowEditing(r.id)
         ? <input 
@@ -432,17 +429,17 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
             data-stop-bubble="true"
             placeholder="메모 입력"
           />
-        : <span title={r.memo ?? ''}>{shorten(r.memo, 6)}</span>,
+        : <span className="block max-w-[220px] truncate" title={r.memo ?? ''}>{r.memo ?? ''}</span>,
     },
     {
       key: 'account',
       header: '입금자명',
-      width: 120,
+      width: 100,
       align: 'center',
       render: (r) => r.account || '-',
     },
     {
-      key: 'paid', header: '입금여부', width: 130, align: 'center',
+      key: 'paid', header: '입금여부', width: 100, align: 'center',
       render: (r) => isRowEditing(r.id)
         ? <DropdownPortal
             value={String(drafts[r.id]?.payStatus ?? r.payStatus ?? (r.paid ? '결제완료' : '미결제'))}
@@ -482,11 +479,13 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
   }, [preset?.fields, initialSearchField]);
 
   const RightControls = preset ? (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
       <FilterBar
         {...preset}
         buttons={toolbarButtons}
-        className="!gap-3"
+        dense
+        searchWidth={260}
+        className="!items-center !gap-2 flex-wrap justify-end"
         showReset
         initialValues={initialValues}
         onFieldChange={(label, value) => {
@@ -604,13 +603,19 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
   ) : null;
 
   return (
-    <div className="space-y-4">
+    <div>
       <AdminTable<ApplicantManageRow>
+        dense
+        contentMinHeight={null}
         columns={columns}
         rows={rows}
         rowKey={(r) => r.id}
         onRowClick={editing ? undefined : onRowClick}
-        renderFilters={null}
+        renderFilters={
+          <p className="shrink-0 text-sm text-gray-600">
+            검색 결과 총 <b className="text-gray-900">{total.toLocaleString()}</b>명
+          </p>
+        }
         renderSearch={null}
         renderActions={RightControls}
         pagination={{
@@ -627,7 +632,7 @@ const ApplicantsManageTable = React.forwardRef<ApplicantsManageTableHandle, Prop
             ),
           },
         }}
-        minWidth={1400}
+        minWidth={1280}
         allowTextSelection={true}
       />
     </div>

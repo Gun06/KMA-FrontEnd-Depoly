@@ -461,7 +461,7 @@ export default function EditForm({
         instantActive={instantNavActive}
       />
 
-      <div className="px-8 pt-8 pb-24 md:ml-[240px] min-h-[calc(100vh-4rem)]">
+      <div className="px-8 pt-8 pb-24 md:ml-[240px] min-h-[calc(100vh-3rem)]">
             <div className="mb-6 flex items-center justify-between gap-3">
               <h1 className="text-[17px] font-semibold">{title}</h1>
               <EditActionBar
