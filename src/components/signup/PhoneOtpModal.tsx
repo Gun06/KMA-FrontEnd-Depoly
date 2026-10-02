@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Clock } from 'lucide-react';
-import { getReadablePhoneOtpError } from '@/utils/phoneOtpErrors';
 
 interface PhoneOtpModalProps {
   isOpen: boolean;
@@ -136,7 +135,8 @@ export default function PhoneOtpModal({
       setReissueCount(0);
       sessionStorage.setItem('signupOtpReissueCount', '0');
     } catch (err: unknown) {
-      setError(getReadablePhoneOtpError(err, '전화번호 인증번호 발급에 실패했습니다.'));
+      const errorMessage = err instanceof Error ? err.message : '전화번호 인증번호 발급에 실패했습니다.';
+      setError(errorMessage);
     }
   };
 
@@ -159,7 +159,8 @@ export default function PhoneOtpModal({
       setIsSuccess(true);
       handleTimerExpired();
     } catch (err: unknown) {
-      setError(getReadablePhoneOtpError(err, '전화번호 인증에 실패했습니다.'));
+      const errorMessage = err instanceof Error ? err.message : '전화번호 인증에 실패했습니다.';
+      setError(errorMessage);
     }
   };
 
@@ -202,7 +203,7 @@ export default function PhoneOtpModal({
         setIsMaxRequested(true);
         setError('인증번호 재발급 횟수를 초과했습니다. 처음부터 다시 진행해주세요.');
       } else {
-        const errorMessage = getReadablePhoneOtpError(err, '인증번호 재발급에 실패했습니다.');
+        const errorMessage = err instanceof Error ? err.message : '인증번호 재발급에 실패했습니다.';
         setError(errorMessage);
       }
     }

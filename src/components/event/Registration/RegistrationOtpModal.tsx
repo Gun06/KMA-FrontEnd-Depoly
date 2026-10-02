@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Clock } from "lucide-react";
-import { getReadablePhoneOtpError } from "@/utils/phoneOtpErrors";
 
 interface RegistrationOtpModalProps {
   isOpen: boolean;
@@ -61,7 +60,9 @@ export default function RegistrationOtpModal({
         await onRequestOtpRef.current();
         setOtpRequested(true);
       } catch (e) {
-        setError(getReadablePhoneOtpError(e, "인증번호 전송에 실패했습니다."));
+        const msg =
+          e instanceof Error ? e.message : "인증번호 전송에 실패했습니다.";
+        setError(msg);
       }
     };
 
@@ -109,7 +110,9 @@ export default function RegistrationOtpModal({
     try {
       await onSubmit(otp);
     } catch (e) {
-      setError(getReadablePhoneOtpError(e, "인증번호 확인에 실패했습니다."));
+      const msg =
+        e instanceof Error ? e.message : "인증번호 확인에 실패했습니다.";
+      setError(msg);
     }
   };
 
