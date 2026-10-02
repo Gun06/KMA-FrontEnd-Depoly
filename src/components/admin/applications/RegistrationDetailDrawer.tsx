@@ -470,9 +470,11 @@ export default function RegistrationDetailDrawer({
     const currentSouvenirList: Array<{ souvenirId: string; selectedSize: string }> = [];
     if (item.souvenirListDetail && item.souvenirListDetail.length > 0) {
       item.souvenirListDetail.forEach((s) => {
-        if (s.id && s.size) {
-          currentSouvenirList.push({ souvenirId: s.id, selectedSize: s.size });
-        }
+        if (!s.id) return;
+        currentSouvenirList.push({
+          souvenirId: s.id,
+          selectedSize: (s.size || '').trim(),
+        });
       });
     } else if (item.souvenirList && item.souvenirList.length > 0) {
       currentSouvenirList.push(...item.souvenirList);
@@ -560,14 +562,8 @@ export default function RegistrationDetailDrawer({
         if (existing) {
           newSouvenirList.push(existing);
         } else {
-          // 새로운 기념품은 첫 번째 사이즈를 기본값으로 설정
-          const sizesString = souvenir.sizes || '';
-          const availableSizes = sizesString
-            .split(/[|,]/)
-            .map(s => s.trim().replace(/^✓\s*/, '').trim())
-            .filter(s => s.length > 0);
-          const defaultSize = availableSizes[0] || '';
-          newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: defaultSize });
+          // 코스 변경 등으로 새로 붙는 기념품만 빈 값 — 저장 전 선택 유도(첫 사이즈 자동 대입 방지)
+          newSouvenirList.push({ souvenirId: souvenir.id, selectedSize: '' });
         }
       });
       
@@ -1143,8 +1139,7 @@ export default function RegistrationDetailDrawer({
                           // 사이즈 옵션 없으면 행 생략 (기존과 동일). 전부 없으면 아래에서 '-' 표시
                           if (availableSizes.length === 0) return null;
 
-                          const sizeValue =
-                            selectedSouvenir?.selectedSize || availableSizes[0];
+                          const sizeValue = selectedSouvenir?.selectedSize ?? '';
 
                           if (isSoldOut) {
                             return (

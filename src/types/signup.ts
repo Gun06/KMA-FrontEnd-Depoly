@@ -173,7 +173,7 @@ export const SIGNUP_ERROR_MESSAGES = {
     '아이디는 영문으로 시작하며, 영문/숫자와 . _ - 만 사용할 수 있어요. (. _ - 연속/끝 사용 불가)',
   ACCOUNT_DUPLICATE: '이미 사용 중인 아이디입니다.',
   PASSWORD_REQUIRED: '비밀번호를 입력해주세요.',
-  PASSWORD_LENGTH: '비밀번호는 8~20자로 입력해주세요.',
+  PASSWORD_LENGTH: '비밀번호는 10~64자로 입력해주세요.',
   PASSWORD_FORMAT: '비밀번호는 영문, 숫자, 특수문자를 포함해야 합니다.',
   PASSWORD_MISMATCH: '비밀번호가 일치하지 않습니다.',
   
@@ -202,9 +202,8 @@ export const VALIDATION_RULES = {
     PATTERN: /^(?=.{5,20}$)(?!.*[._-]{2})[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]$/,
   },
   PASSWORD: {
-    MIN_LENGTH: 8,
-    MAX_LENGTH: 20,
-    PATTERN: /^(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*])/,
+    MIN_LENGTH: 10,
+    MAX_LENGTH: 64,
   },
   PHONE: {
     PATTERN: /^[0-9]{3,4}$/,

@@ -16,6 +16,7 @@ import {
   PHONE_PREFIXES
 } from '../types/signup';
 import { authService } from '../services/auth';
+import { isSignupPasswordValid } from '@/lib/signupPassword';
 
 // API 요청 형식에 맞는 타입 정의
 interface SignupApiRequest {
@@ -222,11 +223,16 @@ const validateAccount = (account: AccountInfo): { isValid: boolean; errors: stri
   
   if (!account.password) {
     errors.push(SIGNUP_ERROR_MESSAGES.PASSWORD_REQUIRED);
-  } else if (account.password.length < VALIDATION_RULES.PASSWORD.MIN_LENGTH || 
-             account.password.length > VALIDATION_RULES.PASSWORD.MAX_LENGTH) {
-    errors.push(SIGNUP_ERROR_MESSAGES.PASSWORD_LENGTH);
-  } else if (!VALIDATION_RULES.PASSWORD.PATTERN.test(account.password)) {
-    errors.push(SIGNUP_ERROR_MESSAGES.PASSWORD_FORMAT);
+  } else if (!isSignupPasswordValid(account.password)) {
+    const { MIN_LENGTH, MAX_LENGTH } = VALIDATION_RULES.PASSWORD;
+    if (
+      account.password.length < MIN_LENGTH ||
+      account.password.length > MAX_LENGTH
+    ) {
+      errors.push(SIGNUP_ERROR_MESSAGES.PASSWORD_LENGTH);
+    } else {
+      errors.push(SIGNUP_ERROR_MESSAGES.PASSWORD_FORMAT);
+    }
   }
   
   if (account.password !== account.passwordConfirm) {

@@ -414,17 +414,60 @@ export async function getRegistrationDetail(registrationId: string): Promise<Reg
       || data.event?.id 
       || data.eventCategory?.eventId
       || data.eventCategoryId?.eventId,
-    // 새 구조의 souvenirList를 souvenirListDetail로 매핑
-    souvenirListDetail: Array.isArray(data.souvenirList)
-      ? data.souvenirList.map((s: any) => ({
-          id: s.id,
-          name: s.name,
-          size: s.size,
-          eventCategoryId: s.eventCategoryId,
-          eventCategoryName: s.eventCategoryName,
-        }))
-      : [],
+    souvenirList: normalizeRegistrationSouvenirList(data.souvenirList),
+    souvenirListDetail: normalizeRegistrationSouvenirListDetail(data.souvenirList),
   };
+}
+
+function normalizeRegistrationSouvenirSize(raw: Record<string, unknown>): string {
+  const candidates = [raw.size, raw.selectedSize, raw.souvenirSize];
+  for (const value of candidates) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+function normalizeRegistrationSouvenirList(
+  list: unknown
+): Array<{ souvenirId: string; selectedSize: string }> {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const raw = entry as Record<string, unknown>;
+      const souvenirId =
+        (typeof raw.souvenirId === 'string' && raw.souvenirId) ||
+        (typeof raw.id === 'string' && raw.id) ||
+        '';
+      const selectedSize = normalizeRegistrationSouvenirSize(raw);
+      if (!souvenirId) return null;
+      return { souvenirId, selectedSize };
+    })
+    .filter((item): item is { souvenirId: string; selectedSize: string } => item !== null);
+}
+
+function normalizeRegistrationSouvenirListDetail(list: unknown) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') return null;
+      const raw = entry as Record<string, unknown>;
+      const id =
+        (typeof raw.id === 'string' && raw.id) ||
+        (typeof raw.souvenirId === 'string' && raw.souvenirId) ||
+        '';
+      if (!id) return null;
+      return {
+        id,
+        name: typeof raw.name === 'string' ? raw.name : '',
+        size: normalizeRegistrationSouvenirSize(raw),
+        eventCategoryId:
+          typeof raw.eventCategoryId === 'string' ? raw.eventCategoryId : '',
+        eventCategoryName:
+          typeof raw.eventCategoryName === 'string' ? raw.eventCategoryName : '',
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
 // 신청 개별 수정 (상세 편집 저장) — PATCH /api/v1/registration/{registrationId}

@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X } from 'lucide-react'
 import SignupLayout from '@/components/common/SignupLayout'
 import { useSignupStore, useSignupActions } from '@/stores'
+import {
+  getSignupPasswordConditions,
+  isSignupPasswordValid,
+} from '@/lib/signupPassword'
 
 const computeIdConditions = (id: string) => {
   if (!id) {
@@ -23,26 +27,6 @@ const computeIdConditions = (id: string) => {
     allowedChars: /^[a-zA-Z0-9._-]+$/.test(id),
     endsWithAlnum: /[a-zA-Z0-9]$/.test(id),
     noConsecutiveSeparators: !/[._-]{2}/.test(id),
-  }
-}
-
-const computePasswordConditions = (password: string) => {
-  if (!password) {
-    return {
-      hasLength: false,
-      hasLowerCase: false,
-      hasNumber: false,
-      hasSpecial: false,
-      noSpace: true,
-    }
-  }
-
-  return {
-    hasLength: password.length >= 10 && password.length <= 64,
-    hasLowerCase: /[a-z]/.test(password),
-    hasNumber: /\d/.test(password),
-    hasSpecial: /[~!@#$%^&*()+\-={}\[\]\\|:;"'<>,.?/]/.test(password),
-    noSpace: !/\s/.test(password),
   }
 }
 
@@ -80,7 +64,7 @@ export default function SignupStep2Page() {
 
   // 비밀번호 조건 상태
   const [passwordConditions, setPasswordConditions] = useState(() =>
-    computePasswordConditions(formData.account.password || '')
+    getSignupPasswordConditions(formData.account.password || '')
   )
 
   const handleInputChange = (field: string, value: string) => {
@@ -111,7 +95,7 @@ export default function SignupStep2Page() {
   }
 
   const validatePassword = (password: string) => {
-    setPasswordConditions(computePasswordConditions(password))
+    setPasswordConditions(getSignupPasswordConditions(password))
   }
 
   const validateConfirmPassword = (confirmPassword: string, password?: string) => {
@@ -130,7 +114,7 @@ export default function SignupStep2Page() {
 
     setFormDataLocal({ id, password, confirmPassword })
     setIdConditions(computeIdConditions(id))
-    setPasswordConditions(computePasswordConditions(password))
+    setPasswordConditions(getSignupPasswordConditions(password))
     setConfirmPasswordMessage(computeConfirmPasswordMessage(confirmPassword, password))
   }, [formData.account])
 
@@ -156,9 +140,7 @@ export default function SignupStep2Page() {
   }
 
   // 비밀번호가 모든 조건을 만족하는지 확인
-  const isPasswordValid = () => {
-    return Object.values(passwordConditions).every(condition => condition === true)
-  }
+  const isPasswordValid = () => isSignupPasswordValid(formDataLocal.password)
 
   // 다음 단계로 진행 가능한지 확인
   const canProceed = formDataLocal.id && formDataLocal.password && formDataLocal.confirmPassword && 
