@@ -7,15 +7,16 @@ import { NoticeBoard } from '@/components/common/Notice';
 import { useNoticeData } from './hooks/useNoticeData';
 import { ErrorState } from './components/ErrorState';
 import NoticeSkeleton from './components/NoticeSkeleton';
+import { EventBoardListFrame } from '@/components/event/notices/EventBoardListFrame';
 
 export default function EventNoticePage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.eventId as string;
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(15);
-  
+
   // API에서 모든 데이터를 가져오기 위해 큰 size 사용 (클라이언트 페이지네이션)
   const { noticeData, isLoading, error, displayNotices } = useNoticeData(eventId, 1, 1000);
 
@@ -27,7 +28,7 @@ export default function EventNoticePage() {
   // 행 클릭 시 처리 (상세 페이지로 이동)
   const handleRowClick = (id: string | number) => {
     let originalId = id;
-    
+
     if (typeof id === 'string') {
       // _regular suffix 제거 (필독 항목의 일반 목록 버전)
       if (id.endsWith('_regular')) {
@@ -45,24 +46,23 @@ export default function EventNoticePage() {
         originalId = id.replace('other_', '');
       }
     }
-    
+
     router.push(`/event/${eventId}/notices/notice/${originalId}`);
   };
 
   // 로딩 상태
   if (isLoading) {
     return (
-      <SubmenuLayout 
+      <SubmenuLayout
         eventId={eventId}
         breadcrumb={{
           mainMenu: "대회안내",
           subMenu: "공지사항"
         }}
       >
-        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
-          {/* 스켈레톤 UI */}
+        <EventBoardListFrame>
           <NoticeSkeleton />
-        </div>
+        </EventBoardListFrame>
       </SubmenuLayout>
     );
   }
@@ -70,7 +70,7 @@ export default function EventNoticePage() {
   // 오류 상태
   if (error && !noticeData) {
     return (
-      <SubmenuLayout 
+      <SubmenuLayout
         eventId={eventId}
         breadcrumb={{
           mainMenu: "대회안내",
@@ -82,15 +82,36 @@ export default function EventNoticePage() {
     );
   }
 
+  if (!isLoading && !error && displayNotices.length === 0) {
+    return (
+      <SubmenuLayout
+        eventId={eventId}
+        breadcrumb={{
+          mainMenu: "대회안내",
+          subMenu: "공지사항",
+        }}
+      >
+        <EventBoardListFrame>
+          <div className="text-center">
+            <div className="mb-2 text-lg text-gray-500">등록된 공지사항이 없습니다</div>
+            <div className="text-sm text-gray-400">
+              새 공지가 등록되면 이곳에서 확인할 수 있습니다
+            </div>
+          </div>
+        </EventBoardListFrame>
+      </SubmenuLayout>
+    );
+  }
+
   return (
-    <SubmenuLayout 
+    <SubmenuLayout
       eventId={eventId}
       breadcrumb={{
         mainMenu: "대회안내",
         subMenu: "공지사항"
       }}
     >
-      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+      <EventBoardListFrame>
         <NoticeBoard
           data={displayNotices}
           onRowClick={handleRowClick}
@@ -106,7 +127,7 @@ export default function EventNoticePage() {
           totalElements={displayNotices.filter(item => !item.pinned).length}
           onPageChange={handlePageChange}
         />
-      </div>
+      </EventBoardListFrame>
     </SubmenuLayout>
   );
 }

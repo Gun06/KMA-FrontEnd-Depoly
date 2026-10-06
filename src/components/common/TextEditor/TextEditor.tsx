@@ -2,9 +2,12 @@
 
 import React from "react";
 import { EditorContent } from "@tiptap/react";
+import { cn } from "@/utils/cn";
 import { useTextEditor } from "./hooks/useTextEditor";
 import { Toolbar, EditorStyles } from "./components";
 import type { TextEditorProps } from "./types";
+
+const defaultFrameClass = "w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm";
 
 const TextEditor: React.FC<TextEditorProps> = ({
   initialContent = "",
@@ -21,7 +24,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
   onEditorReady,
   defaultTextColor,
   defaultFontSize,
+  frameClassName,
 }) => {
+  const frameClass = frameClassName ?? defaultFrameClass;
   const {
     editor,
     isMounted,
@@ -45,7 +50,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   // 클라이언트 사이드에서만 에디터 렌더링
   if (!isMounted || !editor) {
     return (
-      <div className="w-full border border-gray-200 rounded-xl bg-white shadow-sm">
+      <div className={cn(frameClass)}>
         <div className="p-6">
           <div className="flex items-center justify-center h-32 text-gray-500">
             에디터를 불러오는 중...
@@ -56,7 +61,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   }
 
   return (
-    <div className="w-full border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+    <div className={cn(frameClass)}>
       {/* 툴바 */}
       <Toolbar
         editor={editor}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import EventHeader from '@/components/event/Header';
 import HeroSection from '@/components/event/HeroSection';
 import _NoticeSection from '@/components/event/NoticeSection';
@@ -70,6 +70,17 @@ interface SubmenuLayoutProps {
     mainMenu: string;
     subMenu: string;
   }
+  /** 미지정 시 공지·문의 상세·작성 등에서는 히어로(사이드 배너) 영역 전체 생략 */
+  showSideBanner?: boolean
+}
+
+function isEventNoticeOrInquiryCompactHeroPath(pathname: string): boolean {
+  if (/^\/event\/[^/]+\/notices\/notice\/[^/]+$/.test(pathname)) return true;
+  if (pathname.includes('/notices/inquiry/particular')) return true;
+  if (/^\/event\/[^/]+\/notices\/inquiry\/answer\/[^/]+$/.test(pathname)) return true;
+  if (/^\/event\/[^/]+\/notices\/inquiry\/write\/?$/.test(pathname)) return true;
+  if (/^\/event\/[^/]+\/notices\/inquiry\/edit\/?$/.test(pathname)) return true;
+  return false;
 }
 
 interface HeroEventData {
@@ -95,9 +106,14 @@ export default function SubmenuLayout({
   children,
   eventId,
   _noticeIndex = 0,
-  breadcrumb
+  breadcrumb,
+  showSideBanner: showSideBannerProp,
 }: SubmenuLayoutProps) {
+  const pathname = usePathname();
   const params = useSearchParams();
+  const showSideBanner =
+    showSideBannerProp ??
+    !isEventNoticeOrInquiryCompactHeroPath(pathname ?? '');
   const { mainBannerColor: contextMainBannerColor } = useMainBanner();
   
   // URL 파라미터로 테마 설정 읽기
@@ -223,15 +239,16 @@ export default function SubmenuLayout({
       <EventHeader eventId={eventId} headerBgClass={headerBgClass} accentColor={accentColor} />
       
       {/* 메인 콘텐츠 */}
-      <main className="flex-1">
-        {/* 히어로 섹션 (항상 표시) */}
-        <HeroSection 
-          eventId={eventId}
-          eventInfo={heroEventData}
-        />
-        
-        {/* 브레드크럼과 페이지 제목 */}
-        <div className="container mx-auto px-4 pt-8">
+      <main className={`flex-1${showSideBanner ? '' : ' pt-16'}`}>
+        {showSideBanner ? (
+          <HeroSection eventId={eventId} eventInfo={heroEventData} />
+        ) : null}
+
+        <div
+          className={`container mx-auto px-4 ${
+            showSideBanner ? 'pt-8' : 'pt-8 sm:pt-10 md:pt-12'
+          }`}
+        >
           <Breadcrumb items={breadcrumbItems} />
         </div>
         
@@ -253,9 +270,15 @@ export function SubmenuLayoutThemed({
   eventId,
   _noticeIndex = 0,
   breadcrumb,
+  showSideBanner: showSideBannerProp,
   headerBgClass, 
   _accentColor  
 }: SubmenuLayoutThemedProps) {
+  const pathname = usePathname();
+  const showSideBanner =
+    showSideBannerProp ??
+    !isEventNoticeOrInquiryCompactHeroPath(pathname ?? '');
+
   const { data: eventDetailData, isError: isEventDetailError } =
     usePublicEventDetail(eventId);
   const heroEventData = useMemo(
@@ -322,15 +345,16 @@ export function SubmenuLayoutThemed({
       <EventHeader eventId={eventId} headerBgClass={headerBgClass} accentColor={accentColor} />
       
       {/* 메인 콘텐츠 */}
-      <main className="flex-1">
-        {/* 히어로 섹션 (항상 표시) */}
-        <HeroSection 
-          eventId={eventId}
-          eventInfo={heroEventData}
-        />
-        
-        {/* 브레드크럼과 페이지 제목 */}
-        <div className="container mx-auto px-4 pt-8">
+      <main className={`flex-1${showSideBanner ? '' : ' pt-16'}`}>
+        {showSideBanner ? (
+          <HeroSection eventId={eventId} eventInfo={heroEventData} />
+        ) : null}
+
+        <div
+          className={`container mx-auto px-4 ${
+            showSideBanner ? 'pt-8' : 'pt-8 sm:pt-10 md:pt-12'
+          }`}
+        >
           <Breadcrumb items={breadcrumbItems} />
         </div>
         

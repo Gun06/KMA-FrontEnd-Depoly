@@ -11,30 +11,22 @@ import 'swiper/css';
 
 const RESIZE_DEBOUNCE_MS = 180;
 
-/** 로딩·빈 데이터 시 실제 슬라이드와 동일한 자리·비율의 스켈레톤 */
+/** 로딩·빈 데이터 — ApiBannerSlide·마감임박 오버레이(z-30)와 겹치지 않게 배경만 z-[1] */
 function HeroBannerSkeleton() {
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
-      <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-zinc-400 via-zinc-500 to-zinc-600" />
-      <div className="pointer-events-none absolute inset-0 bg-black/45" aria-hidden />
-      <div
-        className={`${HERO_OVERLAY_POSITION_CLASS} gap-2.5 sm:gap-3`}
-      >
-        <div className="mb-1 flex flex-col gap-2 sm:mb-0 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
-          <div className="h-7 w-14 shrink-0 animate-pulse rounded-md bg-white/35 sm:h-9 sm:w-16" />
-          <div className="h-5 w-32 animate-pulse rounded bg-white/25 sm:h-6 sm:w-40" />
-        </div>
-        <div className="h-9 w-[92%] max-w-xl animate-pulse rounded-md bg-white/40 sm:h-11 md:h-12 lg:h-14 xl:h-16" />
-        <div className="h-5 w-[72%] max-w-lg animate-pulse rounded bg-white/25 sm:h-6 md:h-7" />
-        <div className="mt-1 h-9 w-32 animate-pulse rounded-md bg-[#FFED00]/35 sm:mt-2 sm:h-10 sm:w-36" />
-        <div className="mt-3 hidden gap-2 sm:flex md:mt-4 md:gap-3">
-          <div className="h-9 w-[5.5rem] animate-pulse rounded-md bg-white/30 md:h-10" />
-          <div className="h-9 w-[5.5rem] animate-pulse rounded-md bg-white/20 md:h-10" />
-          <div className="h-9 w-[5.5rem] animate-pulse rounded-md bg-white/20 md:h-10" />
-        </div>
+    <div className="absolute inset-0 z-[1] h-full w-full overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-stone-600 via-stone-700 to-stone-800" />
+      <div className="pointer-events-none absolute inset-0 bg-black/45" />
+
+      <div className={`${HERO_OVERLAY_POSITION_CLASS} gap-2.5 sm:gap-3`}>
+        <div className="h-6 w-[5.25rem] shrink-0 animate-pulse rounded-full bg-white/25 sm:h-7 sm:w-24" />
+        <div className="h-10 w-[min(92%,540px)] max-w-xl animate-pulse rounded-sm bg-white/35 sm:h-11 md:h-12 lg:h-14 xl:h-[3.75rem]" />
+        <div className="h-6 w-[min(78%,420px)] max-w-lg animate-pulse rounded-sm bg-white/28 sm:h-7 md:h-8" />
+        <div className="mt-2 h-10 w-[min(96%,520px)] max-w-xl animate-pulse rounded-md bg-[#FFED00]/45 sm:mt-3 md:mt-4 lg:h-11" />
       </div>
-      <div className="absolute bottom-5 right-5 z-10">
-        <div className="h-8 w-[3.25rem] animate-pulse rounded-[20px] bg-black/50" />
+
+      <div className="absolute bottom-12 right-3 sm:right-5 sm:bottom-14 md:bottom-16 lg:bottom-16">
+        <div className="h-7 w-[3.25rem] animate-pulse rounded-[20px] bg-black/40 sm:h-8" />
       </div>
     </div>
   );
@@ -105,15 +97,11 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
 
   return (
     <div
-      className={`relative w-full hero-section ${fillViewport ? 'hero-section--fill-viewport h-full min-h-0 max-h-none' : 'h-[var(--kma-main-hero-height-mobile,min(56vh,400px))] max-h-[var(--kma-main-hero-height-mobile,min(56vh,400px))] min-h-[var(--kma-main-hero-height-mobile,min(56vh,400px))] max-[1023px]:aspect-auto lg:h-[800px] lg:max-h-[800px] lg:min-h-[800px]'}`}
+      className={`relative w-full hero-section ${fillViewport ? 'hero-section--fill-viewport h-full min-h-0 max-h-none' : 'kma-main-hero-height max-[1023px]:aspect-auto'}`}
     >
       {/* 스켈레톤: 첫 페인트부터 보이도록 전환 지연 없음. 데이터 로드 전까지 Swiper는 마운트하지 않음(빈 슬라이드 플래시 방지). */}
       {showSkeleton ? (
-        <div
-          className="absolute inset-0 z-20 h-full w-full overflow-hidden"
-          aria-busy="true"
-          aria-label="메인 배너 로딩"
-        >
+        <div className="absolute inset-0 h-full w-full overflow-hidden" aria-busy="true" aria-label="메인 배너 로딩">
           <HeroBannerSkeleton />
         </div>
       ) : null}
@@ -172,29 +160,9 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
           max-height: none !important;
           height: 100% !important;
         }
-        @media (max-width: 639px) {
+        @media (max-width: 1023px) {
           .hero-section:not(.hero-section--fill-viewport) {
             aspect-ratio: auto !important;
-            height: min(56vh, 400px) !important;
-            min-height: min(56vh, 400px) !important;
-            max-height: min(56vh, 400px) !important;
-          }
-        }
-        /* 태블릿: 모바일 400px 상한을 쓰면 가로가 넓어 납작해 보임 → 별도 높이 */
-        @media (min-width: 640px) and (max-width: 1023px) {
-          .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: auto !important;
-            height: clamp(420px, 52vh, 560px) !important;
-            min-height: clamp(420px, 52vh, 560px) !important;
-            max-height: clamp(420px, 52vh, 560px) !important;
-          }
-        }
-        @media (min-width: 1024px) {
-          .hero-section:not(.hero-section--fill-viewport) {
-            aspect-ratio: auto;
-            height: 800px;
-            min-height: 800px;
-            max-height: 800px;
           }
         }
         .hero-section > div,

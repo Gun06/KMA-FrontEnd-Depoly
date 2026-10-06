@@ -125,13 +125,11 @@ export default function MiddleSection({
   const resolvedInfo = eventInfo || propEventInfo || null;
   const pcUrl = resolvedInfo?.mainOutlinePcImageUrl?.trim();
   const mobileUrl = resolvedInfo?.mainOutlineMobileImageUrl?.trim();
-  const desktopImage = isMounted && pcUrl ? pcUrl : null;
-  const mobileImage = isMounted && mobileUrl ? mobileUrl : null;
+  const desktopImage = pcUrl || null;
+  const mobileImage = mobileUrl || null;
   const hasImages = Boolean(desktopImage || mobileImage);
 
-  const showSkeleton = !hasImages;
-
-  if (error && !eventInfo) {
+  if (error && !eventInfo && !propEventInfo) {
     return (
       <section className={`relative w-full overflow-hidden ${className}`}>
         <div className="relative w-full min-h-[200px] flex items-center justify-center bg-gray-100">
@@ -144,31 +142,14 @@ export default function MiddleSection({
     );
   }
 
+  if (!hasImages) {
+    return null;
+  }
+
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
       <div className="relative w-full">
-        {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-gray-50 transition-opacity duration-300"
-          style={{
-            opacity: showSkeleton ? 1 : 0,
-            zIndex: showSkeleton ? 50 : 0,
-            pointerEvents: showSkeleton ? 'auto' : 'none'
-          }}
-        >
-            {/* 데스크톱용 이미지 스켈레톤 (768px 이상) */}
-            <div className="relative w-full hidden md:block">
-              <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-200 animate-pulse" />
-            </div>
-            
-            {/* 모바일용 이미지 스켈레톤 (768px 미만) */}
-            <div className="relative w-full block md:hidden">
-              <div className="w-full h-[300px] sm:h-[350px] bg-gray-200 animate-pulse" />
-            </div>
-        </div>
-
-        {/* 데스크톱용 이미지 (768px 이상) - 스켈레톤이 아닐 때만 표시 */}
-        {!showSkeleton && desktopImage && (
+        {desktopImage && (
           <div className="relative w-full hidden md:block">
             <Image
               src={desktopImage}
@@ -184,8 +165,7 @@ export default function MiddleSection({
           </div>
         )}
         
-        {/* 모바일용 이미지 (768px 미만) - 스켈레톤이 아닐 때만 표시 */}
-        {!showSkeleton && mobileImage && (
+        {mobileImage && (
           <div className="relative w-full block md:hidden">
             <Image
               src={mobileImage}

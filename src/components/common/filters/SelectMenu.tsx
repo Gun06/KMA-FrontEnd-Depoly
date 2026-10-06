@@ -149,7 +149,7 @@ export default function SelectMenu({
               ? "text-[13px] leading-tight font-medium"
               : dense
                 ? "text-[13px] leading-5 whitespace-nowrap"
-                : "text-[15px] leading-[26px] whitespace-nowrap"
+                : "text-sm leading-[26px] whitespace-nowrap sm:text-base"
           )}
         >
           {buttonText}
@@ -195,7 +195,7 @@ export default function SelectMenu({
                       ? "py-2.5 text-[13px] leading-snug min-h-[44px]"
                       : dense
                         ? "py-1.5 text-[13px] leading-5"
-                        : "py-2 text-[15px] leading-[26px]",
+                        : "py-2 text-sm leading-[26px] sm:text-base",
                     active ? "bg-[#EEF2F7]" : "hover:bg-gray-50"
                   )}
                 >

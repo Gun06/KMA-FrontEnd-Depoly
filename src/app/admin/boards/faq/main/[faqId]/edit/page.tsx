@@ -4,7 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import Button from "@/components/common/Button/Button";
-import TextEditor from "@/components/common/TextEditor/TextEditor";
+import {
+  BoardDetailPage,
+  BoardDetailPlaceholder,
+} from "@/components/admin/boards/BoardDetailFrame";
+import { BoardFormSaveToolbar } from "@/components/admin/boards/BoardAdminToolbar";
+import { FaqFormEditors } from "@/components/admin/boards/faq/FaqFormEditors";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
 import ErrorModal from "@/components/common/Modal/ErrorModal";
 import type { Editor } from "@tiptap/react";
@@ -135,82 +140,35 @@ export default function Page() {
   // 로딩 상태 처리
   if (detailLoading) {
     return (
-      <div className="flex p-6 flex-col gap-6 mx-20">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <div className="text-lg font-medium text-gray-700">
-              FAQ 정보를 불러오는 중입니다...
-            </div>
-            <div className="text-sm text-gray-500">
-              잠시만 기다려주세요
-            </div>
-          </div>
-        </div>
-      </div>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder>FAQ 정보를 불러오는 중...</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
 
   return (
-    <div className="flex p-6 flex-col gap-6 mx-20">
-      <div className="flex justify-end gap-3">
-        <Button tone="dark" size="sm" widthType="pager" onClick={handleCancel} disabled={isLoading}>
-          취소하기
-        </Button>
-        <Button tone="primary" variant="solid" size="sm" widthType="pager" onClick={handleSave} disabled={isLoading}>
-          {isLoading ? "저장 중..." : "저장하기"}
-        </Button>
-      </div>
-
-      <div className="flex gap-6">
-        <div className="flex-1 rounded-lg shadow-sm">
-          <div className="mb-6 gap-4 flex flex-col">
-            {/* 질문 */}
-            <div className="flex gap-4">
-              <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center"><p>질문</p></div>
-              <div className="flex-1">
-                <TextEditor
-                  key={`q-${faqId}`}
-                  height="200px"
-                  initialContent={initialQuestionContent || ""}
-                  showFormatting
-                  showFontSize
-                  showTextColor
-                  showImageUpload={false}
-                  onChange={setQuestionContent}
-                  onEditorReady={handleQuestionEditorReady}
-                  defaultTextColor="#1F2937"
-                  defaultFontSize="16px"
-                  showLink
-                />
-              </div>
-            </div>
-
-            {/* 답변 */}
-            <div className="flex gap-4">
-              <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center"><p>답변</p></div>
-              <div className="flex-1">
-                <TextEditor
-                  key={`a-${faqId}`}
-                  height="300px"
-                  initialContent={initialAnswerContent || ""}
-                  showFormatting
-                  showFontSize
-                  showTextColor
-                  showImageUpload={false}
-                  onChange={setAnswerContent}
-                  onEditorReady={handleAnswerEditorReady}
-                  defaultTextColor="#4B5563"
-                  defaultFontSize="15px"
-                  showLink
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px mb-4 bg-gray-200 w-full" />
-        </div>
-      </div>
+    <>
+      <BoardDetailPage>
+        <FaqFormEditors
+          cardTitle="FAQ 수정"
+          titleAction={
+            <BoardFormSaveToolbar
+              onCancel={handleCancel}
+              onSave={handleSave}
+              pending={isLoading}
+              pendingLabel="저장 중..."
+            />
+          }
+          questionKey={`q-${faqId}`}
+          answerKey={`a-${faqId}`}
+          initialQuestion={initialQuestionContent}
+          initialAnswer={initialAnswerContent}
+          onQuestionChange={setQuestionContent}
+          onAnswerChange={setAnswerContent}
+          onQuestionEditorReady={handleQuestionEditorReady}
+          onAnswerEditorReady={handleAnswerEditorReady}
+        />
+      </BoardDetailPage>
 
       {/* 성공 모달 */}
       <SuccessModal
@@ -230,6 +188,6 @@ export default function Page() {
         title="오류"
         message={errorMessage}
       />
-    </div>
+    </>
   );
 }

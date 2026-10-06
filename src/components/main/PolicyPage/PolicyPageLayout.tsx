@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
+import { mainBodyTextClass } from '@/lib/main/typography'
 
 export type PolicyTab = 'terms' | 'privacy' | 'email'
 
@@ -54,7 +55,7 @@ export function PolicyPageLayout({
                 key={tab.href}
                 href={tab.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`min-w-0 flex-1 border-r border-gray-200 px-3 py-3.5 text-center text-sm transition-colors last:border-r-0 sm:px-4 sm:text-[15px] ${
+                className={`min-w-0 flex-1 border-r border-gray-200 px-3 py-3.5 text-center transition-colors last:border-r-0 sm:px-4 ${mainBodyTextClass} ${
                   isActive
                     ? 'bg-gray-900 font-semibold text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -84,7 +85,7 @@ export function PolicyPageLayout({
                   <li key={item.id}>
                     <a
                       href={`#${item.id}`}
-                      className="text-sm text-gray-700 transition-colors hover:text-gray-900 hover:underline sm:text-[15px]"
+                      className={`text-gray-700 transition-colors hover:text-gray-900 hover:underline ${mainBodyTextClass}`}
                     >
                       {item.label}
                     </a>
@@ -94,7 +95,7 @@ export function PolicyPageLayout({
             </nav>
           )}
 
-          <article className="text-[15px] leading-[1.85] text-gray-600 sm:text-base">
+          <article className={`leading-[1.85] text-gray-600 ${mainBodyTextClass}`}>
             {children}
           </article>
         </div>
@@ -214,7 +215,7 @@ export function PolicyCallout({
 
   return (
     <aside
-      className={`rounded-lg border px-5 py-4 text-sm font-medium sm:text-[15px] ${styles}`}
+      className={`rounded-lg border px-5 py-4 font-medium ${mainBodyTextClass} ${styles}`}
     >
       {children}
     </aside>

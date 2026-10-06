@@ -181,7 +181,7 @@ export default function FaqSection({
                         Q
                       </span>
                       <span 
-                        className="min-w-0 flex-1 font-pretendard text-sm leading-relaxed text-gray-900 md:text-[15px] md:leading-relaxed [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
+                        className="min-w-0 flex-1 font-pretendard text-sm leading-relaxed text-gray-900 sm:text-base [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: item.questionHtml }}
                       />
                       <span aria-hidden>
@@ -202,7 +202,7 @@ export default function FaqSection({
                       className="pb-4 sm:pb-5 md:pb-6"
                     >
                       <div 
-                        className="mt-1 min-h-[100px] w-full rounded-md bg-gray-100 p-3 text-sm leading-relaxed text-gray-700 sm:mt-2 sm:p-4 md:min-h-[140px] md:p-5 md:text-[15px] md:leading-relaxed [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
+                        className="mt-1 min-h-[100px] w-full rounded-md bg-gray-100 p-3 text-sm leading-relaxed text-gray-700 sm:mt-2 sm:p-4 sm:text-base md:min-h-[140px] md:p-5 [&_p]:m-0 [&_p]:min-h-[1.25em] [&_p]:whitespace-pre-wrap [&_p]:leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: item.answerHtml }}
                       />
                     </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import Image from "next/image";
+import { GuidePageImageStack } from "@/components/event/GuidePageImageStack";
 
 interface EventPageImage {
   imageUrl: string;
@@ -53,9 +53,7 @@ export default function GuideCautionPage({ params }: { params: { eventId: string
     fetchEventData();
   }, [eventId]);
 
-  // 로딩 상태 제거 - 바로 콘텐츠 표시
-
-  if (error && images.length === 0) {
+  if (error && !isLoading && images.length === 0) {
     return (
       <SubmenuLayout 
         eventId={eventId}
@@ -88,24 +86,11 @@ export default function GuideCautionPage({ params }: { params: { eventId: string
     >
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-          {/* noticePageImageUrl 이미지 표시 */}
-          {images.length > 0 && (
-            <div>
-              {images.map((image, index) => (
-                <div key={`${image.orderNumber}-${index}`} className="flex justify-center">
-                  <Image
-                    src={image.imageUrl}
-                    alt={`대회유의사항 이미지 ${index + 1}`}
-                    width={800}
-                    height={600}
-                    priority={index === 0}
-                    className="max-w-full h-auto"
-                    style={{ touchAction: 'auto' }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          <GuidePageImageStack
+            images={images}
+            altPrefix="대회유의사항 이미지"
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </SubmenuLayout>

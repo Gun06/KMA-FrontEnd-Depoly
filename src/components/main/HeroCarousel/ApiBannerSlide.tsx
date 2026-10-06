@@ -173,7 +173,7 @@ export default function ApiBannerSlide({
 
       {/* KMA-Mobile 스타일: 우하단 "1 / N" — 흰색 시트(-mt)에 가리지 않게 올림 */}
       {total > 0 && (
-        <div className="absolute right-3 z-10 bottom-10 sm:right-5 sm:bottom-12 md:bottom-14 lg:bottom-16">
+        <div className="absolute right-3 z-10 bottom-12 sm:right-5 sm:bottom-14 md:bottom-16 lg:bottom-16">
           <div className="rounded-[20px] bg-black/40 px-2.5 py-1 text-[11px] font-medium text-white sm:px-3 sm:py-1.5 sm:text-xs">
             {safeIndex + 1} / {total}
           </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
+import { GuidePageSingleImage } from "@/components/event/GuidePageImageStack";
 import { fetchSpecialEventImageUrl } from "@/services/publicEventAssets";
 
 export default function GuideEventPage({ params }: { params: { eventId: string } }) {
@@ -40,22 +40,12 @@ export default function GuideEventPage({ params }: { params: { eventId: string }
     >
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-          {isLoading ? (
-            <div className="flex justify-center mb-6">
-              <div className="w-full max-w-4xl h-[600px] bg-gray-200 rounded-lg animate-pulse" />
-            </div>
-          ) : imageUrl ? (
-            <div className="flex justify-center">
-              <Image
-                src={imageUrl}
-                alt="이벤트 안내 이미지"
-                width={800}
-                height={600}
-                priority
-                className="max-w-full h-auto"
-                style={{ touchAction: "auto" }}
-              />
-            </div>
+          {isLoading || imageUrl ? (
+            <GuidePageSingleImage
+              src={imageUrl}
+              alt="이벤트 안내 이미지"
+              isLoading={isLoading}
+            />
           ) : error ? (
             <div className="text-center text-sm text-gray-500">{error}</div>
           ) : (

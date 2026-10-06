@@ -363,7 +363,7 @@ export default function ApplyPage({ params }: { params: { eventId: string } }) {
               showTermItems={false}
             />
 
-            <label className="mb-2 inline-flex cursor-pointer items-center gap-1.5 px-0 py-1 text-sm sm:text-[15px] font-semibold text-gray-900">
+            <label className="mb-2 inline-flex cursor-pointer items-center gap-1.5 px-0 py-1 text-sm font-semibold text-gray-900 sm:text-base">
               <input
                 type="checkbox"
                 checked={isStaticTermsAgreed}

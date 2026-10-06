@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import PageMediaList from "@/components/event/PageMediaList";
+import { GuidePageImageSkeleton } from "@/components/event/GuidePageImageStack";
 import type { PageMediaItem } from "@/types/pageMedia";
 import { parsePageMediaResponse } from "@/utils/pageMedia";
 
@@ -39,7 +40,7 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
     fetchEventData();
   }, [eventId]);
 
-  if (error && images.length === 0) {
+  if (error && !isLoading && images.length === 0) {
     return (
       <SubmenuLayout
         eventId={eventId}
@@ -75,7 +76,11 @@ export default function GuideCoursePage({ params }: { params: { eventId: string 
           <p className="mb-4 text-sm sm:text-base text-black text-center font-light">
             안전 및 원활한 대회 진행을 위해 코스는 조정될 수 있습니다.
           </p>
-          {!isLoading && <PageMediaList items={images} altPrefix="대회 코스" />}
+          {isLoading ? (
+            <GuidePageImageSkeleton />
+          ) : (
+            <PageMediaList items={images} altPrefix="대회 코스" />
+          )}
         </div>
       </div>
     </SubmenuLayout>

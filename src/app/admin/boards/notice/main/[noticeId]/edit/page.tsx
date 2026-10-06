@@ -3,10 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
-import SelectMenu from "@/components/common/filters/SelectMenu";
-import TextField from "@/components/common/TextField/TextField";
-import TextEditor from "@/components/common/TextEditor";
-import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
 import type { Editor } from "@tiptap/react";
 
@@ -14,7 +10,10 @@ import type { NoticeFile } from "@/types/notice";
 import { useNoticeDetail, useUpdateNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
 import { useAdminAuthStore } from "@/stores";
-import { useQueryClient } from "@tanstack/react-query"; 
+import { useQueryClient } from "@tanstack/react-query";
+import { BoardDetailPage, BoardDetailPlaceholder } from '@/components/admin/boards/BoardDetailFrame';
+import { BoardFormSaveToolbar } from '@/components/admin/boards/BoardAdminToolbar';
+import { AdminNoticeFormBody } from '@/components/admin/boards/notice/AdminNoticeFormBody';
 // ↑ saveMainNotice(noticeId: string|number, payload: {type,title,visibility,pinned?,content?,files?}) 를
 // data/notice/main.ts에 구현해 두세요. (이벤트용 saveEventNotice와 동일 패턴)
 
@@ -153,105 +152,47 @@ export default function Page() {
   // 로딩 상태 처리
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-        <div className="rounded-xl border p-8 text-center text-gray-500">
-          공지사항을 불러오는 중...
-        </div>
-      </main>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder>공지사항을 불러오는 중...</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
 
-  // 에러 상태 처리
   if (error) {
     return (
-      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-        <div className="rounded-xl border p-8 text-center text-red-500">
-          공지사항을 불러오는데 실패했습니다.
-        </div>
-      </main>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder tone="error">공지사항을 불러오는데 실패했습니다.</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
 
   return (
     <>
-      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-        <div className="flex justify-end gap-2">
-        <Button 
-          size="sm" 
-          tone="outlineDark" 
-          variant="outline" 
-          widthType="pager" 
-          onClick={goView}
-          disabled={updateMutation.isPending}
-        >
-          취소하기
-        </Button>
-        <Button 
-          size="sm" 
-          tone="primary" 
-          widthType="pager" 
-          onClick={onSave}
-          disabled={updateMutation.isPending}
-        >
-          {updateMutation.isPending ? '저장 중...' : '저장하기'}
-        </Button>
-      </div>
-
-      {/* 1줄: 카테고리 + 제목 */}
-      <div className="flex gap-3 items-center">
-        <SelectMenu
-          label="카테고리"
-          value={categoryId}
-          onChange={setCategoryId}
-          options={categoryOptions}
-          buttonTextMode="current"
-          className="!h-12"
-        />
-        <TextField
-          type="text"
-          placeholder="제목을 입력하세요."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="flex-1 !h-12"
-        />
-      </div>
-
-
-      {/* 에디터 */}
-      <TextEditor 
-        initialContent={content} 
-        onChange={setContent} 
-        onEditorReady={handleEditorReady}
-        height="520px" 
-        imageDomainType="NOTICE"
-        placeholder="내용을 작성해주세요..."
-        defaultFontSize="16px"
-        defaultTextColor="#000000"
-        showLink
-      />
-
-      {/* 첨부파일 */}
-      <div className="space-y-2">
-        <BoardFileBox
-          variant="edit"
-          title="첨부파일"
+      <BoardDetailPage>
+        <AdminNoticeFormBody
+          formTitle="공지 수정"
+          titleAction={
+            <BoardFormSaveToolbar
+              onCancel={goView}
+              onSave={onSave}
+              pending={updateMutation.isPending}
+              pendingLabel="저장 중..."
+            />
+          }
+          categoryId={categoryId}
+          onCategoryChange={setCategoryId}
+          categoryOptions={categoryOptions}
+          title={title}
+          onTitleChange={setTitle}
+          content={content}
+          onContentChange={setContent}
+          onEditorReady={handleEditorReady}
           files={files}
-          onChange={setFiles}
-          label="첨부파일 업로드"
-          maxCount={10}
-          maxSizeMB={20}
-          totalMaxMB={200}
-          multiple
-          className="mt-2"
-          showQuotaText={false}
+          onFilesChange={setFiles}
+          attachmentFormats="JPG, PNG, PDF, DOC, XLS, XLSX"
+          disabled={updateMutation.isPending}
         />
-        <div className="text-sm text-gray-500 px-1 pt-1">
-          <p>• 텍스트 에디터 내 이미지: JPG, PNG (크기 조절 가능)</p>
-          <p>• 첨부파일: JPG, PNG, PDF, DOC, XLS, XLSX</p>
-          <p>• 첨부파일 이름이 너무 길면 등록이 실패할 수 있습니다</p>
-        </div>
-      </div>
-    </main>
+      </BoardDetailPage>
 
     {/* 성공 모달 */}
     <SuccessModal

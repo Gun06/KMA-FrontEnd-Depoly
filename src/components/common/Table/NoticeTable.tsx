@@ -119,7 +119,7 @@ export default function NoticeTable({
               </span>
             )}
             <span
-              className={`text-[15px] text-[#0F1113] truncate ${clickable ? 'cursor-pointer hover:underline' : ''}`}
+              className={`text-sm text-[#0F1113] truncate sm:text-base ${clickable ? 'cursor-pointer hover:underline' : ''}`}
               title={row.title}
               onClick={(e) => { if (clickable) { e.stopPropagation(); onRowClick?.(row.id); } }}
             >
@@ -249,7 +249,7 @@ export default function NoticeTable({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-1.5">
                           <span
-                            className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
+                            className="text-sm leading-[22px] text-[#0F1113] line-clamp-2 flex-1 sm:text-base"
                             title={row.title}
                           >
                             {row.title}
@@ -310,7 +310,7 @@ export default function NoticeTable({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-1.5">
                           <span
-                            className="text-[15px] leading-[22px] text-[#0F1113] line-clamp-2 flex-1"
+                            className="text-sm leading-[22px] text-[#0F1113] line-clamp-2 flex-1 sm:text-base"
                             title={row.title}
                           >
                             {row.title}

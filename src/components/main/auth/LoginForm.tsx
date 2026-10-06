@@ -131,7 +131,7 @@ export default function LoginForm() {
                   </p>
                 </div>
               </div>
-              <p className="text-[#898989] font-pretendard text-[15px]">
+              <p className="text-[#898989] font-pretendard text-sm sm:text-base">
                 회원 서비스 이용을 위해 로그인해 주세요
               </p>
             </div>

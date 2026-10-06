@@ -199,7 +199,7 @@ export default function LocalEventMineSearchControls({
             onChange={(e) => onKeywordChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSearch()}
             placeholder="검색어를 입력해주세요."
-            className="flex-1 min-w-0 bg-transparent text-[15px] text-[#1E2124] placeholder:text-gray-400 outline-none"
+            className="flex-1 min-w-0 bg-transparent text-sm text-[#1E2124] placeholder:text-gray-400 outline-none sm:text-base"
           />
         </label>
 

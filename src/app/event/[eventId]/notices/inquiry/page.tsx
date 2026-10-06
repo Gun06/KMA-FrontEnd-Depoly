@@ -13,6 +13,7 @@ import { fetchInquiryList, type InquiryResponse, type InquiryItem, type SearchTa
 import { formatDate, maskAuthorName } from './utils/formatters';
 import { SecretPostModal } from '@/components/common/Modal/SecretPostModal';
 import InquirySkeleton from './components/InquirySkeleton';
+import { EventBoardListFrame } from '@/components/event/notices/EventBoardListFrame';
 
 // 문의사항 상세보기 API 응답 인터페이스
 interface AttachmentInfo {
@@ -276,7 +277,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+        <EventBoardListFrame>
           {/* 안내문구 */}
           <div className="mb-6">
             <div className="bg-gray-100 rounded-lg p-4 text-center">
@@ -300,7 +301,7 @@ export default function EventInquiryPage() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
               >
-                <span className="text-[15px] leading-[26px] text-[#1E2124]">
+                <span className="text-sm leading-[26px] text-[#1E2124] sm:text-base">
                   {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '전체'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -378,7 +379,7 @@ export default function EventInquiryPage() {
               글쓰기
             </button>
           </div>
-        </div>
+        </EventBoardListFrame>
       </SubmenuLayout>
     );
   }
@@ -393,7 +394,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+        <EventBoardListFrame>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="text-red-500 text-lg mb-2">오류가 발생했습니다</div>
@@ -416,7 +417,7 @@ export default function EventInquiryPage() {
               </div>
             </div>
           </div>
-        </div>
+        </EventBoardListFrame>
       </SubmenuLayout>
     );
   }
@@ -480,7 +481,7 @@ export default function EventInquiryPage() {
           subMenu: "문의사항"
         }}
       >
-        <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+        <EventBoardListFrame>
           <div className="text-center">
             <div className="text-gray-500 text-lg mb-2">
               {appliedSearchKeyword || appliedSearchType !== 'ALL' 
@@ -511,7 +512,7 @@ export default function EventInquiryPage() {
               </button>
             </div>
           </div>
-        </div>
+        </EventBoardListFrame>
       </SubmenuLayout>
     );
   }
@@ -524,7 +525,7 @@ export default function EventInquiryPage() {
         subMenu: "문의사항"
       }}
     >
-      <div className="w-full h-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-5 lg:px-6 py-8 md:py-10 lg:py-12">
+      <EventBoardListFrame>
         {/* 안내문구 */}
         <div className="mb-6">
           <div className="bg-gray-100 rounded-lg p-4 text-center">
@@ -557,7 +558,7 @@ export default function EventInquiryPage() {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
             >
-              <span className="text-[15px] leading-[26px] text-[#1E2124]">
+              <span className="text-sm leading-[26px] text-[#1E2124] sm:text-base">
                 {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '전체'}
               </span>
               <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -636,7 +637,7 @@ export default function EventInquiryPage() {
           </button>
         </div>
 
-      </div>
+      </EventBoardListFrame>
       
       {/* 로그인 필요 모달 제거 (비회원 작성 허용) */}
       

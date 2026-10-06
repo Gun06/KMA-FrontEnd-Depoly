@@ -101,15 +101,7 @@ export default function NoticeSection({
   }, [autoRotate, rotateInterval, notices.length]);
   
   if (!isMounted || isLoading) {
-    return (
-      <div className={`text-center py-1 sm:py-2 lg:py-3 px-2 sm:px-4 ${className}`}>
-        <div className="inline-flex items-center gap-1 sm:gap-2">
-          <div className="h-4 sm:h-5 lg:h-6 w-10 sm:w-12 bg-gray-200 rounded animate-pulse" />
-          <span className="text-gray-400 text-sm sm:text-base">•</span>
-          <div className="h-4 sm:h-5 lg:h-6 w-48 sm:w-64 lg:w-80 bg-gray-200 rounded animate-pulse" />
-        </div>
-      </div>
-    );
+    return null;
   }
   
   if (error || !notices || notices.length === 0) {

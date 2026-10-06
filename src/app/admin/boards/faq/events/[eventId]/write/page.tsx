@@ -4,7 +4,9 @@ import { useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/common/Button/Button';
-import TextEditor from '@/components/common/TextEditor/TextEditor';
+import { BoardDetailPage } from '@/components/admin/boards/BoardDetailFrame';
+import { BoardFormSaveToolbar } from '@/components/admin/boards/BoardAdminToolbar';
+import { FaqFormEditors } from '@/components/admin/boards/faq/FaqFormEditors';
 import SuccessModal from '@/components/common/Modal/SuccessModal';
 import ErrorModal from '@/components/common/Modal/ErrorModal';
 import type { Editor } from '@tiptap/react';
@@ -110,64 +112,25 @@ export default function Page() {
   };
 
   return (
-    <div className="flex p-6 flex-col gap-6 mx-20">
-      {/* 상단 헤더 */}
-      <div className="flex justify-end gap-3">
-        <Button tone="dark" size="sm" widthType="pager" onClick={handleCancel} disabled={isLoading}>
-          취소하기
-        </Button>
-        <Button tone="primary" variant="solid" size="sm" widthType="pager" onClick={handleSave} disabled={isLoading}>
-          {isLoading ? '저장 중...' : '등록하기'}
-        </Button>
-      </div>
-
-      <div className="flex gap-6">
-        <div className="flex-1 rounded-lg shadow-sm">
-          <div className="mb-6 gap-4 flex flex-col">
-            {/* 질문 */}
-            <div className="flex gap-4">
-              <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center">
-                <p>질문</p>
-              </div>
-              <div className="flex-1">
-                <TextEditor
-                  showFormatting
-                  showFontSize
-                  showTextColor
-                  showImageUpload={false}
-                  height="200px"
-                  placeholder="질문 내용을 입력하세요..."
-                  onChange={setQuestionContent}
-                  onEditorReady={handleQuestionEditorReady}
-                  showLink
-                />
-              </div>
-            </div>
-
-            {/* 답변 */}
-            <div className="flex gap-4">
-              <div className="bg-zinc-200 rounded-lg p-2 w-[150px] flex items-center justify-center">
-                <p>답변</p>
-              </div>
-              <div className="flex-1">
-                <TextEditor
-                  showFormatting
-                  showFontSize
-                  showTextColor
-                  showImageUpload={false}
-                  height="300px"
-                  placeholder="답변 내용을 입력하세요..."
-                  onChange={setAnswerContent}
-                  onEditorReady={handleAnswerEditorReady}
-                  showLink
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px mb-4 bg-gray-200 w-full" />
-        </div>
-      </div>
+    <>
+      <BoardDetailPage>
+        <FaqFormEditors
+          cardTitle="FAQ 등록"
+          titleAction={
+            <BoardFormSaveToolbar
+              onCancel={handleCancel}
+              onSave={handleSave}
+              saveLabel="등록하기"
+              pending={isLoading}
+              pendingLabel="등록 중..."
+            />
+          }
+          onQuestionChange={setQuestionContent}
+          onAnswerChange={setAnswerContent}
+          onQuestionEditorReady={handleQuestionEditorReady}
+          onAnswerEditorReady={handleAnswerEditorReady}
+        />
+      </BoardDetailPage>
 
       {/* 성공 모달 */}
       <SuccessModal
@@ -191,6 +154,6 @@ export default function Page() {
         title="오류"
         message={errorMessage}
       />
-    </div>
+    </>
   );
 }

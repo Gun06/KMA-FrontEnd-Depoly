@@ -78,6 +78,8 @@ type Props = {
   totalMaxMB?: number;
 
   className?: string;
+  /** 관리자 게시판 폼 — h-9 업로드·rounded-lg 목록 */
+  dense?: boolean;
 };
 
 /* ================= component ================= */
@@ -97,6 +99,7 @@ function BoardFileBox({
   maxSizeMB = 20,
   totalMaxMB = 200,
   className,
+  dense = false,
 }: Props) {
   const controlled = files !== undefined;
   const [inner, setInner] = React.useState<NoticeFile[]>(defaultFiles);
@@ -167,12 +170,20 @@ function BoardFileBox({
         <div className="mb-3 flex items-end justify-between">
           <div>
             {title && (
-              <div className="text-[16px] sm:text-[17px] font-semibold text-[#0F1113]">
+              <div
+                className={cn(
+                  dense
+                    ? 'text-sm font-medium text-gray-700'
+                    : 'text-[16px] font-semibold text-[#0F1113] sm:text-[17px]'
+                )}
+              >
                 {title}
               </div>
             )}
             {finalHelper && (
-              <div className="mt-1 text-[12px] text-neutral-400">{finalHelper}</div>
+              <div className={cn('mt-1', dense ? 'text-xs text-gray-500' : 'text-[12px] text-neutral-400')}>
+                {finalHelper}
+              </div>
             )}
           </div>
           {showCount && (
@@ -197,17 +208,31 @@ function BoardFileBox({
           <button
             type="button"
             onClick={openPicker}
-            className="inline-flex items-center gap-2 rounded-[12px] border border-[#D1D5DB] bg-white px-4 py-2 text-[15px] font-medium text-[#0F1113] hover:bg-gray-50"
+            className={cn(
+              'inline-flex items-center gap-2 border bg-white font-medium hover:bg-gray-50',
+              dense
+                ? 'h-9 rounded-md border-gray-300 px-3 text-[13px] text-gray-700'
+                : 'rounded-[12px] border-[#D1D5DB] px-4 py-2 text-[15px] text-[#0F1113]'
+            )}
           >
             {label}
-            <span className="inline-block rounded-md border border-[#256EF4] px-1 py-0.5 text-[12px] leading-none text-[#256EF4]">↗</span>
+            {!dense ? (
+              <span className="inline-block rounded-md border border-[#256EF4] px-1 py-0.5 text-[12px] leading-none text-[#256EF4]">
+                ↗
+              </span>
+            ) : null}
           </button>
 
           {list.length > 0 && (
             <button
               type="button"
               onClick={removeAll}
-              className="ml-auto rounded-[10px] border border-[#D1D5DB] px-3 py-1.5 text-sm text-[#374151] hover:bg-gray-50"
+              className={cn(
+                'ml-auto border hover:bg-gray-50',
+                dense
+                  ? 'h-9 rounded-md border-gray-300 px-3 text-[13px] text-gray-700'
+                  : 'rounded-[10px] border-[#D1D5DB] px-3 py-1.5 text-sm text-[#374151]'
+              )}
             >
               전체 파일 삭제
             </button>
@@ -220,10 +245,18 @@ function BoardFileBox({
         {list.map((f, idx) => (
           <li
             key={`${f.id}-${idx}`}
-            className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white px-5 py-3"
+            className={cn(
+              'flex items-center justify-between border bg-white',
+              dense
+                ? 'rounded-lg border-gray-200 px-4 py-2.5'
+                : 'rounded-xl border-[#E5E7EB] px-5 py-3'
+            )}
           >
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[15px] font-medium" title={f.name}>
+              <div
+                className={cn('truncate font-medium', dense ? 'text-sm text-gray-900' : 'text-[15px]')}
+                title={f.name}
+              >
                 {truncateFileName(f.name)}
               </div>
               {typeof f.sizeMB === "number" && (

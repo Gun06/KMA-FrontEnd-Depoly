@@ -618,11 +618,11 @@ function HeroMobileDeadlineInBanner({
 }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-20 lg:hidden"
+      className="pointer-events-none absolute inset-0 z-[30] lg:hidden"
       aria-label="마감임박 대회"
       aria-busy={popularLoading}
     >
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-10 pt-8 sm:px-5 sm:pb-12 sm:pt-12 md:px-6 md:pb-14 md:pt-14">
+      <div className="pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pb-12 pt-6 sm:px-5 sm:pb-14 sm:pt-10 md:px-6 md:pb-16 md:pt-12">
         <div className="w-full max-w-[min(52vw,10.25rem)] sm:max-w-[min(48vw,12.5rem)]">
           <PopularDeadlineBanner
             variant="mobileDesktopLike"
@@ -1178,7 +1178,7 @@ function HeroEventOverlay({
 }) {
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[12] hidden lg:flex lg:flex-col lg:justify-end lg:pb-24 lg:pt-[max(5.5rem,calc(var(--kma-main-header-offset,64px)+1.75rem))]"
+      className="pointer-events-none absolute inset-0 z-[30] hidden lg:flex lg:flex-col lg:justify-end lg:pb-24 lg:pt-[max(5.5rem,calc(var(--kma-main-header-offset,64px)+1.75rem))]"
       role="region"
       aria-label="주요 대회 미리보기"
     >
@@ -1319,8 +1319,8 @@ export default function MainHomeHero() {
   }, []);
 
   return (
-    <section className="relative w-full">
-      <div className="relative w-full">
+    <section className="relative h-full w-full">
+      <div className="relative h-full w-full">
         <MarathonHeroCarousel fillViewport={false} />
         <HeroMobileDeadlineInBanner
           popularItems={popularItems}

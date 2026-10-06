@@ -44,7 +44,7 @@ export const EMBEDDED_EVENT_CARD_WIDTH =
 
 /** 메인 홈 olive(가로형) — 모바일 축소, lg에서 기존 267px */
 export const EMBEDDED_OLIVE_WIDE_CARD_WIDTH =
-  'w-[200px] sm:w-[220px] md:w-[240px] lg:w-[267px]';
+  'w-[188px] sm:w-[208px] md:w-[240px] lg:w-[267px]';
 
 const OLIVE_STATUS_MAP: Record<string, { text: string; bg: string }> = {
   PENDING: { text: '접수예정', bg: '#FF6B00' },

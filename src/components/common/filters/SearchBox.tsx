@@ -36,7 +36,7 @@ export default function SearchBox({
           if (e.key === "Enter") onEnter?.(value ?? "");
         }}
         placeholder={placeholder}
-        className={`${dense ? 'text-[13px]' : 'text-[15px] font-semibold tracking-[-0.08px]'} outline-none w-full pr-2`}
+        className={`${dense ? 'text-[13px]' : 'text-sm font-semibold tracking-[-0.08px] sm:text-base'} outline-none w-full pr-2`}
       />
     </div>
   );

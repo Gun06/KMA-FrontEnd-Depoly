@@ -29,4 +29,6 @@ export interface TextEditorProps {
   defaultTextColor?: string;
   /** 기본 폰트 크기 - 전달 시 에디터 초기화 시 해당 크기로 설정 (FAQ 전용: 질문 14px, 답변 15px) */
   defaultFontSize?: string;
+  /** 외곽 카드 클래스 (관리자 게시판: shadow 제거·rounded-lg) */
+  frameClassName?: string;
 }

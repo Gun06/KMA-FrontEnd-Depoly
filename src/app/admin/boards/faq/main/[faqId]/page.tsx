@@ -7,6 +7,10 @@ import { useFaqDetail } from "@/hooks/useFaqs";
 import { useQueryClient } from "@tanstack/react-query";
 import { faqKeys } from "@/hooks/useFaqs";
 import type { Faq } from "@/types/faq";
+import {
+  BoardDetailPage,
+  BoardDetailPlaceholder,
+} from "@/components/admin/boards/BoardDetailFrame";
 
 export default function Page() {
   const { faqId } = useParams<{ faqId: string }>();
@@ -48,23 +52,25 @@ export default function Page() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-[1100px] px-4 py-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <div className="text-lg font-medium text-gray-700">
-              FAQ 상세 정보를 불러오는 중입니다...
-            </div>
-            <div className="text-sm text-gray-500">
-              잠시만 기다려주세요
-            </div>
-          </div>
-        </div>
-      </main>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder>FAQ 상세 정보를 불러오는 중...</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
-  if (error) return <main className="p-6">오류가 발생했습니다.</main>;
-  if (!detail) return <main className="p-6">데이터가 없습니다.</main>;
+  if (error) {
+    return (
+      <BoardDetailPage>
+        <BoardDetailPlaceholder tone="error">FAQ를 불러오는데 실패했습니다.</BoardDetailPlaceholder>
+      </BoardDetailPage>
+    );
+  }
+  if (!detail) {
+    return (
+      <BoardDetailPage>
+        <BoardDetailPlaceholder tone="error">데이터가 없습니다.</BoardDetailPlaceholder>
+      </BoardDetailPage>
+    );
+  }
 
   return (
     <FaqDetailSimple

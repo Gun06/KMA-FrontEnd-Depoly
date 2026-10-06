@@ -3,7 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --kma-main-hero-height-mobile: min(56vh, 400px);
+  --kma-main-hero-height-mobile: min(58dvh, 420px);
+}
+
+/* 메인 히어로·스크롤 여백·고정 레이어 — HeroCarousel과 동일 높이 (JS 측정 전환 없음) */
+.kma-main-hero-height {
+  height: min(58dvh, 420px);
+  min-height: min(58dvh, 420px);
+  max-height: min(58dvh, 420px);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .kma-main-hero-height {
+    height: clamp(420px, 52vh, 560px);
+    min-height: clamp(420px, 52vh, 560px);
+    max-height: clamp(420px, 52vh, 560px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .kma-main-hero-height {
+    height: 800px;
+    min-height: 800px;
+    max-height: 800px;
+  }
 }
 
 /* 메인: 끝까지 스크롤 시 바운스로 뒤 고정 레이어가 비치지 않게 */

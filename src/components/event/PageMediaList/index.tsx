@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Portal from "@/components/common/portal";
 import type { PageMediaItem } from "@/types/pageMedia";
 import { cn } from "@/utils/cn";
+import { GuidePageRevealImage } from "@/components/event/GuidePageImageStack";
 import { extractMediaUrl } from "@/utils/pageMedia";
 import {
   getYoutubeThumbnailUrl,
@@ -157,14 +157,10 @@ function StackedMediaItem({
   }
 
   return (
-    <Image
+    <GuidePageRevealImage
       src={item.url}
       alt={`${altPrefix} ${index + 1}`}
-      width={800}
-      height={600}
       priority={index === 0}
-      className="max-w-full h-auto"
-      style={{ touchAction: "auto" }}
     />
   );
 }

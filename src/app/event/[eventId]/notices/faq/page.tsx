@@ -5,6 +5,7 @@ import SubmenuLayout from "@/layouts/event/SubmenuLayout";
 import { useFaqData } from './hooks/useFaqData';
 import { useFaqAccordion } from './hooks/useFaqAccordion';
 import { FaqList } from './components/FaqList';
+import { FaqPageFrame } from './components/FaqPageFrame';
 import { LoadingState } from './components/LoadingState';
 import { ErrorState } from './components/ErrorState';
 
@@ -54,14 +55,13 @@ export default function EventFaqPage() {
         subMenu: "자주 묻는 질문"
       }}
     >
-      <div className="w-full h-full px-4 py-8 sm:px-8 md:px-12 lg:px-16">
-        {/* FAQ 리스트 */}
-        <FaqList 
+      <FaqPageFrame>
+        <FaqList
           faqItems={displayFaqItems}
           isOpen={isOpen}
           onToggle={toggle}
         />
-      </div>
+      </FaqPageFrame>
     </SubmenuLayout>
   );
 }

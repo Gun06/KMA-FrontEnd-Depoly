@@ -333,7 +333,7 @@ export default function FindIdForm() {
                     <p className="text-2xl text-[#999999] font-pretendard">전국마라톤협회</p>
                   </div>
                 </div>
-                <p className="text-[#898989] font-pretendard text-[15px]">
+                <p className="text-[#898989] font-pretendard text-sm sm:text-base">
                   등록된 휴대폰 번호로 인증번호가 발송되었습니다
                 </p>
               </div>
@@ -426,7 +426,7 @@ export default function FindIdForm() {
                   <p className="text-2xl text-[#999999] font-pretendard">전국마라톤협회</p>
                 </div>
               </div>
-              <p className="text-[#898989] font-pretendard text-[15px]">
+              <p className="text-[#898989] font-pretendard text-sm sm:text-base">
                 아이디를 찾기 위해 회원 정보를 입력해 주세요
               </p>
             </div>

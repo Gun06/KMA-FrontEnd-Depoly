@@ -41,6 +41,11 @@ type Props = {
   selectedSearchType?: string;
   onSearchTypeChange?: (type: string) => void;
   onResetSearch?: () => void;
+
+  /** 대회 공지: 제목 아래 총 게시물·페이지 표시 */
+  paginationBarPlacement?: 'afterTable' | 'beforeTable';
+  /** 목록 0건일 때 본문 최소 높이 (대회 공지 빈 목록) */
+  emptyListMinHeight?: boolean;
 };
 
 export default function NoticeBoard({
@@ -65,6 +70,8 @@ export default function NoticeBoard({
   selectedSearchType: externalSelectedSearchType,
   onSearchTypeChange: externalOnSearchTypeChange,
   onResetSearch: externalOnResetSearch,
+  paginationBarPlacement = 'afterTable',
+  emptyListMinHeight = false,
 }: Props) {
   const [internalCurrentPage, setInternalCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -255,50 +262,65 @@ export default function NoticeBoard({
     );
   }
 
+  const isListEmpty = finalData.rows.length === 0;
+
+  const paginationBar = (
+    <PaginationBar
+      page={currentPage}
+      total={finalData.total}
+      pageSize={finalData.effectivePageSize}
+      onChange={handlePageChange}
+      showTotalText={true}
+      showPageIndicator={true}
+      className="bg-white px-1 sm:px-6"
+      totalPages={externalTotalPages}
+    />
+  );
+
+  const tableSection = (
+    <div
+      className={`overflow-hidden sm:px-6 ${
+        isListEmpty && emptyListMinHeight
+          ? 'min-h-[280px] sm:min-h-[360px] md:min-h-[420px]'
+          : ''
+      }`}
+      aria-busy={false}
+    >
+      <NoticeTable
+        data={finalData.rows}
+        onRowClick={onRowClick as (id: string | number) => void}
+        pinLimit={pinLimit}
+        numberDesc={numberDesc}
+        showPinnedBadgeInNo={showPinnedBadgeInNo}
+        pinnedClickable={pinnedClickable}
+        showViews={showViews}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        totalElements={finalData.total}
+      />
+    </div>
+  );
+
+  const paginationNav = (
+    <div className="flex justify-center bg-white px-1 py-2 sm:px-6 sm:py-6">
+      <Pagination
+        page={currentPage}
+        total={finalData.total}
+        pageSize={finalData.effectivePageSize}
+        onChange={handlePageChange}
+        groupSize={10}
+        responsive={true}
+        showEdge={true}
+      />
+    </div>
+  );
+
   return (
     <div className={`bg-white h-full ${className || ''}`}>
-
-      {/* 테이블 */}
-      <div className="overflow-hidden sm:px-6">
-                  <NoticeTable
-            data={finalData.rows}
-            onRowClick={onRowClick as (id: string | number) => void}
-            pinLimit={pinLimit}
-            numberDesc={numberDesc}
-            showPinnedBadgeInNo={showPinnedBadgeInNo}
-            pinnedClickable={pinnedClickable}
-            showViews={showViews}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            totalElements={finalData.total}
-          />
-        </div>
-
-        {/* 페이지네이션 바 */}
-        <PaginationBar
-          page={currentPage}
-          total={finalData.total}
-          pageSize={finalData.effectivePageSize}
-          onChange={handlePageChange}
-          showTotalText={true}
-          showPageIndicator={true}
-          className="bg-white px-1 sm:px-6"
-          totalPages={externalTotalPages}
-        />
-
-        {/* 페이지네이션 */}
-        <div className="flex justify-center py-2 bg-white px-1 sm:py-6 sm:px-6">
-          <Pagination
-            page={currentPage}
-            total={finalData.total}
-            pageSize={finalData.effectivePageSize}
-            onChange={handlePageChange}
-            groupSize={10}
-            responsive={true}
-            showEdge={true}
-          />
-        </div>
-
+      {paginationBarPlacement === 'beforeTable' ? paginationBar : null}
+      {tableSection}
+      {paginationBarPlacement === 'afterTable' ? paginationBar : null}
+      {paginationNav}
     </div>
   );
 }

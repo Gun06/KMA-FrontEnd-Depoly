@@ -171,10 +171,10 @@ export default function FindPasswordForm() {
           {header}
 
           <div className="text-center space-y-3">
-            <p className="text-[#898989] font-pretendard text-[15px]">
+            <p className="text-[#898989] font-pretendard text-sm sm:text-base">
               비밀번호 변경을 위해 아이디를 입력해 주세요
             </p>
-            <p className="text-[#898989] font-pretendard text-[15px]">
+            <p className="text-[#898989] font-pretendard text-sm sm:text-base">
               해당 아이디에 등록된 휴대전화 번호로 전화번호 인증이 진행됩니다.
             </p>
           </div>

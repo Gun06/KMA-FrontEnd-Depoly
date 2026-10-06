@@ -1,18 +1,25 @@
 "use client";
 
 import React from "react";
-import Button from "@/components/common/Button/Button";
 import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import { RichTextContent } from "@/components/common/RichTextContent";
 import { prepareHtmlForDisplay } from "@/components/common/TextEditor/utils/prepareHtmlForDisplay";
 import type { Faq, FaqFile } from "@/types/faq";
+import { BoardDetailListEditToolbar } from "@/components/admin/boards/BoardAdminToolbar";
+import {
+  BoardCardTitleBar,
+  BoardDetailCard,
+  BoardDetailHeader,
+  BoardDetailPage,
+  BoardDetailSection,
+} from "@/components/admin/boards/BoardDetailFrame";
 
 type Props = {
   detail: Faq;
   onBack: () => void;
   onEdit: () => void;
-  /** true면 질문 첨부까지 함께 표기(기본 false = 답변 첨부만) */
   showQuestionFiles?: boolean;
+  pageTitle?: string;
 };
 
 export default function FaqDetailSimple({
@@ -20,6 +27,7 @@ export default function FaqDetailSimple({
   onBack,
   onEdit,
   showQuestionFiles = false,
+  pageTitle = "FAQ",
 }: Props) {
   const files: FaqFile[] = React.useMemo(() => {
     const ans = detail.answer?.files ?? [];
@@ -31,48 +39,42 @@ export default function FaqDetailSimple({
   const questionHtml = React.useMemo(() => prepareHtmlForDisplay(detail.question), [detail.question]);
   const answerHtml = React.useMemo(() => prepareHtmlForDisplay(detail.answer?.content || ''), [detail.answer?.content]);
 
+  const previewTitle =
+    detail.title?.replace(/<[^>]+>/g, '').trim() ||
+    questionHtml.replace(/<[^>]+>/g, '').trim().slice(0, 80) ||
+    'FAQ';
+
   return (
-    <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-      {/* 상단 액션 */}
-      <div className="flex justify-end gap-2">
-        <Button size="sm" tone="outlineDark" variant="outline" widthType="pager" onClick={onBack}>
-          목록으로
-        </Button>
-        <Button size="sm" tone="primary" widthType="pager" onClick={onEdit}>
-          수정하기
-        </Button>
-      </div>
+    <BoardDetailPage>
+      <BoardDetailCard>
+        <BoardCardTitleBar
+          title={pageTitle}
+          action={<BoardDetailListEditToolbar onList={onBack} onEdit={onEdit} />}
+        />
+        <BoardDetailHeader title={previewTitle} meta="자주 묻는 질문" />
 
-      {/* 본문 카드 */}
-      <article className="rounded-xl border bg-white">
-        {/* 질문 */}
-        <section className="px-6 pt-6 pb-4">
-          <div className="text-sm font-semibold mb-2 text-gray-500">질문</div>
+        <BoardDetailSection label="질문">
           {detail.question ? (
-            <RichTextContent html={questionHtml} variant="compact" />
+            <RichTextContent html={questionHtml} variant="responsiveCompact" />
           ) : (
-            <p className="text-gray-600">질문 내용이 없습니다.</p>
+            <p className="text-sm text-gray-600 sm:text-base">질문 내용이 없습니다.</p>
           )}
-        </section>
+        </BoardDetailSection>
 
-        {/* 답변 */}
-        <section id="answer" className="px-6 pt-6 pb-4">
-          <div className="text-sm font-semibold mb-2 text-gray-500">답변</div>
+        <BoardDetailSection label="답변" className="border-t border-gray-200">
           {detail.answer ? (
-            <RichTextContent html={answerHtml} variant="compact" />
+            <RichTextContent html={answerHtml} variant="responsiveCompact" />
           ) : (
-            <p className="text-gray-600">등록된 답변이 없습니다.</p>
+            <p className="text-sm text-gray-600 sm:text-base">등록된 답변이 없습니다.</p>
           )}
-        </section>
+        </BoardDetailSection>
 
-        {/* 첨부파일 (있을 때만 표시) */}
-        {files.length > 0 && (
-          <section className="px-6 pt-6 pb-6">
-            <div className="text-sm font-semibold mb-2 text-gray-500">첨부파일</div>
+        {files.length > 0 ? (
+          <BoardDetailSection label="첨부파일" className="border-t border-gray-200">
             <BoardFileBox variant="view" files={files} />
-          </section>
-        )}
-      </article>
-    </main>
+          </BoardDetailSection>
+        ) : null}
+      </BoardDetailCard>
+    </BoardDetailPage>
   );
 }

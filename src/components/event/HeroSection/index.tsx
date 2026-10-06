@@ -7,6 +7,8 @@ import { usePublicMainPageImages } from '@/hooks/usePublicEventData';
 interface HeroSectionProps {
   eventId: string;
   className?: string;
+  /** false면 사이드 배너 미표시·미조회 (공지·문의 상세 등) */
+  showSideBanner?: boolean;
   eventInfo?: {
     eventInfo: {
       nameKr: string;
@@ -45,6 +47,7 @@ function normalizeHeroFromMainPageImages(data: {
 export default function HeroSection({
   eventId,
   className = '',
+  showSideBanner = true,
   eventInfo: propEventInfo,
 }: HeroSectionProps) {
   const shouldFetchImages = !propEventInfo;
@@ -101,11 +104,17 @@ export default function HeroSection({
   ]);
 
   useEffect(() => {
+    if (!showSideBanner) {
+      setSideBannerImageUrl(null);
+      return;
+    }
     const cached = readCachedSideBanner();
     if (cached) setSideBannerImageUrl(cached);
-  }, [eventId]);
+  }, [eventId, showSideBanner]);
 
   useEffect(() => {
+    if (!showSideBanner) return;
+
     const fetchSideBanner = async () => {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
@@ -139,9 +148,9 @@ export default function HeroSection({
     if (eventId) {
       void fetchSideBanner();
     }
-  }, [eventId]);
+  }, [eventId, showSideBanner]);
 
-  const hasSideBanner = !!sideBannerImageUrl;
+  const hasSideBanner = showSideBanner && !!sideBannerImageUrl;
 
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>

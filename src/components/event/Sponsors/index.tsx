@@ -4,7 +4,6 @@ import Image from 'next/image'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useEventSponsorBanners } from '@/hooks/useEventSponsor'
 import type { EventSponsorBanner } from '@/types/eventSponsor'
-import SponsorSkeleton from './components/SponsorSkeleton'
 type Logo = {
   src: string
   alt: string
@@ -67,9 +66,8 @@ export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
 
 
 
-  // 로딩 중일 때 스켈레톤 표시
   if (isLoading) {
-    return <SponsorSkeleton />;
+    return null;
   }
 
   if (error || (!hosts.length && !organizers.length && !sponsors.length && !assists.length)) {

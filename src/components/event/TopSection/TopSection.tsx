@@ -5,40 +5,10 @@ import Image, { StaticImageData } from 'next/image';
 import { TopSectionConfig } from './topSectionConfig';
 import { EventTopSectionInfo } from '@/types/event';
 import { formatDate } from '@/utils/formatDate';
-
-/** mainpage-images API 응답 정규화 (camelCase / snake_case). 캐시에 메인+중간배너 모두 저장해 MiddleSection에서 사용 */
-function normalizeMainPageImagesResponse(raw: Record<string, unknown> | null): EventTopSectionInfo & { mainOutlinePcImageUrl: string; mainOutlineMobileImageUrl: string } | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const get = (camel: string, snake: string): string => {
-    const v = (raw[camel] ?? raw[snake]) as string | undefined;
-    return typeof v === 'string' ? v : '';
-  };
-  const id = get('id', 'id');
-  const nameKr = get('nameKr', 'name_kr');
-  const nameEng = get('nameEng', 'name_eng');
-  const startDate = get('startDate', 'start_date');
-  const region = get('region', 'region');
-  const mainBannerColor = get('mainBannerColor', 'main_banner_color');
-  const mainBannerPcImageUrl = get('mainBannerPcImageUrl', 'main_banner_pc_image_url');
-  const mainBannerMobileImageUrl = get('mainBannerMobileImageUrl', 'main_banner_mobile_image_url');
-  const mainOutlinePcImageUrl = get('mainOutlinePcImageUrl', 'main_outline_pc_image_url');
-  const mainOutlineMobileImageUrl = get('mainOutlineMobileImageUrl', 'main_outline_mobile_image_url');
-  const youtubeUrl = get('youtubeUrl', 'youtube_url');
-  const resolvedId = typeof id === 'string' && id ? id : String(raw?.id ?? '');
-  return {
-    id: resolvedId,
-    nameKr,
-    nameEng,
-    startDate,
-    region,
-    mainBannerColor,
-    mainBannerPcImageUrl,
-    mainBannerMobileImageUrl,
-    youtubeUrl,
-    mainOutlinePcImageUrl,
-    mainOutlineMobileImageUrl,
-  };
-}
+import {
+  hasBannerImages,
+  normalizeMainPageImagesResponse,
+} from '@/lib/event/mainPageImages';
 
 function normalizeYoutubeEmbedUrl(url: string | undefined): string | null {
   if (!url) return null;
@@ -74,13 +44,6 @@ function normalizeYoutubeEmbedUrl(url: string | undefined): string | null {
   } catch {
     return null;
   }
-}
-
-function hasBannerImages(info: EventTopSectionInfo | null): boolean {
-  if (!info) return false;
-  const pc = (info.mainBannerPcImageUrl ?? '').trim();
-  const mobile = (info.mainBannerMobileImageUrl ?? '').trim();
-  return pc.length > 0 || mobile.length > 0;
 }
 
 interface TopSectionProps {
@@ -198,18 +161,12 @@ export default function TopSection({
   // SSR/CSR 일치를 위해 마운트 전에는 props와 config만 사용
   const resolvedInfo = eventInfo || propEventInfo || null;
   const desktopImage =
-    backgroundImage ||
-    (isMounted ? resolvedInfo?.mainBannerPcImageUrl : propEventInfo?.mainBannerPcImageUrl) ||
-    null;
+    backgroundImage || resolvedInfo?.mainBannerPcImageUrl || null;
   const mobileImage =
-    mobileBackgroundImage ||
-    (isMounted ? resolvedInfo?.mainBannerMobileImageUrl : propEventInfo?.mainBannerMobileImageUrl) ||
-    null;
+    mobileBackgroundImage || resolvedInfo?.mainBannerMobileImageUrl || null;
 
   const hasImages = Boolean(desktopImage || mobileImage);
-  const youtubeEmbedUrl = normalizeYoutubeEmbedUrl(
-    isMounted ? resolvedInfo?.youtubeUrl : propEventInfo?.youtubeUrl
-  );
+  const youtubeEmbedUrl = normalizeYoutubeEmbedUrl(resolvedInfo?.youtubeUrl);
   const shouldShowTopYoutube = showYoutube && Boolean(youtubeEmbedUrl);
   const hasMedia = hasImages || shouldShowTopYoutube;
 
@@ -223,10 +180,7 @@ export default function TopSection({
 
   if (!eventId) return null;
 
-  // 이미지가 없으면 스켈레톤만 표시 (더미 그라데이션/텍스트 제거)
-  const showSkeleton = !hasMedia || ((isLoading || !isMounted) && !eventInfo && !propEventInfo);
-
-  if (error && !eventInfo) {
+  if (error && !eventInfo && !propEventInfo) {
     return (
       <div className="relative w-full min-h-[500px] md:min-h-[600px] overflow-hidden bg-gray-900">
         <div className="absolute inset-0 z-10 flex items-center justify-center min-h-[500px] md:min-h-[600px] px-4 md:px-8">
@@ -239,46 +193,17 @@ export default function TopSection({
     );
   }
 
+  if (!hasMedia && isLoading && !propEventInfo) {
+    return null;
+  }
+
+  if (!hasMedia) {
+    return null;
+  }
+
   return (
     <div className={`relative w-full overflow-hidden ${hasImages ? '' : 'bg-gray-900'}`}>
-      {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
-      <div 
-        className="absolute inset-0 w-full h-full bg-gray-900 transition-opacity duration-300"
-        style={{
-          opacity: showSkeleton ? 1 : 0,
-          zIndex: showSkeleton ? 50 : 0,
-          pointerEvents: showSkeleton ? 'auto' : 'none',
-          minHeight: '500px'
-        }}
-      >
-          {/* 배경 이미지 스켈레톤 */}
-          <div className="absolute inset-0 bg-gray-800 animate-pulse">
-            {/* 데스크톱 배경 스켈레톤 */}
-            <div className="hidden md:block w-full h-full bg-gray-700" />
-            {/* 모바일 배경 스켈레톤 */}
-            <div className="block md:hidden w-full h-full bg-gray-700" />
-          </div>
-          
-          {/* 메인 콘텐츠 스켈레톤 */}
-          <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
-            <div className="container mx-auto">
-              <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24">
-                {/* 제목 스켈레톤 */}
-                <div className="mb-4 md:mb-6 lg:mb-8">
-                  {/* 영어 제목 스켈레톤 */}
-                  <div className="h-5 sm:h-6 md:h-7 lg:h-8 xl:h-9 w-32 sm:w-40 md:w-48 bg-gray-600 rounded animate-pulse mb-2 sm:mb-3" />
-                  {/* 한글 제목 스켈레톤 */}
-                  <div className="h-8 sm:h-10 md:h-12 lg:h-16 xl:h-20 w-48 sm:w-64 md:w-80 lg:w-96 bg-gray-600 rounded animate-pulse" />
-                </div>
-                {/* 부제목 스켈레톤 */}
-                <div className="h-4 sm:h-5 md:h-6 lg:h-7 w-56 sm:w-64 md:w-72 lg:w-80 bg-gray-600 rounded animate-pulse mb-6 sm:mb-8 md:mb-10 lg:mb-12" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-      {/* 유튜브 URL이 있으면 메인 첫 화면에 영상 우선 노출 */}
-      {!showSkeleton && shouldShowTopYoutube && youtubeEmbedUrl && (
+      {shouldShowTopYoutube && youtubeEmbedUrl && (
         <div className="relative w-full bg-black">
           {/* 모바일/데스크탑 모두 16:9 비율 고정 */}
           <div className="relative w-full aspect-video">
@@ -293,8 +218,7 @@ export default function TopSection({
         </div>
       )}
 
-      {/* 데스크톱 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
-      {!showSkeleton && !shouldShowTopYoutube && desktopImage && (
+      {!shouldShowTopYoutube && desktopImage && (
         <Image
           src={desktopImage}
           alt="Background"
@@ -306,8 +230,7 @@ export default function TopSection({
         />
       )}
 
-      {/* 모바일 배경 이미지 - 스켈레톤이 아니고 유튜브가 없을 때만 표시 */}
-      {!showSkeleton && !shouldShowTopYoutube && mobileImage && (
+      {!shouldShowTopYoutube && mobileImage && (
         <Image
           src={mobileImage}
           alt="Mobile Background"
@@ -319,8 +242,7 @@ export default function TopSection({
         />
       )}
 
-      {/* 메인 콘텐츠 - 스켈레톤이 아닐 때만 표시 (배너 이미지 있을 때만) */}
-      {!showSkeleton && hasImages && !shouldShowTopYoutube && (
+      {hasImages && !shouldShowTopYoutube && (
         <div className="absolute inset-0 z-10 flex items-center px-4 md:px-8">
           <div className="container mx-auto">
             <div className="text-left max-w-4xl ml-8 md:ml-16 lg:ml-24 text-white">

@@ -4,10 +4,6 @@
 import { useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
-import SelectMenu from "@/components/common/filters/SelectMenu";
-import TextField from "@/components/common/TextField/TextField";
-import TextEditor from "@/components/common/TextEditor";
-import BoardFileBox from "@/components/admin/boards/BoardFileBox";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
 import type { Editor } from "@tiptap/react";
 
@@ -16,6 +12,9 @@ import { useCreateHomepageNotice, useNoticeCategories } from "@/hooks/useNotices
 import type { NoticeCategory } from "@/services/admin/notices";
 import { useAdminAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query";
+import { BoardDetailPage } from "@/components/admin/boards/BoardDetailFrame";
+import { BoardFormSaveToolbar } from "@/components/admin/boards/BoardAdminToolbar";
+import { AdminNoticeFormBody } from "@/components/admin/boards/notice/AdminNoticeFormBody";
 
 export default function Page() {
   const router = useRouter();
@@ -143,84 +142,31 @@ export default function Page() {
 
   return (
     <>
-      <main className="mx-auto max-w-[1100px] px-4 py-6 space-y-4">
-        <div className="flex justify-end gap-2">
-        <Button 
-          size="sm" 
-          tone="outlineDark" 
-          variant="outline" 
-          widthType="pager" 
-          onClick={goBack}
-          disabled={createMutation.isPending}
-        >
-          취소하기
-        </Button>
-        <Button 
-          size="sm" 
-          tone="primary" 
-          widthType="pager" 
-          onClick={onSave}
-          disabled={createMutation.isPending}
-        >
-          {createMutation.isPending ? '등록 중...' : '등록하기'}
-        </Button>
-      </div>
-
-      {/* 1줄: 카테고리 + 제목 */}
-      <div className="flex gap-3 items-center">
-        <SelectMenu
-          label="카테고리"
-          value={categoryId}
-          onChange={handleCategoryChange}
-          options={categoryOptions}
-          buttonTextMode="current"
-          className="!h-12"
-        />
-        <TextField
-          type="text"
-          placeholder="제목을 입력하세요."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="flex-1 !h-12"
-        />
-      </div>
-
-
-      {/* 에디터 */}
-      <TextEditor 
-        initialContent={content} 
-        onChange={setContent} 
-        onEditorReady={handleEditorReady}
-        height="520px" 
-        imageDomainType="NOTICE"
-        placeholder="내용을 작성해주세요..."
-        defaultFontSize="16px"
-        defaultTextColor="#000000"
-        showLink
-      />
-
-      {/* 첨부파일 */}
-      <div className="space-y-2">
-        <BoardFileBox
-          variant="edit"
-          title="첨부파일"
+      <BoardDetailPage>
+        <AdminNoticeFormBody
+          formTitle="공지 등록"
+          titleAction={
+            <BoardFormSaveToolbar
+              onCancel={goBack}
+              onSave={onSave}
+              saveLabel="등록하기"
+              pending={createMutation.isPending}
+              pendingLabel="등록 중..."
+            />
+          }
+          categoryId={categoryId}
+          onCategoryChange={handleCategoryChange}
+          categoryOptions={categoryOptions}
+          title={title}
+          onTitleChange={setTitle}
+          content={content}
+          onContentChange={setContent}
+          onEditorReady={handleEditorReady}
           files={files}
-          onChange={setFiles}
-          label="첨부파일 업로드"
-          maxCount={10}
-          maxSizeMB={20}
-          totalMaxMB={200}
-          multiple
-          className="mt-2"
-          showQuotaText={false}
+          onFilesChange={setFiles}
+          disabled={createMutation.isPending}
         />
-        <div className="text-sm text-gray-500 px-1 pt-1">
-          <p>• 텍스트 에디터 내 이미지: JPG, PNG (크기 조절 가능)</p>
-          <p>• 첨부파일: 모든 파일 형식 지원</p>
-          <p>• 첨부파일 이름이 너무 길면 등록이 실패할 수 있습니다</p>
-        </div>
-      </div>
-    </main>
+      </BoardDetailPage>
 
     {/* 성공 모달 */}
     <SuccessModal

@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
 import GuideHeader from '@/components/main/registration/GuideHeader'
+import { MAIN_HEADER_MENU_TEXT_CLASS } from '@/components/main/mainLayoutTokens'
+import { mainBodyTextClass } from '@/lib/main/typography'
 
 export default function RegistrationGuidePage() {
   const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual')
   const [activeSection, setActiveSection] = useState('overview')
-  const contentScrollRef = useRef<HTMLElement | null>(null)
+  const skipInitialTabScroll = useRef(true)
 
   const guideContent = {
     individual: {
@@ -102,10 +104,11 @@ export default function RegistrationGuidePage() {
   ] as const
 
   useEffect(() => {
-    const isDesktop = window.matchMedia('(min-width: 1024px)').matches
-    if (isDesktop && contentScrollRef.current) {
-      contentScrollRef.current.scrollTo({ top: 0, behavior: 'auto' })
+    if (skipInitialTabScroll.current) {
+      skipInitialTabScroll.current = false
+    } else {
       setActiveSection('overview')
+      document.getElementById('overview')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     const observer = new IntersectionObserver(
@@ -114,16 +117,13 @@ export default function RegistrationGuidePage() {
         if (visibleEntries.length === 0) return
 
         visibleEntries.sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-        const topEntry = visibleEntries[0]
-        const sectionId = topEntry.target.getAttribute('id')
-        if (sectionId) {
-          setActiveSection(sectionId)
-        }
+        const sectionId = visibleEntries[0].target.getAttribute('id')
+        if (sectionId) setActiveSection(sectionId)
       },
       {
-        root: isDesktop ? contentScrollRef.current : null,
-        rootMargin: '-20% 0px -65% 0px',
-        threshold: [0.2, 0.4, 0.7]
+        root: null,
+        rootMargin: '-20% 0px -55% 0px',
+        threshold: [0.15, 0.35, 0.6]
       }
     )
 
@@ -138,15 +138,7 @@ export default function RegistrationGuidePage() {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id)
     if (!element) return
-    const isDesktop = window.matchMedia('(min-width: 1024px)').matches
-    if (isDesktop && contentScrollRef.current) {
-      const containerTop = contentScrollRef.current.getBoundingClientRect().top
-      const targetTop = element.getBoundingClientRect().top
-      const nextTop = targetTop - containerTop + contentScrollRef.current.scrollTop - 8
-      contentScrollRef.current.scrollTo({ top: nextTop, behavior: 'smooth' })
-    } else {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setActiveSection(id)
   }
 
@@ -159,23 +151,46 @@ export default function RegistrationGuidePage() {
     >
       <GuideHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <div className="bg-white">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] lg:h-[72vh]">
-          <aside className="hidden lg:block self-start">
-            <div className="h-full border border-gray-200 bg-[#f3f3f4] overflow-y-auto">
+      <div className="bg-white pb-6 lg:pb-10">
+        <div className="mb-4 lg:hidden">
+          <div className="overflow-x-auto scrollbar-hide rounded-md border border-gray-200 bg-white p-2">
+            <div className="flex min-w-max gap-2">
+              {sectionMenu.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => scrollToSection(section.id)}
+                  className={`whitespace-nowrap rounded-md px-3 py-2 transition-colors ${MAIN_HEADER_MENU_TEXT_CLASS} ${
+                    activeSection === section.id
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {section.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 items-start gap-0 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-0">
+          <aside className="hidden lg:sticky lg:top-[calc(var(--kma-main-header-offset,80px)+12px)] lg:block lg:self-start">
+            <div className="border border-gray-200 bg-[#f3f3f4]">
               <div className="px-4 py-3 border-b border-gray-200 bg-[#ececee]">
-                <p className="text-xs font-medium text-gray-500">문서</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">{tabContent.badge}</p>
+                <p className={`font-medium text-gray-500 ${mainBodyTextClass}`}>문서</p>
+                <p className={`mt-1 font-semibold text-gray-900 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>
+                  {tabContent.badge}
+                </p>
               </div>
               <nav className="py-2">
                 {sectionMenu.map((section) => (
                   <button
                     key={section.id}
                     onClick={() => scrollToSection(section.id)}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                    className={`flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors ${MAIN_HEADER_MENU_TEXT_CLASS} ${
                       activeSection === section.id
-                        ? 'bg-white text-gray-900 font-semibold'
-                        : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                        ? 'bg-white font-semibold text-gray-900'
+                        : 'font-medium text-gray-600 hover:bg-white hover:text-gray-900'
                     }`}
                   >
                     <span>{section.label}</span>
@@ -186,13 +201,10 @@ export default function RegistrationGuidePage() {
             </div>
           </aside>
 
-          <main
-            ref={contentScrollRef}
-            className="space-y-5 scroll-smooth px-4 pb-4 pt-0 lg:px-6 lg:pb-6 lg:pt-0 bg-white lg:h-full lg:overflow-y-auto"
-          >
+          <main className="space-y-5 scroll-smooth bg-white px-4 pb-4 pt-0 lg:px-6 lg:pb-6 lg:pt-0">
             <section id="overview" className="scroll-mt-24 border border-gray-200 bg-white">
               <div className="px-4 py-2.5 border-b border-gray-200 bg-[#f4f4f7]">
-                <h3 className="text-sm font-semibold text-gray-900">가이드 개요</h3>
+                <h3 className={`font-semibold text-gray-900 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>가이드 개요</h3>
               </div>
               <div className="p-4 lg:p-5">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
@@ -228,7 +240,7 @@ export default function RegistrationGuidePage() {
 
             <section id="steps" className="scroll-mt-24 border border-gray-200 bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-gray-200 bg-[#f4f4f7] flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">신청 절차</h3>
+                <h3 className={`font-semibold text-gray-900 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>신청 절차</h3>
               </div>
               <div className="hidden lg:grid grid-cols-[88px_220px_minmax(0,1fr)] px-4 py-2 text-xs text-gray-500 border-b border-gray-200 bg-[#eef0f8]">
                 <div>단계</div>
@@ -248,7 +260,7 @@ export default function RegistrationGuidePage() {
 
             <section id="payment" className="scroll-mt-24 border border-gray-200 bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-gray-200 bg-[#f4f4f7] flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">결제 안내</h3>
+                <h3 className={`font-semibold text-gray-900 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>결제 안내</h3>
               </div>
               <div className="hidden lg:grid grid-cols-[88px_minmax(0,1fr)] px-4 py-2 text-xs text-gray-600 border-b border-blue-200 bg-blue-50">
                 <div className="text-center">번호</div>
@@ -266,7 +278,7 @@ export default function RegistrationGuidePage() {
 
             <section id="refund" className="scroll-mt-24 border border-gray-200 bg-white overflow-hidden">
               <div className="px-4 py-2.5 border-b border-rose-200 bg-rose-50 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-rose-800">환불/변경 안내</h3>
+                <h3 className={`font-semibold text-rose-800 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>환불/변경 안내</h3>
               </div>
               <div className="hidden lg:grid grid-cols-[88px_minmax(0,1fr)] px-4 py-2 text-xs text-rose-700 border-b border-rose-200 bg-rose-50/60">
                 <div className="text-center">번호</div>
@@ -284,7 +296,7 @@ export default function RegistrationGuidePage() {
 
             <section id="checklist" className="scroll-mt-24 border border-gray-200 bg-white overflow-hidden mb-6 lg:mb-8">
               <div className="px-4 py-2.5 border-b border-gray-200 bg-[#f4f4f7] flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">신청 전 체크리스트</h3>
+                <h3 className={`font-semibold text-gray-900 ${MAIN_HEADER_MENU_TEXT_CLASS}`}>신청 전 체크리스트</h3>
               </div>
               <div className="p-4 lg:p-5 space-y-2.5">
                 <div className="flex items-start gap-2">
@@ -302,26 +314,6 @@ export default function RegistrationGuidePage() {
               </div>
             </section>
           </main>
-        </div>
-      </div>
-
-      <div className="lg:hidden mb-6">
-        <div className="rounded-md border border-gray-200 bg-white p-2 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
-            {sectionMenu.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(section.id)}
-                className={`px-3 py-1.5 rounded-md text-xs whitespace-nowrap transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                {section.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </SubmenuLayout>

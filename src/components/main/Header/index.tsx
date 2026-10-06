@@ -25,7 +25,12 @@ import { navigationGuard } from '@/utils/navigationGuard';
 import { buildLoginHref } from '@/utils/authRedirect';
 import { NotificationDropdown } from '@/app/(main)/mypage/notifications/components/NotificationDropdown';
 import { MAIN_GLASS_STYLE } from '@/components/main/mainGlassStyle';
-import { MAIN_CONTENT_SHELL_CLASS, MAIN_DESKTOP_UI_CLASS, MAIN_HEADER_Z_CLASS } from '@/components/main/mainLayoutTokens';
+import {
+  MAIN_CONTENT_SHELL_CLASS,
+  MAIN_DESKTOP_UI_CLASS,
+  MAIN_HEADER_MENU_TEXT_CLASS,
+  MAIN_HEADER_Z_CLASS,
+} from '@/components/main/mainLayoutTokens';
 
 interface SubMenuItem {
   icon?: React.ReactNode;
@@ -117,8 +122,7 @@ const DESKTOP_HEADER_PILL_RING_CLASS =
   'flex shrink-0 items-center rounded-full ring-1 ring-white/15';
 const DESKTOP_HEADER_PILL_SHELL_CLASS = `${DESKTOP_HEADER_PILL_RING_CLASS} px-2 py-2`;
 const DESKTOP_HEADER_LOGO_CLASS = `${DESKTOP_HEADER_PILL_RING_CLASS} gap-3 px-5 py-2.5 xl:px-6`;
-const DESKTOP_HEADER_PILL_ITEM_CLASS =
-  'rounded-full py-2 text-sm font-semibold whitespace-nowrap transition-all duration-200';
+const DESKTOP_HEADER_PILL_ITEM_CLASS = `rounded-full py-2 whitespace-nowrap transition-all duration-200 ${MAIN_HEADER_MENU_TEXT_CLASS}`;
 const APP_INSTALL_BANNER_STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 
 
@@ -442,7 +446,7 @@ export default function Header() {
                           <Link
                             href={item.href}
                             onClick={() => updateState({ subMenuOpen: null })}
-                            className={`relative flex w-full items-center justify-center rounded-full px-10 py-2 text-[15px] font-semibold whitespace-nowrap ring-1 transition-all duration-150 ${
+                            className={`relative flex w-full items-center justify-center rounded-full px-10 py-2 whitespace-nowrap ring-1 transition-colors ${MAIN_HEADER_MENU_TEXT_CLASS} ${
                               pathname === item.href
                                 ? 'bg-white text-gray-900 shadow-md ring-black/15'
                                 : 'ring-black/15 shadow-[0_2px_10px_rgba(0,0,0,0.18)] text-white/95 hover:-translate-y-[1px] hover:bg-white/20 hover:text-white hover:ring-white/35 hover:shadow-[0_6px_14px_rgba(0,0,0,0.2)] focus-visible:-translate-y-[1px] focus-visible:bg-white/20 focus-visible:text-white focus-visible:ring-white/35 focus-visible:shadow-[0_6px_14px_rgba(0,0,0,0.2)]'
@@ -651,7 +655,7 @@ export default function Header() {
                       <>
                         <button
                           type="button"
-                          className="flex w-full items-center justify-between px-4 py-3 text-left font-pretendard text-white/95 hover:bg-white/10 focus:bg-white/10 focus:outline-none"
+                          className={`flex w-full items-center justify-between px-4 py-3 text-left font-pretendard text-white/95 hover:bg-white/10 focus:bg-white/10 focus:outline-none ${MAIN_HEADER_MENU_TEXT_CLASS}`}
                           onClick={() => toggleMobileSubMenu(key)}
                           aria-expanded={state.expandedMobileMenu === key}
                         >
@@ -686,7 +690,7 @@ export default function Header() {
                                 <li key={item.href}>
                                   <Link
                                     href={item.href}
-                                    className="block px-8 py-2.5 text-sm font-pretendard text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                                    className={`block px-8 py-2.5 font-pretendard text-white/80 transition-colors hover:bg-white/10 hover:text-white ${MAIN_HEADER_MENU_TEXT_CLASS}`}
                                     onClick={() =>
                                       updateState({ mobileOpen: false })
                                     }

@@ -11,9 +11,9 @@ interface SuccessModalProps {
   allowDismissal?: boolean;
 }
 
-export default function SuccessModal({ 
-  isOpen, 
-  onClose, 
+export default function SuccessModal({
+  isOpen,
+  onClose,
   title = "등록되었습니다!",
   message = "문의사항이 성공적으로 등록되었습니다.",
   allowDismissal = true,
@@ -23,12 +23,12 @@ export default function SuccessModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 배경 오버레이 */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={allowDismissal ? onClose : undefined}
         aria-hidden
       />
-      
+
       {/* 모달 */}
       <div
         className="relative bg-white rounded-2xl shadow-xl max-w-md w-full mx-4"
@@ -43,24 +43,24 @@ export default function SuccessModal({
             <X className="w-5 h-5" />
           </button>
         )}
-        
+
         {/* 모달 내용 */}
         <div className="p-8 text-center">
           {/* 아이콘 */}
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <Check className="h-8 w-8 text-green-600" strokeWidth={2.5} />
           </div>
-          
+
           {/* 제목 */}
           <h3 className="text-xl font-bold text-gray-900 mb-2">
             {title}
           </h3>
-          
+
           {/* 메시지 */}
           <p className="text-gray-600 mb-6">
             {message}
           </p>
-          
+
           {/* 확인 버튼 */}
           <button
             type="button"

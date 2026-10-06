@@ -27,7 +27,7 @@ export default function LocalEventRegisterPanel({
         </div>
       </div>
 
-      <p className="mx-auto mb-6 max-w-xl break-keep text-[13px] leading-[1.7] text-gray-700 sm:mb-7 sm:text-[15px] sm:leading-relaxed">
+      <p className="mx-auto mb-6 max-w-xl break-keep text-sm leading-relaxed text-gray-700 sm:mb-7 sm:text-base">
         아래 버튼을 누르면 지역대회 정보를 입력하는 페이지로 이동합니다.
         <br className="hidden sm:block" />
         대회명, 일정·접수 기간, 종목, 홍보 배너 등을 입력한 뒤 제출해 주세요.

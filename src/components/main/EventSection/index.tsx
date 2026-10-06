@@ -2,21 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import EventCard, { EMBEDDED_OLIVE_WIDE_CARD_WIDTH } from './EventCard';
+import { MainEmbeddedOliveCardSkeleton } from './MainEmbeddedOliveCardSkeleton';
 import { BlockEventItem } from '@/types/event';
 import { blockListDisplayImageSrc } from '@/services/schedule';
 import Link from 'next/link';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import {
+  MAIN_EMBEDDED_HSCROLL_INSET_CLASS,
+  MAIN_EMBEDDED_SECTION_Y_CLASS,
+  MAIN_EMBEDDED_SHELL_CLASS,
+  MAIN_HOME_HSCROLL_TRACK_CLASS,
+  MAIN_HOME_SECTION_MORE_LINK_CLASS,
+  MAIN_HOME_SECTION_TITLE_CLASS,
+} from '@/components/main/mainLayoutTokens';
 
 interface EventSectionProps {
   /** 메인 홈: KMA-Mobile과 동일한 흰 배경·좌우 여백 */
   variant?: 'default' | 'embedded';
 }
 
-const EMBEDDED_HEADER = 'mx-auto w-full max-w-[1920px] px-4 md:px-6 lg:px-[6vw]';
-const EMBEDDED_SCROLL_PADDING = 'pl-4 md:pl-6 lg:pl-[6vw] pr-4 md:pr-6 lg:pr-[6vw]';
-
 export default function EventSection({ variant = 'default' }: EventSectionProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)');
   const [eventData, setEventData] = useState<BlockEventItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,7 +123,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
 
   const isEmbedded = variant === 'embedded';
   const containerClass = isEmbedded
-    ? EMBEDDED_HEADER
+    ? MAIN_EMBEDDED_SHELL_CLASS
     : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10';
 
   const renderEventCard = (event: BlockEventItem, key: string) => (
@@ -150,26 +154,32 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
   );
 
   const listGapClass = isEmbedded ? 'gap-3 md:gap-4 lg:gap-5' : 'gap-3';
-  const listPaddingClass = isEmbedded ? EMBEDDED_SCROLL_PADDING : '';
+  const listPaddingClass = isEmbedded ? MAIN_EMBEDDED_HSCROLL_INSET_CLASS : '';
   const scrollHeightClass = isEmbedded
-    ? 'min-h-[168px] sm:min-h-[188px] md:min-h-[215px] lg:min-h-[228px]'
+    ? 'min-h-[160px] sm:min-h-[176px] md:min-h-[215px] lg:min-h-[228px]'
     : 'h-[215px] md:h-[245px]';
+
+  const skeletonCount = isEmbedded ? 5 : 9;
 
   const cardList = isLoading || error ? (
     <ul className={`m-0 flex w-max list-none ${listGapClass} pb-2 ${listPaddingClass}`}>
-      {Array.from({ length: 9 }).map((_, i) => (
-        <li
-          key={`skeleton-${i}`}
-          className={isEmbedded ? `shrink-0 ${EMBEDDED_OLIVE_WIDE_CARD_WIDTH}` : 'shrink-0 w-[240px] md:w-[267px]'}
-        >
-          <div className="aspect-[332/166] w-full animate-pulse rounded-xl bg-gray-200" />
-          <div className="mt-2 space-y-1.5 md:mt-2.5">
-            <div className="h-3 w-8 animate-pulse rounded bg-gray-200" />
-            <div className="h-3.5 w-20 animate-pulse rounded bg-gray-200 md:h-4" />
-            <div className="h-3 w-14 animate-pulse rounded bg-gray-200" />
-          </div>
-        </li>
-      ))}
+      {Array.from({ length: skeletonCount }).map((_, i) =>
+        isEmbedded ? (
+          <MainEmbeddedOliveCardSkeleton key={`skeleton-${i}`} />
+        ) : (
+          <li
+            key={`skeleton-${i}`}
+            className="shrink-0 w-[240px] md:w-[267px]"
+          >
+            <div className="aspect-[332/166] w-full animate-pulse rounded-xl bg-gray-200/90" />
+            <div className="mt-2 space-y-1.5 md:mt-2.5">
+              <div className="h-3 w-10 animate-pulse rounded bg-gray-200/90" />
+              <div className="h-3.5 w-[72%] max-w-[12rem] animate-pulse rounded bg-gray-200/90 md:h-4" />
+              <div className="h-3 w-16 animate-pulse rounded bg-gray-200/80" />
+            </div>
+          </li>
+        )
+      )}
     </ul>
   ) : eventData.length > 0 ? (
     <ul className={`m-0 flex w-max list-none ${listGapClass} pb-2 ${listPaddingClass}`}>
@@ -188,7 +198,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
       ref={scrollRef}
       role="region"
       aria-label="주요 대회 일정 카드 목록"
-      className={`flex ${scrollHeightClass} min-w-0 items-start overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+      className={`flex ${scrollHeightClass} min-w-0 items-start ${MAIN_HOME_HSCROLL_TRACK_CLASS} ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
         }`}
       style={{ touchAction: 'pan-x' }}
       onMouseDown={handlePointerDown}
@@ -204,15 +214,15 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
   );
 
   return (
-    <section className={`bg-white ${isEmbedded ? 'py-8 md:py-10' : 'pt-8 pb-8'}`}>
+    <section className={`bg-white ${isEmbedded ? MAIN_EMBEDDED_SECTION_Y_CLASS : 'pt-8 pb-8'}`}>
       <div className={containerClass}>
-        <div className="flex items-end justify-between">
-          <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className={MAIN_HOME_SECTION_TITLE_CLASS}>
             주요 대회 일정
           </h2>
           <Link
             href="/schedule"
-            className="text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
+            className={MAIN_HOME_SECTION_MORE_LINK_CLASS}
           >
             더보기 &gt;
           </Link>

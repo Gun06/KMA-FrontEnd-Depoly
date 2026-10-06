@@ -4,6 +4,7 @@ import menubanner from '@/assets/images/main/menubanner.png'
 import homeIcon from '@/assets/icons/main/home.svg'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { MAIN_HEADER_MENU_TEXT_CLASS } from '@/components/main/mainLayoutTokens'
 
 interface SubmenuLayoutProps {
   children: React.ReactNode
@@ -53,12 +54,12 @@ export default function SubmenuLayout({
             style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}
           >
             {/* 페이지 제목 */}
-            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
+            <h1 className="mb-0.5 font-giants-bold text-black text-xl sm:text-2xl md:text-2xl lg:text-3xl sm:mb-1">
               {breadcrumb?.subMenu || "인사말"}
             </h1>
             
-            {/* 브레드크럼 네비게이션 */}
-            <nav className="text-xs sm:text-sm md:text-sm text-black">
+            {/* 브레드크럼 — 헤더 메뉴와 동일 14/16px */}
+            <nav className={`text-black ${MAIN_HEADER_MENU_TEXT_CLASS}`}>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Link 
                   href="/"
@@ -84,7 +85,7 @@ export default function SubmenuLayout({
         <div
           className={
             wide
-              ? 'mx-auto w-full max-w-[1400px] px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 xl:max-w-[1536px] xl:px-12'
+              ? 'mx-auto w-full max-w-[1920px] px-4 py-4 sm:px-6 sm:py-6 lg:px-[6vw] lg:py-8'
               : 'container mx-auto px-2 py-4 sm:py-6 lg:px-6 lg:py-8'
           }
         >
@@ -138,10 +139,10 @@ export function SubmenuLayoutThemed({
             className="absolute inset-0 flex flex-col items-start justify-center px-4 py-1 sm:px-6 sm:py-1.5 lg:px-[6vw]"
             style={{ paddingTop: 'var(--kma-main-header-offset, 80px)' }}
           >
-            <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-black mb-0.5 sm:mb-1 font-giants-bold">
+            <h1 className="mb-0.5 font-giants-bold text-black text-xl sm:text-2xl md:text-2xl lg:text-3xl sm:mb-1">
               {breadcrumb?.subMenu || "인사말"}
             </h1>
-            <nav className="text-xs sm:text-sm md:text-sm text-black">
+            <nav className={`text-black ${MAIN_HEADER_MENU_TEXT_CLASS}`}>
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Link 
                   href="/"

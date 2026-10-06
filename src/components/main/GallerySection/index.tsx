@@ -3,15 +3,20 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import GalleryList from './components/GalleryList';
-import { EMBEDDED_GALLERY_CARD_WIDTH } from './GalleryCard';
+import { EMBEDDED_GALLERY_CARD_WIDTH } from './galleryEmbeddedTokens';
 import { useMainPageGallery } from './hooks/useMainPageGallery';
 import type { GalleryItem } from '@/app/(main)/schedule/gallery/types';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import {
+  MAIN_EMBEDDED_HSCROLL_INSET_CLASS,
+  MAIN_EMBEDDED_SECTION_Y_CLASS,
+  MAIN_EMBEDDED_SHELL_CLASS,
+  MAIN_HOME_HSCROLL_TRACK_CLASS,
+  MAIN_HOME_SECTION_MORE_LINK_CLASS,
+  MAIN_HOME_SECTION_TITLE_CLASS,
+} from '@/components/main/mainLayoutTokens';
 
 const GALLERY_PAGE_PATH = '/schedule/gallery';
 const SKELETON_COUNT = 9;
-const EMBEDDED_HEADER = 'mx-auto w-full max-w-[1920px] px-4 md:px-6 lg:px-[6vw]';
-const EMBEDDED_SCROLL_PADDING = 'pl-4 md:pl-6 lg:pl-[6vw] pr-4 md:pr-6 lg:pr-[6vw]';
 
 interface GallerySectionProps {
   className?: string;
@@ -19,16 +24,11 @@ interface GallerySectionProps {
 }
 
 export default function GallerySection({ className, variant = 'default' }: GallerySectionProps) {
-  const isMobile = useMediaQuery('(max-width: 767px)');
   const [isDragging, setIsDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-  const isPausedRef = useRef(false);
-  const offsetRef = useRef(0); // 애니메이션 offset을 ref로 관리
 
   const { data, isPending, isFetching } = useMainPageGallery();
   const galleryItems = useMemo(() => data ?? [], [data]);
@@ -59,62 +59,52 @@ export default function GallerySection({ className, variant = 'default' }: Galle
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('button, a, [role="button"]')) return;
-    if (!trackRef.current) return;
-    
-    // 애니메이션 일시정지
-    isPausedRef.current = true;
+    if (!scrollRef.current) return;
     isDraggingRef.current = true;
     setIsDragging(true);
-    
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     startXRef.current = clientX;
-    
-    // 현재 offset을 드래그 시작 위치로 설정
-    scrollLeftRef.current = -offsetRef.current; // offset은 음수이므로 -를 붙여서 양수로
+    scrollLeftRef.current = scrollRef.current.scrollLeft;
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDraggingRef.current || !trackRef.current) return;
+    if (!isDraggingRef.current || !scrollRef.current) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const diff = startXRef.current - clientX;
-    const newX = -(scrollLeftRef.current + diff);
-    trackRef.current.style.transform = `translateX(${newX}px)`;
+    scrollRef.current.scrollLeft = scrollLeftRef.current + diff;
     if ('touches' in e) e.preventDefault();
   };
 
   const handlePointerUp = () => {
-    if (!isDraggingRef.current || !trackRef.current) return;
-    
-    // 현재 위치를 offsetRef에 저장하여 애니메이션이 이어지도록
-    const transform = window.getComputedStyle(trackRef.current).transform;
-    const matrix = new DOMMatrix(transform);
-    offsetRef.current = matrix.m41; // translateX 값
-    
     isDraggingRef.current = false;
     setIsDragging(false);
-    isPausedRef.current = false; // 드래그 종료 시 애니메이션 재개
   };
 
   const embedded = variant === 'embedded';
   const containerClass = embedded
-    ? EMBEDDED_HEADER
+    ? MAIN_EMBEDDED_SHELL_CLASS
     : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10';
 
-  /** 정사각 썸네일 + 2줄 제목 + 날짜 (카드 너비에 맞춰 여유 높이) */
+  /** common GalleryCard: aspect-video + 하단 제목·날짜 */
   const scrollHeight = embedded
-    ? 'min-h-[178px] sm:min-h-[200px] md:min-h-[228px] lg:min-h-[268px]'
+    ? 'min-h-[156px] sm:min-h-[172px] md:min-h-[210px] lg:min-h-[232px]'
     : 'h-[220px] md:h-[285px]';
   const listGapClass = embedded ? 'gap-3 md:gap-4 lg:gap-5' : 'gap-3';
-  const listPaddingClass = embedded ? EMBEDDED_SCROLL_PADDING : '';
+  const listPaddingClass = embedded ? MAIN_EMBEDDED_HSCROLL_INSET_CLASS : '';
 
   const cardList = showGallerySkeleton ? (
     <ul className={`m-0 flex w-max list-none ${listGapClass} pb-2 ${listPaddingClass}`}>
       {Array.from({ length: embedded ? 6 : SKELETON_COUNT }).map((_, i) =>
         embedded ? (
-          <li key={`gallery-sk-${i}`} className={`shrink-0 ${EMBEDDED_GALLERY_CARD_WIDTH}`}>
-            <div className="aspect-square w-full animate-pulse rounded-lg bg-gray-200 md:rounded-xl" />
-            <div className="mt-2 h-3.5 w-[83%] animate-pulse rounded bg-gray-200 md:mt-2.5 md:h-4" />
-            <div className="mt-1 h-3 w-1/2 animate-pulse rounded bg-gray-200 md:mt-1.5" />
+          <li key={`gallery-sk-${i}`} className={`shrink-0 list-none ${EMBEDDED_GALLERY_CARD_WIDTH}`}>
+            <div className="aspect-video w-full animate-pulse rounded-xl bg-gray-200" />
+            <div className="mt-2.5 space-y-1.5 px-0.5">
+              <div className="h-4 w-[88%] animate-pulse rounded bg-gray-200" />
+              <div className="flex items-center gap-1">
+                <div className="h-3 w-3 shrink-0 animate-pulse rounded-full bg-gray-200/80" />
+                <div className="h-3 w-[55%] animate-pulse rounded bg-gray-200/90" />
+              </div>
+            </div>
           </li>
         ) : (
           <li key={`gallery-sk-${i}`} className="shrink-0">
@@ -144,7 +134,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       ref={scrollRef}
       role="region"
       aria-label="대회사진 갤러리 카드 목록"
-      className={`flex ${scrollHeight} min-w-0 items-start overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+      className={`flex ${scrollHeight} min-w-0 items-start ${MAIN_HOME_HSCROLL_TRACK_CLASS} ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
         }`}
       style={{ touchAction: 'pan-x' }}
       onMouseDown={handlePointerDown}
@@ -161,16 +151,16 @@ export default function GallerySection({ className, variant = 'default' }: Galle
 
   return (
     <section
-      className={`bg-white ${embedded ? 'py-8 md:py-10' : 'pt-8 pb-8'} ${className ?? ''}`}
+      className={`bg-white ${embedded ? MAIN_EMBEDDED_SECTION_Y_CLASS : 'pt-8 pb-8'} ${className ?? ''}`}
     >
       <div className={containerClass}>
-        <div className="flex items-end justify-between">
-          <h2 className="font-giants text-[22px] md:text-[28px] text-gray-900">
+        <div className="flex items-end justify-between gap-3">
+          <h2 className={MAIN_HOME_SECTION_TITLE_CLASS}>
             대회사진 갤러리
           </h2>
           <Link
             href={GALLERY_PAGE_PATH}
-            className="text-xs font-medium text-gray-500 transition-colors hover:text-gray-700"
+            className={MAIN_HOME_SECTION_MORE_LINK_CLASS}
           >
             더보기 &gt;
           </Link>

@@ -9,10 +9,11 @@ import ErrorModal from "@/components/common/Modal/ErrorModal";
 import { useInquiryDetail, useCreateAnswer, useUpdateAnswer } from "@/hooks/useInquiries";
 import { useQueryClient } from "@tanstack/react-query";
 import { inquiryKeys } from "@/hooks/useInquiries";
-import { InquiryDetail } from "@/services/admin/inquiries";
+import { InquiryDetail, deleteAnswer } from "@/services/admin/inquiries";
 import type { InquiryFile } from "@/types/inquiry";
 import { formatInquiryAdminDateTime } from "@/utils/formatDate";
 import { buildInquiryListReturnUrl } from "@/utils/inquiryListQuery";
+import { BoardDetailPage, BoardDetailPlaceholder } from "@/components/admin/boards/BoardDetailFrame";
 
 export default function Page() {
   const { eventId, inquiryId } = useParams<{ eventId: string; inquiryId: string }>();
@@ -87,21 +88,17 @@ export default function Page() {
 
   if (isLoading) {
     return (
-      <main className="mx-auto max-w-[1100px] px-4 py-6">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-gray-500">문의사항을 불러오는 중...</div>
-        </div>
-      </main>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder>문의사항을 불러오는 중...</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
 
   if (error || !detail) {
     return (
-      <main className="mx-auto max-w-[1100px] px-4 py-6">
-        <div className="flex items-center justify-center py-8">
-          <div className="text-red-500">문의사항을 불러오는데 실패했습니다.</div>
-        </div>
-      </main>
+      <BoardDetailPage>
+        <BoardDetailPlaceholder tone="error">문의사항을 불러오는데 실패했습니다.</BoardDetailPlaceholder>
+      </BoardDetailPage>
     );
   }
 
@@ -208,9 +205,26 @@ export default function Page() {
     }
   };
 
+  const onDeleteAnswer = async () => {
+    if (!answerId) return;
+    await deleteAnswer(answerId);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: inquiryKeys.detail(inquiryId) }),
+      queryClient.invalidateQueries({ queryKey: inquiryKeys.homepage() }),
+      queryClient.invalidateQueries({ queryKey: inquiryKeys.all }),
+      queryClient.invalidateQueries({ queryKey: inquiryKeys.event(eventId) }),
+    ]);
+    await queryClient.refetchQueries({ queryKey: inquiryKeys.detail(inquiryId) });
+  };
+
   return (
     <>
-      <InquiryDetailPanel detail={detail} onBack={onBack} onSave={onSave} />
+      <InquiryDetailPanel
+        detail={detail}
+        onBack={onBack}
+        onSave={onSave}
+        onDeleteAnswer={answerId ? onDeleteAnswer : undefined}
+      />
 
       {/* 성공 모달 */}
       <SuccessModal

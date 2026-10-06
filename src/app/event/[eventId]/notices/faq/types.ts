@@ -9,11 +9,7 @@ export interface FaqResponse {
   empty: boolean;
 }
 
-// FAQ 표시용 인터페이스
-export interface DisplayFaqItem {
-  question: string;
-  answer: string;
-}
+export type { DisplayFaqItem } from '@/components/common/faq/types';
 
 // FAQ 상태 인터페이스
 export interface FaqState {

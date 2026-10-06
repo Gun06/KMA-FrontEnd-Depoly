@@ -68,6 +68,10 @@ export default function BottomNoticeSection({
     return null;
   }
 
+  if (isLoading) {
+    return null;
+  }
+
   if (error && notices.length === 0) {
     return (
       <section className={`bg-white py-8 md:py-16 ${className}`}>
@@ -92,27 +96,7 @@ export default function BottomNoticeSection({
         </h2>
         
         <div className="max-w-5xl mx-auto relative">
-          {isLoading && (
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              {Array.from({ length: 5 }).map((_, idx) => (
-                <div 
-                  key={`skeleton-${idx}`}
-                  className={`flex items-center justify-between p-4 sm:p-6 ${
-                    idx !== 4 ? 'border-b border-gray-100' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                    <div className="h-5 sm:h-6 w-12 sm:w-14 bg-gray-200 rounded animate-pulse flex-shrink-0" />
-                    <div className="h-5 sm:h-6 bg-gray-200 rounded animate-pulse flex-1" style={{ maxWidth: '70%' }} />
-                  </div>
-                  <div className="h-4 sm:h-5 w-16 sm:w-20 bg-gray-200 rounded animate-pulse flex-shrink-0 ml-2 sm:ml-4" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!isLoading && (
-            <>
+          <>
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {notices.map((notice, index) => (
                   <div 
@@ -163,8 +147,7 @@ export default function BottomNoticeSection({
                   <span className="text-red-500 text-lg">+</span>
                 </button>
               </div>
-            </>
-          )}
+          </>
         </div>
       </div>
     </section>

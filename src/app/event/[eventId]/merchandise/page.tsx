@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SubmenuLayout from "@/layouts/event/SubmenuLayout";
-import Image from "next/image";
+import { GuidePageImageStack } from "@/components/event/GuidePageImageStack";
 
 interface EventPageImage {
   imageUrl: string;
@@ -21,21 +21,17 @@ export default function MerchandisePage({ params }: { params: { eventId: string 
         setIsLoading(true);
         setError(null);
 
-        // API에서 이벤트 정보 가져오기
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL_USER;
         const API_ENDPOINT = `${API_BASE_URL}/api/v1/public/event/${eventId}/souvenir-image`;
 
         const response = await fetch(API_ENDPOINT);
-        
+
         if (response.ok) {
           const data = await response.json();
-          // API 응답이 배열인 경우 처리
           if (Array.isArray(data) && data.length > 0) {
-            // orderNumber로 정렬하여 모든 이미지 저장
             const sortedImages = [...data].sort((a, b) => a.orderNumber - b.orderNumber);
             setImages(sortedImages);
-          } else if (data && typeof data === 'object' && 'souvenirPageImageUrl' in data) {
-            // 단일 객체 응답인 경우 (하위 호환성)
+          } else if (data && typeof data === "object" && "souvenirPageImageUrl" in data) {
             setImages([{ imageUrl: data.souvenirPageImageUrl, orderNumber: 0 }]);
           } else {
             setImages([]);
@@ -43,8 +39,8 @@ export default function MerchandisePage({ params }: { params: { eventId: string 
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (error) {
-        setError('이벤트 정보를 불러올 수 없습니다.');
+      } catch {
+        setError("이벤트 정보를 불러올 수 없습니다.");
       } finally {
         setIsLoading(false);
       }
@@ -53,40 +49,20 @@ export default function MerchandisePage({ params }: { params: { eventId: string 
     fetchEventData();
   }, [eventId]);
 
-  if (isLoading) {
+  if (error && !isLoading && images.length === 0) {
     return (
-      <SubmenuLayout 
+      <SubmenuLayout
         eventId={eventId}
         breadcrumb={{
           mainMenu: "기념품",
-          subMenu: "대회 기념품"
+          subMenu: "대회 기념품",
         }}
       >
         <div className="container mx-auto px-4 py-4 sm:py-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-            <div className="flex justify-center">
-              <div className="text-gray-500">로딩 중...</div>
-            </div>
-          </div>
-        </div>
-      </SubmenuLayout>
-    );
-  }
-
-  if (error && images.length === 0) {
-    return (
-      <SubmenuLayout 
-        eventId={eventId}
-        breadcrumb={{
-          mainMenu: "기념품",
-          subMenu: "대회 기념품"
-        }}
-      >
-        <div className="container mx-auto px-4 py-4 sm:py-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
+          <div className="mx-auto max-w-4xl px-4 sm:px-8 lg:px-12">
             <div className="flex justify-center">
               <div className="text-center">
-                <div className="text-gray-500 mb-2">오류가 발생했습니다</div>
+                <div className="mb-2 text-gray-500">오류가 발생했습니다</div>
                 <div className="text-sm text-gray-400">{error}</div>
               </div>
             </div>
@@ -97,42 +73,31 @@ export default function MerchandisePage({ params }: { params: { eventId: string 
   }
 
   return (
-    <SubmenuLayout 
+    <SubmenuLayout
       eventId={eventId}
       breadcrumb={{
         mainMenu: "기념품",
-        subMenu: "대회 기념품"
+        subMenu: "대회 기념품",
       }}
     >
       <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 lg:px-12">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 sm:mb-4 text-left">대회 기념품</h2>
-          <hr className="border-black mb-3 sm:mb-4" style={{ borderWidth: '1.7px' }} />
-          
+        <div className="mx-auto max-w-4xl px-4 sm:px-8 lg:px-12">
+          <h2 className="mb-3 text-left text-xl font-extrabold text-gray-900 sm:mb-4 sm:text-2xl">
+            대회 기념품
+          </h2>
+          <hr className="mb-3 border-black sm:mb-4" style={{ borderWidth: "1.7px" }} />
+
           <div className="mb-4 sm:mb-6">
-            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+            <p className="text-sm leading-relaxed text-gray-700 sm:text-base">
               대회 참가자들을 위한 특별한 기념품을 안내합니다.
             </p>
           </div>
-          
-          {/* souvenirPageImageUrl 이미지 표시 */}
-          {images.length > 0 && (
-            <div>
-              {images.map((image, index) => (
-                <div key={`${image.orderNumber}-${index}`} className="flex justify-center">
-                  <Image
-                    src={image.imageUrl}
-                    alt={`대회 기념품 이미지 ${index + 1}`}
-                    width={800}
-                    height={600}
-                    priority={index === 0}
-                    className="max-w-full h-auto"
-                    style={{ touchAction: 'auto' }}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+
+          <GuidePageImageStack
+            images={images}
+            altPrefix="대회 기념품 이미지"
+            isLoading={isLoading}
+          />
         </div>
       </div>
     </SubmenuLayout>

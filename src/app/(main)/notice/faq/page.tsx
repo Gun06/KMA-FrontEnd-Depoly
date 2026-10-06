@@ -1,18 +1,14 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { SubmenuLayout } from '@/layouts/main/SubmenuLayout'
-import Image from 'next/image'  
-import downIcon from '@/assets/icons/main/down.svg'
-import upIcon from '@/assets/icons/main/up.svg'
-import { prepareHtmlForDisplay } from '@/components/common/TextEditor/utils/prepareHtmlForDisplay'
+import { FaqPageFrame } from '@/components/common/faq/FaqPageFrame'
+import { FaqList } from '@/components/common/faq/FaqList'
+import { FaqLoadingState } from '@/components/common/faq/FaqLoadingState'
+import { FaqErrorState } from '@/components/common/faq/FaqErrorState'
+import { useFaqAccordion } from '@/components/common/faq/useFaqAccordion'
+import type { DisplayFaqItem } from '@/components/common/faq/types'
 
-interface FaqItem {
-  question: string
-  answer: string
-}
-
-// API 응답 타입 정의
 interface ApiFaqItem {
   problem: string
   solution: string
@@ -23,13 +19,20 @@ interface FaqResponse {
   empty: boolean
 }
 
+const FALLBACK_FAQ: DisplayFaqItem[] = [
+  { question: '참가 등록은 어떻게 하나요?', answer: '홈 상단 메뉴의 접수안내 > 참가신청 가이드에서 절차를 확인한 뒤, 해당 대회 페이지에서 온라인으로 신청하실 수 있습니다.' },
+  { question: '대회 코스는 어떻게 구성되어 있나요?', answer: '대회별 코스 안내 페이지에서 거리, 고도, 급수대 위치 등 세부 정보를 확인하실 수 있습니다.' },
+  { question: '준비물은 무엇이 필요한가요?', answer: '신분증, 참가 확인증(또는 모바일 확인), 러닝화 및 개인 물품을 지참해 주세요. 대회별로 요구 사항이 다를 수 있으니 공지를 확인해 주세요.' },
+  { question: '기록은 어떻게 확인하나요?', answer: '대회 종료 후 기록 조회 페이지에서 이름/생년월일 또는 배번호로 검색하실 수 있습니다. 인증서 발급도 가능합니다.' },
+  { question: '자원봉사자로 어떻게 참여하나요?', answer: '공지사항 또는 자원봉사 신청 게시판에서 모집 공지를 확인하고 온라인 신청서를 제출해 주세요.' },
+]
+
 export default function FaqPage() {
-  const [faqData, setFaqData] = useState<FaqItem[]>([])
+  const [faqData, setFaqData] = useState<DisplayFaqItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [openSet, setOpenSet] = useState<Set<number>>(new Set())
+  const { isOpen, toggle } = useFaqAccordion()
 
-  // API 데이터 가져오기
   useEffect(() => {
     const fetchFaqData = async () => {
       try {
@@ -62,15 +65,8 @@ export default function FaqPage() {
           const errorText = await response.text()
           throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
         }
-      } catch (error) {
-        // 서버 에러 시 기본 데이터 사용
-        setFaqData([
-          { question: '참가 등록은 어떻게 하나요?', answer: '홈 상단 메뉴의 접수안내 > 참가신청 가이드에서 절차를 확인한 뒤, 해당 대회 페이지에서 온라인으로 신청하실 수 있습니다.' },
-          { question: '대회 코스는 어떻게 구성되어 있나요?', answer: '대회별 코스 안내 페이지에서 거리, 고도, 급수대 위치 등 세부 정보를 확인하실 수 있습니다.' },
-          { question: '준비물은 무엇이 필요한가요?', answer: '신분증, 참가 확인증(또는 모바일 확인), 러닝화 및 개인 물품을 지참해 주세요. 대회별로 요구 사항이 다를 수 있으니 공지를 확인해 주세요.' },
-          { question: '기록은 어떻게 확인하나요?', answer: '대회 종료 후 기록 조회 페이지에서 이름/생년월일 또는 배번호로 검색하실 수 있습니다. 인증서 발급도 가능합니다.' },
-          { question: '자원봉사자로 어떻게 참여하나요?', answer: '공지사항 또는 자원봉사 신청 게시판에서 모집 공지를 확인하고 온라인 신청서를 제출해 주세요.' },
-        ])
+      } catch {
+        setFaqData(FALLBACK_FAQ)
         setError(null)
       } finally {
         setIsLoading(false)
@@ -79,141 +75,52 @@ export default function FaqPage() {
     fetchFaqData()
   }, [])
 
-  const toggle = (index: number) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev)
-      const isOpen = next.has(index)
-      if (isOpen) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-      return next
-    })
-  }
-
-  // FAQ 항목의 HTML을 미리 계산 (조건부 return 이전에 호출)
-  const faqItemsWithHtml = useMemo(() => {
-    return faqData.map(item => ({
-      ...item,
-      questionHtml: prepareHtmlForDisplay(item.question),
-      answerHtml: prepareHtmlForDisplay(item.answer),
-    }));
-  }, [faqData]);
-
-  // 로딩 상태
   if (isLoading) {
     return (
       <SubmenuLayout
+        wide
         breadcrumb={{
           mainMenu: "게시판",
           subMenu: "FAQ"
         }}
       >
-        <div className="w-full h-full px-0 py-6 sm:py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-            <span className="ml-4 text-gray-600">FAQ를 불러오는 중...</span>
-          </div>
-        </div>
+        <FaqLoadingState />
       </SubmenuLayout>
     );
   }
 
-  // 에러 상태
   if (error) {
     return (
       <SubmenuLayout
+        wide
         breadcrumb={{
           mainMenu: "게시판",
           subMenu: "FAQ"
         }}
       >
-        <div className="w-full h-full px-0 py-6 sm:py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <p className="text-red-600 mb-4">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-              >
-                다시 시도
-              </button>
-            </div>
-          </div>
-        </div>
+        <FaqErrorState
+          error={error}
+          onRetry={() => window.location.reload()}
+        />
       </SubmenuLayout>
     );
   }
 
   return (
     <SubmenuLayout
+      wide
       breadcrumb={{
         mainMenu: "게시판",
         subMenu: "FAQ"
       }}
     >
-      <div className="w-full h-full px-0 py-6 sm:py-8">
-        <div className="bg-white rounded-lg">
-          {/* FAQ 내용 */}
-          <div className="px-6 md:px-8 py-6">
-            {faqItemsWithHtml.length > 0 ? (
-              <div className="space-y-3">
-                {faqItemsWithHtml.map((item, index) => {
-                  const isOpen = openSet.has(index)
-                  const buttonId = `faq-button-${index}`
-                  const panelId = `faq-panel-${index}`
-                  const questionCaption = `QUESTION ${String(index + 1).padStart(2, '0')}`
-                  return (
-                    <div key={index} className={`rounded-lg transition-colors ${isOpen ? 'bg-white' : 'bg-gray-50/70'}`}>
-                      <button
-                        id={buttonId}
-                        aria-controls={panelId}
-                        aria-expanded={isOpen}
-                        onClick={() => toggle(index)}
-                        className="w-full flex items-center gap-3 py-4 sm:py-5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 px-4 sm:px-6"
-                      >
-                        <div className="flex-1">
-                          <p className="text-[11px] tracking-[0.12em] text-gray-400 mb-1">{questionCaption}</p>
-                          <span 
-                            className="font-pretendard text-[15px] sm:text-[16px] font-medium text-gray-800 [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:leading-[1.6]"
-                            dangerouslySetInnerHTML={{ __html: item.questionHtml }}
-                          />
-                        </div>
-                        <span aria-hidden className="text-gray-500">
-                          <Image
-                            src={isOpen ? upIcon : downIcon}
-                            alt=""
-                            width={16}
-                            height={16}
-                            className="w-4 h-4"
-                          />
-                        </span>
-                      </button>
-                      <div
-                        id={panelId}
-                        role="region"
-                        aria-labelledby={buttonId}
-                        hidden={!isOpen}
-                        className="pb-5 px-4 sm:px-6"
-                      >
-                        <div 
-                          className="mt-1 pl-3 sm:pl-4 border-l-2 border-gray-200 text-gray-600 text-[14px] sm:text-[15px] font-light [&_p]:m-0 [&_p]:whitespace-pre-wrap [&_p]:leading-[1.7] [&_p+p]:mt-2"
-                          dangerouslySetInnerHTML={{ __html: item.answerHtml }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">FAQ가 없습니다.</div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <FaqPageFrame>
+        <FaqList
+          faqItems={faqData}
+          isOpen={isOpen}
+          onToggle={toggle}
+        />
+      </FaqPageFrame>
     </SubmenuLayout>
   )
 }

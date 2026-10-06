@@ -98,12 +98,10 @@ export default function SnsSection({
     fetchEventInfo();
   }, [eventId, propEventInfo, isMounted]);
 
-  // 이미지 우선순위: API 데이터만 사용 (더미 이미지 제거)
-  const imageUrl = (isMounted && eventInfo?.eventPromotionBannerUrl) || null;
+  const resolvedPromotion = eventInfo || propEventInfo;
+  const imageUrl = resolvedPromotion?.eventPromotionBannerUrl?.trim() || null;
 
-  const showSkeleton = (isLoading || !isMounted) && !eventInfo && !propEventInfo;
-
-  if (error && !eventInfo) {
+  if (error && !eventInfo && !propEventInfo) {
     return (
       <section className={`relative w-full overflow-hidden ${className}`}>
         <div className="relative w-full min-h-[200px] flex items-center justify-center bg-gray-100">
@@ -116,25 +114,14 @@ export default function SnsSection({
     );
   }
 
+  if (!imageUrl) {
+    return null;
+  }
+
   return (
     <section className={`relative w-full overflow-hidden ${className}`}>
       <div className="relative w-full">
-        {/* 스켈레톤 UI - 메인 사이트 방식: absolute 오버레이 */}
-        <div 
-          className="absolute inset-0 w-full h-full bg-gray-50 transition-opacity duration-300"
-          style={{
-            opacity: showSkeleton ? 1 : 0,
-            zIndex: showSkeleton ? 50 : 0,
-            pointerEvents: showSkeleton ? 'auto' : 'none'
-          }}
-        >
-            <div className="relative w-full">
-              <div className="w-full h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] bg-gray-200 animate-pulse" />
-            </div>
-        </div>
-
-        {/* 이미지 원본 비율 유지 - 스켈레톤이 아닐 때만 표시 */}
-        {!showSkeleton && imageUrl && (
+        {imageUrl && (
           <div className="relative w-full">
             <Image
               src={imageUrl}

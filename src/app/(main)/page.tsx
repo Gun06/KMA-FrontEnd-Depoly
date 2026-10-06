@@ -20,11 +20,11 @@ export default function AssociationPage() {
       <MainSectionDivider />
       <GallerySection variant="embedded" />
 
-      <div className="bg-white pb-2 sm:pb-4 md:pb-6 lg:pb-8">
+      <div className="bg-white pb-1 sm:pb-4 md:pb-6 lg:pb-8">
         <NoticeMagazineSection />
       </div>
 
-      <div className="bg-white pt-6 sm:pt-8 md:pt-10 lg:pt-12">
+      <div className="bg-white pt-4 sm:pt-8 md:pt-10 lg:pt-12">
         <CtaCards presets={['ios', 'android']} />
       </div>
 

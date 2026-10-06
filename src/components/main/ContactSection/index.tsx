@@ -109,12 +109,12 @@ export default function ContactSection({ slateStart = '45%' }: ContactSectionPro
                         href={item.href}
                         target={item.type === 'youtube' || item.type === 'instagram' ? '_blank' : undefined}
                         rel={item.type === 'youtube' || item.type === 'instagram' ? 'noopener noreferrer' : undefined}
-                        className="text-sm leading-relaxed text-gray-600 transition-colors duration-200 hover:text-gray-900 whitespace-pre-line md:text-[15px] md:leading-relaxed"
+                        className="text-sm leading-relaxed text-gray-600 transition-colors duration-200 hover:text-gray-900 whitespace-pre-line sm:text-base"
                       >
                         {item.description}
                       </a>
                     ) : (
-                      <span className="text-sm leading-relaxed text-gray-600 whitespace-pre-line md:text-[15px] md:leading-relaxed">
+                      <span className="text-sm leading-relaxed text-gray-600 whitespace-pre-line sm:text-base">
                         {item.description}
                       </span>
                     )

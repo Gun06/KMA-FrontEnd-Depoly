@@ -231,7 +231,7 @@ export default function InquiryPage() {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
                 >
-                  <span className="text-[15px] leading-[26px] text-[#1E2124]">
+                  <span className="text-sm leading-[26px] text-[#1E2124] sm:text-base">
                     {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '제목'}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -410,7 +410,7 @@ export default function InquiryPage() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-32 h-10 px-2 border border-[#58616A] rounded-[5px] text-sm bg-white focus:border-[#256EF4] outline-none flex items-center justify-between"
               >
-                <span className="text-[15px] leading-[26px] text-[#1E2124]">
+                <span className="text-sm leading-[26px] text-[#1E2124] sm:text-base">
                   {searchOptions.find(opt => opt.value === selectedSearchType)?.label || '제목'}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-[#33363D] transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />

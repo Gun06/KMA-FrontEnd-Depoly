@@ -235,7 +235,7 @@ function ClientContent() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <h3 className={`text-[14px] sm:text-[15px] font-semibold tracking-[-0.01em] truncate ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
+                            <h3 className={`text-sm font-semibold tracking-[-0.01em] truncate sm:text-base ${isUnread ? 'text-gray-950' : 'text-gray-900'}`}>
                               {n.title}
                             </h3>
                             <div className="mt-1.5 flex items-center gap-2 min-w-0">
