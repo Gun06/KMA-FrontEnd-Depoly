@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/event/Breadcrumb';
 import { useMainBanner } from '@/components/providers/MainBannerContext';
 import { usePublicEventDetail } from '@/hooks/usePublicEventData';
 import type { PublicEventDetailResponse } from '@/services/publicEventAssets';
+import { EVENT_SUBMENU_GUTTER_CLASS } from '@/lib/layout/publicContentFrame';
 
 const MAP_BG: Record<string, string> = {
   dark: 'bg-neutral-900',
@@ -72,6 +73,15 @@ interface SubmenuLayoutProps {
   }
   /** 미지정 시 공지·문의 상세·작성 등에서는 히어로(사이드 배너) 영역 전체 생략 */
   showSideBanner?: boolean
+}
+
+function breadcrumbShellClass(pathname: string, showSideBanner: boolean): string {
+  const topPad = showSideBanner ? 'pt-8' : 'pt-8 sm:pt-10 md:pt-12';
+  const isFaqPage = /\/notices\/faq\/?$/.test(pathname);
+  if (isFaqPage) {
+    return `mx-auto w-full ${EVENT_SUBMENU_GUTTER_CLASS} ${topPad}`;
+  }
+  return `container mx-auto px-4 ${topPad}`;
 }
 
 function isEventNoticeOrInquiryCompactHeroPath(pathname: string): boolean {
@@ -244,11 +254,7 @@ export default function SubmenuLayout({
           <HeroSection eventId={eventId} eventInfo={heroEventData} />
         ) : null}
 
-        <div
-          className={`container mx-auto px-4 ${
-            showSideBanner ? 'pt-8' : 'pt-8 sm:pt-10 md:pt-12'
-          }`}
-        >
+        <div className={breadcrumbShellClass(pathname ?? '', showSideBanner)}>
           <Breadcrumb items={breadcrumbItems} />
         </div>
         
@@ -350,11 +356,7 @@ export function SubmenuLayoutThemed({
           <HeroSection eventId={eventId} eventInfo={heroEventData} />
         ) : null}
 
-        <div
-          className={`container mx-auto px-4 ${
-            showSideBanner ? 'pt-8' : 'pt-8 sm:pt-10 md:pt-12'
-          }`}
-        >
+        <div className={breadcrumbShellClass(pathname ?? '', showSideBanner)}>
           <Breadcrumb items={breadcrumbItems} />
         </div>
         

@@ -158,7 +158,7 @@ Tailwind `screens` (`tailwind.config.js`)와 `src/lib/layout/breakpoints.ts`를 
 ### 공통 레이아웃·UI
 
 - 메인 가로 리듬: `src/components/main/mainLayoutTokens.ts`
-- 게시판·FAQ 목록 폭: `src/lib/layout/publicContentFrame.ts` (`EventBoardListFrame`, `FaqPageFrame`)
+- 게시판·FAQ 목록 폭: `publicContentFrame.ts` — 대회 FAQ는 `max-w` 없이 `EVENT_SUBMENU_GUTTER_CLASS`, 공지 `max-w-6xl`, 메인 FAQ `max-w-4xl`
 - 공개 본문 타이포: `src/lib/main/typography.ts`
 
 ### 정적 리소스
