@@ -2,6 +2,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { mediaMaxWidth, SCREEN_PX } from '@/lib/layout/breakpoints'
 import { useEventSponsorBanners } from '@/hooks/useEventSponsor'
 import type { EventSponsorBanner } from '@/types/eventSponsor'
 type Logo = {
@@ -25,7 +26,7 @@ const SPEED_MS = 50000 // 50초
 
 export default function SponsorsMarquee({ eventId }: SponsorsMarqueeProps) {
   // 모바일 여부 감지
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobile = useMediaQuery(mediaMaxWidth(SCREEN_PX.md));
   
   // 새로운 API 훅 사용
   const { data: sponsorData, isLoading, error } = useEventSponsorBanners({

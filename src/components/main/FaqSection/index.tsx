@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import Image from 'next/image'  
 import downIcon from '@/assets/icons/main/down.svg'
 import upIcon from '@/assets/icons/main/up.svg'
 import SectionPanel from '@/components/main/SectionPanel'
 import { prepareHtmlForDisplay } from '@/components/common/TextEditor/utils/prepareHtmlForDisplay'
+import { PUBLIC_TAP_TARGET_MIN_CLASS } from '@/lib/layout/publicContentFrame'
 
 interface FaqItem {
   question: string
@@ -102,20 +103,23 @@ export default function FaqSection({
 
   const [openSet, setOpenSet] = useState<Set<number>>(new Set())
 
-  const toggle = (index: number) => {
-    setOpenSet((prev) => {
-      const next = new Set(prev)
-      const isOpen = next.has(index)
-      if (allowMultipleOpen) {
-        if (isOpen) next.delete(index)
-        else next.add(index)
-      } else {
-        next.clear()
-        if (!isOpen) next.add(index)
-      }
-      return next
-    })
-  }
+  const toggle = useCallback(
+    (index: number) => {
+      setOpenSet(prev => {
+        const next = new Set(prev)
+        const isOpen = next.has(index)
+        if (allowMultipleOpen) {
+          if (isOpen) next.delete(index)
+          else next.add(index)
+        } else {
+          next.clear()
+          if (!isOpen) next.add(index)
+        }
+        return next
+      })
+    },
+    [allowMultipleOpen]
+  )
 
   // FAQ 항목의 HTML을 미리 계산
   const faqItemsWithHtml = useMemo(() => {
@@ -175,7 +179,7 @@ export default function FaqSection({
                       aria-controls={panelId}
                       aria-expanded={isOpen}
                       onClick={() => toggle(index)}
-                      className="flex w-full items-center gap-3 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4 sm:py-5 md:py-6"
+                      className={`flex w-full items-center gap-3 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4 sm:py-5 md:py-6 ${PUBLIC_TAP_TARGET_MIN_CLASS}`}
                     >
                       <span aria-hidden className="shrink-0 font-giants text-base font-bold leading-none text-gray-800 md:text-lg">
                         Q

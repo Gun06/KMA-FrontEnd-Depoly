@@ -10,6 +10,10 @@ import {
   fetchSpecialEventImageUrl,
 } from '@/services/publicEventAssets';
 import { usePublicMainPageImages } from '@/hooks/usePublicEventData';
+import {
+  EVENT_DESKTOP_NAV_MIN_PX,
+  mediaMinWidth,
+} from '@/lib/layout/breakpoints';
 
 interface EventHeaderProps {
   eventName?: string;
@@ -226,10 +230,9 @@ export default function EventHeader({
     }
   }, [isOpen]);
 
-  // Viewport가 데스크탑(>=1180px)으로 바뀌면 모바일 메뉴/오버레이 자동 닫기
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(min-width: 1180px)');
+    const mq = window.matchMedia(mediaMinWidth(EVENT_DESKTOP_NAV_MIN_PX));
     const handleChange = (e: MediaQueryListEvent) => {
       if (e.matches) {
         setIsOpen(false);
@@ -264,7 +267,7 @@ export default function EventHeader({
       }}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="h-16 grid grid-cols-[minmax(0,1fr)_auto] min-[1180px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-4 min-[1180px]:gap-x-6 min-w-0">
+        <div className="h-16 grid grid-cols-[minmax(0,1fr)_auto] eventNav:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-4 eventNav:gap-x-6 min-w-0">
           {/* Logo / Title */}
           <Link
             href={`/event/${eventId}`}
@@ -296,9 +299,9 @@ export default function EventHeader({
           </Link>
 
           {/* Navigation (desktop) — 항상 헤더 중앙 고정 */}
-          <div className="hidden min-[1180px]:block shrink-0 justify-self-center relative z-50 col-start-2">
+          <div className="hidden eventNav:block shrink-0 justify-self-center relative z-50 col-start-2">
             <nav>
-              <ul className="flex items-center gap-1 text-sm min-[1180px]:text-base">
+              <ul className="flex items-center gap-1 text-sm eventNav:text-base">
                 {menuItems.map(m => (
                   <li
                     key={m.key}
@@ -374,7 +377,7 @@ export default function EventHeader({
           </div>
 
           {/* External link */}
-          <div className="hidden min-[1180px]:flex shrink-0 min-w-0 justify-self-end items-center justify-end gap-4 col-start-3">
+          <div className="hidden eventNav:flex shrink-0 min-w-0 justify-self-end items-center justify-end gap-4 col-start-3">
             <a
               href="http://www.run1080.com/new/"
               target="_blank"
@@ -437,7 +440,7 @@ export default function EventHeader({
             aria-controls="mobile-menu"
             aria-expanded={isOpen}
             onClick={() => setIsOpen(v => !v)}
-            className="min-[1180px]:hidden col-start-2 shrink-0 justify-self-end inline-flex items-center justify-center rounded-sm p-2 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+            className="eventNav:hidden col-start-2 shrink-0 justify-self-end inline-flex items-center justify-center rounded-sm p-2 text-white/80 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
           >
             {isOpen ? (
               // X icon
@@ -472,10 +475,10 @@ export default function EventHeader({
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 top-16 z-30 bg-black/40 min-[1180px]:hidden"
+            className="fixed inset-0 top-16 z-30 bg-black/40 eventNav:hidden"
             onClick={() => setIsOpen(false)}
           />
-          <div className="min-[1180px]:hidden fixed top-16 inset-x-0 z-40 bg-neutral-900 border-t border-white/10">
+          <div className="eventNav:hidden fixed top-16 inset-x-0 z-40 bg-neutral-900 border-t border-white/10">
             <nav
               id="mobile-menu"
               aria-label="모바일 내비게이션"

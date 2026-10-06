@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
+import { PUBLIC_TAP_TARGET_MIN_CLASS } from '@/lib/layout/publicContentFrame';
 import Image from 'next/image';
 import downIcon from '@/assets/icons/main/down.svg';
 import upIcon from '@/assets/icons/main/up.svg';
@@ -12,7 +13,7 @@ interface FaqItemProps {
   onToggle: (index: number) => void;
 }
 
-export const FaqItem = ({ item, index, isOpen, onToggle }: FaqItemProps) => {
+export const FaqItem = memo(function FaqItem({ item, index, isOpen, onToggle }: FaqItemProps) {
   const buttonId = `faq-button-${index}`;
   const panelId = `faq-panel-${index}`;
 
@@ -33,7 +34,7 @@ export const FaqItem = ({ item, index, isOpen, onToggle }: FaqItemProps) => {
         aria-controls={panelId}
         aria-expanded={isOpen}
         onClick={() => onToggle(index)}
-        className="flex w-full items-center gap-3 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4 sm:py-5 md:py-6"
+        className={`flex w-full items-center gap-3 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 sm:gap-4 sm:py-5 md:py-6 ${PUBLIC_TAP_TARGET_MIN_CLASS}`}
       >
         <span
           aria-hidden
@@ -69,4 +70,4 @@ export const FaqItem = ({ item, index, isOpen, onToggle }: FaqItemProps) => {
       </div>
     </div>
   );
-};
+});

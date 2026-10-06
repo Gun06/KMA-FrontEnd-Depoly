@@ -123,6 +123,56 @@ pnpm update           # pnpm update --latest
 
 `main`, `develop` 브랜치 push/PR 시 GitHub Actions에서 **build → type-check → lint** 를 실행합니다 (`.github/workflows/ci.yml`).
 
+## 반응형·프론트 최적화 (#822)
+
+이슈 [#822](https://github.com/KMA-Renewal/KMA-Frontend/issues/822) 범위·브레이크포인트·리소스 패턴 요약입니다.
+
+### 우선순위 (P0 → P1)
+
+| 우선 | 영역 | 대표 URL |
+|------|------|----------|
+| P0 | 메인 홈·히어로·embedded 섹션 | `/` |
+| P0 | 참가신청 가이드 | `/registration/guide` |
+| P0 | 메인 FAQ | `/notice/faq` |
+| P0 | 대회 홈·게시판·가이드 | `/event/{eventId}`, `…/notices/*`, `…/guide/*` |
+| P1 | 관리자 게시판·목록 (별도 PR 가능) | `/admin/*` |
+| — | 커밍순 | `src/app/page.tsx` 모드 분기 |
+
+### 브레이크포인트
+
+Tailwind `screens` (`tailwind.config.js`)와 `src/lib/layout/breakpoints.ts`를 맞춥니다.
+
+| 토큰 | px | 용도 |
+|------|-----|------|
+| `xs` | 475 | 초소형 |
+| `sm` | 640 | 본문 16px 전환 (`typography.ts`) |
+| `md` | 768 | 태블릿 |
+| `lg` | 1024 | 메인 히어로 고정 높이 (`globals.css`) |
+| `xl` | 1280 | |
+| `custom` | 1300 | 메인 데스크탑 헤더·우측 플로팅 (`mainLayoutTokens`) |
+| `eventNav` | 1180 | 대회 헤더 가로 nav |
+| `2xl` | 1536 | |
+
+수동 QA 권장 뷰포트: **390 · 768 · 1280 · 1920** (`QA_VIEWPORTS` in `breakpoints.ts`).
+
+### 공통 레이아웃·UI
+
+- 메인 가로 리듬: `src/components/main/mainLayoutTokens.ts`
+- 게시판·FAQ 목록 폭: `src/lib/layout/publicContentFrame.ts` (`EventBoardListFrame`, `FaqPageFrame`)
+- 공개 본문 타이포: `src/lib/main/typography.ts`
+
+### 정적 리소스
+
+- 폰트: `src/styles/globals.css` `@font-face` — **woff2**, `font-display: swap`
+- 이미지: `next/image` + `sizes`; 대회 메인은 `useEventMainPageAssets`에서 **프리로드 후 일괄 표시**
+- 대회 가이드·기념품: `GuidePageImageStack` — 스켈레톤 → 로드 후 reveal
+
+### 렌더·데이터
+
+- 대회 메인: 단일 훅으로 API·스폰서 fetch + 이미지 preload (`useEventMainPageAssets`)
+- FAQ 아코디언: `React.memo` on `FaqItem`, 홈 `FaqSection` toggle `useCallback`
+- `useBreakpoints` / `useMediaQuery`: `breakpoints.ts`와 동일 px
+
 ## 기여
 
 1. GitHub 이슈 확인 또는 생성 (템플릿: `.github/ISSUE_TEMPLATE/`)
@@ -132,4 +182,4 @@ pnpm update           # pnpm update --latest
 
 ## 라이선스
 
-전국마라톤협회 소유입니다.
+이 프로젝트는 전국마라톤협회 및 TEAM.BR{Ai}N 소유입니다

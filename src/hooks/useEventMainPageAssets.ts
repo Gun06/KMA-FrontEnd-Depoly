@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   collectMainPageImageUrls,
@@ -228,12 +228,15 @@ export function useEventMainPageAssets(eventId: string) {
     };
   }, [eventId, queryClient]);
 
-  return {
-    isReady: phase === 'ready',
-    isLoading: phase === 'loading',
-    showNotFound: phase === 'not_found',
-    errorMessage: phase === 'error' ? errorMessage : null,
-    mainPage,
-    promotion,
-  };
+  return useMemo(
+    () => ({
+      isReady: phase === 'ready',
+      isLoading: phase === 'loading',
+      showNotFound: phase === 'not_found',
+      errorMessage: phase === 'error' ? errorMessage : null,
+      mainPage,
+      promotion,
+    }),
+    [phase, errorMessage, mainPage, promotion]
+  );
 }

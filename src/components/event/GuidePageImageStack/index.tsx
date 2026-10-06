@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { cn } from '@/utils/cn';
 
 const IMAGE_MAX_W_CLASS = 'w-full max-w-[800px]';
@@ -23,7 +23,7 @@ export function GuidePageImageSkeleton({ blocks = 1 }: { blocks?: number }) {
   );
 }
 
-export function GuidePageRevealImage({
+export const GuidePageRevealImage = memo(function GuidePageRevealImage({
   src,
   alt,
   priority,
@@ -60,7 +60,7 @@ export function GuidePageRevealImage({
       />
     </div>
   );
-}
+});
 
 export type GuidePageImageItem = {
   imageUrl: string;

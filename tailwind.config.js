@@ -27,6 +27,8 @@ module.exports = {
         lg: '1024px',
         xl: '1280px',
         custom: '1300px',
+        /** 대회 헤더 nav — `src/lib/layout/breakpoints.ts` EVENT_DESKTOP_NAV_MIN_PX */
+        eventNav: '1180px',
         '2xl': '1536px',
       },
     },

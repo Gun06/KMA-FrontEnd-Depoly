@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { mediaMaxWidth, SCREEN_PX } from '@/lib/layout/breakpoints'
 
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false)
@@ -40,13 +41,13 @@ export function useMediaQuery(query: string): boolean {
 
 // 자주 사용되는 미디어 쿼리들을 위한 편의 훅들
 export function useBreakpoints() {
-  const isXs = useMediaQuery('(max-width: 475px)')
-  const isSm = useMediaQuery('(max-width: 640px)')
-  const isMd = useMediaQuery('(max-width: 768px)')
-  const isLg = useMediaQuery('(max-width: 1024px)')
-  const isXl = useMediaQuery('(max-width: 1280px)')
-  const isCustom = useMediaQuery('(max-width: 1300px)')
-  const is2xl = useMediaQuery('(max-width: 1536px)')
+  const isXs = useMediaQuery(mediaMaxWidth(SCREEN_PX.xs))
+  const isSm = useMediaQuery(mediaMaxWidth(SCREEN_PX.sm))
+  const isMd = useMediaQuery(mediaMaxWidth(SCREEN_PX.md))
+  const isLg = useMediaQuery(mediaMaxWidth(SCREEN_PX.lg))
+  const isXl = useMediaQuery(mediaMaxWidth(SCREEN_PX.xl))
+  const isCustom = useMediaQuery(mediaMaxWidth(SCREEN_PX.custom))
+  const is2xl = useMediaQuery(mediaMaxWidth(SCREEN_PX['2xl']))
 
   return useMemo(() => ({
     isXs,

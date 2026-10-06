@@ -25,7 +25,7 @@ export const MAIN_EMBEDDED_SECTION_Y_CLASS = 'py-6 sm:py-8 md:py-10';
 export const MAIN_HOME_HSCROLL_TRACK_CLASS =
   'overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
-/** 데스크탑 헤더·우측 플로팅 노출 기준 (tailwind `custom`: 1300px) */
+/** 데스크탑 헤더·우측 플로팅 노출 기준 — `MAIN_DESKTOP_MIN_PX` in `@/lib/layout/breakpoints` */
 export const MAIN_DESKTOP_UI_CLASS = 'hidden custom:block';
 
 /** 헤더·드롭다운(알림 등) — 우측 플로팅(z-151)보다 위 */
