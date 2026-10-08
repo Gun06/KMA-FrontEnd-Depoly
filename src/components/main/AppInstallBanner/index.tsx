@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import logoImage from '@/assets/images/main/logo.jpg';
+import { getAppStoreUrl } from '@/constants/appStore';
 
 const STORAGE_KEY = 'kma-main-app-install-banner-hidden';
 
@@ -33,6 +33,10 @@ export default function AppInstallBanner({ onVisibilityChange }: AppInstallBanne
     if (typeof window !== 'undefined') {
       window.sessionStorage.setItem(STORAGE_KEY, 'true');
     }
+  };
+
+  const handleOpenStore = () => {
+    window.location.assign(getAppStoreUrl());
   };
 
   if (!ready || hidden) return null;
@@ -69,12 +73,13 @@ export default function AppInstallBanner({ onVisibilityChange }: AppInstallBanne
           </p>
         </div>
 
-        <Link
-          href="#"
+        <button
+          type="button"
+          onClick={handleOpenStore}
           className="shrink-0 rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold text-black transition hover:bg-lime-200 sm:px-3.5 sm:text-sm md:px-4 md:py-1.5"
         >
           Open
-        </Link>
+        </button>
       </div>
     </div>
   );

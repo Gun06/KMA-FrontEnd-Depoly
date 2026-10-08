@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image, { StaticImageData } from 'next/image'
 import playstoreImg from '@/assets/images/main/playstore.webp'
 import appstoreImg from '@/assets/images/main/appstore.png'
+import { APP_STORE_URL, PLAY_STORE_URL } from '@/constants/appStore'
 
 type CtaCardVariant = 'primary' | 'teal'
 type CtaCardPreset = 'android' | 'ios'
@@ -40,14 +41,14 @@ const PRESETS: Record<
   android: {
     title: 'Android 다운로드',
     description: '전국마라톤협회 공식 앱을 Android에서 만나보세요. 곧 출시됩니다.',
-    href: '#',
+    href: PLAY_STORE_URL,
     imageAlt: 'Google Play에서 다운로드',
     variant: 'teal',
   },
   ios: {
     title: 'iOS 다운로드',
     description: '전국마라톤협회 공식 앱을 iOS에서 만나보세요. 곧 출시됩니다.',
-    href: '#',
+    href: APP_STORE_URL,
     imageAlt: 'App Store에서 다운로드',
     variant: 'primary',
   },
