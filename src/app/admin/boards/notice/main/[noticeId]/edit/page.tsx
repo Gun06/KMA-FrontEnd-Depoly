@@ -4,12 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import type { Editor } from "@tiptap/react";
 
 import type { NoticeFile } from "@/types/notice";
 import { useNoticeDetail, useUpdateNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeDetail, NoticeCategory } from "@/services/admin/notices";
-import { useAdminAuthStore } from "@/stores";
+import { getAdminAuthorName, useAdminAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query";
 import { BoardDetailPage, BoardDetailPlaceholder } from '@/components/admin/boards/BoardDetailFrame';
 import { BoardFormSaveToolbar } from '@/components/admin/boards/BoardAdminToolbar';
@@ -41,6 +42,7 @@ export default function Page() {
   const [content, setContent] = React.useState<string>("");
   const [files, setFiles] = React.useState<NoticeFile[]>([]);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
   const editorRef = React.useRef<Editor | null>(null);
 
   // 에디터 준비 완료 시 호출
@@ -89,6 +91,15 @@ export default function Page() {
       alert("카테고리를 선택하세요."); 
       return; 
     }
+    if (!user) {
+      setErrorMessage("로그인 정보가 없어서 로그인이 필요합니다.");
+      return;
+    }
+    const author = getAdminAuthorName(user);
+    if (!author) {
+      setErrorMessage("작성자 이름을 확인할 수 없어서 로그인이 필요합니다.");
+      return;
+    }
 
     // 저장 시 에디터에서 최신 HTML 가져오기 (작성한 대로 그대로 저장)
     let finalContent = content;
@@ -115,7 +126,7 @@ export default function Page() {
       title: title.trim(),
       content: finalContent,
       categoryId,
-      author: user?.account || '관리자', // 작성자 정보
+      author,
       deleteFileUrls: deletedFileUrls, // 삭제할 파일 URL들
       // TODO: 백엔드에서 visible, pinned 필드 지원 시 추가
       // visible: visibility === 'open',
@@ -203,6 +214,13 @@ export default function Page() {
       }}
       title="수정 완료!"
       message="공지사항이 성공적으로 수정되었습니다."
+    />
+    <ErrorModal
+      isOpen={!!errorMessage}
+      onClose={() => setErrorMessage("")}
+      title="알림"
+      message={errorMessage}
+      fitContent
     />
     </>
   );

@@ -32,7 +32,7 @@ const features: FeatureCard[] = [
   {
     id: '2',
     icon: photoIcon,
-    title: '대회사진 갤러리',
+    title: '대회 사진 갤러리',
     description: '대회 현장의 생생한 감동을 느껴보세요.',
     link: '/schedule/gallery',
     linkColor: '#256EF4',

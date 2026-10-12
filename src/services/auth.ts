@@ -29,6 +29,15 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 const getString = (v: unknown): string | undefined =>
   typeof v === 'string' ? v : undefined;
 
+const readAdminName = (body: unknown): string => {
+  if (!isRecord(body)) return '';
+  const direct = getString(body['adminName'])?.trim();
+  if (direct) return direct;
+  const data = body['data'];
+  if (!isRecord(data)) return '';
+  return getString(data['adminName'])?.trim() || '';
+};
+
 /** JSON 안전 파서 (204/빈 본문/비 JSON 대응) */
 const safeParseJson = async (res: Response): Promise<unknown | null> => {
   const ct = res.headers.get('content-type') || '';
@@ -543,6 +552,7 @@ export const authService = {
 
     // 본문 파싱
     const body = await safeParseJson(response);
+    const responseAdminName = readAdminName(body);
     
     // 본문에서 토큰 추출 (mustChangePassword 확인 전에)
     if ((!accessToken || !refreshToken) && body && isRecord(body)) {
@@ -589,11 +599,13 @@ export const authService = {
             } | null;
             const roles = extractRolesFromDecoded(decoded);
 
+            const displayName = responseAdminName || decoded?.name?.trim() || '';
             useAdminAuthStore.getState().login(
               { accessToken: token, refreshToken },
               {
                 id: decoded?.sub || decoded?.admin_id || 'admin',
-                account: decoded?.name || credentials.account,
+                account: displayName,
+                name: displayName,
                 role: roles[0] || 'ADMIN',
                 roles,
               }
@@ -650,11 +662,13 @@ export const authService = {
         } | null;
         const roles = extractRolesFromDecoded(decoded);
 
+        const displayName = responseAdminName || decoded?.name?.trim() || '';
         useAdminAuthStore.getState().login(
           { accessToken: token, refreshToken },
           {
             id: decoded?.sub || decoded?.admin_id || 'admin',
-            account: decoded?.name || credentials.account,
+            account: displayName,
+            name: displayName,
             role: roles[0] || 'ADMIN',
             roles,
           }

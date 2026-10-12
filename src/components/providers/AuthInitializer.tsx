@@ -104,10 +104,12 @@ export default function AuthInitializer() {
                 }
                 const roles = Array.from(new Set(extractedRoles));
 
+                const displayName = decoded?.name?.trim() || '';
                 useAdminAuthStore.setState({
                   user: {
                     id: decoded?.sub || decoded?.admin_id || 'admin',
-                    account: decoded?.name || 'admin',
+                    account: displayName,
+                    name: displayName,
                     role: roles[0] || 'ADMIN',
                     roles,
                   },

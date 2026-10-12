@@ -68,7 +68,7 @@ export default function EventSection({ variant = 'default' }: EventSectionProps)
             const dateB = new Date(b.eventDate).getTime();
             return dateA - dateB;
           });
-          setEventData(sorted.slice(0, 9));
+          setEventData(sorted);
         } else {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

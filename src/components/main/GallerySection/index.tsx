@@ -85,7 +85,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
     ? MAIN_EMBEDDED_SHELL_CLASS
     : 'max-w-[1920px] mx-auto px-8 md:px-9 lg:px-10';
 
-  /** common GalleryCard: aspect-video + 하단 제목·날짜 */
+  /** common GalleryCard: aspect-square + 하단 제목·날짜 */
   const scrollHeight = embedded
     ? 'min-h-[156px] sm:min-h-[172px] md:min-h-[210px] lg:min-h-[232px]'
     : 'h-[220px] md:h-[285px]';
@@ -97,7 +97,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       {Array.from({ length: embedded ? 6 : SKELETON_COUNT }).map((_, i) =>
         embedded ? (
           <li key={`gallery-sk-${i}`} className={`shrink-0 list-none ${EMBEDDED_GALLERY_CARD_WIDTH}`}>
-            <div className="aspect-video w-full animate-pulse rounded-xl bg-gray-200" />
+            <div className="aspect-square w-full animate-pulse rounded-xl bg-gray-200" />
             <div className="mt-2.5 space-y-1.5 px-0.5">
               <div className="h-4 w-[88%] animate-pulse rounded bg-gray-200" />
               <div className="flex items-center gap-1">
@@ -133,7 +133,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
     <div
       ref={scrollRef}
       role="region"
-      aria-label="대회사진 갤러리 카드 목록"
+      aria-label="대회 사진 갤러리 카드 목록"
       className={`flex ${scrollHeight} min-w-0 items-start ${MAIN_HOME_HSCROLL_TRACK_CLASS} ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
         }`}
       style={{ touchAction: 'pan-x' }}
@@ -156,7 +156,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
       <div className={containerClass}>
         <div className="flex items-end justify-between gap-3">
           <h2 className={MAIN_HOME_SECTION_TITLE_CLASS}>
-            대회사진 갤러리
+            대회 사진 갤러리
           </h2>
           <Link
             href={GALLERY_PAGE_PATH}

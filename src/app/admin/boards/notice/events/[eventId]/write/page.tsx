@@ -5,12 +5,13 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import Button from "@/components/common/Button/Button";
 import SuccessModal from "@/components/common/Modal/SuccessModal";
+import ErrorModal from "@/components/common/Modal/ErrorModal";
 import type { Editor } from "@tiptap/react";
 
 import type { NoticeFile } from "@/types/notice";
 import { useCreateEventNotice, useNoticeCategories } from "@/hooks/useNotices";
 import type { NoticeCategory } from "@/services/admin/notices";
-import { useAdminAuthStore } from "@/stores";
+import { getAdminAuthorName, useAdminAuthStore } from "@/stores";
 import { useQueryClient } from "@tanstack/react-query";
 import { BoardDetailPage } from "@/components/admin/boards/BoardDetailFrame";
 import { BoardFormSaveToolbar } from "@/components/admin/boards/BoardAdminToolbar";
@@ -35,6 +36,7 @@ export default function Page() {
   const [content, setContent] = React.useState("");
   const [files, setFiles] = React.useState<NoticeFile[]>([]);
   const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
   const [createdNoticeId, setCreatedNoticeId] = React.useState<string>("");
   const editorRef = React.useRef<Editor | null>(null);
 
@@ -85,9 +87,13 @@ export default function Page() {
       return;
     }
 
-    // 작성자 정보 확인
-    if (!user?.account) {
-      alert("로그인이 필요합니다.");
+    if (!user) {
+      setErrorMessage("로그인 정보가 없어서 로그인이 필요합니다.");
+      return;
+    }
+    const author = getAdminAuthorName(user);
+    if (!author) {
+      setErrorMessage("작성자 이름을 확인할 수 없어서 로그인이 필요합니다.");
       return;
     }
 
@@ -102,7 +108,7 @@ export default function Page() {
       categoryId,
       title: title.trim(),
       content: finalContent,
-      author: user.account,
+      author,
     }));
     
     if (fileObjects.length > 0) {
@@ -185,6 +191,13 @@ export default function Page() {
       }}
       title="등록 완료!"
       message="공지사항이 성공적으로 등록되었습니다."
+    />
+    <ErrorModal
+      isOpen={!!errorMessage}
+      onClose={() => setErrorMessage("")}
+      title="알림"
+      message={errorMessage}
+      fitContent
     />
     </>
   );

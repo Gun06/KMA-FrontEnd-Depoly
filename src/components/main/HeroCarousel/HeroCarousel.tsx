@@ -22,7 +22,6 @@ function HeroBannerSkeleton() {
         <div className="h-6 w-[5.25rem] shrink-0 animate-pulse rounded-full bg-white/25 sm:h-7 sm:w-24" />
         <div className="h-10 w-[min(92%,540px)] max-w-xl animate-pulse rounded-sm bg-white/35 sm:h-11 md:h-12 lg:h-14 xl:h-[3.75rem]" />
         <div className="h-6 w-[min(78%,420px)] max-w-lg animate-pulse rounded-sm bg-white/28 sm:h-7 md:h-8" />
-        <div className="mt-2 h-10 w-[min(96%,520px)] max-w-xl animate-pulse rounded-md bg-[#FFED00]/45 sm:mt-3 md:mt-4 lg:h-11" />
       </div>
 
       <div className="absolute bottom-12 right-3 sm:right-5 sm:bottom-14 md:bottom-16 lg:bottom-16">
@@ -137,7 +136,6 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
                   subtitle={banner.subTitle}
                   date={banner.date}
                   eventId={banner.eventId}
-                  eventNameKr={banner.eventNameKr}
                   total={total}
                   currentIndex={activeIndex}
                 />
@@ -184,7 +182,6 @@ export default function MarathonHeroCarousel({ fillViewport = false }: MarathonH
         .swiper-slide-active .hero-badge { transition-delay: 180ms; }
         .swiper-slide-active .hero-title { transition-delay: 360ms; }
         .swiper-slide-active .hero-date { transition-delay: 540ms; }
-        .swiper-slide-active .hero-readmore { transition-delay: 630ms; }
       `}</style>
     </div>
   );

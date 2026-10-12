@@ -5,8 +5,15 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 interface AdminUser {
   id: string;
   account: string;
+  name?: string;
   role: string;
   roles?: string[];
+}
+
+export function getAdminAuthorName(
+  user: { name?: string; account?: string } | null | undefined
+): string {
+  return user?.name?.trim() || user?.account?.trim() || '';
 }
 
 interface AdminAuthState {

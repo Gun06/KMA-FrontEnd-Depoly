@@ -31,11 +31,11 @@ export default function GalleryList({ items, onItemClick, variant = 'default' }:
             <CommonGalleryCard
               imageSrc={item.thumbnailUrl || ''}
               imageAlt={item.eventName}
-              tagName={item.tagName}
               title={item.eventName}
               date={formattedDate(item.eventStartDate)}
               onClick={() => onItemClick?.(item)}
               className="w-full"
+              imageAspect="square"
             />
           </li>
         ))}

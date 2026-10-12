@@ -1277,7 +1277,7 @@ export default function MainHomeHero() {
           const tb = new Date(b.eventDate).getTime();
           return ta - tb;
         });
-        setEvents(sorted.slice(0, 20));
+        setEvents(sorted);
       } catch {
         setEvents([]);
       } finally {

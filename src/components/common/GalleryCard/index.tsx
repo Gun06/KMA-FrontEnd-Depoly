@@ -13,6 +13,8 @@ interface GalleryCardProps {
   date: string;
   onClick?: () => void;
   className?: string;
+  /** 기본 video(16:9). 메인 홈 스트립은 square */
+  imageAspect?: 'video' | 'square';
 }
 
 export default function GalleryCard({
@@ -23,12 +25,14 @@ export default function GalleryCard({
   date,
   onClick,
   className,
+  imageAspect = 'video',
 }: GalleryCardProps) {
   const body = (
     <>
       <div
         className={cn(
-          'relative aspect-video w-full overflow-hidden rounded-xl bg-gray-100',
+          'relative w-full overflow-hidden rounded-xl bg-gray-100',
+          imageAspect === 'square' ? 'aspect-square' : 'aspect-video',
           onClick && 'transition-shadow duration-200 group-hover:shadow-lg'
         )}
       >
