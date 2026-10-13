@@ -27,6 +27,22 @@ export default function GalleryCard({
   className,
   imageAspect = 'video',
 }: GalleryCardProps) {
+  const arrowClass =
+    'flex shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors duration-200 group-hover:bg-[#256EF4] group-hover:text-white';
+
+  const arrow = onClick ? (
+    <span className={cn(arrowClass, 'h-8 w-8 bg-gray-100')} aria-hidden>
+      <ArrowUpRight size={16} strokeWidth={2} />
+    </span>
+  ) : null;
+
+  const dateLine = (
+    <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[12px] text-gray-500">
+      <CalendarDays size={13} strokeWidth={1.8} className="shrink-0" aria-hidden />
+      {date}
+    </p>
+  );
+
   const body = (
     <>
       <div
@@ -61,27 +77,41 @@ export default function GalleryCard({
             {tagName}
           </span>
         )}
-      </div>
-
-      <div className="flex min-w-0 items-end gap-2 px-0.5 pt-2.5">
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[15px] font-semibold tracking-[-0.2px] text-gray-900" title={title}>
-            {title}
-          </h3>
-          <p className="mt-1 flex items-center gap-1 text-[12px] text-gray-500">
-            <CalendarDays size={13} strokeWidth={1.8} aria-hidden />
-            {date}
-          </p>
-        </div>
-        {onClick && (
-          <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors duration-200 group-hover:bg-[#256EF4] group-hover:text-white"
-            aria-hidden
-          >
-            <ArrowUpRight size={16} strokeWidth={2} />
+        {imageAspect === 'square' && onClick && (
+          <span className={cn(arrowClass, 'absolute bottom-1.5 right-1.5 h-6 w-6 bg-white/90 shadow-sm lg:hidden')} aria-hidden>
+            <ArrowUpRight size={14} strokeWidth={2} />
           </span>
         )}
       </div>
+
+      {imageAspect === 'square' ? (
+        <div className="min-w-0 px-0.5 pt-2 lg:pt-2.5">
+          <div className="lg:flex lg:min-w-0 lg:items-center lg:gap-2">
+            <h3
+              className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-[-0.2px] text-gray-900 sm:text-sm lg:line-clamp-none lg:min-w-0 lg:flex-1 lg:truncate lg:text-[15px]"
+              title={title}
+            >
+              {title}
+            </h3>
+            {onClick && (
+              <span className={cn(arrowClass, 'hidden h-8 w-8 bg-gray-100 lg:flex')} aria-hidden>
+                <ArrowUpRight size={16} strokeWidth={2} />
+              </span>
+            )}
+          </div>
+          {dateLine}
+        </div>
+      ) : (
+        <div className="flex min-w-0 items-end gap-2 px-0.5 pt-2.5">
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-[15px] font-semibold tracking-[-0.2px] text-gray-900" title={title}>
+              {title}
+            </h3>
+            {dateLine}
+          </div>
+          {arrow}
+        </div>
+      )}
     </>
   );
 

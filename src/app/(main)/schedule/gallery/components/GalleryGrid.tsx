@@ -40,7 +40,6 @@ export default function GalleryGrid({
             <GalleryCard
               imageSrc={item.thumbnailUrl}
               imageAlt={item.eventName}
-              tagName={item.tagName}
               title={item.eventName}
               date={formatDate(item.eventStartDate)}
               onClick={() => onItemClick?.(item)}

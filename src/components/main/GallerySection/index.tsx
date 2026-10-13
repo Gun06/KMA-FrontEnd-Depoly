@@ -87,7 +87,7 @@ export default function GallerySection({ className, variant = 'default' }: Galle
 
   /** common GalleryCard: aspect-square + 하단 제목·날짜 */
   const scrollHeight = embedded
-    ? 'min-h-[156px] sm:min-h-[172px] md:min-h-[210px] lg:min-h-[232px]'
+    ? 'min-h-[200px] sm:min-h-[216px] md:min-h-[250px] lg:min-h-[262px]'
     : 'h-[220px] md:h-[285px]';
   const listGapClass = embedded ? 'gap-3 md:gap-4 lg:gap-5' : 'gap-3';
   const listPaddingClass = embedded ? MAIN_EMBEDDED_HSCROLL_INSET_CLASS : '';
