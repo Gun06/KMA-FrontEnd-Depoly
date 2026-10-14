@@ -61,10 +61,8 @@ export default function GalleryForm({
       }
     }, [file, imageUrl]);
 
-    // 16:9 비율 (1200px × 675px 기준)
-    // 미리보기 크기: 약 400px × 225px (비율 유지)
     return (
-      <div className={`relative aspect-video w-full ${dense ? "max-w-[280px]" : "max-w-[400px]"} overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0`}>
+      <div className={`relative aspect-square w-full ${dense ? "max-w-[220px]" : "max-w-[280px]"} overflow-hidden rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-center shrink-0`}>
         {previewUrl ? (
           <Image
             src={previewUrl}
@@ -144,8 +142,8 @@ export default function GalleryForm({
                     <HelpCircle className="w-4 h-4 text-gray-400 cursor-help" />
                     <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
                       <div className="mb-1 font-semibold">권장 이미지 사이즈:</div>
-                      <div>• 실제 표시: 1200px × 675px (16:9 비율)</div>
-                      <div>• 업로드 권장: 2400px × 1350px (2배 해상도)</div>
+                      <div>• 실제 표시: 1200px × 1200px (1:1 비율)</div>
+                      <div>• 업로드 권장: 2400px × 2400px (2배 해상도)</div>
                       <div className="mt-2 text-gray-300">갤러리 카드에 표시될 썸네일 이미지입니다.</div>
                     </div>
                   </div>
@@ -229,10 +227,10 @@ export default function GalleryForm({
         <NoticeMessage
           items={[
             { text: "※ 이미지는 jpg, jpeg, png, gif, webp, heic, heif, avif 만 지원합니다." },
-            { text: "※ 썸네일 이미지 실제 표시 사이즈: 1200px × 675px (16:9 비율)" },
+            { text: "※ 썸네일 이미지 실제 표시 사이즈: 1200px × 1200px (1:1 비율)" },
             {
               text:
-                "다만, 해상도 문제로 인하여 업로드는 각 2배인 2400px × 1350px로 작업하여 업로드 부탁드립니다.",
+                "다만, 해상도 문제로 인하여 업로드는 각 2배인 2400px × 2400px로 작업하여 업로드 부탁드립니다.",
               highlight: true,
             },
           ]}

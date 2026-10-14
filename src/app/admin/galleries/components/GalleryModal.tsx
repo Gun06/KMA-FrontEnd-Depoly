@@ -121,6 +121,7 @@ export default function GalleryModal({
                       tagName={value.tagName || "태그명"}
                       title={value.title || "대회명을 입력하세요"}
                       date={formatDisplayDate() || "대회 개최일을 입력하세요"}
+                      imageAspect="square"
                     />
                   </div>
                 </div>

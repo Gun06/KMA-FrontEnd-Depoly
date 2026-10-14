@@ -8,8 +8,8 @@ import type { Column } from '@/components/common/Table/BaseTable';
 import AdminTable from '@/components/admin/Table/AdminTableShell';
 import FilterBar from '@/components/common/filters/FilterBar';
 import { PRESETS } from '@/components/common/filters/presets';
-import { useEventList } from '@/hooks/useNotices';
 import { useCashReceiptBatches, useCashReceiptSearch } from './hooks/useCashReceiptAdmin';
+import CashReceiptEventSelect from './CashReceiptEventSelect';
 import CashReceiptDetailDrawer from './CashReceiptDetailDrawer';
 import CashReceiptBatchList from './CashReceiptBatchList';
 import ConfirmModal from '@/components/common/Modal/ConfirmModal';
@@ -22,7 +22,6 @@ import {
   downloadRequestedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
-import type { EventListResponse } from '@/types/eventList';
 import type { CashReceiptAdminStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
 
 type Props = {
@@ -134,15 +133,6 @@ export default function Client({ initialPage, pageSize }: Props) {
     router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname, { scroll: false });
   }, [router, pathname, page, eventId, status, keyword, drawerOpen, selectedId]);
 
-  const { data: eventData } = useEventList(1, 200) as { data: EventListResponse | undefined };
-  const eventOptions = React.useMemo(
-    () => [
-      { label: '대회전체', value: 'ALL' },
-      ...((eventData?.content ?? []).map((e) => ({ label: e.nameKr, value: e.id }))),
-    ],
-    [eventData]
-  );
-
   const params = React.useMemo(
     () => ({
       eventId,
@@ -163,15 +153,11 @@ export default function Client({ initialPage, pageSize }: Props) {
     if (!presetBase) return undefined;
     return {
       ...presetBase,
-      fields: presetBase.fields?.map((f) =>
-        f.label === '대회'
-          ? { ...f, options: eventOptions, fieldClassName: 'w-[300px] [&>button]:w-full' }
-          : f
-      ),
-      initialValues: [eventId, status],
+      fields: presetBase.fields?.filter((f) => f.label !== '대회'),
+      initialValues: [status],
       initialSearchValue: keyword,
     };
-  }, [presetBase, eventOptions, eventId, status, keyword]);
+  }, [presetBase, status, keyword]);
 
   const rows = React.useMemo(() => data?.content ?? [], [data]);
   const total = data?.totalElements ?? 0;
@@ -473,28 +459,36 @@ export default function Client({ initialPage, pageSize }: Props) {
         }
         renderActions={
           preset ? (
-            <FilterBar
-              {...preset}
-              dense
-              searchWidth={260}
-              className="!items-center !gap-2 flex-wrap justify-end"
-              buttons={filterBarButtons}
-              onFieldChange={(label, value) => {
-                if (label === '대회') setEventId(value || 'ALL');
-                if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
-                setPage(1);
-              }}
-              onSearch={(q) => {
-                setKeyword(q);
-                setPage(1);
-              }}
-              onReset={() => {
-                setEventId('ALL');
-                setStatus('');
-                setKeyword('');
-                setPage(1);
-              }}
-            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <CashReceiptEventSelect
+                value={eventId}
+                onChange={(id) => {
+                  setEventId(id || 'ALL');
+                  setPage(1);
+                }}
+              />
+              <FilterBar
+                {...preset}
+                dense
+                searchWidth={260}
+                className="!items-center !gap-2 flex-wrap justify-end"
+                buttons={filterBarButtons}
+                onFieldChange={(label, value) => {
+                  if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
+                  setPage(1);
+                }}
+                onSearch={(q) => {
+                  setKeyword(q);
+                  setPage(1);
+                }}
+                onReset={() => {
+                  setEventId('ALL');
+                  setStatus('');
+                  setKeyword('');
+                  setPage(1);
+                }}
+              />
+            </div>
           ) : null
         }
         columns={columns}

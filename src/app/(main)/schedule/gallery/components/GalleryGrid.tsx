@@ -34,7 +34,7 @@ export default function GalleryGrid({
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-start">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 custom:grid-cols-5 min-[1600px]:grid-cols-6 gap-3 xs:gap-4 md:gap-6 items-start">
         {items.map((item, index) => (
           <div key={`${item.eventName}-${item.eventStartDate}-${index}`} className="min-w-0">
             <GalleryCard
@@ -42,6 +42,7 @@ export default function GalleryGrid({
               imageAlt={item.eventName}
               title={item.eventName}
               date={formatDate(item.eventStartDate)}
+              imageAspect="square"
               onClick={() => onItemClick?.(item)}
             />
           </div>

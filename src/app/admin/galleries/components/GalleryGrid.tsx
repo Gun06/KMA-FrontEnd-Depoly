@@ -23,7 +23,7 @@ export default function GalleryGrid({ items, onItemClick }: GalleryGridProps) {
   if (!items.length) return null;
 
   return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4 p-4">
+    <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-4">
       {items.map((item) => (
         <li key={item.id} className="min-w-0">
           <GalleryCard
@@ -32,6 +32,7 @@ export default function GalleryGrid({ items, onItemClick }: GalleryGridProps) {
             tagName={item.tagName}
             title={item.eventName}
             date={formatDate(item.eventStartDate)}
+            imageAspect="square"
             onClick={onItemClick ? () => onItemClick(item.id) : undefined}
           />
         </li>

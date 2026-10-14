@@ -15,7 +15,7 @@ import type { GalleryItem } from './types';
 export default function GalleryPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pageSize = 12; // 한 페이지에 12개씩 표시 (3x4 또는 4x3 그리드)
+  const pageSize = 12;
 
   // URL 쿼리 파라미터에서 페이지 번호 읽기
   const initialPage = parseInt(searchParams.get('page') || '1', 10);
@@ -116,7 +116,7 @@ export default function GalleryPage() {
 
         {/* 갤러리 콘텐츠 섹션 */}
         <div className="w-full bg-white py-6 sm:py-8 md:py-12 lg:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 min-[1600px]:max-w-[1920px]">
             {/* 페이지 설명 */}
             <div className="mb-8 md:mb-12 text-center">
               <div className="inline-flex flex-col items-center">
@@ -174,7 +174,7 @@ export default function GalleryPage() {
                       showPageIndicator={true}
                       totalTextFormatter={(total) => (
                         <>
-                          총 <b>{total.toLocaleString()}</b>개의 갤러리 항목
+                          총 <b>{total.toLocaleString()}</b>개의 항목
                         </>
                       )}
                     />
