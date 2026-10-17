@@ -37,12 +37,9 @@ export default function DesktopPreview({
   }
 
   return (
-    <div className="h-full flex items-center justify-center bg-gray-100 p-4">
-      <div 
-        className="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden w-full max-w-md"
-        style={{ 
-          maxHeight: '100%'
-        }}
+    <div className="flex h-full items-center justify-center bg-gray-100 p-4">
+      <div
+        className="relative flex w-[min(400px,100%)] max-h-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
         {/* 닫기 버튼 */}
         <button
@@ -73,32 +70,20 @@ export default function DesktopPreview({
           </>
         )}
 
-        {/* 이미지 영역 - 스크롤 가능 */}
-        <div 
-          className="relative w-full overflow-y-auto flex-1"
-          style={{ 
-            minHeight: 0
-          }}
-        >
+        <div className="relative min-h-0 w-full overflow-y-auto">
           <a
             href={active.href && active.href !== '#' ? active.href : undefined}
             target={active.href && active.href !== '#' ? '_blank' : undefined}
             rel={active.href && active.href !== '#' ? 'noopener noreferrer' : undefined}
             className="block w-full"
           >
-            <div 
-              className="relative w-full overflow-hidden"
-              style={{ 
-                aspectRatio: '4/5'
-              }}
-            >
+            <div className="relative w-full" style={{ aspectRatio: '4 / 5' }}>
               <img
                 src={active.src}
                 alt="팝업 이미지"
-                className="w-full h-full object-cover"
-                style={{ 
-                  display: 'block'
-                }}
+                width={800}
+                height={1000}
+                className="block h-auto w-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';

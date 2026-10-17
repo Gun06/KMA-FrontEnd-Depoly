@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/utils/cn';
 import { Pencil } from 'lucide-react';
 import SponsorUploader from '@/components/common/Upload/SponsorUploader';
 import type { PopupRow } from '../../types';
@@ -18,6 +19,7 @@ const LABEL_CLS = 'block text-[12px] font-medium text-slate-500 mb-1';
 interface PopupCardBackProps {
   row: PopupRow;
   index: number;
+  isExpanded: boolean;
   isEditing: boolean;
   onUpdate: (patch: Partial<PopupRow>) => void;
   onMove: (dir: -1 | 1) => void;
@@ -35,6 +37,7 @@ interface PopupCardBackProps {
 export default function PopupCardBack({
   row,
   index,
+  isExpanded,
   isEditing,
   onUpdate,
   onMove,
@@ -119,25 +122,36 @@ export default function PopupCardBack({
       return;
     }
     
-    // draft도 아니고 수정 모드도 아닐 때: 아무 곳이나 클릭해도 뒤집기
+    // 수정 버튼 클릭은 뒤집기로 넘기지 않는다.
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
     onFlip();
   };
 
   const handleInnerClick = (e: React.MouseEvent) => {
     const isDraft = row.draft;
-    
+    const target = e.target as HTMLElement;
+
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+
     // draft 상태이거나 수정 모드일 때는 뒤집지 않음 (입력 중이므로)
     if (isDraft || isEditing) {
       return;
     }
-    
-    // 수정 모드가 아니고 draft도 아닐 때는 모든 클릭이 뒤집기로 처리
+
     onFlip();
   };
 
   return (
     <div
-      className="absolute inset-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-3 overflow-y-auto"
+      className={cn(
+        'absolute inset-0 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-3 overflow-y-auto',
+        !isExpanded && 'pointer-events-none'
+      )}
       style={{
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',

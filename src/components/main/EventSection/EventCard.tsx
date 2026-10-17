@@ -244,10 +244,9 @@ export default function EventCard({
             </div>
           )}
           <div
-            className="absolute left-0 top-0 px-2 py-1 text-[10px] font-bold text-white md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]"
+            className="absolute -left-px -top-px px-2 py-1 text-[10px] font-bold text-white md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]"
             style={{
               backgroundColor: statusInfo.bg,
-              borderTopLeftRadius: '12px',
               borderBottomRightRadius: '8px',
             }}
           >
@@ -345,14 +344,13 @@ export default function EventCard({
           )}
           <div
             className={clsx(
-              'absolute left-0 top-0 font-bold text-white',
+              'absolute -left-px -top-px font-bold text-white',
               isMainEmbedded
                 ? 'px-2 py-1 text-[10px] md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]'
                 : 'px-2.5 py-1.5 text-[13px]'
             )}
             style={{
               backgroundColor: statusInfo.bg,
-              borderTopLeftRadius: '12px',
               borderBottomRightRadius: '8px',
             }}
           >

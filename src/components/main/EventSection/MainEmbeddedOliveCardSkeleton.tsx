@@ -7,7 +7,7 @@ export function MainEmbeddedOliveCardSkeleton({ className }: { className?: strin
     <li className={clsx('shrink-0 list-none', EMBEDDED_OLIVE_WIDE_CARD_WIDTH, className)}>
       <div className={clsx('flex flex-col select-none', EMBEDDED_OLIVE_WIDE_CARD_WIDTH)}>
         <div className="relative aspect-[332/166] w-full overflow-hidden rounded-xl border border-gray-100 bg-gray-200/90 animate-pulse">
-          <div className="absolute left-0 top-0 h-6 w-[3.25rem] rounded-br-lg rounded-tl-xl bg-gray-300/95 md:h-7 md:w-[4.25rem]" />
+          <div className="absolute -left-px -top-px h-6 w-[3.25rem] rounded-br-lg bg-gray-300/95 md:h-7 md:w-[4.25rem]" />
         </div>
         <div className="mt-2 space-y-1.5 md:mt-2.5">
           <div className="flex min-w-0 items-center gap-2">

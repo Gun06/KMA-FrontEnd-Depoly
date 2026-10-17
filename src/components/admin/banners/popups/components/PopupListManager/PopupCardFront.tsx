@@ -1,4 +1,5 @@
 import React from 'react';
+import { cn } from '@/utils/cn';
 import type { PopupRow } from '../../types';
 import { getPopupImageSrc, isPopupRowUnsaved } from '../../utils/helpers';
 import { VisibilityChip } from '../shared/VisibilityChip';
@@ -7,6 +8,8 @@ import { VisibilityChipsEditable } from '../shared/VisibilityChipsEditable';
 interface PopupCardFrontProps {
   row: PopupRow;
   index: number;
+  isExpanded: boolean;
+  onFlip: () => void;
   onVisibilityChange: (value: boolean) => void;
 }
 
@@ -23,16 +26,22 @@ function UnsavedBadge({ className = '' }: { className?: string }) {
 /**
  * 팝업 카드 앞면 컴포넌트
  */
-export default function PopupCardFront({ row, index, onVisibilityChange }: PopupCardFrontProps) {
+export default function PopupCardFront({ row, index, isExpanded, onFlip, onVisibilityChange }: PopupCardFrontProps) {
   const imageSrc = getPopupImageSrc(row.image);
   const showUnsaved = isPopupRowUnsaved(row);
 
   return (
     <div
-      className="relative w-full bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+      className={cn(
+        'relative w-full bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-lg transition-shadow',
+        isExpanded && 'pointer-events-none'
+      )}
       style={{
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
+      }}
+      onClick={() => {
+        if (!isExpanded) onFlip();
       }}
     >
       {imageSrc ? (

@@ -49,7 +49,8 @@ export default function PopupCard({
       {/* 플립 카드 컨테이너 */}
       <div
         className={cn(
-          'relative w-full cursor-pointer rounded-xl transition-[box-shadow,transform]',
+          'relative w-full rounded-xl transition-[box-shadow,transform]',
+          !isExpanded && 'cursor-pointer',
           showUnsaved && 'ring-2 ring-[#1E5EFF]/70 ring-offset-2'
         )}
         style={{
@@ -57,19 +58,18 @@ export default function PopupCard({
           transition: 'transform 0.6s',
           transform: isExpanded ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}
-        onClick={onToggleExpand}
       >
-        {/* 앞면 */}
         <PopupCardFront
           row={row}
           index={index}
+          isExpanded={isExpanded}
+          onFlip={onToggleExpand}
           onVisibilityChange={onVisibilityChange}
         />
-
-        {/* 뒷면 */}
         <PopupCardBack
           row={row}
           index={index}
+          isExpanded={isExpanded}
           isEditing={isEditing}
           onUpdate={onUpdate}
           onMove={onMove}
