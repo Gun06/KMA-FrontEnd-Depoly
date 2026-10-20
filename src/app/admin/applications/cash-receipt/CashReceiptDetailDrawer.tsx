@@ -3,7 +3,7 @@
 import React from 'react';
 import clsx from 'clsx';
 import { toast } from 'react-toastify';
-import { getCashReceiptDetail, updateCashReceipt } from './services/cashReceiptAdmin';
+import { getCashReceiptDetail, updateCashReceipt, updateCashReceiptByTarget } from './services/cashReceiptAdmin';
 import { SearchableSelect } from '@/components/common/Dropdown/SearchableSelect';
 import type {
   CashReceiptDetail,
@@ -62,13 +62,47 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 type Props = {
   open: boolean;
   cashReceiptId: string | null;
+  eventId?: string | null;
   onClose: () => void;
   onUpdated: () => void;
+};
+
+function formatAmount(amount?: number | null): string {
+  if (typeof amount !== 'number') return '-';
+  return `${amount.toLocaleString()}원`;
+}
+
+function parseAmountInput(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (!/^\d+$/.test(trimmed)) return Number.NaN;
+  return Number(trimmed);
+}
+
+function targetHref(detail: CashReceiptDetail, eventId?: string | null): string | null {
+  if (!detail.targetType || !detail.targetId) return null;
+  if (detail.targetType === 'ORGANIZATION') {
+    return `/admin/users/organization/${detail.targetId}`;
+  }
+  const event = eventId || detail.eventId;
+  if (!event) return null;
+  return `/admin/applications/management/${event}?registrationId=${encodeURIComponent(detail.targetId)}`;
+}
+
+const TARGET_TYPE_LABEL: Record<string, string> = {
+  REGISTRATION: '개인',
+  ORGANIZATION: '단체',
+};
+
+const TARGET_LINK_LABEL: Record<string, string> = {
+  REGISTRATION: '신청 상세',
+  ORGANIZATION: '단체 상세',
 };
 
 export default function CashReceiptDetailDrawer({
   open,
   cashReceiptId,
+  eventId,
   onClose,
   onUpdated,
 }: Props) {
@@ -79,6 +113,8 @@ export default function CashReceiptDetailDrawer({
 
   const [editStatus, setEditStatus] = React.useState<CashReceiptAdminStatus>('REQUESTED');
   const [editAnswer, setEditAnswer] = React.useState('');
+  const [editAmount, setEditAmount] = React.useState('');
+  const [editAdminMemo, setEditAdminMemo] = React.useState('');
 
   React.useEffect(() => {
     if (!open || !cashReceiptId) {
@@ -92,15 +128,50 @@ export default function CashReceiptDetailDrawer({
         setDetail(d);
         setEditStatus(d.status);
         setEditAnswer(d.adminAnswer ?? '');
+        setEditAmount(typeof d.amount === 'number' ? String(d.amount) : '');
+        setEditAdminMemo(d.adminMemo ?? '');
       })
       .catch(() => toast.error('상세 정보를 불러오지 못했습니다.'))
       .finally(() => setIsLoading(false));
   }, [open, cashReceiptId]);
 
+  const resetEdits = (source: CashReceiptDetail) => {
+    setEditStatus(source.status);
+    setEditAnswer(source.adminAnswer ?? '');
+    setEditAmount(typeof source.amount === 'number' ? String(source.amount) : '');
+    setEditAdminMemo(source.adminMemo ?? '');
+  };
+
   const handleSave = async () => {
-    if (!cashReceiptId) return;
+    if (!cashReceiptId || !detail) return;
+    const nextAmount = parseAmountInput(editAmount);
+    if (Number.isNaN(nextAmount)) {
+      toast.error('현금영수증 금액은 0 이상의 숫자로 입력해주세요.');
+      return;
+    }
+
+    const amountDirty = nextAmount !== (typeof detail.amount === 'number' ? detail.amount : null);
+    const memoDirty = editAdminMemo !== (detail.adminMemo ?? '');
+    const hasTarget = Boolean(detail.targetType && detail.targetId);
+    if ((amountDirty || memoDirty) && !hasTarget) {
+      toast.error('신청 대상을 확인할 수 없어 금액과 관리자 메모를 저장할 수 없습니다.');
+      return;
+    }
+
     setSaving(true);
     try {
+      if ((amountDirty || memoDirty) && detail.targetType && detail.targetId) {
+        await updateCashReceiptByTarget(detail.targetType, detail.targetId, {
+          purpose: detail.purpose,
+          requesterType: detail.requesterType,
+          identifierType: detail.identifierType,
+          cashReceiptRequestValue: detail.cashReceiptRequestValue.replace(/\D/g, ''),
+          adminAnswer: editAnswer,
+          status: editStatus,
+          adminMemo: editAdminMemo,
+          amount: nextAmount,
+        });
+      }
       await updateCashReceipt(cashReceiptId, {
         adminAnswer: editAnswer,
         updateStatus: editStatus,
@@ -108,11 +179,9 @@ export default function CashReceiptDetailDrawer({
       toast.success('처리 내역이 저장되었습니다.');
       setIsEditing(false);
       onUpdated();
-      // 상세 새로고침
       const refreshed = await getCashReceiptDetail(cashReceiptId);
       setDetail(refreshed);
-      setEditStatus(refreshed.status);
-      setEditAnswer(refreshed.adminAnswer ?? '');
+      resetEdits(refreshed);
     } catch {
       toast.error('저장에 실패했습니다.');
     } finally {
@@ -124,6 +193,8 @@ export default function CashReceiptDetailDrawer({
     setIsEditing(false);
     onClose();
   };
+
+  const linkedTargetHref = detail ? targetHref(detail, eventId) : null;
 
   return (
     <div
@@ -182,8 +253,7 @@ export default function CashReceiptDetailDrawer({
                       className="px-3 py-1.5 rounded border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                       onClick={() => {
                         setIsEditing(false);
-                        setEditStatus(detail.status);
-                        setEditAnswer(detail.adminAnswer ?? '');
+                        resetEdits(detail);
                       }}
                       disabled={saving}
                     >
@@ -227,6 +297,32 @@ export default function CashReceiptDetailDrawer({
                 <Row label="인증 유형">{IDENTIFIER_TYPE_LABEL[detail.identifierType] ?? detail.identifierType}</Row>
                 <Row label="인증 번호">{detail.cashReceiptRequestValue}</Row>
                 <Row label="메모 (사용자 입력)">{detail.memo || '-'}</Row>
+                <Row label="신청 주체">{TARGET_TYPE_LABEL[detail.targetType ?? ''] ?? '-'}</Row>
+                <Row label="대상">
+                  {!detail.targetId ? (
+                    '-'
+                  ) : linkedTargetHref ? (
+                    <a href={linkedTargetHref} className="text-sky-700 hover:underline break-all">
+                      {TARGET_LINK_LABEL[detail.targetType ?? ''] ?? '상세'}
+                    </a>
+                  ) : (
+                    <span className="font-mono text-xs text-gray-600 select-all">{detail.targetId}</span>
+                  )}
+                </Row>
+                <Row label="현금영수증 금액">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-40 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="숫자만 입력"
+                      value={editAmount}
+                      onChange={(e) => setEditAmount(e.target.value.replace(/\D/g, ''))}
+                    />
+                  ) : (
+                    formatAmount(detail.amount)
+                  )}
+                </Row>
                 <Row label="현금영수증 ID">
                   <span className="font-mono text-xs text-gray-600 select-all">{detail.id}</span>
                 </Row>
@@ -252,6 +348,22 @@ export default function CashReceiptDetailDrawer({
                       )}
                     >
                       {STATUS_LABEL[detail.status] ?? detail.status}
+                    </span>
+                  )}
+                </Row>
+
+                <Row label="관리자 메모">
+                  {isEditing ? (
+                    <textarea
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      rows={3}
+                      placeholder="관리자 메모를 입력해주세요."
+                      value={editAdminMemo}
+                      onChange={(e) => setEditAdminMemo(e.target.value)}
+                    />
+                  ) : (
+                    <span className={detail.adminMemo ? 'text-gray-900' : 'text-gray-400'}>
+                      {detail.adminMemo || '-'}
                     </span>
                   )}
                 </Row>

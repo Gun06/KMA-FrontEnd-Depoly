@@ -23,6 +23,8 @@ import {
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
 import type { CashReceiptAdminStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
+import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
+import { convertPaymentStatusToKorean } from '@/types/registration';
 
 type Props = {
   initialPage: number;
@@ -88,6 +90,20 @@ const CASH_RECEIPT_STATUS_SELECT_OPTIONS = [
   { value: 'CANCELED' as const, label: '발급 취소' },
 ];
 
+const KNOWN_PAYMENT_STATUS = new Set([
+  'UNPAID',
+  'COMPLETED',
+  'MUST_CHECK',
+  'NEED_PARTITIAL_REFUND',
+  'NEED_REFUND',
+  'REFUNDED',
+]);
+
+function paymentStatusLabel(status?: string | null) {
+  if (!status || !KNOWN_PAYMENT_STATUS.has(status)) return null;
+  return convertPaymentStatusToKorean(status);
+}
+
 export default function Client({ initialPage, pageSize }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -96,6 +112,7 @@ export default function Client({ initialPage, pageSize }: Props) {
 
   const [page, setPage] = React.useState<number>(initialPage);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = React.useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [eventId, setEventId] = React.useState<string>(sp.get('eventId') ?? 'ALL');
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
@@ -168,6 +185,8 @@ export default function Client({ initialPage, pageSize }: Props) {
   React.useEffect(() => {
     if (deepLinkId) {
       setSelectedId(deepLinkId);
+      const linked = rows.find((row) => row.id === deepLinkId);
+      if (linked?.eventId) setSelectedEventId(linked.eventId);
       setDrawerOpen(true);
       return;
     }
@@ -179,6 +198,7 @@ export default function Client({ initialPage, pageSize }: Props) {
     if (match) {
       autoOpenedFromQueryRef.current = true;
       setSelectedId(match.id);
+      setSelectedEventId(match.eventId);
       setDrawerOpen(true);
     }
   }, [deepLinkId, deepLinkQ, isLoading, rows]);
@@ -259,20 +279,32 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'eventName',
         header: '대회명',
+        width: 340,
         align: 'left',
         headerAlign: 'center',
         className: 'text-left',
         render: (row) => (
-          <span className="block max-w-[520px] truncate" title={row.eventName}>
+          <span className="block max-w-[340px] truncate" title={row.eventName}>
             {row.eventName}
           </span>
         ),
       },
-      { key: 'requesterName', header: '신청자명', width: 120, align: 'center' },
+      { key: 'requesterName', header: '신청자명', width: 150, align: 'center' },
+      {
+        key: 'paymentStatus',
+        header: '입금여부',
+        width: 140,
+        align: 'center',
+        render: (row) => {
+          const label = paymentStatusLabel(row.paymentStatus);
+          if (!label) return <span className="text-gray-400">-</span>;
+          return <PaymentBadgeApplicants payStatus={label} />;
+        },
+      },
       {
         key: 'status',
         header: '처리상태',
-        width: 90,
+        width: 130,
         align: 'center',
         render: (row) => (
           <span className={`font-semibold ${STATUS_CLASS[row.status] ?? 'text-gray-700'}`}>
@@ -283,12 +315,11 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'id',
         header: '환불 ID',
-        width: 300,
-        align: 'left',
+        align: 'center',
         headerAlign: 'center',
-        className: 'text-left text-xs font-mono text-gray-600',
+        className: 'text-center text-xs font-mono text-gray-600',
         render: (row) => (
-          <div className="max-w-[300px] truncate" title={row.id}>
+          <div className="truncate text-center" title={row.id}>
             {row.id}
           </div>
         ),
@@ -451,6 +482,7 @@ export default function Client({ initialPage, pageSize }: Props) {
 
       <AdminTable<CashReceiptSearchItem>
         dense
+        fit
         contentMinHeight={null}
         renderFilters={
           <p className="shrink-0 text-sm text-gray-600">
@@ -462,6 +494,7 @@ export default function Client({ initialPage, pageSize }: Props) {
             <div className="flex flex-wrap items-center justify-end gap-2">
               <CashReceiptEventSelect
                 value={eventId}
+                disabled={drawerOpen}
                 onChange={(id) => {
                   setEventId(id || 'ALL');
                   setPage(1);
@@ -507,7 +540,6 @@ export default function Client({ initialPage, pageSize }: Props) {
             ),
           },
         }}
-        minWidth={1100}
         loadingMessage={isLoading ? '현금영수증 목록을 불러오는 중입니다.' : undefined}
         emptyMessage={
           !isLoading && rows.length === 0
@@ -516,6 +548,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         }
         onRowClick={(row) => {
           setSelectedId(row.id);
+          setSelectedEventId(row.eventId);
           setDrawerOpen(true);
         }}
       />
@@ -523,6 +556,7 @@ export default function Client({ initialPage, pageSize }: Props) {
       <CashReceiptDetailDrawer
         open={drawerOpen}
         cashReceiptId={selectedId}
+        eventId={selectedEventId}
         onClose={() => {
           setDrawerOpen(false);
           setSelectedId(null);

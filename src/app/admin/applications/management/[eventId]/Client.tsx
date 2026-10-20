@@ -76,6 +76,9 @@ export default function Client({
   const [sortKey, setSortKey] = React.useState<SortKey>(() => readInit().sort);
   const [searchField, setSearchField] = React.useState<'name' | 'org' | 'birth' | 'tel' | 'paymenterName' | 'memo' | 'note' | 'detailMemo' | 'matchingLog' | 'all'>(() => readInit().field);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+  const [linkedRegistrationId, setLinkedRegistrationId] = React.useState<string | null>(
+    () => sp.get('registrationId')
+  );
   const [isApplicantsDownloadLoading, setIsApplicantsDownloadLoading] = React.useState(false);
   const tableRef = React.useRef<ApplicantsManageTableHandle>(null);
   const [isTableEditing, setIsTableEditing] = React.useState(false);
@@ -114,10 +117,11 @@ export default function Client({
     if (searchField !== 'all') p.set('field', searchField);
     if (paidFilter) p.set('paid', paidFilter);
     if (sortKey !== 'id') p.set('sort', sortKey);
+    if (linkedRegistrationId) p.set('registrationId', linkedRegistrationId);
 
     const next = p.toString() ? `${pathname}?${p.toString()}` : pathname;
     router.replace(next);
-  }, [router, pathname, page, query, searchField, paidFilter, sortKey]);
+  }, [router, pathname, page, query, searchField, paidFilter, sortKey, linkedRegistrationId]);
 
   React.useEffect(() => {
     syncURL();
@@ -303,8 +307,8 @@ export default function Client({
   const rows = data;
 
   // 상세 드로어 상태
-  const [open, setOpen] = React.useState(false);
-  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState(() => Boolean(sp.get('registrationId')));
+  const [selectedId, setSelectedId] = React.useState<string | null>(() => sp.get('registrationId'));
   
   // 입금내역 업로드 모달 상태
   const [isPaymentUploadModalOpen, setIsPaymentUploadModalOpen] = React.useState(false);
@@ -874,6 +878,7 @@ export default function Client({
         isLoading={isLoadingDetail}
         eventId={eventId}
         onClose={() => {
+          setLinkedRegistrationId(null);
           setOpen(false);
           setSelectedId(null);
         }}

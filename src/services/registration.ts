@@ -25,6 +25,13 @@ export function parseCashReceiptRequest(data: unknown): RegistrationCashReceiptR
   ) {
     return null;
   }
+  const amount =
+    typeof raw.amount === 'number'
+      ? raw.amount
+      : typeof raw.amount === 'string' && raw.amount.trim() !== '' && Number.isFinite(Number(raw.amount))
+        ? Number(raw.amount)
+        : null;
+
   return {
     purpose: purpose as RegistrationCashReceiptRequest['purpose'],
     requesterType: (raw.requesterType ?? 'INDIVIDUAL') as RegistrationCashReceiptRequest['requesterType'],
@@ -32,6 +39,8 @@ export function parseCashReceiptRequest(data: unknown): RegistrationCashReceiptR
     value: String(value),
     adminAnswer: typeof raw.adminAnswer === 'string' ? raw.adminAnswer : null,
     status: status as RegistrationCashReceiptRequest['status'],
+    adminMemo: typeof raw.adminMemo === 'string' ? raw.adminMemo : null,
+    amount,
   };
 }
 
@@ -484,6 +493,8 @@ export type RegistrationCashReceiptRequestBody = {
   cashReceiptRequestValue: string;
   adminAnswer?: string | null;
   status: 'REQUESTED' | 'COMPLETED' | 'CANCELED';
+  adminMemo?: string | null;
+  amount?: number | null;
 };
 
 export function toRegistrationCashReceiptRequestBody(
@@ -496,6 +507,8 @@ export function toRegistrationCashReceiptRequestBody(
     cashReceiptRequestValue: request.value.replace(/\D/g, ''),
     adminAnswer: request.adminAnswer ?? '',
     status: request.status,
+    ...(request.adminMemo ? { adminMemo: request.adminMemo } : {}),
+    ...(typeof request.amount === 'number' ? { amount: request.amount } : {}),
   };
 }
 

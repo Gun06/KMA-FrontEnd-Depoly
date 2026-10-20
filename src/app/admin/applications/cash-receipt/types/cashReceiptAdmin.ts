@@ -1,5 +1,15 @@
 export type CashReceiptAdminStatus = 'REQUESTED' | 'COMPLETED' | 'CANCELED';
 
+export type CashReceiptPaymentStatus =
+  | 'UNPAID'
+  | 'MUST_CHECK'
+  | 'NEED_REFUND'
+  | 'NEED_PARTITIAL_REFUND'
+  | 'COMPLETED'
+  | 'REFUNDED';
+
+export type CashReceiptTargetType = 'REGISTRATION' | 'ORGANIZATION';
+
 export interface CashReceiptSearchItem {
   no: number;
   id: string;
@@ -7,6 +17,7 @@ export interface CashReceiptSearchItem {
   eventName: string;
   requesterName: string;
   status: CashReceiptAdminStatus;
+  paymentStatus?: CashReceiptPaymentStatus | string | null;
   memo?: string;
 }
 
@@ -95,6 +106,12 @@ export interface CashReceiptDetail {
   adminAnswer: string | null;
   completedTime: string | null;
   memo?: string;
+  /** 기존 건은 보정 없이 비어 있을 수 있음 */
+  adminMemo?: string | null;
+  amount?: number | null;
+  targetType?: CashReceiptTargetType | null;
+  targetId?: string | null;
+  eventId?: string | null;
 }
 
 export interface CashReceiptUpdateRequest {

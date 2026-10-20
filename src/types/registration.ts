@@ -67,6 +67,8 @@ export interface RegistrationCashReceiptRequest {
   value: string;
   adminAnswer?: string | null;
   status: CashReceiptRequestStatus;
+  adminMemo?: string | null;
+  amount?: number | null;
 }
 
 export interface RegistrationListResponse {

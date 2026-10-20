@@ -49,6 +49,8 @@ export default function AdminCashReceiptRequestModal({
   const [identifierType, setIdentifierType] = React.useState<CashReceiptIdentifierType>('PHONE_NUMBER');
   const [value, setValue] = React.useState('');
   const [adminAnswer, setAdminAnswer] = React.useState('');
+  const [adminMemo, setAdminMemo] = React.useState('');
+  const [amount, setAmount] = React.useState('');
   const [valueError, setValueError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -63,6 +65,8 @@ export default function AdminCashReceiptRequestModal({
       setIdentifierType(initialRequest.type);
       setValue(initialRequest.value.replace(/\D/g, ''));
       setAdminAnswer(initialRequest.adminAnswer ?? '');
+      setAdminMemo(initialRequest.adminMemo ?? '');
+      setAmount(typeof initialRequest.amount === 'number' ? String(initialRequest.amount) : '');
       setValueError(null);
       return;
     }
@@ -71,6 +75,8 @@ export default function AdminCashReceiptRequestModal({
     setIdentifierType('PHONE_NUMBER');
     setValue(defaultPhone.replace(/\D/g, ''));
     setAdminAnswer('');
+    setAdminMemo('');
+    setAmount('');
     setValueError(null);
   }, [open, isEdit, initialRequest, defaultPhone]);
 
@@ -103,12 +109,16 @@ export default function AdminCashReceiptRequestModal({
       return;
     }
 
+    const amountDigits = amount.replace(/\D/g, '');
+
     const request: RegistrationCashReceiptRequest = {
       purpose: presetConfig.purpose,
       requesterType: presetConfig.requesterType,
       type: identifierType,
       value,
       adminAnswer: adminAnswer.trim() || null,
+      adminMemo: adminMemo.trim() || null,
+      amount: amountDigits === '' ? null : Number(amountDigits),
       status: isEdit && initialRequest ? initialRequest.status : 'REQUESTED',
     };
 
@@ -225,7 +235,36 @@ export default function AdminCashReceiptRequestModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              현금영수증 금액 <span className="text-gray-400 font-normal">(선택)</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+              disabled={submitting}
+              placeholder="숫자만 입력"
+              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               관리자 메모 <span className="text-gray-400 font-normal">(선택)</span>
+            </label>
+            <textarea
+              value={adminMemo}
+              onChange={(e) => setAdminMemo(e.target.value)}
+              disabled={submitting}
+              rows={2}
+              placeholder="내부 확인용 메모입니다."
+              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              관리자 답변 <span className="text-gray-400 font-normal">(선택)</span>
             </label>
             <textarea
               value={adminAnswer}

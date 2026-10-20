@@ -14,8 +14,16 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
   const [isOpen, setIsOpen] = React.useState(true);
   const [dontShowToday, setDontShowToday] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [items, setItems] = React.useState(popups);
+  const sourceKey = popups.map((popup) => popup.id).join(',');
 
-  const currentPopup = popups[currentIndex];
+  React.useEffect(() => {
+    setItems(popups);
+    setCurrentIndex(0);
+    setIsOpen(true);
+  }, [sourceKey]);
+
+  const currentPopup = items[currentIndex];
   // 800x1000 비율 (4:5)
   const aspectRatio = 4 / 5;
 
@@ -44,10 +52,17 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
     }
     if (dontShowToday) {
       onDontShowToday();
+      setIsOpen(false);
+      return;
     }
-    // 즉시 완전히 제거
-    setIsOpen(false);
-  }, [dontShowToday, onDontShowToday]);
+    if (items.length <= 1) {
+      setIsOpen(false);
+      return;
+    }
+    const nextLength = items.length - 1;
+    setItems((prev) => prev.filter((_, index) => index !== currentIndex));
+    setCurrentIndex((index) => (index >= nextLength ? nextLength - 1 : index));
+  }, [dontShowToday, onDontShowToday, currentIndex, items.length]);
 
   const handleDontShowTodayChange = (checked: boolean) => {
     setDontShowToday(checked);
@@ -55,13 +70,13 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
 
   const goToNext = React.useCallback(() => {
     if (!isOpen) return;
-    setCurrentIndex((prev) => (prev + 1) % popups.length);
-  }, [popups.length, isOpen]);
+    setCurrentIndex((prev) => (prev + 1) % items.length);
+  }, [items.length, isOpen]);
 
   const goToPrevious = React.useCallback(() => {
     if (!isOpen) return;
-    setCurrentIndex((prev) => (prev - 1 + popups.length) % popups.length);
-  }, [popups.length, isOpen]);
+    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+  }, [items.length, isOpen]);
 
   // 키보드 네비게이션 (데스크톱만)
   React.useEffect(() => {
@@ -109,7 +124,7 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
           </button>
 
           {/* 네비게이션 버튼 (여러 개일 때만) */}
-          {popups.length > 1 && (
+          {items.length > 1 && (
             <>
               <button
                 onClick={goToPrevious}
@@ -213,9 +228,9 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
             onClick={(e) => e.stopPropagation()}
           >
             {/* 상단 인디케이터 */}
-            {popups.length > 1 && (
+            {items.length > 1 && (
               <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
-                {currentIndex + 1} / {popups.length}
+                {currentIndex + 1} / {items.length}
               </div>
             )}
 
@@ -282,7 +297,7 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
                 오늘 하루 보지 않음
               </label>
               <div className="flex items-center gap-2">
-                {popups.length > 1 && (
+                {items.length > 1 && (
                   <>
                     <button
                       onClick={goToPrevious}

@@ -1473,6 +1473,20 @@ export default function RegistrationDetailDrawer({
                         </span>
                       </div>
                     </div>
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
+                      <div className="w-28 shrink-0 text-sky-800">현금영수증 금액</div>
+                      <div className="flex-1 min-w-0 text-gray-900">
+                        {typeof displayCashReceipt.amount === 'number' ? formatAmount(displayCashReceipt.amount) : '-'}
+                      </div>
+                    </div>
+                    <div className="flex min-h-10 items-center py-2.5 text-sm">
+                      <div className="w-28 shrink-0 text-sky-800">관리자 메모</div>
+                      <div className="flex-1 min-w-0">
+                        <span className={displayCashReceipt.adminMemo ? 'text-gray-900' : 'text-gray-400'}>
+                          {displayCashReceipt.adminMemo || '-'}
+                        </span>
+                      </div>
+                    </div>
                     {isEditing && (
                       <p className="pt-2 text-xs text-sky-700">
                         현금영수증 정보는 신청 저장과 별도로 처리됩니다. 변경이 필요하면 상단의 &apos;현금영수증 관리&apos;에서 수정해주세요.

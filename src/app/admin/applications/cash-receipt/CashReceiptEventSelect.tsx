@@ -13,13 +13,14 @@ import {
 type Props = {
   value: string;
   onChange: (eventId: string) => void;
+  disabled?: boolean;
 };
 
 function eventLabel(event?: ApplicantEventDropdownItem) {
   return event?.nameKr || event?.nameEn || '대회명 불러오는 중...';
 }
 
-export default function CashReceiptEventSelect({ value, onChange }: Props) {
+export default function CashReceiptEventSelect({ value, onChange, disabled = false }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [year, setYear] = React.useState<number | undefined>(undefined);
@@ -98,6 +99,10 @@ export default function CashReceiptEventSelect({ value, onChange }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open, close]);
 
+  React.useEffect(() => {
+    if (disabled) close();
+  }, [disabled, close]);
+
   const selected = value === 'ALL' ? undefined : details[value] ?? allEvents.find((event) => event.id === value);
   const buttonText = value === 'ALL' ? '대회전체' : eventLabel(selected);
 
@@ -106,16 +111,19 @@ export default function CashReceiptEventSelect({ value, onChange }: Props) {
   };
 
   return (
-    <div className="relative z-[130] w-[300px] shrink-0" ref={rootRef}>
+    <div className={clsx('relative w-[300px] shrink-0', disabled ? 'z-0' : 'z-[130]')} ref={rootRef}>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => {
+          if (disabled) return;
           if (open) close();
           else setOpen(true);
         }}
         className={clsx(
           'flex h-9 w-full items-center justify-between gap-2 rounded-[5px] border bg-white px-2.5 text-left',
           'outline-none focus:outline-none focus-visible:outline-none',
+          disabled && 'cursor-not-allowed disabled:opacity-100 disabled:border-[#58616A]',
           open ? 'border-[#256EF4]' : 'border-[#58616A]'
         )}
         aria-haspopup="listbox"

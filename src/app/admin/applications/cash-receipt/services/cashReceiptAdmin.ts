@@ -9,10 +9,15 @@ import type {
   CashReceiptBatch,
   CashReceiptDownloadRequest,
   CashReceiptDownloadErrorResponse,
+  CashReceiptTargetType,
 } from '../types/cashReceiptAdmin';
 import { CashReceiptDownloadError } from '../types/cashReceiptAdmin';
 import type { RegistrationCashReceiptRequest } from '@/types/registration';
-import { parseCashReceiptRequest } from '@/services/registration';
+import {
+  parseCashReceiptRequest,
+  updateRegistrationCashReceipt,
+  type RegistrationCashReceiptRequestBody,
+} from '@/services/registration';
 
 export { CashReceiptDownloadError } from '../types/cashReceiptAdmin';
 
@@ -26,7 +31,32 @@ export function mapCashReceiptDetailToRequest(
     value: detail.cashReceiptRequestValue,
     adminAnswer: detail.adminAnswer,
     status: detail.status,
+    adminMemo: detail.adminMemo ?? null,
+    amount: typeof detail.amount === 'number' ? detail.amount : null,
   };
+}
+
+/** 신청·단체 현금영수증의 금액, 관리자 메모 수정 */
+export async function updateCashReceiptByTarget(
+  targetType: CashReceiptTargetType,
+  targetId: string,
+  body: RegistrationCashReceiptRequestBody
+): Promise<string> {
+  if (targetType === 'REGISTRATION') {
+    return updateRegistrationCashReceipt(targetId, body);
+  }
+
+  const id = targetId.trim();
+  if (!id) {
+    throw new Error('Organization ID is required');
+  }
+  return request<string>(
+    'admin',
+    `/api/v1/organization/${id}/cashReceipt`,
+    'PATCH',
+    body,
+    true
+  ) as Promise<string>;
 }
 
 /** 신청 ID로 연결된 현금영수증 조회 (상세 API에 없을 때 보조) */

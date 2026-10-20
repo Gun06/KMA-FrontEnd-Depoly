@@ -16,9 +16,17 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
   const [isOpen, setIsOpen] = React.useState(true);
   const [dontShowToday, setDontShowToday] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [items, setItems] = React.useState(popups);
+  const sourceKey = popups.map((popup) => popup.id).join(',');
 
-  const currentPopup = popups[currentIndex];
-  const totalPopups = popups.length;
+  React.useEffect(() => {
+    setItems(popups);
+    setCurrentIndex(0);
+    setIsOpen(true);
+  }, [sourceKey]);
+
+  const currentPopup = items[currentIndex];
+  const totalPopups = items.length;
 
   // 화면 크기 변경 감지
   React.useEffect(() => {
@@ -55,10 +63,17 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
     }
     if (dontShowToday) {
       onDontShowToday();
+      setIsOpen(false);
+      return;
     }
-    // 즉시 완전히 제거 - 바로 DOM에서 제거
-    setIsOpen(false);
-  }, [dontShowToday, onDontShowToday]);
+    if (items.length <= 1) {
+      setIsOpen(false);
+      return;
+    }
+    const nextLength = items.length - 1;
+    setItems((prev) => prev.filter((_, index) => index !== currentIndex));
+    setCurrentIndex((index) => (index >= nextLength ? nextLength - 1 : index));
+  }, [dontShowToday, onDontShowToday, currentIndex, items.length]);
 
   // 키보드 네비게이션 (데스크톱만)
   React.useEffect(() => {
