@@ -36,6 +36,7 @@ export interface CashReceiptSearchResponse {
 export interface CashReceiptSearchParams {
   eventId?: string;
   status?: CashReceiptAdminStatus | '';
+  paymentStatus?: CashReceiptPaymentStatus | '';
   keyword?: string;
   sort?: 'asc' | 'desc';
   page?: number;

@@ -123,6 +123,7 @@ export async function searchCashReceiptList(
   const {
     eventId = 'ALL',
     status = '',
+    paymentStatus = '',
     keyword = '',
     sort = 'desc',
     page = 1,
@@ -135,6 +136,7 @@ export async function searchCashReceiptList(
   query.set('page', String(page));
   query.set('size', String(size));
   if (status) query.set('status', status);
+  if (paymentStatus) query.set('paymentStatus', paymentStatus);
   if (keyword.trim()) query.set('keyword', keyword.trim());
 
   return request<CashReceiptSearchResponse>(

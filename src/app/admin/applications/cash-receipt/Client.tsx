@@ -22,7 +22,7 @@ import {
   downloadRequestedCashReceiptsExcel,
   updateCashReceiptsStatusBulk,
 } from './services/cashReceiptAdmin';
-import type { CashReceiptAdminStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
+import type { CashReceiptAdminStatus, CashReceiptPaymentStatus, CashReceiptSearchItem } from './types/cashReceiptAdmin';
 import PaymentBadgeApplicants from '@/components/common/Badge/PaymentBadgeApplicants';
 import { convertPaymentStatusToKorean } from '@/types/registration';
 
@@ -116,6 +116,9 @@ export default function Client({ initialPage, pageSize }: Props) {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [eventId, setEventId] = React.useState<string>(sp.get('eventId') ?? 'ALL');
   const [status, setStatus] = React.useState<CashReceiptAdminStatus | ''>((sp.get('status') as CashReceiptAdminStatus | '') ?? '');
+  const [paymentStatus, setPaymentStatus] = React.useState<CashReceiptPaymentStatus | ''>(
+    (sp.get('paymentStatus') as CashReceiptPaymentStatus | '') ?? ''
+  );
   const [keyword, setKeyword] = React.useState<string>(sp.get('q') ?? '');
   const [isCashReceiptDownloading, setIsCashReceiptDownloading] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
@@ -145,21 +148,23 @@ export default function Client({ initialPage, pageSize }: Props) {
     if (page !== 1) qs.set('page', String(page));
     if (eventId !== 'ALL') qs.set('eventId', eventId);
     if (status) qs.set('status', status);
+    if (paymentStatus) qs.set('paymentStatus', paymentStatus);
     if (keyword.trim()) qs.set('q', keyword.trim());
     if (drawerOpen && selectedId) qs.set('id', selectedId);
     router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname, { scroll: false });
-  }, [router, pathname, page, eventId, status, keyword, drawerOpen, selectedId]);
+  }, [router, pathname, page, eventId, status, paymentStatus, keyword, drawerOpen, selectedId]);
 
   const params = React.useMemo(
     () => ({
       eventId,
       status,
+      paymentStatus,
       keyword,
       sort: 'desc' as const,
       page,
       size: pageSize,
     }),
-    [eventId, status, keyword, page, pageSize]
+    [eventId, status, paymentStatus, keyword, page, pageSize]
   );
 
   const { data, isLoading } = useCashReceiptSearch(params);
@@ -171,10 +176,10 @@ export default function Client({ initialPage, pageSize }: Props) {
     return {
       ...presetBase,
       fields: presetBase.fields?.filter((f) => f.label !== '대회'),
-      initialValues: [status],
+      initialValues: [status, paymentStatus],
       initialSearchValue: keyword,
     };
-  }, [presetBase, status, keyword]);
+  }, [presetBase, status, paymentStatus, keyword]);
 
   const rows = React.useMemo(() => data?.content ?? [], [data]);
   const total = data?.totalElements ?? 0;
@@ -212,7 +217,7 @@ export default function Client({ initialPage, pageSize }: Props) {
   // 필터/검색 변경 시에만 선택 초기화 (페이지 이동 시에는 유지)
   React.useEffect(() => {
     setSelectedIds([]);
-  }, [eventId, status, keyword]);
+  }, [eventId, status, paymentStatus, keyword]);
 
   const pageAllSelected = rows.length > 0 && rows.every((r) => selectedIds.includes(r.id));
   const pageSomeSelected = rows.some((r) => selectedIds.includes(r.id)) && !pageAllSelected;
@@ -491,7 +496,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         }
         renderActions={
           preset ? (
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-nowrap items-center justify-end gap-2">
               <CashReceiptEventSelect
                 value={eventId}
                 disabled={drawerOpen}
@@ -504,10 +509,11 @@ export default function Client({ initialPage, pageSize }: Props) {
                 {...preset}
                 dense
                 searchWidth={260}
-                className="!items-center !gap-2 flex-wrap justify-end"
+                className="!items-center !gap-2 !flex-nowrap shrink-0"
                 buttons={filterBarButtons}
                 onFieldChange={(label, value) => {
                   if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
+                  if (label === '입금여부') setPaymentStatus((value as CashReceiptPaymentStatus | '') ?? '');
                   setPage(1);
                 }}
                 onSearch={(q) => {
@@ -517,6 +523,7 @@ export default function Client({ initialPage, pageSize }: Props) {
                 onReset={() => {
                   setEventId('ALL');
                   setStatus('');
+                  setPaymentStatus('');
                   setKeyword('');
                   setPage(1);
                 }}

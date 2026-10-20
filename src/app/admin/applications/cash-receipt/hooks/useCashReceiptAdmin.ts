@@ -8,6 +8,7 @@ export function useCashReceiptSearch(params: CashReceiptSearchParams) {
       'cashReceiptSearch',
       params.eventId,
       params.status,
+      params.paymentStatus,
       params.keyword,
       params.sort,
       params.page,

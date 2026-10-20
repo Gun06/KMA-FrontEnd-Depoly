@@ -146,6 +146,18 @@ export const PRESETS: Record<string, FilterBarPreset> = {
             { label: "발급 취소", value: "CANCELED" },
           ],
         },
+        {
+          label: "입금여부",
+          options: [
+            { label: "전체", value: "" },
+            { label: "미결제", value: "UNPAID" },
+            { label: "결제완료", value: "COMPLETED" },
+            { label: "확인필요", value: "MUST_CHECK" },
+            { label: "차액환불요청", value: "NEED_PARTITIAL_REFUND" },
+            { label: "전액환불요청", value: "NEED_REFUND" },
+            { label: "전액환불완료", value: "REFUNDED" },
+          ],
+        },
       ],
       searchPlaceholder: "검색어를 입력한 후 Enter를 누르세요.",
       buttons: [
