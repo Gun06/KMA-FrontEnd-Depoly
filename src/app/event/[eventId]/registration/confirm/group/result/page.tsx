@@ -139,12 +139,12 @@ export default function GroupApplicationConfirmResultPage() {
         let baseData: GroupRegistrationConfirmData | null = null;
 
         if (orgAccount) {
-          // 새로운 방식: organizationAccount만 받아서 API 호출
-          organizationAccount = decodeURIComponent(orgAccount);
+          // searchParams는 이미 디코딩된 값. %가 있는 ID를 다시 풀면 URI malformed
+          organizationAccount = orgAccount;
         } else if (dataParam) {
           // 기존 방식: data 파라미터에서 파싱 (하위 호환성)
           try {
-            baseData = JSON.parse(decodeURIComponent(dataParam));
+            baseData = JSON.parse(dataParam);
             organizationAccount = baseData?.organizationAccount || null;
           } catch {
             setError('데이터를 파싱할 수 없습니다.');

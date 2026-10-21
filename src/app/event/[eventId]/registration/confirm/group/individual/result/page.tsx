@@ -53,12 +53,12 @@ export default function IndividualGroupConfirmResultPage() {
         return;
       }
 
-      // API 호출하여 개별 확인 데이터 가져오기
+      // searchParams는 이미 디코딩된 값. %가 있는 ID를 다시 풀면 URI malformed
       const response = await fetchIndividualGroupRegistration(eventId, {
-        orgAccount: decodeURIComponent(orgAccount),
-        name: decodeURIComponent(name),
-        phNum: decodeURIComponent(phNum),
-        birth: decodeURIComponent(birth),
+        orgAccount,
+        name,
+        phNum,
+        birth,
       });
 
       setIndividualData(response);

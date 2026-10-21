@@ -59,7 +59,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
         // sessionStorage에서 먼저 확인 (새로운 방식)
         if (orgAccount) {
           try {
-            const storageKey = `group_edit_data_${eventId}_${decodeURIComponent(orgAccount)}`;
+            const storageKey = `group_edit_data_${eventId}_${orgAccount}`;
             const storedDataString = sessionStorage.getItem(storageKey);
             if (storedDataString) {
               editData = JSON.parse(storedDataString);
@@ -73,7 +73,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
         // sessionStorage에 없으면 URL 파라미터에서 확인 (하위 호환성)
         if (!editData && dataParam) {
           try {
-            editData = JSON.parse(decodeURIComponent(dataParam as string));
+            editData = JSON.parse(dataParam as string);
           } catch (e) {
             // 파싱 실패 시 무시
           }
@@ -275,7 +275,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           // sessionStorage에서 다시 확인
           if (orgAccount) {
             try {
-              const storageKey = `group_edit_data_${eventId}_${decodeURIComponent(orgAccount)}`;
+              const storageKey = `group_edit_data_${eventId}_${orgAccount}`;
               const storedDataString = sessionStorage.getItem(storageKey);
               if (storedDataString) {
                 currentEditData = JSON.parse(storedDataString);
@@ -289,7 +289,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           // sessionStorage에 없으면 URL 파라미터에서 확인 (하위 호환성)
           if (!currentEditData && dataParam) {
             try {
-              currentEditData = JSON.parse(decodeURIComponent(dataParam));
+              currentEditData = JSON.parse(dataParam);
               setEditData(currentEditData);
             } catch (e) {
               // 파싱 실패 시 무시
@@ -318,7 +318,7 @@ export const useGroupForm = (eventId: string, eventInfo: any) => {
           // 성공 후 sessionStorage에서 삭제 (보안)
           if (orgAccount) {
             try {
-              const storageKey = `group_edit_data_${eventId}_${decodeURIComponent(orgAccount)}`;
+              const storageKey = `group_edit_data_${eventId}_${orgAccount}`;
               sessionStorage.removeItem(storageKey);
             } catch (e) {
               // 무시
