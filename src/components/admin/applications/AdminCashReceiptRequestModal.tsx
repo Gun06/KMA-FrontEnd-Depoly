@@ -51,7 +51,9 @@ export default function AdminCashReceiptRequestModal({
   const [adminAnswer, setAdminAnswer] = React.useState('');
   const [adminMemo, setAdminMemo] = React.useState('');
   const [amount, setAmount] = React.useState('');
+  const [useTargetAmount, setUseTargetAmount] = React.useState(true);
   const [valueError, setValueError] = React.useState<string | null>(null);
+  const [amountError, setAmountError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
   const presetConfig = CASH_RECEIPT_PRESETS[preset];
@@ -67,7 +69,9 @@ export default function AdminCashReceiptRequestModal({
       setAdminAnswer(initialRequest.adminAnswer ?? '');
       setAdminMemo(initialRequest.adminMemo ?? '');
       setAmount(typeof initialRequest.amount === 'number' ? String(initialRequest.amount) : '');
+      setUseTargetAmount(false);
       setValueError(null);
+      setAmountError(null);
       return;
     }
 
@@ -77,7 +81,9 @@ export default function AdminCashReceiptRequestModal({
     setAdminAnswer('');
     setAdminMemo('');
     setAmount('');
+    setUseTargetAmount(true);
     setValueError(null);
+    setAmountError(null);
   }, [open, isEdit, initialRequest, defaultPhone]);
 
   const handlePresetChange = (newPreset: CashReceiptPreset) => {
@@ -110,6 +116,12 @@ export default function AdminCashReceiptRequestModal({
     }
 
     const amountDigits = amount.replace(/\D/g, '');
+    const sendTargetAmount = !isEdit && useTargetAmount;
+    if (!sendTargetAmount && !isEdit && amountDigits === '') {
+      setAmountError('금액을 입력해주세요.');
+      return;
+    }
+    setAmountError(null);
 
     const request: RegistrationCashReceiptRequest = {
       purpose: presetConfig.purpose,
@@ -118,7 +130,7 @@ export default function AdminCashReceiptRequestModal({
       value,
       adminAnswer: adminAnswer.trim() || null,
       adminMemo: adminMemo.trim() || null,
-      amount: amountDigits === '' ? null : Number(amountDigits),
+      amount: (sendTargetAmount || amountDigits === '') ? null : Number(amountDigits),
       status: isEdit && initialRequest ? initialRequest.status : 'REQUESTED',
     };
 
@@ -128,7 +140,10 @@ export default function AdminCashReceiptRequestModal({
       return;
     }
 
-    const body = toRegistrationCashReceiptRequestBody(request);
+    const body = toRegistrationCashReceiptRequestBody(
+      request,
+      isEdit ? undefined : { useTargetAmount }
+    );
 
     try {
       setSubmitting(true);
@@ -235,17 +250,39 @@ export default function AdminCashReceiptRequestModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              현금영수증 금액 <span className="text-gray-400 font-normal">(선택)</span>
+              현금영수증 금액
             </label>
+            {!isEdit && (
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={useTargetAmount}
+                  onChange={(e) => {
+                    setUseTargetAmount(e.target.checked);
+                    if (e.target.checked) setAmountError(null);
+                  }}
+                  disabled={submitting}
+                  className="rounded border-gray-300"
+                />
+                신청 금액 자동 입력
+              </label>
+            )}
             <input
               type="text"
               inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-              disabled={submitting}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '');
+                setAmount(digits);
+                if (digits) setAmountError(null);
+              }}
+              disabled={submitting || (!isEdit && useTargetAmount)}
               placeholder="숫자만 입력"
-              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full rounded border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:text-gray-400 ${
+                amountError ? 'border-red-300 focus:ring-red-200' : 'border-gray-300 focus:ring-blue-500'
+              }`}
             />
+            {amountError && <p className="mt-1 text-xs text-red-500">{amountError}</p>}
           </div>
 
           <div>

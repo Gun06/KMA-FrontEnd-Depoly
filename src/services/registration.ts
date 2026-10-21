@@ -495,11 +495,17 @@ export type RegistrationCashReceiptRequestBody = {
   status: 'REQUESTED' | 'COMPLETED' | 'CANCELED';
   adminMemo?: string | null;
   amount?: number | null;
+  /** true면 서버가 해당 신청의 결제 금액을 저장한다. 신청(POST)에서만 보낸다. */
+  useTargetAmount?: boolean;
 };
 
 export function toRegistrationCashReceiptRequestBody(
-  request: RegistrationCashReceiptRequest
+  request: RegistrationCashReceiptRequest,
+  options?: { useTargetAmount?: boolean }
 ): RegistrationCashReceiptRequestBody {
+  const useTargetAmount = options?.useTargetAmount;
+  const includeAmount = useTargetAmount !== true && typeof request.amount === 'number';
+
   return {
     purpose: request.purpose,
     requesterType: request.requesterType,
@@ -508,7 +514,8 @@ export function toRegistrationCashReceiptRequestBody(
     adminAnswer: request.adminAnswer ?? '',
     status: request.status,
     ...(request.adminMemo ? { adminMemo: request.adminMemo } : {}),
-    ...(typeof request.amount === 'number' ? { amount: request.amount } : {}),
+    ...(includeAmount ? { amount: request.amount } : {}),
+    ...(typeof useTargetAmount === 'boolean' ? { useTargetAmount } : {}),
   };
 }
 
