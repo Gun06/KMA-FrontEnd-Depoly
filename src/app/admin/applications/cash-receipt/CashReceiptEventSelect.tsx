@@ -20,12 +20,27 @@ function eventLabel(event?: ApplicantEventDropdownItem) {
   return event?.nameKr || event?.nameEn || '대회명 불러오는 중...';
 }
 
+function placeEventMenu(root: HTMLElement) {
+  const rect = root.getBoundingClientRect();
+  const sidebar = parseFloat(getComputedStyle(root).getPropertyValue('--admin-sidebar-w')) || 0;
+  const minLeft = sidebar + 16;
+  const maxRight = window.innerWidth - 16;
+  const spaceRight = Math.max(rect.width, maxRight - rect.left);
+  const spaceLeft = Math.max(rect.width, rect.right - minLeft);
+  const desired = Math.min(800, Math.max(rect.width, Math.min(400, Math.max(spaceRight, spaceLeft))));
+  const align: 'left' | 'right' =
+    spaceRight >= desired || spaceRight >= spaceLeft ? 'left' : 'right';
+  const room = align === 'left' ? spaceRight : spaceLeft;
+  return { align, width: Math.min(desired, room) };
+}
+
 export default function CashReceiptEventSelect({ value, onChange, disabled = false }: Props) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [year, setYear] = React.useState<number | undefined>(undefined);
   const [yearMenuOpen, setYearMenuOpen] = React.useState(false);
   const [details, setDetails] = React.useState<Record<string, ApplicantEventDropdownItem>>({});
+  const [menuPlace, setMenuPlace] = React.useState<{ align: 'left' | 'right'; width: number } | null>(null);
   const rootRef = React.useRef<HTMLDivElement>(null);
 
   const {
@@ -103,6 +118,24 @@ export default function CashReceiptEventSelect({ value, onChange, disabled = fal
     if (disabled) close();
   }, [disabled, close]);
 
+  React.useLayoutEffect(() => {
+    if (!open || !rootRef.current) {
+      setMenuPlace(null);
+      return;
+    }
+    const root = rootRef.current;
+    const place = () => setMenuPlace(placeEventMenu(root));
+    place();
+    window.addEventListener('resize', place);
+    const main = root.closest('main');
+    const observer = main ? new ResizeObserver(place) : null;
+    if (main && observer) observer.observe(main);
+    return () => {
+      window.removeEventListener('resize', place);
+      observer?.disconnect();
+    };
+  }, [open]);
+
   const selected = value === 'ALL' ? undefined : details[value] ?? allEvents.find((event) => event.id === value);
   const buttonText = value === 'ALL' ? '대회전체' : eventLabel(selected);
 
@@ -111,7 +144,13 @@ export default function CashReceiptEventSelect({ value, onChange, disabled = fal
   };
 
   return (
-    <div className={clsx('relative w-[300px] shrink-0', disabled ? 'z-0' : 'z-[130]')} ref={rootRef}>
+    <div
+      className={clsx(
+        'relative w-[300px] max-w-full shrink-0',
+        open && !disabled ? 'z-[130]' : 'z-0'
+      )}
+      ref={rootRef}
+    >
       <button
         type="button"
         disabled={disabled}
@@ -138,8 +177,14 @@ export default function CashReceiptEventSelect({ value, onChange, disabled = fal
         />
       </button>
 
-      {open && (
-        <div className="absolute left-0 z-50 mt-1 flex max-h-96 w-auto min-w-[400px] max-w-[800px] flex-col overflow-hidden rounded-md border border-gray-300 bg-white shadow-lg">
+      {open && menuPlace && (
+        <div
+          className={clsx(
+            'absolute z-50 mt-1 flex max-h-96 flex-col overflow-hidden rounded-md border border-gray-300 bg-white shadow-lg',
+            menuPlace.align === 'right' ? 'right-0' : 'left-0'
+          )}
+          style={{ width: menuPlace.width }}
+        >
           <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
             <YearSelectDropdown
               value={year}

@@ -134,6 +134,7 @@ export default function Client({ initialPage, pageSize }: Props) {
   } | null>(null);
   const headCbRef = React.useRef<HTMLInputElement>(null);
   const autoOpenedFromQueryRef = React.useRef(false);
+  const suppressAutoOpenRef = React.useRef(false);
 
   const invalidateCashReceiptQueries = React.useCallback(async () => {
     await Promise.all([
@@ -188,6 +189,8 @@ export default function Client({ initialPage, pageSize }: Props) {
   const deepLinkQ = sp.get('q')?.trim() ?? '';
 
   React.useEffect(() => {
+    if (suppressAutoOpenRef.current) return;
+
     if (deepLinkId) {
       setSelectedId(deepLinkId);
       const linked = rows.find((row) => row.id === deepLinkId);
@@ -208,9 +211,11 @@ export default function Client({ initialPage, pageSize }: Props) {
     }
   }, [deepLinkId, deepLinkQ, isLoading, rows]);
 
+  // 검색어가 바뀔 때만 자동으로 다시 연다. id가 빠지는 것(닫기)으로는 열지 않는다.
   React.useEffect(() => {
     autoOpenedFromQueryRef.current = false;
-  }, [deepLinkId, deepLinkQ]);
+    suppressAutoOpenRef.current = false;
+  }, [deepLinkQ]);
 
   const idsOnPage = React.useMemo(() => rows.map((r) => r.id), [rows]);
 
@@ -496,7 +501,7 @@ export default function Client({ initialPage, pageSize }: Props) {
         }
         renderActions={
           preset ? (
-            <div className="flex flex-nowrap items-center justify-end gap-2">
+            <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
               <CashReceiptEventSelect
                 value={eventId}
                 disabled={drawerOpen}
@@ -509,7 +514,7 @@ export default function Client({ initialPage, pageSize }: Props) {
                 {...preset}
                 dense
                 searchWidth={260}
-                className="!items-center !gap-2 !flex-nowrap shrink-0"
+                className="min-w-0 max-w-full flex-wrap justify-end !items-center !gap-2"
                 buttons={filterBarButtons}
                 onFieldChange={(label, value) => {
                   if (label === '상태') setStatus((value as CashReceiptAdminStatus | '') ?? '');
@@ -554,6 +559,7 @@ export default function Client({ initialPage, pageSize }: Props) {
             : undefined
         }
         onRowClick={(row) => {
+          suppressAutoOpenRef.current = false;
           setSelectedId(row.id);
           setSelectedEventId(row.eventId);
           setDrawerOpen(true);
@@ -565,9 +571,9 @@ export default function Client({ initialPage, pageSize }: Props) {
         cashReceiptId={selectedId}
         eventId={selectedEventId}
         onClose={() => {
+          suppressAutoOpenRef.current = true;
           setDrawerOpen(false);
           setSelectedId(null);
-          autoOpenedFromQueryRef.current = false;
           const qs = new URLSearchParams(sp.toString());
           qs.delete('id');
           router.replace(qs.toString() ? `${pathname}?${qs.toString()}` : pathname, { scroll: false });
