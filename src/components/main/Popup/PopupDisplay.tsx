@@ -153,6 +153,15 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          {totalPopups > 1 && (
+            <div
+              className="absolute left-1/2 top-2.5 z-20 -translate-x-1/2 rounded-full bg-black/70 px-2.5 py-0.5 text-xs font-medium tabular-nums text-white"
+              aria-live="polite"
+            >
+              {currentIndex + 1} / {totalPopups}
+            </div>
+          )}
+
           {/* 닫기 버튼 */}
           <button
             onClick={handleClose}
@@ -232,12 +241,19 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
               />
               오늘 하루 보지 않음
             </label>
-            <button
-              onClick={handleClose}
-              className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors"
-            >
-              닫기
-            </button>
+            <div className="flex items-center gap-2">
+              {totalPopups > 1 && (
+                <span className="text-xs tabular-nums text-gray-500" aria-hidden>
+                  {currentIndex + 1} / {totalPopups}
+                </span>
+              )}
+              <button
+                onClick={handleClose}
+                className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -267,7 +283,10 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
           >
             {/* 상단 인디케이터 */}
             {totalPopups > 1 && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
+              <div
+                className="absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium tabular-nums text-white"
+                aria-live="polite"
+              >
                 {currentIndex + 1} / {totalPopups}
               </div>
             )}
@@ -350,7 +369,7 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
                 )}
                 <button
                   onClick={handleClose}
-                  className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors"
+                  className="text-xs text-gray-900 font-medium hover:text-gray-700 transition-colors whitespace-nowrap"
                 >
                   닫기
                 </button>

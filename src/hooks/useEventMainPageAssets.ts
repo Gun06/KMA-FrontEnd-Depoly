@@ -14,16 +14,6 @@ import { getEventSponsorBanners } from '@/services/eventSponsor';
 import type { EventSponsorResponse } from '@/types/eventSponsor';
 
 const CACHE_TTL = 15 * 60 * 1000;
-/** 캐시 등으로 API가 빨리 끝나도 로딩 UI 최소 노출 */
-const MIN_LOADER_DISPLAY_MS = 2000;
-
-function waitForMinimumLoaderDisplay(startedAt: number): Promise<void> {
-  const remaining = MIN_LOADER_DISPLAY_MS - (Date.now() - startedAt);
-  if (remaining <= 0) return Promise.resolve();
-  return new Promise(resolve => {
-    window.setTimeout(resolve, remaining);
-  });
-}
 const HERO_CACHE_KEY = (eventId: string) => `hero_main_${eventId}`;
 const SNS_CACHE_KEY = (eventId: string) => `sns_section_${eventId}`;
 
@@ -114,15 +104,13 @@ export function useEventMainPageAssets(eventId: string) {
     let cancelled = false;
 
     const run = async () => {
-      const startedAt = Date.now();
       setPhase('loading');
       setErrorMessage(null);
 
-      const finishReady = async (
+      const finishReady = (
         nextMain: MainPageImagesData | null,
         nextPromo: PromotionBannerData | null
       ) => {
-        await waitForMinimumLoaderDisplay(startedAt);
         if (cancelled) return;
         setMainPage(nextMain);
         setPromotion(nextPromo);
@@ -201,8 +189,7 @@ export function useEventMainPageAssets(eventId: string) {
           ...sponsorImageUrls,
         ];
         await preloadImages(imageUrls);
-
-        await finishReady(mainData, promoData);
+        finishReady(mainData, promoData);
       } catch {
         if (cancelled) return;
         if (mainData || promoData) {
@@ -214,7 +201,7 @@ export function useEventMainPageAssets(eventId: string) {
             ...sponsorImageUrls,
           ];
           await preloadImages(imageUrls);
-          await finishReady(mainData, promoData);
+          finishReady(mainData, promoData);
           return;
         }
         setPhase('error');

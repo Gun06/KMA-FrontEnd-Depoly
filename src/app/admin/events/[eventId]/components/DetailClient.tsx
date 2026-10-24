@@ -90,7 +90,8 @@ export default function DetailClient({
               return {
                 ...cat,
                 amount: dropdownCat.amount,
-                isActive: dropdownCat.isActive !== false, // 기본값은 true
+                isActive:
+                  dropdownCat.isActive !== false && cat.isActive !== false,
                 souvenirs: dropdownCat.souvenirs.map(s => ({
                   id: s.id,
                   name: s.name,

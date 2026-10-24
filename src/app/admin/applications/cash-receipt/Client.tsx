@@ -289,21 +289,21 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'eventName',
         header: '대회명',
-        width: 340,
+        width: 480,
         align: 'left',
         headerAlign: 'center',
         className: 'text-left',
         render: (row) => (
-          <span className="block max-w-[340px] truncate" title={row.eventName}>
+          <span className="block max-w-[480px] truncate" title={row.eventName}>
             {row.eventName}
           </span>
         ),
       },
-      { key: 'requesterName', header: '신청자명', width: 150, align: 'center' },
+      { key: 'requesterName', header: '신청자명', width: 100, align: 'center' },
       {
         key: 'paymentStatus',
         header: '입금여부',
-        width: 140,
+        width: 100,
         align: 'center',
         render: (row) => {
           const label = paymentStatusLabel(row.paymentStatus);
@@ -314,7 +314,7 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'status',
         header: '처리상태',
-        width: 130,
+        width: 100,
         align: 'center',
         render: (row) => (
           <span className={`font-semibold ${STATUS_CLASS[row.status] ?? 'text-gray-700'}`}>
@@ -325,11 +325,12 @@ export default function Client({ initialPage, pageSize }: Props) {
       {
         key: 'id',
         header: '환불 ID',
+        width: 300,
         align: 'center',
         headerAlign: 'center',
         className: 'text-center text-xs font-mono text-gray-600',
         render: (row) => (
-          <div className="truncate text-center" title={row.id}>
+          <div className="mx-auto max-w-[300px] truncate text-center" title={row.id}>
             {row.id}
           </div>
         ),

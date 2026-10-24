@@ -11,6 +11,7 @@ import { EventPopupManager } from '@/components/event/Popup';
 import EventNotFoundModal from '@/components/event/EventNotFoundModal';
 import EventMarathonLoader from '@/components/event/EventMainPageLoader/EventMarathonLoader';
 import { useEventMainPageAssets } from '@/hooks/useEventMainPageAssets';
+import { useMustReadNotices } from '@/hooks/useMustReadNotices';
 
 interface EventPageProps {
   params: {
@@ -88,6 +89,8 @@ export default function EventPage({ params }: EventPageProps) {
     mainPage,
     promotion,
   } = useEventMainPageAssets(eventId);
+
+  useMustReadNotices(eventId);
 
   const youtubeEmbedUrl = useMemo(
     () => normalizeYoutubeEmbedUrl(mainPage?.youtubeUrl),

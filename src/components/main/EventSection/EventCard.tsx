@@ -2,7 +2,9 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { StaticImageData } from 'next/image';
+import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate as formatGalleryDate } from '@/app/(main)/schedule/gallery/utils/dateUtils';
 interface EventCardProps {
   imageSrc: StaticImageData | string;
   imageAlt: string;
@@ -57,15 +59,134 @@ const OLIVE_STATUS_MAP: Record<string, { text: string; bg: string }> = {
   FINAL_CLOSED: { text: '접수마감', bg: '#999999' },
 };
 
-/** 날짜 포맷 YYYY.MM.DD (KMA-Mobile 동일) */
-function formatEventDate(dateStr: string): string {
-  if (!dateStr?.trim()) return '';
-  const d = new Date(dateStr.trim());
-  if (Number.isNaN(d.getTime())) return dateStr;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}.${m}.${day}`;
+function resolveEventHref(eventUrl?: string, eventId?: string): string {
+  if (eventUrl) return eventUrl;
+  if (eventId) return `/event/${eventId}`;
+  return '#';
+}
+
+function OliveCardInfoBlock({
+  title,
+  eventDate,
+  dDay,
+  categoryNames,
+  formatCategoryNames,
+  showArrow,
+  compact,
+  smallMeta,
+}: {
+  title: string;
+  eventDate: string;
+  dDay: string | null;
+  categoryNames?: string;
+  formatCategoryNames: (value: string) => string;
+  showArrow: boolean;
+  compact?: boolean;
+  /** 대회일정 리스트 그리드: 날짜·종목만 작게 */
+  smallMeta?: boolean;
+}) {
+  const dateIso = eventDate.split('T')[0] || eventDate;
+
+  return (
+    <div className={clsx('relative min-w-0 px-0.5 pt-2 md:pt-2.5', showArrow && 'pr-10')}>
+      {showArrow && (
+        <span
+          className="absolute right-0 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors duration-200 group-hover:bg-[#256EF4] group-hover:text-white md:top-2.5"
+          aria-hidden
+        >
+          <ArrowUpRight size={18} strokeWidth={2} />
+        </span>
+      )}
+      <div className="flex min-w-0 flex-col gap-1">
+        <h3
+          className={clsx(
+            'min-w-0 truncate font-semibold leading-tight tracking-[-0.2px] text-gray-900',
+            compact
+              ? 'text-[14px] sm:text-[15px] md:text-base'
+              : 'text-base md:text-[17px]'
+          )}
+          title={title}
+        >
+          {title}
+        </h3>
+        <p
+          className={clsx(
+            'flex min-w-0 items-center gap-1.5 whitespace-nowrap text-gray-500',
+            smallMeta
+              ? 'text-[11px] md:text-xs'
+              : compact
+                ? 'text-[13px] md:text-sm'
+                : 'text-sm'
+          )}
+        >
+          <CalendarDays
+            size={smallMeta ? 12 : 14}
+            strokeWidth={1.8}
+            className="shrink-0"
+            aria-hidden
+          />
+          <span className="truncate">{formatGalleryDate(dateIso)}</span>
+          {dDay && (
+            <span
+              className={clsx(
+                'shrink-0 font-black text-[#FF4081]',
+                smallMeta ? 'text-[11px] md:text-xs' : 'text-[13px] md:text-sm'
+              )}
+            >
+              {dDay}
+            </span>
+          )}
+        </p>
+        {categoryNames && (
+          <p
+            className={clsx(
+              'truncate text-gray-500',
+              smallMeta
+                ? 'text-[11px] md:text-xs'
+                : compact
+                  ? 'text-xs md:text-[13px]'
+                  : 'text-sm md:text-[15px]'
+            )}
+          >
+            {formatCategoryNames(categoryNames)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function OliveCardLink({
+  href,
+  isExternal,
+  className,
+  children,
+}: {
+  href: string;
+  isExternal: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href || href === '#') {
+    return <div className={className}>{children}</div>;
+  }
+  if (isExternal) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={clsx(className, 'group block text-inherit no-underline')}
+      >
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={clsx(className, 'group block text-inherit no-underline')}>
+      {children}
+    </Link>
+  );
 }
 
 export default function EventCard({
@@ -215,15 +336,17 @@ export default function EventCard({
   if (size === 'olive-home') {
     const statusInfo = OLIVE_STATUS_MAP[status] || { text: status || '접수중', bg: '#00C73C' };
     const dDay = calculateDDayFromDeadline(eventDeadLine);
-    const href = eventUrl
-      ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
-      : (eventId ? `/event/${eventId}` : '#');
+    const href = resolveEventHref(eventUrl, eventId);
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
 
     const oliveHomeCard = (
-      <div className={clsx(EMBEDDED_EVENT_CARD_WIDTH, 'flex flex-col select-none')}>
+      <OliveCardLink
+        href={href}
+        isExternal={isExternal}
+        className={clsx(EMBEDDED_EVENT_CARD_WIDTH, 'flex flex-col select-none')}
+      >
         <div
-          className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-100 bg-gray-100 md:rounded-xl"
+          className="relative w-full aspect-square overflow-hidden rounded-xl border border-gray-100 bg-gray-100"
           onDragStart={(e) => e.preventDefault()}
           draggable={false}
         >
@@ -252,46 +375,17 @@ export default function EventCard({
           >
             {statusInfo.text}
           </div>
-          {href && href !== '#' ? (
-            <Link
-              href={href}
-              className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300 md:bottom-2 md:right-2 md:h-8 md:w-8"
-              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-              aria-label="대회 상세 보기"
-            >
-              <svg className="h-3.5 w-3.5 flex-shrink-0 text-black/87 md:h-4 md:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
-              </svg>
-            </Link>
-          ) : (
-            <div className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow md:bottom-2 md:right-2 md:h-8 md:w-8" aria-hidden>
-              <svg className="h-3.5 w-3.5 flex-shrink-0 text-black/87 md:h-4 md:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
-              </svg>
-            </div>
-          )}
         </div>
-        <div className="mt-2.5 flex min-w-0 flex-col md:mt-3">
-          <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
-            {dDay && (
-              <span className="shrink-0 text-xs font-black md:text-sm" style={{ color: '#FF4081' }}>
-                {dDay}
-              </span>
-            )}
-            <span className="truncate text-[11px] text-gray-500 md:text-xs">{formatEventDate(eventDate)}</span>
-          </div>
-          <p
-            className="mt-1 truncate text-[13px] font-semibold leading-tight text-black md:text-sm lg:text-base"
-            style={{ letterSpacing: '-0.3px' }}
-            title={title}
-          >
-            {title}
-          </p>
-          {categoryNames && (
-            <p className="mt-1 truncate text-[11px] text-gray-500 md:text-xs">{formatCategoryNames(categoryNames)}</p>
-          )}
-        </div>
-      </div>
+        <OliveCardInfoBlock
+          title={title}
+          eventDate={eventDate}
+          dDay={dDay}
+          categoryNames={categoryNames}
+          formatCategoryNames={formatCategoryNames}
+          showArrow={href !== '#'}
+          compact
+        />
+      </OliveCardLink>
     );
 
     return <li className={clsx('shrink-0 list-none', className)}>{oliveHomeCard}</li>;
@@ -301,12 +395,12 @@ export default function EventCard({
   if (size === 'olive') {
     const statusInfo = OLIVE_STATUS_MAP[status] || { text: status || '접수중', bg: '#00C73C' };
     const dDay = calculateDDayFromDeadline(eventDeadLine);
-    const href = eventUrl
-      ? (eventUrl.startsWith('/') ? eventUrl : eventUrl)
-      : (eventId ? `/event/${eventId}` : '#');
+    const href = resolveEventHref(eventUrl, eventId);
     const isExternal = !!eventUrl && !eventUrl.startsWith('/');
     const isGridCell = className?.includes('w-full');
     const isMainEmbedded = className?.includes('main-embedded');
+    /** 메인 홈 주요 대회 일정과 동일한 타이포·뱃지 (대회일정 그리드 포함) */
+    const isCompactLayout = isMainEmbedded || isGridCell;
 
     const cardWidth = isGridCell
       ? 'w-full'
@@ -315,7 +409,11 @@ export default function EventCard({
         : 'w-[240px] md:w-[267px]';
 
     const oliveCard = (
-      <div className={clsx(cardWidth, 'flex flex-col select-none')}>
+      <OliveCardLink
+        href={href}
+        isExternal={isExternal}
+        className={clsx(cardWidth, 'flex flex-col select-none')}
+      >
         <div
           className="relative w-full aspect-[332/166] overflow-hidden rounded-xl border border-gray-100 bg-gray-100"
           onDragStart={(e) => e.preventDefault()}
@@ -345,7 +443,7 @@ export default function EventCard({
           <div
             className={clsx(
               'absolute -left-px -top-px font-bold text-white',
-              isMainEmbedded
+              isCompactLayout
                 ? 'px-2 py-1 text-[10px] md:px-2.5 md:py-1.5 md:text-xs lg:text-[13px]'
                 : 'px-2.5 py-1.5 text-[13px]'
             )}
@@ -356,101 +454,18 @@ export default function EventCard({
           >
             {statusInfo.text}
           </div>
-          {href && href !== '#' ? (
-            <Link
-              href={href}
-              className={clsx(
-                'absolute flex items-center justify-center rounded-full bg-white/95 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300',
-                isMainEmbedded
-                  ? 'bottom-1.5 right-1.5 h-7 w-7 md:bottom-2 md:right-2 md:h-8 md:w-8'
-                  : 'bottom-2 right-2 h-8 w-8'
-              )}
-              {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-              aria-label="대회 상세 보기"
-            >
-              <svg
-                className={clsx(
-                  'flex-shrink-0 text-black/87',
-                  isMainEmbedded ? 'h-3.5 w-3.5 md:h-4 md:w-4' : 'h-4 w-4'
-                )}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                aria-hidden
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
-              </svg>
-            </Link>
-          ) : (
-            <div
-              className={clsx(
-                'absolute flex items-center justify-center rounded-full bg-white/95 shadow',
-                isMainEmbedded
-                  ? 'bottom-1.5 right-1.5 h-7 w-7 md:bottom-2 md:right-2 md:h-8 md:w-8'
-                  : 'bottom-2 right-2 h-8 w-8'
-              )}
-              aria-hidden
-            >
-              <svg
-                className={clsx(
-                  'flex-shrink-0 text-black/87',
-                  isMainEmbedded ? 'h-3.5 w-3.5 md:h-4 md:w-4' : 'h-4 w-4'
-                )}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6l6 6-6 6" />
-              </svg>
-            </div>
-          )}
         </div>
-        <div className={clsx('flex min-w-0 flex-col', isMainEmbedded ? 'mt-2 md:mt-2.5' : 'mt-2.5')}>
-          <div className="flex flex-wrap items-center gap-1 md:gap-1.5">
-            {dDay && (
-              <span
-                className={clsx(
-                  'shrink-0 font-black',
-                  isMainEmbedded ? 'text-xs md:text-sm' : 'text-sm'
-                )}
-                style={{ color: '#FF4081' }}
-              >
-                {dDay}
-              </span>
-            )}
-            <span
-              className={clsx(
-                'truncate text-gray-500',
-                isMainEmbedded ? 'text-[11px] md:text-xs lg:text-sm' : 'text-sm'
-              )}
-            >
-              {formatEventDate(eventDate)}
-            </span>
-          </div>
-          <p
-            className={clsx(
-              'mt-1 truncate font-semibold leading-tight text-black',
-              isMainEmbedded ? 'text-[13px] md:text-sm lg:text-base' : 'text-base'
-            )}
-            style={{ letterSpacing: '-0.3px' }}
-            title={title}
-          >
-            {title}
-          </p>
-          {categoryNames && (
-            <p
-              className={clsx(
-                'mt-1 truncate text-gray-500',
-                isMainEmbedded ? 'text-[11px] md:text-xs lg:text-sm' : 'text-sm'
-              )}
-            >
-              {formatCategoryNames(categoryNames)}
-            </p>
-          )}
-        </div>
-      </div>
+        <OliveCardInfoBlock
+          title={title}
+          eventDate={eventDate}
+          dDay={dDay}
+          categoryNames={categoryNames}
+          formatCategoryNames={formatCategoryNames}
+          showArrow={href !== '#'}
+          compact={isCompactLayout}
+          smallMeta={isGridCell}
+        />
+      </OliveCardLink>
     );
 
     return (

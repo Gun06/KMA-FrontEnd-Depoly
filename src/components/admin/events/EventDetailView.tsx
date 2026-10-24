@@ -119,6 +119,23 @@ type Props = {
   onBack?: () => void;
 };
 
+function CategoryAvailabilityStatus({ active }: { active: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 text-xs font-medium',
+        active ? 'text-gray-800' : 'text-gray-500'
+      )}
+    >
+      <span
+        className={cn('h-1.5 w-1.5 rounded-full', active ? 'bg-emerald-500' : 'bg-red-500')}
+        aria-hidden
+      />
+      {active ? '접수중' : '마감'}
+    </span>
+  );
+}
+
 /** 약관 본문: 2줄 클램프 시 실제로 잘릴 때만 더보기/접기 표시 */
 function EventTermBody({
   content,
@@ -193,7 +210,7 @@ export default function EventDetailView({
   const [expandedTermKeys, setExpandedTermKeys] = useState<Set<string>>(
     () => new Set()
   );
-  
+
   // 결제정보(은행/계좌) - eventData에서 직접 가져오기
   const bankName = eventData.bank || '';
   const accountNumber = eventData.virtualAccount || '';
@@ -448,13 +465,12 @@ export default function EventDetailView({
               </span>
               <div className="pt-1">
                 <span
-                  className={`inline-flex items-center justify-center w-[64px] h-7 rounded-[5px] text-[12px] leading-4 font-medium ${
-                    eventData.visibleStatus === 'OPEN'
-                      ? 'bg-kma-blue text-white'
-                      : eventData.visibleStatus === 'TEST'
-                        ? 'bg-[#FFA500] text-white'
-                        : 'bg-kma-red text-white'
-                  }`}
+                  className={`inline-flex items-center justify-center w-[64px] h-7 rounded-[5px] text-[12px] leading-4 font-medium ${eventData.visibleStatus === 'OPEN'
+                    ? 'bg-kma-blue text-white'
+                    : eventData.visibleStatus === 'TEST'
+                      ? 'bg-[#FFA500] text-white'
+                      : 'bg-kma-red text-white'
+                    }`}
                 >
                   {eventData.visibleStatus === 'OPEN'
                     ? '공개'
@@ -658,7 +674,7 @@ export default function EventDetailView({
                   className={cn(
                     'w-8 h-8 rounded-lg border-2 border-gray-300 shadow-sm',
                     PREVIEW_BG[eventData.mainBannerColor as EventTheme] ||
-                      'bg-gray-400'
+                    'bg-gray-400'
                   )}
                 ></div>
                 <span className="text-sm text-gray-900 font-pretendard font-medium">
@@ -876,65 +892,59 @@ export default function EventDetailView({
                     key={category.id}
                     className={cn(
                       "border border-gray-200 rounded-lg p-3",
-                      isCategoryActive ? "bg-white" : "bg-gray-100"
+                      isCategoryActive ? "bg-white" : "bg-gray-50"
                     )}
                   >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-pretendard font-medium text-gray-900">
-                        {category.name}
-                      </h3>
-                      {!isCategoryActive && (
-                        <span className="text-xs px-2 py-0.5 bg-red-500 text-white rounded whitespace-nowrap font-medium">
-                          마감
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-lg font-pretendard font-semibold text-blue-600">
-                      {category.amount ? category.amount.toLocaleString() : 0}원
-                    </span>
-                  </div>
-
-                  {category.souvenirs && category.souvenirs.length > 0 && (
-                    <div className="mt-3">
-                      <h4 className="text-sm font-pretendard font-medium text-gray-700 mb-2">
-                        기념품
-                      </h4>
-                      <div className="space-y-2">
-                        {category.souvenirs.map(souvenir => {
-                          const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
-                          return (
-                            <div
-                              key={souvenir.id}
-                              className={cn(
-                                "flex items-center justify-between py-2 px-3 rounded",
-                                isSouvenirActive 
-                                  ? "bg-gray-50" 
-                                  : "bg-gray-100" // 기념품 마감된 경우 진한 회색
-                              )}
-                            >
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-pretendard text-gray-900">
-                                {souvenir.name}
-                              </span>
-                              {!isSouvenirActive && (
-                                <span className="text-xs px-2 py-0.5 bg-red-500 text-white rounded whitespace-nowrap font-medium">
-                                  마감
-                                </span>
-                              )}
-                            </div>
-                            {souvenir.sizes && (
-                              <span className="text-xs font-pretendard text-gray-600">
-                                {souvenir.sizes}
-                              </span>
-                            )}
-                          </div>
-                          );
-                        })}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CategoryAvailabilityStatus active={isCategoryActive} />
+                        <h3 className="text-sm font-pretendard font-medium text-gray-900 truncate">
+                          {category.name}
+                        </h3>
                       </div>
+                      <span className="text-lg font-pretendard font-semibold text-blue-600">
+                        {category.amount ? category.amount.toLocaleString() : 0}원
+                      </span>
                     </div>
-                  )}
-                </div>
+
+                    {category.souvenirs && category.souvenirs.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="text-sm font-pretendard font-medium text-gray-700 mb-2">
+                          기념품
+                        </h4>
+                        <div className="space-y-2">
+                          {category.souvenirs.map(souvenir => {
+                            const isSouvenirActive = souvenir.isActive !== false; // 기본값은 true
+                            return (
+                              <div
+                                key={souvenir.id}
+                                className={cn(
+                                  "flex items-center justify-between py-2 px-3 rounded",
+                                  isSouvenirActive
+                                    ? isCategoryActive
+                                      ? "bg-gray-50"
+                                      : "bg-white"
+                                    : "bg-gray-100"
+                                )}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <CategoryAvailabilityStatus active={isSouvenirActive} />
+                                  <span className="text-sm font-pretendard text-gray-900 truncate">
+                                    {souvenir.name}
+                                  </span>
+                                </div>
+                                {souvenir.sizes && (
+                                  <span className="text-xs font-pretendard text-gray-600">
+                                    {souvenir.sizes}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -1014,17 +1024,16 @@ export default function EventDetailView({
                         타입
                       </span>
                       <span
-                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 text-white ${
-                          banner.bannerType === 'HOST'
-                            ? 'bg-kma-red'
-                            : banner.bannerType === 'ORGANIZER'
-                              ? 'bg-kma-blue'
-                              : banner.bannerType === 'SPONSOR'
-                                ? 'bg-amber-500'
-                                : banner.bannerType === 'ASSIST'
-                                  ? 'bg-emerald-500'
-                                  : 'bg-gray-600'
-                        }`}
+                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 text-white ${banner.bannerType === 'HOST'
+                          ? 'bg-kma-red'
+                          : banner.bannerType === 'ORGANIZER'
+                            ? 'bg-kma-blue'
+                            : banner.bannerType === 'SPONSOR'
+                              ? 'bg-amber-500'
+                              : banner.bannerType === 'ASSIST'
+                                ? 'bg-emerald-500'
+                                : 'bg-gray-600'
+                          }`}
                       >
                         {banner.bannerType === 'HOST'
                           ? '주최'
@@ -1042,11 +1051,10 @@ export default function EventDetailView({
                         고정여부
                       </span>
                       <span
-                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 ${
-                          banner.static
-                            ? 'bg-gray-600 text-white'
-                            : 'bg-gray-500 text-white'
-                        }`}
+                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 ${banner.static
+                          ? 'bg-gray-600 text-white'
+                          : 'bg-gray-500 text-white'
+                          }`}
                       >
                         {banner.static ? '고정' : '회전'}
                       </span>
@@ -1056,11 +1064,10 @@ export default function EventDetailView({
                         배지표시여부
                       </span>
                       <span
-                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 ${
-                          banner.badge !== false
-                            ? 'bg-green-600 text-white'
-                            : 'bg-red-600 text-white'
-                        }`}
+                        className={`inline-flex items-center justify-center rounded-[6px] text-[13px] leading-[22px] font-medium px-3 ${banner.badge !== false
+                          ? 'bg-green-600 text-white'
+                          : 'bg-red-600 text-white'
+                          }`}
                       >
                         {banner.badge !== false ? '공개' : '비공개'}
                       </span>
@@ -1347,16 +1354,16 @@ export default function EventDetailView({
               const courseItems =
                 eventData.coursePageImages && eventData.coursePageImages.length > 0
                   ? [...eventData.coursePageImages].sort(
-                      (a, b) => a.orderNumber - b.orderNumber
-                    )
+                    (a, b) => a.orderNumber - b.orderNumber
+                  )
                   : eventData.coursePageImageUrl
                     ? [
-                        {
-                          imageUrl: eventData.coursePageImageUrl,
-                          mediaType: 'IMAGE',
-                          orderNumber: 0,
-                        },
-                      ]
+                      {
+                        imageUrl: eventData.coursePageImageUrl,
+                        mediaType: 'IMAGE',
+                        orderNumber: 0,
+                      },
+                    ]
                     : [];
 
               if (courseItems.length === 0) return null;

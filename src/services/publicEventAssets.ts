@@ -184,6 +184,43 @@ export async function fetchPublicPaymentInfo(
   return (await response.json()) as PublicPaymentInfoResponse;
 }
 
+export type MustReadNoticeItem = {
+  noticeId: string;
+  category: string;
+  noticeTitle: string;
+  createdAt: string;
+};
+
+export type MustReadNoticeListResponse = {
+  eventNoticeHeaderList: MustReadNoticeItem[];
+  noticeEmpty: boolean;
+};
+
+/** GET /api/v1/public/event/{eventId}/must-read-notice-list */
+export async function fetchMustReadNotices(
+  eventId: string,
+  size = 20
+): Promise<MustReadNoticeListResponse> {
+  if (!USER_API_BASE_URL) {
+    throw new Error('API 서버 설정이 필요합니다.');
+  }
+  const response = await fetch(
+    `${USER_API_BASE_URL}/api/v1/public/event/${eventId}/must-read-notice-list?size=${size}`,
+    {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const data = (await response.json()) as MustReadNoticeListResponse;
+  return {
+    eventNoticeHeaderList: data.eventNoticeHeaderList ?? [],
+    noticeEmpty: Boolean(data.noticeEmpty),
+  };
+}
+
 /** 접수 마감 판단용 — 기존 apply/page.tsx와 동일한 우선순위 */
 export function extractEventStatus(
   data: PublicEventDetailResponse | null | undefined

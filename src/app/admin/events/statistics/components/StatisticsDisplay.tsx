@@ -17,6 +17,53 @@ interface StatisticsDisplayProps {
   dense?: boolean;
 }
 
+function ParticipantCountChip({
+  label,
+  count,
+  dotClassName,
+}: {
+  label: string;
+  count: number;
+  dotClassName: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-700">
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dotClassName)} aria-hidden />
+      {label} {formatNumber(count)}명
+    </span>
+  );
+}
+
+function KeyMetricBox({
+  label,
+  value,
+  dotClassName,
+  large = false,
+}: {
+  label: string;
+  value: string | number | undefined | null;
+  dotClassName: string;
+  large?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+        <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', dotClassName)} aria-hidden />
+        {label}
+      </div>
+      <div
+        className={cn(
+          'mt-1 tabular-nums font-semibold text-gray-900',
+          large ? 'text-xl' : 'text-lg'
+        )}
+      >
+        {formatNumber(value)}
+        <span className="ml-1 text-xs font-medium text-gray-500">명</span>
+      </div>
+    </div>
+  );
+}
+
 export default function StatisticsDisplay({ data, distanceData, defaultDistanceExpanded = false, showSideBanner = false, dense = false }: StatisticsDisplayProps) {
   const cardRound = dense ? 'rounded-lg' : 'rounded-2xl shadow-sm';
   const [isDistanceExpanded, setIsDistanceExpanded] = useState(defaultDistanceExpanded);
@@ -81,18 +128,18 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
   // 단체 규모별 비율 계산
   const groupSizeRates = (() => {
     if (!data.group1to19 && !data.group20to29 && !data.group30over) return null;
-    
+
     const group1to19Match = data.group1to19?.match(/(\d+)/);
     const group20to29Match = data.group20to29?.match(/(\d+)/);
     const group30overMatch = data.group30over?.match(/(\d+)/);
-    
+
     const group1to19Count = group1to19Match ? parseInt(group1to19Match[1], 10) : 0;
     const group20to29Count = group20to29Match ? parseInt(group20to29Match[1], 10) : 0;
     const group30overCount = group30overMatch ? parseInt(group30overMatch[1], 10) : 0;
-    
+
     const totalGroups = group1to19Count + group20to29Count + group30overCount;
     if (!totalGroups) return null;
-    
+
     return {
       group1to19: Math.round((group1to19Count / totalGroups) * 100),
       group20to29: Math.round((group20to29Count / totalGroups) * 100),
@@ -119,73 +166,56 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
           return (
             <div
               key={`participant-${index}`}
-              className={cn(cardRound, 'border border-slate-200 bg-white p-4')}
+              className="rounded-lg border border-gray-200 bg-white p-4"
             >
-              <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
-                <h4 className="text-sm font-semibold text-slate-900">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <h4 className="text-sm font-semibold text-gray-900 font-pretendard">
                   {category.categoryName || '-'}
                 </h4>
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700">
-                    입금 {formatNumber(parsed.paid)}명
-                  </span>
-                  <span className="rounded-full bg-rose-50 px-2 py-1 font-medium text-rose-700">
-                    미입금 {formatNumber(parsed.unpaid)}명
-                  </span>
-                  <span className="rounded-full bg-purple-50 px-2 py-1 font-medium text-purple-700">
-                    환불 {formatNumber(parsed.refund)}명
-                  </span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <ParticipantCountChip label="입금" count={parsed.paid} dotClassName="bg-emerald-500" />
+                  <ParticipantCountChip label="미입금" count={parsed.unpaid} dotClassName="bg-red-500" />
+                  <ParticipantCountChip label="환불" count={parsed.refund} dotClassName="bg-purple-500" />
                 </div>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="text-[11px] font-medium text-slate-500">
-                    총 참가자
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-slate-900">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] font-medium text-gray-500">총 참가자</div>
+                  <div className="mt-0.5 text-base font-semibold text-gray-900 tabular-nums">
                     {formatNumber(parsed.total)}
-                    <span className="ml-1 text-xs font-medium text-slate-500">명</span>
+                    <span className="ml-1 text-xs font-medium text-gray-500">명</span>
                   </div>
                 </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="text-[11px] font-medium text-slate-500">
-                    남성
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-slate-900">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] font-medium text-gray-500">남성</div>
+                  <div className="mt-0.5 text-base font-semibold text-gray-900 tabular-nums">
                     {formatNumber(parsed.male)}
-                    <span className="ml-1 text-xs font-medium text-slate-500">명</span>
+                    <span className="ml-1 text-xs font-medium text-gray-500">명</span>
                   </div>
                 </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="text-[11px] font-medium text-slate-500">
-                    여성
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-slate-900">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] font-medium text-gray-500">여성</div>
+                  <div className="mt-0.5 text-base font-semibold text-gray-900 tabular-nums">
                     {formatNumber(parsed.female)}
-                    <span className="ml-1 text-xs font-medium text-slate-500">명</span>
+                    <span className="ml-1 text-xs font-medium text-gray-500">명</span>
                   </div>
                 </div>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <div className="text-[11px] font-medium text-slate-500">
-                    입금률
-                  </div>
-                  <div className="mt-0.5 text-base font-semibold text-slate-900">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="text-[11px] font-medium text-gray-500">입금률</div>
+                  <div className="mt-0.5 text-base font-semibold text-gray-900 tabular-nums">
                     {paidPercentage}
-                    <span className="ml-1 text-xs font-medium text-slate-500">%</span>
+                    <span className="ml-1 text-xs font-medium text-gray-500">%</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-3">
-                <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                <div className="mb-1 flex items-center justify-between text-[11px] text-gray-500">
                   <span>입금 진행률</span>
                   <span>{paidPercentage}%</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"
                     style={{ width: `${paidPercentage}%` }}
@@ -233,52 +263,60 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
       </div>
 
       <div className={cn('grid grid-cols-1 xl:grid-cols-12', dense ? 'gap-3' : 'gap-4')}>
-        <div className={cn(cardRound, 'border border-slate-200 bg-white p-4', dense ? 'xl:col-span-6' : 'xl:col-span-8')}>
+        <div className={cn(cardRound, 'border border-gray-200 bg-white p-4', dense ? 'xl:col-span-6' : 'xl:col-span-8')}>
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">핵심 지표</h3>
-            <span className="text-xs text-slate-500">실시간 집계 기준</span>
+            <h3 className="text-sm font-semibold text-gray-900 font-pretendard">핵심 지표</h3>
+            <span className="text-xs text-gray-500">실시간 집계 기준</span>
           </div>
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-100">
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">총 참가자</span>
-              <span className="text-lg font-semibold text-slate-900">
-                {formatNumber(data.totalParticipants)}명
-              </span>
+          <div className="space-y-3">
+            <KeyMetricBox
+              label="총 참가자"
+              value={data.totalParticipants}
+              dotClassName="bg-gray-400"
+              large
+            />
+
+            <div className="grid grid-cols-3 gap-2">
+              <KeyMetricBox
+                label="입금"
+                value={data.totalCompletedParticipants}
+                dotClassName="bg-emerald-500"
+              />
+              <KeyMetricBox
+                label="미입금"
+                value={data.totalUnpaidParticipants}
+                dotClassName="bg-red-500"
+              />
+              <KeyMetricBox
+                label="환불"
+                value={data.totalRefundRequest ?? data.totalRefunded}
+                dotClassName="bg-purple-500"
+              />
             </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">입금</span>
-              <span className="text-lg font-semibold text-emerald-700">
-                {formatNumber(data.totalCompletedParticipants)}명
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-slate-600">미입금</span>
-              <span className="text-lg font-semibold text-rose-700">
-                {formatNumber(data.totalUnpaidParticipants)}명
-              </span>
-            </div>
-            {data.totalRefundRequest && (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-slate-600">환불</span>
-                <span className="text-lg font-semibold text-purple-700">
-                  {formatNumber(data.totalRefundRequest)}명
-                </span>
-              </div>
-            )}
-            {data.totalNeedRefunded && (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-slate-600">전액 환불 요청</span>
-                <span className="text-lg font-semibold text-orange-700">
-                  {formatNumber(data.totalNeedRefunded)}명
-                </span>
-              </div>
-            )}
-            {data.totalNeedPartitialRefunded && (
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-sm text-slate-600">차액 환불 요청</span>
-                <span className="text-lg font-semibold text-amber-700">
-                  {formatNumber(data.totalNeedPartitialRefunded)}명
-                </span>
+
+            {(data.totalNeedRefunded || data.totalNeedPartitialRefunded) && (
+              <div
+                className={cn(
+                  'grid gap-2',
+                  data.totalNeedRefunded && data.totalNeedPartitialRefunded
+                    ? 'grid-cols-2'
+                    : 'grid-cols-1'
+                )}
+              >
+                {data.totalNeedRefunded && (
+                  <KeyMetricBox
+                    label="전액 환불 요청"
+                    value={data.totalNeedRefunded}
+                    dotClassName="bg-orange-500"
+                  />
+                )}
+                {data.totalNeedPartitialRefunded && (
+                  <KeyMetricBox
+                    label="차액 환불 요청"
+                    value={data.totalNeedPartitialRefunded}
+                    dotClassName="bg-amber-500"
+                  />
+                )}
               </div>
             )}
           </div>
@@ -392,10 +430,13 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
 
       {/* 종목별 참가자 통계 */}
       {distanceParticipants.length > 0 && (
-        <div className={cn(cardRound, 'overflow-hidden border border-slate-200 bg-white')}>
+        <section className="space-y-3">
           <button
             type="button"
-            className="flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800"
+            className={cn(
+              'flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800',
+              dense ? 'rounded-lg' : 'rounded-2xl'
+            )}
             onClick={() => setIsDistanceExpanded((prev) => !prev)}
             aria-expanded={isDistanceExpanded}
           >
@@ -410,20 +451,19 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
             </span>
           </button>
 
-          {isDistanceExpanded && (
-            <div className="border-t border-slate-200 bg-slate-50/40 px-4 pb-4 pt-3">
-              {renderParticipantCards(distanceParticipants)}
-            </div>
-          )}
-        </div>
+          {isDistanceExpanded && renderParticipantCards(distanceParticipants)}
+        </section>
       )}
 
       {/* 카테고리별 참가자 통계 (기본 접힘) */}
       {data.eventCategoryParticipants && data.eventCategoryParticipants.length > 0 && (
-        <div className={cn(cardRound, 'overflow-hidden border border-slate-200 bg-white')}>
+        <section className="space-y-3">
           <button
             type="button"
-            className="flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800"
+            className={cn(
+              'flex w-full items-center justify-between bg-slate-900 px-4 py-3 text-left transition-colors hover:bg-slate-800',
+              dense ? 'rounded-lg' : 'rounded-2xl'
+            )}
             onClick={() => setIsCategoryExpanded((prev) => !prev)}
             aria-expanded={isCategoryExpanded}
           >
@@ -438,12 +478,8 @@ export default function StatisticsDisplay({ data, distanceData, defaultDistanceE
             </span>
           </button>
 
-          {isCategoryExpanded && (
-            <div className="border-t border-slate-200 bg-slate-50/40 px-4 pb-4 pt-3">
-              {renderParticipantCards(data.eventCategoryParticipants)}
-            </div>
-          )}
-        </div>
+          {isCategoryExpanded && renderParticipantCards(data.eventCategoryParticipants)}
+        </section>
       )}
 
       {/* 사이드 배너 모달 */}

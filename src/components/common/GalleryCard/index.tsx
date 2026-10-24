@@ -31,14 +31,14 @@ export default function GalleryCard({
     'flex shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors duration-200 group-hover:bg-[#256EF4] group-hover:text-white';
 
   const arrow = onClick ? (
-    <span className={cn(arrowClass, 'h-8 w-8 bg-gray-100')} aria-hidden>
-      <ArrowUpRight size={16} strokeWidth={2} />
+    <span className={cn(arrowClass, 'h-9 w-9 bg-gray-100')} aria-hidden>
+      <ArrowUpRight size={18} strokeWidth={2} />
     </span>
   ) : null;
 
   const dateLine = (
-    <p className="mt-1 flex items-center gap-1 whitespace-nowrap text-[12px] text-gray-500">
-      <CalendarDays size={13} strokeWidth={1.8} className="shrink-0" aria-hidden />
+    <p className="mt-1.5 flex items-center gap-1.5 whitespace-nowrap text-[13px] text-gray-500 md:text-sm">
+      <CalendarDays size={14} strokeWidth={1.8} className="shrink-0" aria-hidden />
       {date}
     </p>
   );
@@ -88,14 +88,14 @@ export default function GalleryCard({
         <div className="min-w-0 px-0.5 pt-2 lg:pt-2.5">
           <div className="lg:flex lg:min-w-0 lg:items-center lg:gap-2">
             <h3
-              className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-[-0.2px] text-gray-900 sm:text-sm lg:line-clamp-none lg:min-w-0 lg:flex-1 lg:truncate lg:text-[15px]"
+              className="line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.2px] text-gray-900 sm:text-[15px] md:text-base lg:line-clamp-none lg:min-w-0 lg:flex-1 lg:truncate"
               title={title}
             >
               {title}
             </h3>
             {onClick && (
-              <span className={cn(arrowClass, 'hidden h-8 w-8 bg-gray-100 lg:flex')} aria-hidden>
-                <ArrowUpRight size={16} strokeWidth={2} />
+              <span className={cn(arrowClass, 'hidden h-9 w-9 bg-gray-100 lg:flex')} aria-hidden>
+                <ArrowUpRight size={18} strokeWidth={2} />
               </span>
             )}
           </div>
@@ -104,7 +104,10 @@ export default function GalleryCard({
       ) : (
         <div className="flex min-w-0 items-end gap-2 px-0.5 pt-2.5">
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[15px] font-semibold tracking-[-0.2px] text-gray-900" title={title}>
+            <h3
+              className="truncate text-base font-semibold tracking-[-0.2px] text-gray-900 md:text-[17px]"
+              title={title}
+            >
               {title}
             </h3>
             {dateLine}
