@@ -1,0 +1,386 @@
+.section {
+  --org-teal: #1f5c60;
+  --org-teal-soft: #e8f1f1;
+  --org-line: #c5ced0;
+  --org-border: #d5dfe0;
+  --org-name: #2a2f30;
+}
+
+.sectionTitle {
+  margin: 0 0 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--org-teal);
+  color: var(--org-teal);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+
+@media (min-width: 640px) {
+  .sectionTitle {
+    font-size: 1.25rem;
+  }
+}
+
+.box {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--org-border);
+  background: #fff;
+}
+
+.boxHeader {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--org-teal-soft);
+  color: var(--org-teal);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.boxName {
+  margin: 0;
+  padding: 0.85rem 0.75rem;
+  color: var(--org-name);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+
+@media (min-width: 640px) {
+  .boxHeader {
+    font-size: 0.9375rem;
+  }
+
+  .boxName {
+    font-size: 1.0625rem;
+  }
+}
+
+.president {
+  width: min(100%, 11.5rem);
+  margin-inline: auto;
+  overflow: hidden;
+  background: var(--org-teal);
+  color: #fff;
+  text-align: center;
+}
+
+.presidentRole {
+  margin: 0;
+  padding: 0.65rem 0.75rem 0.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.presidentName {
+  margin: 0;
+  padding: 0.15rem 0.75rem 0.85rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 640px) {
+  .presidentName {
+    font-size: 1.375rem;
+  }
+}
+
+/* 데스크톱: 회장 → 6부서 트리 */
+.tree {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.node {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  padding: 1rem 0.3rem 0;
+}
+
+.node::before,
+.node::after {
+  content: '';
+  position: absolute;
+  background: var(--org-line);
+}
+
+.node::before {
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 1rem;
+  transform: translateX(-50%);
+}
+
+.node::after {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+}
+
+.node:first-child::after {
+  left: 50%;
+}
+
+.node:last-child::after {
+  right: 50%;
+}
+
+.stem {
+  width: 1px;
+  height: 1.25rem;
+  margin-inline: auto;
+  background: var(--org-line);
+}
+
+.deptBlock {
+  margin-top: 0;
+}
+
+.branchRow {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin-top: 1.75rem;
+}
+
+.branchLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  padding: 0.5rem 0.35rem;
+  border: 1px solid var(--org-border);
+  background: var(--org-teal-soft);
+  color: var(--org-teal);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  writing-mode: vertical-rl;
+  letter-spacing: 0.15em;
+}
+
+.branchList {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 0.65rem;
+}
+
+.branchList > li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.pairGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .pairGrid {
+    gap: 0.75rem;
+  }
+}
+
+.directorsBody {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem 0.5rem;
+  margin: 0;
+  padding: 0.85rem 0.5rem;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .directorsBody {
+    gap: 0.75rem 1rem;
+    padding: 1.1rem 1.25rem;
+  }
+}
+
+.directorsBody li {
+  color: var(--org-name);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.advisorBar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  border: 1px solid var(--org-border);
+  background: #fff;
+  overflow: hidden;
+}
+
+.advisorLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1rem;
+  background: var(--org-teal-soft);
+  color: var(--org-teal);
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.advisorNames {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  list-style: none;
+}
+
+.advisorNames li {
+  color: var(--org-name);
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  word-break: keep-all;
+}
+
+/* 태블릿·모바일: 트리 대신 회장 아래 카드 그리드 */
+@media (max-width: 1023px) {
+  .stemToDepartments {
+    display: block;
+  }
+
+  .deptBlock {
+    position: relative;
+    margin-top: 0;
+    padding-top: 1rem;
+  }
+
+  /* 회장 stem이 닿는 가로선 + 부서 묶음 */
+  .deptBlock::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: var(--org-line);
+  }
+
+  .departments {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .departments .node {
+    display: block;
+    flex: none;
+    padding: 0;
+  }
+
+  .departments .node::before,
+  .departments .node::after {
+    display: none;
+  }
+
+  /* 태블릿: 지사는 데스크톱과 동일(왼쪽 세로 라벨 + 3칸) */
+  .branchList {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .deptBlock::before {
+    left: 0;
+    right: 0;
+  }
+
+  .departments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  /* 모바일만: 지사 제목 위 + 카드 3열 */
+  .branchRow {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .branchLabel {
+    justify-content: flex-start;
+    width: fit-content;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    writing-mode: horizontal-tb;
+    letter-spacing: -0.02em;
+    font-size: 0.9375rem;
+  }
+
+  .branchList {
+    gap: 0.4rem;
+  }
+
+  .branchList .boxHeader {
+    padding: 0.45rem 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .branchList .boxName {
+    padding: 0.65rem 0.25rem;
+    font-size: 0.9375rem;
+  }
+
+  .advisorBar {
+    grid-template-columns: 1fr;
+  }
+
+  /* 전마협 이사 .boxHeader 와 동일 */
+  .advisorLabel {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .advisorNames {
+    gap: 0.35rem 0.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .advisorNames li {
+    font-size: 0.9375rem;
+  }
+
+  .directorsBody li {
+    font-size: 0.9375rem;
+  }
+
+  .boxHeader {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .boxName {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.9375rem;
+  }
+}

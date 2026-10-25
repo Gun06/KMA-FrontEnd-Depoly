@@ -26,7 +26,12 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
   }, [sourceKey]);
 
   const currentPopup = items[currentIndex];
-  const totalPopups = items.length;
+  const remainingCount = items.length;
+  // 닫기 후에도 분모 고정 (1/6 → 2/6 …). 남은 개수로 줄이지 않음
+  const originalTotal = popups.length;
+  const progressCurrent = originalTotal - remainingCount + currentIndex + 1;
+  const showProgress = originalTotal > 1;
+  const progressLabel = `${progressCurrent} / ${originalTotal}`;
 
   // 화면 크기 변경 감지
   React.useEffect(() => {
@@ -47,14 +52,14 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
   }, [isOpen, currentPopup]);
 
   const goToNext = React.useCallback(() => {
-    if (!isOpen) return;
-    setCurrentIndex((prev) => (prev + 1) % totalPopups);
-  }, [totalPopups, isOpen]);
+    if (!isOpen || remainingCount === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % remainingCount);
+  }, [remainingCount, isOpen]);
 
   const goToPrevious = React.useCallback(() => {
-    if (!isOpen) return;
-    setCurrentIndex((prev) => (prev - 1 + totalPopups) % totalPopups);
-  }, [totalPopups, isOpen]);
+    if (!isOpen || remainingCount === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + remainingCount) % remainingCount);
+  }, [remainingCount, isOpen]);
 
   const handleClose = React.useCallback((e?: React.MouseEvent) => {
     if (e) {
@@ -153,12 +158,12 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {totalPopups > 1 && (
+          {showProgress && (
             <div
               className="absolute left-1/2 top-2.5 z-20 -translate-x-1/2 rounded-full bg-black/70 px-2.5 py-0.5 text-xs font-medium tabular-nums text-white"
               aria-live="polite"
             >
-              {currentIndex + 1} / {totalPopups}
+              {progressLabel}
             </div>
           )}
 
@@ -172,7 +177,7 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
           </button>
 
           {/* 네비게이션 버튼 (여러 개일 때만) */}
-          {totalPopups > 1 && (
+          {remainingCount > 1 && (
             <>
               <button
                 onClick={goToPrevious}
@@ -242,9 +247,9 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
               오늘 하루 보지 않음
             </label>
             <div className="flex items-center gap-2">
-              {totalPopups > 1 && (
+              {showProgress && (
                 <span className="text-xs tabular-nums text-gray-500" aria-hidden>
-                  {currentIndex + 1} / {totalPopups}
+                  {progressLabel}
                 </span>
               )}
               <button
@@ -282,12 +287,12 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
             onClick={(e) => e.stopPropagation()}
           >
             {/* 상단 인디케이터 */}
-            {totalPopups > 1 && (
+            {showProgress && (
               <div
                 className="absolute left-1/2 top-2 z-20 -translate-x-1/2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-medium tabular-nums text-white"
                 aria-live="polite"
               >
-                {currentIndex + 1} / {totalPopups}
+                {progressLabel}
               </div>
             )}
 
@@ -351,7 +356,7 @@ export default function PopupDisplay({ popups, onDontShowToday }: PopupDisplayPr
                 오늘 하루 보지 않음
               </label>
               <div className="flex items-center gap-2">
-                {totalPopups > 1 && (
+                {remainingCount > 1 && (
                   <>
                     <button
                       onClick={goToPrevious}

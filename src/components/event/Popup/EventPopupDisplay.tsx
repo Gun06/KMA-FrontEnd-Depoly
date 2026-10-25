@@ -24,6 +24,12 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
   }, [sourceKey]);
 
   const currentPopup = items[currentIndex];
+  const remainingCount = items.length;
+  // 닫기 후에도 분모 고정 (1/6 → 2/6 …). 남은 개수로 줄이지 않음
+  const originalTotal = popups.length;
+  const progressCurrent = originalTotal - remainingCount + currentIndex + 1;
+  const showProgress = originalTotal > 1;
+  const progressLabel = `${progressCurrent} / ${originalTotal}`;
   // 800x1000 비율 (4:5)
   const aspectRatio = 4 / 5;
 
@@ -69,14 +75,14 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
   };
 
   const goToNext = React.useCallback(() => {
-    if (!isOpen) return;
-    setCurrentIndex((prev) => (prev + 1) % items.length);
-  }, [items.length, isOpen]);
+    if (!isOpen || remainingCount === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % remainingCount);
+  }, [remainingCount, isOpen]);
 
   const goToPrevious = React.useCallback(() => {
-    if (!isOpen) return;
-    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-  }, [items.length, isOpen]);
+    if (!isOpen || remainingCount === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + remainingCount) % remainingCount);
+  }, [remainingCount, isOpen]);
 
   // 키보드 네비게이션 (데스크톱만)
   React.useEffect(() => {
@@ -124,7 +130,7 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
           </button>
 
           {/* 네비게이션 버튼 (여러 개일 때만) */}
-          {items.length > 1 && (
+          {remainingCount > 1 && (
             <>
               <button
                 onClick={goToPrevious}
@@ -228,9 +234,12 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
             onClick={(e) => e.stopPropagation()}
           >
             {/* 상단 인디케이터 */}
-            {items.length > 1 && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white">
-                {currentIndex + 1} / {items.length}
+            {showProgress && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-2 z-20 text-xs px-2 py-0.5 rounded-full bg-black/60 text-white tabular-nums"
+                aria-live="polite"
+              >
+                {progressLabel}
               </div>
             )}
 
@@ -297,7 +306,7 @@ export default function EventPopupDisplay({ popups, onDontShowToday }: EventPopu
                 오늘 하루 보지 않음
               </label>
               <div className="flex items-center gap-2">
-                {items.length > 1 && (
+                {remainingCount > 1 && (
                   <>
                     <button
                       onClick={goToPrevious}
